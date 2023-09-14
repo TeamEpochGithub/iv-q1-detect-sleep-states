@@ -387,49 +387,6 @@ column_names = {
 'event_column_name': 'event',
 'score_column_name': 'score',
 }
-# tolerances = {'pass': [1.0]}
-# solution = pd.DataFrame({
-# 'video_id': ['a', 'a'],
-# 'event': ['pass', 'pass'],
-# 'time': [0, 15],
-# })
-# submission = pd.DataFrame({
-# 'video_id': ['a', 'a', 'a'],
-# 'event': ['pass', 'pass', 'pass'],
-# 'score': [1.0, 0.5, 1.0],
-# 'time': [0, 10, 14.5],
-# })
-# print(score(solution, submission, tolerances, **column_names))
-#
-#
-# submission.loc[1, 'score'] = 1.5
-# print(score(solution, submission, tolerances, **column_names))
-#
-#
-# submission.loc[1, 'score'] = 0.5  # reset
-# submission.loc[0, 'score'] = 0.0
-# print(score(solution, submission, tolerances, **column_names))
-#
-#
-# tolerances = {'pass': [0.1, 0.2, 1.0]}
-# print(score(solution, submission, tolerances, **column_names))
-#
-#
-# tolerances = {'pass': [0.5, 1.0], 'challenge': [0.25, 0.50]}
-# solution = pd.DataFrame({
-#
-# 'video_id': ['a', 'a', 'b'],
-# 'event': ['pass', 'challenge', 'pass'],
-# 'time': [0, 15, 0],  # restart time for new time series b
-# })
-# submission = pd.DataFrame({
-# 'video_id': ['a', 'a', 'b'],
-# 'event': ['pass', 'challenge', 'pass'],
-# 'score': [1.0, 0.5, 1.0],
-# 'time': [0, 15, 0],
-# })
-# print(score(solution, submission, tolerances, **column_names))
-
 
 tolerances = {'pass': [1.0]}
 solution = pd.DataFrame({
@@ -447,4 +404,37 @@ print(score(solution, submission, tolerances, **column_names, use_scoring_interv
 # import 1 sequences data
 # generate fake predicitons for it using the already known labels
 # look at the score
+
+#TODO make this work without local paths
+
+train_events = pd.read_csv("C:\\Users\\Tolga\\Downloads\\train_events.csv")
+# pick an event to look at
+event_id = train_events['series_id'].unique()[0]
+train_event = train_events.loc[train_events['series_id'] == event_id]
+# now only take onsets from this event also dropping the nans (nans lead to lower score)
+onset_steps = train_event.loc[train_event['event'] == 'onset']['step'].dropna()
+onset_steps = onset_steps.to_numpy()
+print(onset_steps)
+
+# now using these steps create a sample submission
+
+tolerances = {'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]}
+solution = pd.DataFrame({
+'video_id': [event_id] * len(onset_steps),
+'event': ['onset'] * len(onset_steps),
+'time': onset_steps,
+})
+
+# for now keeping it the same as the answer
+submission = pd.DataFrame({
+'video_id': [event_id] * len(onset_steps),
+'event': ['onset'] * len(onset_steps),
+'time': onset_steps,
+'score': [0.9] * (len(onset_steps) - 10) + [1.0] * 10
+})
+
+test_score = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False)
+print(test_score)
+
+
 

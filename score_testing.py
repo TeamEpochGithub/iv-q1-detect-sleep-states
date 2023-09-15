@@ -21,7 +21,8 @@ time_column_name = None
 event_column_name = None
 score_column_name = None
 use_scoring_intervals = None
-
+all_tps = []
+all_fps = []
 
 def score(
         solution: pd.DataFrame,
@@ -250,8 +251,10 @@ def precision_recall_curve(
     # Matches become TPs and non-matches FPs as confidence threshold decreases
     tps = np.cumsum(matches)[threshold_idxs]
     fps = np.cumsum(~matches)[threshold_idxs]
-    print('TPS',tps)
-    print('FPS',fps)
+    globals()['all_tps'].append(tps)
+    globals()['all_fps'].append(fps)
+    # print('TPS',tps)
+    # print('FPS',fps)
     precision = tps / (tps + fps)
     precision[np.isnan(precision)] = 0
     #print('precision', precision)
@@ -277,24 +280,52 @@ def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> 
     # remove last item of precision
     # pair those points together
     # those are the new points
-    old_points = np.array([recall, precision])
-    new_points = np.array([recall[1:], precision[:-1]])
-    # start with old point, add new_point
-    plot_points = []
-    for i in range(old_points.shape[1] + new_points.shape[1]):
-        if i % 2 == 0:
-            plot_points.append(old_points[:, i//2])
-        else:
-            plot_points.append(new_points[:, i//2])
-    plot_points = np.array(plot_points)
+    old_points_filtered = dict()
+    for i in range(len(recall)):
+        val = old_points_filtered.get(recall[i],-1)
+        if precision[i] > val:
+            old_points_filtered[recall[i]] = precision[i]
 
-    #print('plot_points',plot_points)
-    plt.figure()
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.plot(plot_points[:,0], plot_points[:,1])
-    plt.show()
-    # Compute step integral
+    old_points_df = pd.DataFrame({'recall': list(old_points_filtered.keys()),\
+                                       'precision': list(old_points_filtered.values())})
+    new_points = np.array([recall[1:], precision[:-1]])
+    old_points = np.array([old_points_df['recall'].to_numpy(),\
+                           old_points_df['precision'].to_numpy()])
+    print(old_points_df.head())
+
+    # old plotting method
+    # #print('old_points',old_points)
+    # plt.figure()
+    # plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
+    # plt.show()
+    # print(old_points.shape)
+    # new_points = np.array([recall[1:], precision[:-1]])
+    # print(new_points.shape)
+    #
+    # old_points = np.array([recall, precision])
+    # new_points = np.array([recall[1:], precision[:-1]])
+    # # start with old point, add new_point
+    # plot_points = []
+    # for i in range(old_points.shape[1] + new_points.shape[1]):
+    #     if i % 2 == 0:
+    #         plot_points.append(old_points[:, i // 2])
+    #     else:
+    #         plot_points.append(new_points[:, i // 2])
+    # plot_points = np.array(plot_points)
+
+    # print('plot_points',plot_points)
+    # start with old point, add new_point
+    # plot_points = []
+    # for i in range(old_points.shape[1] + new_points.shape[1]):
+    #     if i % 2 == 0:
+    #         plot_points.append(old_points[:, i // 2])
+    #     else:
+    #         plot_points.append(new_points[:, i // 2])
+    # plot_points = np.array(plot_points)
+    #
+    # # print('plot_points',plot_points)
+
+    # # # Compute step integral
     return -np.sum(np.diff(recall) * np.array(precision)[:-1])
 
 
@@ -471,21 +502,24 @@ def gaussian_predictions(prediction_timestamps, prediction_confidences, sigmas, 
 
 # test code to see if the function works
 
+# for each r value of the generated points
+# only add the original points at that r value with p >= p of the artificial data
+
 test_timestamps = onset_steps
-test_confidences = np.linspace(0.5,1,len(onset_steps))
-test_sigmas = [10000] * len(onset_steps)
+test_confidences = np.linspace(0.4,1,len(onset_steps))
+test_sigmas = [1] * len(onset_steps)
 
 old_points = np.array([test_timestamps, test_confidences])
-print('old_preds',old_points)
+#print('old_preds',old_points)
 new_points = gaussian_predictions(prediction_timestamps=test_timestamps, prediction_confidences=test_confidences,\
-                                  sigmas=test_sigmas, num_points=70)
+                                  sigmas=test_sigmas, num_points=29)
 #print('new_preds',new_points)
 
 #new points has an x column and a y column
 plt.figure()
 plt.ylim((0,1))
 plt.plot(old_points[0], old_points[1])
-# plt.plot(new_points[:,0], new_points[:,1])
+plt.plot(new_points[:,0], new_points[:,1])
 plt.show()
 
 # now using the newly generated points see if the recall values keep increasing as confidences go down
@@ -501,7 +535,7 @@ solution = pd.DataFrame({
 submission = pd.DataFrame({
 'video_id': [event_id] * len(new_points[:,0]),
 'event': ['onset'] * len(new_points[:,0]),
-'time': new_points[:,0],
+'time': np.add(new_points[:,0], 100),
 'score': new_points[:,1]
 })
 
@@ -509,5 +543,6 @@ test_score = score(solution, submission, tolerances, **column_names, use_scoring
 
 print(test_score)
 
-
-
+# print('FP', all_fps)
+# print(np.sum(np.diff(np.array(all_tps),axis=0)))
+# print(np.sum(np.diff(np.array(all_fps),axis=0)))

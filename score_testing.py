@@ -250,11 +250,13 @@ def precision_recall_curve(
     # Matches become TPs and non-matches FPs as confidence threshold decreases
     tps = np.cumsum(matches)[threshold_idxs]
     fps = np.cumsum(~matches)[threshold_idxs]
-
+    print('TPS',tps)
+    print('FPS',fps)
     precision = tps / (tps + fps)
     precision[np.isnan(precision)] = 0
+    #print('precision', precision)
     recall = tps / p  # total number of ground truths might be different than total number of matches
-
+    #print('recall', recall)
     # Stop when full recall attained and reverse the outputs so recall is non-increasing.
     last_ind = tps.searchsorted(tps[-1])
     sl = slice(last_ind, None, -1)
@@ -265,16 +267,32 @@ def precision_recall_curve(
 
 def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> float:
     precision, recall, _ = precision_recall_curve(matches, scores, p)
-    idxs = np.argsort(recall)
-    sorted_recall = recall[idxs]
-    sorted_precision = precision[idxs]
-    print('precision:', precision)
-    print('recall:', recall)
-    # assuming the recalls will always increase as the threshold goes down
-    # otherwise the calculation will result in negative score
-    
+
+    # print('precision:', precision)
+    # print('recall:', recall)
+
+    # to plot the rectangles the exact way they calculate the area
+    # need to generate new_precision recall pairs [r1,p0], [r2,p1], [r3,p2] etc.
+    # remove first item of recall
+    # remove last item of precision
+    # pair those points together
+    # those are the new points
+    old_points = np.array([recall, precision])
+    new_points = np.array([recall[1:], precision[:-1]])
+    # start with old point, add new_point
+    plot_points = []
+    for i in range(old_points.shape[1] + new_points.shape[1]):
+        if i % 2 == 0:
+            plot_points.append(old_points[:, i//2])
+        else:
+            plot_points.append(new_points[:, i//2])
+    plot_points = np.array(plot_points)
+
+    #print('plot_points',plot_points)
     plt.figure()
-    plt.plot(recall, precision)
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.plot(plot_points[:,0], plot_points[:,1])
     plt.show()
     # Compute step integral
     return -np.sum(np.diff(recall) * np.array(precision)[:-1])
@@ -400,7 +418,7 @@ submission = pd.DataFrame({
 'score': [1.0, 1.0, 1.0],
 'time': [10, 20, 40],
 })
-print(score(solution, submission, tolerances, **column_names, use_scoring_intervals=False))
+#print(score(solution, submission, tolerances, **column_names, use_scoring_intervals=False))
 # import 1 sequences data
 # generate fake predicitons for it using the already known labels
 # look at the score
@@ -414,9 +432,63 @@ train_event = train_events.loc[train_events['series_id'] == event_id]
 # now only take onsets from this event also dropping the nans (nans lead to lower score)
 onset_steps = train_event.loc[train_event['event'] == 'onset']['step'].dropna()
 onset_steps = onset_steps.to_numpy()
-print(onset_steps)
+#print(onset_steps)
 
 # now using these steps create a sample submission
+
+#print(test_score)
+
+def gaussian_predictions(prediction_timestamps, prediction_confidences, sigmas, num_points=11):
+    # this function will, for a given array of timesteps and their confidences, will generate a
+    # gaussian curve around each prediction using the given sigma value
+    # and it will generate new predcitions each 1 sigma apart up to 5 sigma in both directions of the original prediction
+    # so for each predcition it will return the original predicition and num_points-1 more predictions around it
+
+    # Create an array of x values spanning from -5 sigma to +5 sigma
+    all_results = np.empty((0, 2))
+    # if num_points is even it destroys the original number so we make it an odd number
+    if num_points % 2 == 0:
+        num_points += 1
+    for i in range(len(prediction_timestamps)):
+        timestamp = prediction_timestamps[i]
+        confidence = prediction_confidences[i]
+        sigma = sigmas[i]
+        x_values = np.linspace(timestamp - 5 * sigma, timestamp + 5 * sigma, num_points)
+
+        # Calculate the corresponding y values using the Gaussian formula
+        y_values = confidence * np.exp(-(x_values - timestamp) ** 2 / (2 * sigma ** 2))
+
+        # Combine x and y values into a list of (x, y) tuples
+        results = np.column_stack((x_values, y_values))
+        all_results = np.concatenate((all_results, results), axis=0)
+
+    # returns a 2 column vector where the 0th col is the timestamps and the 1st column is the y values
+    # to plot do this: plt.plot(new_points[:,0], new_points[:,1])
+    # timestamps = new_points[:,0]
+    # confidences = new_points[:,1]
+    return all_results
+
+
+# test code to see if the function works
+
+test_timestamps = onset_steps
+test_confidences = np.linspace(0.5,1,len(onset_steps))
+test_sigmas = [10000] * len(onset_steps)
+
+old_points = np.array([test_timestamps, test_confidences])
+print('old_preds',old_points)
+new_points = gaussian_predictions(prediction_timestamps=test_timestamps, prediction_confidences=test_confidences,\
+                                  sigmas=test_sigmas, num_points=70)
+#print('new_preds',new_points)
+
+#new points has an x column and a y column
+plt.figure()
+plt.ylim((0,1))
+plt.plot(old_points[0], old_points[1])
+# plt.plot(new_points[:,0], new_points[:,1])
+plt.show()
+
+# now using the newly generated points see if the recall values keep increasing as confidences go down
 
 tolerances = {'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]}
 solution = pd.DataFrame({
@@ -427,13 +499,14 @@ solution = pd.DataFrame({
 
 # for now keeping it the same as the answer
 submission = pd.DataFrame({
-'video_id': [event_id] * len(onset_steps),
-'event': ['onset'] * len(onset_steps),
-'time': onset_steps,
-'score': [0.9] * (len(onset_steps) - 10) + [1.0] * 10
+'video_id': [event_id] * len(new_points[:,0]),
+'event': ['onset'] * len(new_points[:,0]),
+'time': new_points[:,0],
+'score': new_points[:,1]
 })
 
 test_score = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False)
+
 print(test_score)
 
 

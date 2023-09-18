@@ -10,6 +10,7 @@ import pandas as pd
 import pandas.api.types
 from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
+import sys
 
 class ParticipantVisibleError(Exception):
     pass
@@ -449,8 +450,8 @@ submission = pd.DataFrame({
 # look at the score
 
 #TODO make this work without local paths
-
-train_events = pd.read_csv("C:\\Users\\Tolga\\Downloads\\train_events.csv")
+sys.path.insert(1,'../data')
+train_events = pd.read_csv("data/train_events.csv")
 # pick an event to look at
 event_id = train_events['series_id'].unique()[0]
 train_event = train_events.loc[train_events['series_id'] == event_id]

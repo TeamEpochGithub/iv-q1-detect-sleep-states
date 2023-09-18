@@ -12,6 +12,23 @@ from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 import sys
 
+
+# To run the code just run this script
+# What it does is it reads the data for a series from the dataset
+# then it takes the correct labels, offsets them (now it is 100 steps) and applies gaussian label
+# smoothing to it. Then takes those smoothed out predictions (there are 27 new points within 5 steps of the actual truth)
+# and passes those in to the scoring metric that was provided
+# (slightly modified to plot curves the workings are the exact same)
+# the first plot is the predictions against the actual ground truths
+# the rest of the plots show the precision recall curve
+# the first few graphs show graph for 0 score (because no predicitons are within the tolerance
+# (starts with small tolerances)) and the rest show reasonable curves
+# they are all the same because the offset is the exact same for all the tolerances hence the same graph
+# in practice it will be different since we will miss events
+
+
+
+
 class ParticipantVisibleError(Exception):
     pass
 
@@ -258,9 +275,9 @@ def precision_recall_curve(
     # print('FPS',fps)
     precision = tps / (tps + fps)
     precision[np.isnan(precision)] = 0
-    #print('precision', precision)
+    print('precision', precision)
     recall = tps / p  # total number of ground truths might be different than total number of matches
-    #print('recall', recall)
+    print('recall', recall)
     # Stop when full recall attained and reverse the outputs so recall is non-increasing.
     last_ind = tps.searchsorted(tps[-1])
     sl = slice(last_ind, None, -1)
@@ -301,7 +318,8 @@ def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> 
     plt.figure()
     plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
     plt.show()
-    print(old_points.shape)
+    #print(old_points.shape)
+
     # new_points = np.array([recall[1:], precision[:-1]])
     # print(new_points.shape)
     #
@@ -426,7 +444,7 @@ def event_detection_ap(
     return mean_ap
 
 column_names = {
-'series_id_column_name': 'video_id',
+'series_id_column_name': 'series_id',
 'time_column_name': 'time',
 'event_column_name': 'event',
 'score_column_name': 'score',
@@ -434,12 +452,12 @@ column_names = {
 
 tolerances = {'pass': [1.0]}
 solution = pd.DataFrame({
-'video_id': ['a', 'a', 'a', 'a'],
+'series_id': ['a', 'a', 'a', 'a'],
 'event': ['start', 'pass', 'pass', 'end'],
 'time': [0, 10, 20, 30],
 })
 submission = pd.DataFrame({
-'video_id': ['a', 'a', 'a'],
+'series_id': ['a', 'a', 'a'],
 'event': ['pass', 'pass', 'pass'],
 'score': [1.0, 1.0, 1.0],
 'time': [10, 20, 40],
@@ -521,14 +539,14 @@ plt.show()
 
 tolerances = {'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]}
 solution = pd.DataFrame({
-'video_id': [event_id] * len(onset_steps),
+'series_id': [event_id] * len(onset_steps),
 'event': ['onset'] * len(onset_steps),
 'time': onset_steps,
 })
 
 # for now keeping it the same as the answer
 submission = pd.DataFrame({
-'video_id': [event_id] * len(new_points[:,0]),
+'series_id': [event_id] * len(new_points[:,0]),
 'event': ['onset'] * len(new_points[:,0]),
 'time': np.add(new_points[:,0], 100),
 'score': new_points[:,1]
@@ -537,7 +555,5 @@ submission = pd.DataFrame({
 test_score = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False)
 
 print(test_score)
-
-# print('FP', all_fps)
-# print(np.sum(np.diff(np.array(all_tps),axis=0)))
-# print(np.sum(np.diff(np.array(all_fps),axis=0)))
+# print('tps:',all_tps)
+# print('fps:',all_fps)

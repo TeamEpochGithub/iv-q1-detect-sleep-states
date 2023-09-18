@@ -9,9 +9,11 @@ def run(test_series_path):
     submission = test[["series_id",'step', 'day', 'hour']].copy()
     # Alternate event with onset and awake
     # Make a new column event and fill it with onset if hour is larger than 18 else awake if less than 12
-    submission['event'] = np.where(submission['hour'] > 18, 'onset', 'awake')
+    submission['event'] = np.where(submission['hour'] > 19, 'onset', 'awake')
+    # Drop row with onset event if hour is more than 22
+    submission = submission.drop(submission[(submission['hour'] > 22) & (submission['event'] == 'onset')].index)
     # Drop row with awake event if hour is more than 12
-    submission = submission.drop(submission[(submission['hour'] > 12) & (submission['event'] == 'awake')].index)
+    submission = submission.drop(submission[(submission['hour'] > 9) & (submission['hour'] < 6) & (submission['event'] == 'awake')].index)
  
     # Keep random onset and awake event per day per series_id
     submission = submission.groupby(['series_id','day','event']).sample(1)

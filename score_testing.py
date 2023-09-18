@@ -270,6 +270,7 @@ def precision_recall_curve(
 
 def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> float:
     precision, recall, _ = precision_recall_curve(matches, scores, p)
+    #TODO clean this shit up
 
     # print('precision:', precision)
     # print('recall:', recall)
@@ -288,17 +289,18 @@ def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> 
 
     old_points_df = pd.DataFrame({'recall': list(old_points_filtered.keys()),\
                                        'precision': list(old_points_filtered.values())})
-    new_points = np.array([recall[1:], precision[:-1]])
+    # new_points = np.array([old_points_df['recall'].to_numpy()[1:],\
+    #                        old_points_df['precision'].to_numpy()])
     old_points = np.array([old_points_df['recall'].to_numpy(),\
                            old_points_df['precision'].to_numpy()])
-    print(old_points_df.head())
+    #print(old_points_df['recall'].to_numpy().shape)
 
     # old plotting method
-    # #print('old_points',old_points)
-    # plt.figure()
-    # plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
-    # plt.show()
-    # print(old_points.shape)
+    #print('old_points',old_points)
+    plt.figure()
+    plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
+    plt.show()
+    print(old_points.shape)
     # new_points = np.array([recall[1:], precision[:-1]])
     # print(new_points.shape)
     #
@@ -312,20 +314,12 @@ def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> 
     #     else:
     #         plot_points.append(new_points[:, i // 2])
     # plot_points = np.array(plot_points)
-
-    # print('plot_points',plot_points)
-    # start with old point, add new_point
-    # plot_points = []
-    # for i in range(old_points.shape[1] + new_points.shape[1]):
-    #     if i % 2 == 0:
-    #         plot_points.append(old_points[:, i // 2])
-    #     else:
-    #         plot_points.append(new_points[:, i // 2])
-    # plot_points = np.array(plot_points)
     #
-    # # print('plot_points',plot_points)
+    # plt.figure()
+    # plt.plot(plot_points)
+    # print('plot_points',plot_points)
 
-    # # # Compute step integral
+    # Compute step integral
     return -np.sum(np.diff(recall) * np.array(precision)[:-1])
 
 

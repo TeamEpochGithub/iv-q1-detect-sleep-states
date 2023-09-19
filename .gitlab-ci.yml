@@ -1,0 +1,54 @@
+stages:
+  - lint
+  - tests
+#  - run
+
+variables:
+  PYTHON_VERSION: "3.10"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+before_script:
+  - python --version  # For debugging
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install -r requirements.txt
+
+lint:
+  stage: lint
+  image: python:$PYTHON_VERSION
+  script:
+    - flake8 . --max-line-length=130 --statistics --exit-zero --exclude ./venv
+    - ERROR_COUNT=$(flake8 . --max-line-length=130 --count --exclude ./venv --exit-zero | tail -n 1)
+    - ERROR_COUNT=$((ERROR_COUNT))
+    - echo $ERROR_COUNT
+    - if [ "$ERROR_COUNT" -gt 0 ]; then
+        echo Too many errors, we need 0 errors :D && exit 1;
+      fi
+    - echo Checkstyle passed! Good job! && exit 0
+  allow_failure: False
+
+
+# This should only include unit tests that do not depend on datasets and models! No system tests and integration tests
+unittests:
+  stage: tests
+  image: python:$PYTHON_VERSION
+  script:
+    - python -m unittest discover  # Run unittests
+  allow_failure: false
+
+
+# We should not run our main on the pipeline, since we would need pre-trained models and data on the gitlab cloud...
+#run:
+#  stage: run
+#  image: python:$PYTHON_VERSION
+#  script:
+#    - python src/main.py  # Attempt to run the main.py file
+#  allow_failure: false
+

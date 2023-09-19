@@ -4,8 +4,8 @@ from scipy import signal
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 
-#stft(enmo.to_numpy(), fs, nperseg=256)
-def spectogram(plot = False, y = None, fs = None, nperseg = 256):
+# stft(enmo.to_numpy(), fs, nperseg=256)
+def spectogram(plot=False, y=None, fs=None, nperseg=256):
     # given the time series data with the sampling frequency calculates the
     # short-time-fourier-transform using the scipy function stft
     # by default stft doesnt return an image so this function returns the spectogram image
@@ -20,11 +20,11 @@ def spectogram(plot = False, y = None, fs = None, nperseg = 256):
     # Zxx is an array of complex number
     # spectograms plot the magnitude
     # so we take the abs value first
-    Y_abs = np.abs(Zxx)
+    # Y_abs = np.abs(Zxx)
     fig, ax = plt.subplots()
     # there can be huge outliers which mess up how the plot works so the upper limit is the mean + 5*std
     # for displaying the color axis
-    quadmesh = ax.pcolormesh(t, f, Y_abs, vmax=np.mean(Y_abs)+5*np.std(Y_abs), shading='gouraud')
+    # quadmesh = ax.pcolormesh(t, f, Y_abs, vmax=np.mean(Y_abs) + 5 * np.std(Y_abs), shading='gouraud')
     # quadmesh is a maplotlib Quadmesh object and not an array
     # not a high priority rn so im leaving this for later
     # TODO figure out how to get rgb array from quadmesh witout rendering the image
@@ -36,5 +36,3 @@ def spectogram(plot = False, y = None, fs = None, nperseg = 256):
     plt.close(fig)
 
     return image_array
-
-

@@ -39,8 +39,6 @@ time_column_name = None
 event_column_name = None
 score_column_name = None
 use_scoring_intervals = None
-all_tps = []
-all_fps = []
 
 def score(
         solution: pd.DataFrame,
@@ -51,6 +49,7 @@ def score(
         event_column_name: str,
         score_column_name: str,
         use_scoring_intervals: bool = False,
+        plot_precision_recall = False
 ) -> float:
     """Event Detection Average Precision, an AUCPR metric for event detection in
     time series and video.
@@ -195,7 +194,7 @@ def score(
     globals()['score_column_name'] = score_column_name
     globals()['use_scoring_intervals'] = use_scoring_intervals
 
-    return event_detection_ap(solution, submission, tolerances)
+    return event_detection_ap(solution, submission, tolerances, plot_precision_recall)
 
 
 def filter_detections(
@@ -269,15 +268,11 @@ def precision_recall_curve(
     # Matches become TPs and non-matches FPs as confidence threshold decreases
     tps = np.cumsum(matches)[threshold_idxs]
     fps = np.cumsum(~matches)[threshold_idxs]
-    globals()['all_tps'].append(tps)
-    globals()['all_fps'].append(fps)
-    # print('TPS',tps)
-    # print('FPS',fps)
     precision = tps / (tps + fps)
     precision[np.isnan(precision)] = 0
-    print('precision', precision)
+    #print('precision', precision)
     recall = tps / p  # total number of ground truths might be different than total number of matches
-    print('recall', recall)
+    #print('recall', recall)
     # Stop when full recall attained and reverse the outputs so recall is non-increasing.
     last_ind = tps.searchsorted(tps[-1])
     sl = slice(last_ind, None, -1)
@@ -286,57 +281,33 @@ def precision_recall_curve(
     return np.r_[precision[sl], 1], np.r_[recall[sl], 0], thresholds[sl]
 
 
-def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> float:
+def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int, plot_precision_recall: bool) -> float:
     precision, recall, _ = precision_recall_curve(matches, scores, p)
-    #TODO clean this shit up
 
-    # print('precision:', precision)
-    # print('recall:', recall)
-
+    # TO MAKE THE PLOTS PRETTY
     # to plot the rectangles the exact way they calculate the area
     # need to generate new_precision recall pairs [r1,p0], [r2,p1], [r3,p2] etc.
     # remove first item of recall
     # remove last item of precision
     # pair those points together
     # those are the new points
-    old_points_filtered = dict()
-    for i in range(len(recall)):
-        val = old_points_filtered.get(recall[i],-1)
-        if precision[i] > val:
-            old_points_filtered[recall[i]] = precision[i]
 
-    old_points_df = pd.DataFrame({'recall': list(old_points_filtered.keys()),\
-                                       'precision': list(old_points_filtered.values())})
-    # new_points = np.array([old_points_df['recall'].to_numpy()[1:],\
-    #                        old_points_df['precision'].to_numpy()])
-    old_points = np.array([old_points_df['recall'].to_numpy(),\
-                           old_points_df['precision'].to_numpy()])
-    #print(old_points_df['recall'].to_numpy().shape)
+    # the precision recall curve ends up with vertical lines with 0 thickness
+    # this code below removes the duplicates using dicts
+    if plot_precision_recall:
+        old_points_filtered = dict()
+        for i in range(len(recall)):
+            val = old_points_filtered.get(recall[i],-1)
+            if precision[i] > val:
+                old_points_filtered[recall[i]] = precision[i]
 
-    # old plotting method
-    #print('old_points',old_points)
-    plt.figure()
-    plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
-    plt.show()
-    #print(old_points.shape)
+        # reads the dict in to a dataframe (uncomment if you want to make fancier plots)
+        # old_points_df = pd.DataFrame({'recall': list(old_points_filtered.keys()),\
+        #                              'precision': list(old_points_filtered.values())})
 
-    # new_points = np.array([recall[1:], precision[:-1]])
-    # print(new_points.shape)
-    #
-    # old_points = np.array([recall, precision])
-    # new_points = np.array([recall[1:], precision[:-1]])
-    # # start with old point, add new_point
-    # plot_points = []
-    # for i in range(old_points.shape[1] + new_points.shape[1]):
-    #     if i % 2 == 0:
-    #         plot_points.append(old_points[:, i // 2])
-    #     else:
-    #         plot_points.append(new_points[:, i // 2])
-    # plot_points = np.array(plot_points)
-    #
-    # plt.figure()
-    # plt.plot(plot_points)
-    # print('plot_points',plot_points)
+        plt.figure()
+        plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
+        plt.show()
 
     # Compute step integral
     return -np.sum(np.diff(recall) * np.array(precision)[:-1])
@@ -346,6 +317,8 @@ def event_detection_ap(
         solution: pd.DataFrame,
         submission: pd.DataFrame,
         tolerances: Dict[str, List[float]],
+        plot_precision_recall: bool,
+
 ) -> float:
 
     # Ensure solution and submission are sorted properly
@@ -435,6 +408,7 @@ def event_detection_ap(
                 group['matched'].to_numpy(),
                 group[score_column_name].to_numpy(),
                 class_counts[group[event_column_name].iat[0]],
+                plot_precision_recall,
             )
         )
     )
@@ -442,118 +416,3 @@ def event_detection_ap(
     mean_ap = ap_table.groupby(event_column_name).mean().sum() / len(event_classes)
 
     return mean_ap
-
-column_names = {
-'series_id_column_name': 'series_id',
-'time_column_name': 'time',
-'event_column_name': 'event',
-'score_column_name': 'score',
-}
-
-tolerances = {'pass': [1.0]}
-solution = pd.DataFrame({
-'series_id': ['a', 'a', 'a', 'a'],
-'event': ['start', 'pass', 'pass', 'end'],
-'time': [0, 10, 20, 30],
-})
-submission = pd.DataFrame({
-'series_id': ['a', 'a', 'a'],
-'event': ['pass', 'pass', 'pass'],
-'score': [1.0, 1.0, 1.0],
-'time': [10, 20, 40],
-})
-#print(score(solution, submission, tolerances, **column_names, use_scoring_intervals=False))
-# import 1 sequences data
-# generate fake predicitons for it using the already known labels
-# look at the score
-
-#TODO make this work without local paths
-sys.path.insert(1,'../data')
-train_events = pd.read_csv("data/train_events.csv")
-# pick an event to look at
-event_id = train_events['series_id'].unique()[0]
-train_event = train_events.loc[train_events['series_id'] == event_id]
-# now only take onsets from this event also dropping the nans (nans lead to lower score)
-onset_steps = train_event.loc[train_event['event'] == 'onset']['step'].dropna()
-onset_steps = onset_steps.to_numpy()
-#print(onset_steps)
-
-# now using these steps create a sample submission
-
-#print(test_score)
-
-def gaussian_predictions(prediction_timestamps, prediction_confidences, sigmas, num_points=11):
-    # this function will, for a given array of timesteps and their confidences, will generate a
-    # gaussian curve around each prediction using the given sigma value
-    # and it will generate new predcitions each 1 sigma apart up to 5 sigma in both directions of the original prediction
-    # so for each predcition it will return the original predicition and num_points-1 more predictions around it
-
-    # Create an array of x values spanning from -5 sigma to +5 sigma
-    all_results = np.empty((0, 2))
-    # if num_points is even it destroys the original number so we make it an odd number
-    if num_points % 2 == 0:
-        num_points += 1
-    for i in range(len(prediction_timestamps)):
-        timestamp = prediction_timestamps[i]
-        confidence = prediction_confidences[i]
-        sigma = sigmas[i]
-        x_values = np.linspace(timestamp - 5 * sigma, timestamp + 5 * sigma, num_points)
-
-        # Calculate the corresponding y values using the Gaussian formula
-        y_values = confidence * np.exp(-(x_values - timestamp) ** 2 / (2 * sigma ** 2))
-
-        # Combine x and y values into a list of (x, y) tuples
-        results = np.column_stack((x_values, y_values))
-        all_results = np.concatenate((all_results, results), axis=0)
-
-    # returns a 2 column vector where the 0th col is the timestamps and the 1st column is the y values
-    # to plot do this: plt.plot(new_points[:,0], new_points[:,1])
-    # timestamps = new_points[:,0]
-    # confidences = new_points[:,1]
-    return all_results
-
-
-# test code to see if the function works
-
-# for each r value of the generated points
-# only add the original points at that r value with p >= p of the artificial data
-
-test_timestamps = onset_steps
-test_confidences = np.linspace(0.4,1,len(onset_steps))
-test_sigmas = [1] * len(onset_steps)
-
-old_points = np.array([test_timestamps, test_confidences])
-#print('old_preds',old_points)
-new_points = gaussian_predictions(prediction_timestamps=test_timestamps, prediction_confidences=test_confidences,\
-                                  sigmas=test_sigmas, num_points=29)
-#print('new_preds',new_points)
-
-#new points has an x column and a y column
-plt.figure()
-plt.ylim((0,1))
-plt.plot(old_points[0], old_points[1])
-plt.plot(new_points[:,0], new_points[:,1])
-plt.show()
-
-# now using the newly generated points see if the recall values keep increasing as confidences go down
-
-tolerances = {'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]}
-solution = pd.DataFrame({
-'series_id': [event_id] * len(onset_steps),
-'event': ['onset'] * len(onset_steps),
-'time': onset_steps,
-})
-
-# for now keeping it the same as the answer
-submission = pd.DataFrame({
-'series_id': [event_id] * len(new_points[:,0]),
-'event': ['onset'] * len(new_points[:,0]),
-'time': np.add(new_points[:,0], 100),
-'score': new_points[:,1]
-})
-
-test_score = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False)
-
-print(test_score)
-# print('tps:',all_tps)
-# print('fps:',all_fps)

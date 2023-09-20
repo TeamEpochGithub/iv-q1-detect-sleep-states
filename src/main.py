@@ -2,7 +2,16 @@ import pandas as pd
 import numpy as np
 
 
-def run(test_series_path):
+def to_test(x: int):
+    """
+    Test function to see if pipeline works well. It does...
+    :param x: is x
+    :return: x + 5
+    """
+    return x + 5
+
+
+def run(test_series_path, submit):
     test = pd.read_parquet(test_series_path)
     test["timestamp"] = pd.to_datetime(test["timestamp"], utc=True)
     test["day"] = test["timestamp"].dt.day
@@ -15,14 +24,23 @@ def run(test_series_path):
     submission = submission.drop(
         submission[(submission['hour'] > 22) & (submission['event'] == 'onset')].index)
     # Drop row with awake event if hour is more than 12
-    submission = submission.drop(submission[(submission['hour'] > 9) & (
-        submission['hour'] < 6) & (submission['event'] == 'awake')].index)
+    submission = submission.drop(
+        submission[(submission['hour'] > 9) & (submission['hour'] < 6) & (submission['event'] == 'awake')].index)
 
     # Keep random onset and awake event per day per series_id
     submission = submission.groupby(['series_id', 'day', 'event']).sample(1)
     submission.drop(['day', 'hour'], axis=1, inplace=True)
     submission['score'] = 1
     submission = submission.reset_index(drop=True).reset_index(names="row_id")
-    submission.to_csv("submission.csv", index=False)
 
-# run("data/test_series.parquet")
+    if submit:
+        submission.to_csv("submission.csv", index=False)
+    return 0
+
+
+def main():
+    run("../data/test_series.parquet", submit=False)
+
+
+if __name__ == "__main__":
+    main()

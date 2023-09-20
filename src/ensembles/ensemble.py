@@ -26,9 +26,7 @@ class Ensemble:
 
         # Weight the predictions
         predictions = np.array(predictions)
-        predictions = np.average(predictions, axis=0, weights=self.weight_matrix)
+        predictions = np.average(
+            predictions, axis=0, weights=self.weight_matrix)
 
         return predictions
-
-
-    

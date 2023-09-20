@@ -1,6 +1,5 @@
 # This is the base class for loss
 
-
 class Loss():
     def __init__(self):
         # Init function

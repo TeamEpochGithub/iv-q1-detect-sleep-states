@@ -2,15 +2,6 @@ import pandas as pd
 import numpy as np
 
 
-def to_test(x: int):
-    """
-    Test function to see if pipeline works well. It does...
-    :param x: is x
-    :return: x + 5
-    """
-    return x + 5
-
-
 def run(test_series_path, submit):
     test = pd.read_parquet(test_series_path)
     test["timestamp"] = pd.to_datetime(test["timestamp"], utc=True)

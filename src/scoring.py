@@ -10,7 +10,6 @@ import pandas as pd
 import pandas.api.types
 from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
-import sys
 
 
 # To run the code just run this script
@@ -27,8 +26,6 @@ import sys
 # in practice it will be different since we will miss events
 
 
-
-
 class ParticipantVisibleError(Exception):
     pass
 
@@ -40,6 +37,7 @@ event_column_name = None
 score_column_name = None
 use_scoring_intervals = None
 
+
 def score(
         solution: pd.DataFrame,
         submission: pd.DataFrame,
@@ -49,7 +47,7 @@ def score(
         event_column_name: str,
         score_column_name: str,
         use_scoring_intervals: bool = False,
-        plot_precision_recall = False
+        plot_precision_recall=False
 ) -> float:
     """Event Detection Average Precision, an AUCPR metric for event detection in
     time series and video.
@@ -162,10 +160,10 @@ def score(
     """
     # Validate metric parameters
     assert len(tolerances) > 0, "Events must have defined tolerances."
-    assert set(tolerances.keys()) == set(solution[event_column_name]).difference({'start', 'end'}),\
+    assert set(tolerances.keys()) == set(solution[event_column_name]).difference({'start', 'end'}), \
         (f"Solution column {event_column_name} must contain the same events "
          "as defined in tolerances.")
-    assert pd.api.types.is_numeric_dtype(solution[time_column_name]),\
+    assert pd.api.types.is_numeric_dtype(solution[time_column_name]), \
         f"Solution column {time_column_name} must be of numeric type."
 
     # Validate submission format
@@ -176,7 +174,7 @@ def score(
         score_column_name,
     ]:
         if column_name not in submission.columns:
-            raise ParticipantVisibleError(f"Submission must have column '{target_name}'.")
+            raise ParticipantVisibleError("Submission must have column ''.")
 
     if not pd.api.types.is_numeric_dtype(submission[time_column_name]):
         raise ParticipantVisibleError(
@@ -227,7 +225,8 @@ def filter_detections(
 def match_detections(
         tolerance: float, ground_truths: pd.DataFrame, detections: pd.DataFrame
 ) -> pd.DataFrame:
-    """Match detections to ground truth events. Arguments are taken from a common event x tolerance x series_id evaluation group."""
+    """Match detections to ground truth events. Arguments are taken from a
+    common event x tolerance x series_id evaluation group."""
     detections_sorted = detections.sort_values(score_column_name, ascending=False).dropna()
     is_matched = np.full_like(detections_sorted[event_column_name], False, dtype=bool)
     gts_matched = set()
@@ -246,7 +245,7 @@ def match_detections(
             gts_matched.add(best_gt)
 
     detections_sorted['matched'] = is_matched
-    #print(detections_sorted)
+    # print(detections_sorted)
     return detections_sorted
 
 
@@ -270,9 +269,9 @@ def precision_recall_curve(
     fps = np.cumsum(~matches)[threshold_idxs]
     precision = tps / (tps + fps)
     precision[np.isnan(precision)] = 0
-    #print('precision', precision)
+    # print('precision', precision)
     recall = tps / p  # total number of ground truths might be different than total number of matches
-    #print('recall', recall)
+    # print('recall', recall)
     # Stop when full recall attained and reverse the outputs so recall is non-increasing.
     last_ind = tps.searchsorted(tps[-1])
     sl = slice(last_ind, None, -1)
@@ -297,7 +296,7 @@ def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int, plo
     if plot_precision_recall:
         old_points_filtered = dict()
         for i in range(len(recall)):
-            val = old_points_filtered.get(recall[i],-1)
+            val = old_points_filtered.get(recall[i], -1)
             if precision[i] > val:
                 old_points_filtered[recall[i]] = precision[i]
 
@@ -320,7 +319,6 @@ def event_detection_ap(
         plot_precision_recall: bool,
 
 ) -> float:
-
     # Ensure solution and submission are sorted properly
     solution = solution.sort_values([series_id_column_name, time_column_name])
     submission = submission.sort_values([series_id_column_name, time_column_name])
@@ -354,13 +352,13 @@ def event_detection_ap(
     class_counts = ground_truths.value_counts(event_column_name).to_dict()
 
     # Create table for detections with a column indicating a match to a ground-truth event
-    detections = submission.assign(matched = False)
+    detections = submission.assign(matched=False)
 
     # Remove detections outside of scoring intervals
     if use_scoring_intervals:
         detections_filtered = []
         for (det_group, dets), (int_group, ints) in zip(
-            detections.groupby(series_id_column_name), intervals.groupby(series_id_column_name)
+                detections.groupby(series_id_column_name), intervals.groupby(series_id_column_name)
         ):
             assert det_group == int_group
             detections_filtered.append(filter_detections(dets, ints))

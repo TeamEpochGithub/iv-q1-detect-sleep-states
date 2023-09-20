@@ -1,1 +1,1 @@
-# This directory contains files related to scoring and loss functions
+# This directory contains files related to scoring functions

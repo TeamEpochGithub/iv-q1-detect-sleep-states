@@ -1,1 +1,1 @@
-# This directory is for metric and loss tests
+# This directory is for metric tests

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from src.scoring import score
+from src.score.scoring import score
 
 
 class Test(TestCase):

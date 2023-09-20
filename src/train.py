@@ -7,6 +7,7 @@ import random
 # Load config file
 config = None
 
+
 def train(config):
     wandb.init(
         project='detect-sleep-states',
@@ -23,11 +24,12 @@ def train(config):
     for epoch in range(2, epochs):
         acc = 1 - 2 ** -epoch - random.random() / epoch - offset
         loss = 2 ** -epoch + random.random() / epoch + offset
-        
+
         # log metrics to wandb
         wandb.log({"acc": acc, "loss": loss})
-        
+
     # [optional] finish the wandb run, necessary in notebooks
     wandb.finish()
+
 
 train(config)

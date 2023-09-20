@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 
+
 def example_feature(path="data/raw/test_series.parquet"):
     data = None
 
@@ -14,9 +15,10 @@ def example_feature(path="data/raw/test_series.parquet"):
         # If file does not exist, create it
         print("Creating parquet")
         data = pd.read_parquet(path)
-        
+
         # Save file to parquet
         data.to_parquet(target_dir)
     print(data.head())
+
 
 example_feature()

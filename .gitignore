@@ -159,8 +159,14 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-data/
+submission.csv
 .idea
+
+# Ignore data files
+data/
+
+# Ignore wandb files
+wandb/
 
 # Ignore zip files
 src.zip

@@ -2,15 +2,6 @@ import pandas as pd
 import numpy as np
 
 
-def to_test(x: int):
-    """
-    Test function to see if pipeline works well. It does...
-    :param x: is x
-    :return: x + 5
-    """
-    return x + 5
-
-
 def run(test_series_path, submit):
     test = pd.read_parquet(test_series_path)
     test["timestamp"] = pd.to_datetime(test["timestamp"], utc=True)
@@ -21,7 +12,8 @@ def run(test_series_path, submit):
     # Make a new column event and fill it with onset if hour is larger than 18 else awake if less than 12
     submission['event'] = np.where(submission['hour'] > 19, 'onset', 'awake')
     # Drop row with onset event if hour is more than 22
-    submission = submission.drop(submission[(submission['hour'] > 22) & (submission['event'] == 'onset')].index)
+    submission = submission.drop(
+        submission[(submission['hour'] > 22) & (submission['event'] == 'onset')].index)
     # Drop row with awake event if hour is more than 12
     submission = submission.drop(
         submission[(submission['hour'] > 9) & (submission['hour'] < 6) & (submission['event'] == 'awake')].index)

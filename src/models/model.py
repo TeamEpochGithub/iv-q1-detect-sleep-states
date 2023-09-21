@@ -2,12 +2,12 @@
 
 
 class Model:
-    def __init__(self, model=None):
+    def __init__(self, config):
         # Init function
-        if model is None:
-            self.stored_model = None
+        if config is None:
+            self.config = None
         else:
-            self.stored_model = model
+            self.config = config
 
     def train(self, data):
         # Train function

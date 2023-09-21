@@ -1,35 +1,34 @@
 {
     "name": "default_do_not_change",
-    "preprocessing": ["pp1", "pp2", "pp3"],
+    "preprocessing": ["mem_reduce"],
     "processed_loc_out": "./data/processed",
     "processed_loc_in": "./data/raw",
-    "feature_engineering": ["fe1", "fe2"],
+    "feature_engineering": ["example_feature_engineering"],
     "fe_loc_out": "./data/features",
     "fe_loc_in": "./data/processed",
     "models": {
         "model1name": {
-            "type1LSTM": {
-                "type": "LSTM",
-                "epochs": 100,
-                "patch_size": 8,
-                "layers": 5
-            }
-        },
-        "store_loc": "./tm"
+            "type": "example_model",
+            "epochs": 100,
+            "patch_size": 8,
+            "layers": 5,
+        }
     },
+    "model_store_loc": "./tm",
     "ensemble": {
         "models": ["model1name", "model2name"],
         "weights": [1, 2],
         "comb_method": "addition"
     },
-    "loss": "MSE",
+    "loss": "example_loss",
     "hpo": {
         "apply": true,
-        "method": "hpo1"
+        "method": "example_hpo"
     },
     "cv": {
         "apply": true,
-        "method": "cv1"
+        "method": "example_cv"
     },
     "scoring": true
 }
+

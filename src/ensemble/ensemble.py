@@ -7,7 +7,7 @@ import numpy as np
 class Ensemble:
 
     # Init function
-    def __init__(self, models=None, weight_matrix=None):
+    def __init__(self, models=None, weight_matrix=None, combination_method="addition"):
         if models is None:
             self.models = []
         else:

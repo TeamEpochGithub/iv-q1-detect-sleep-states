@@ -71,8 +71,7 @@ A list of models and their specified configurations are included here. Multiple 
     },
     "model2name": {
         MODEL SPECIFIC CONFIG OPTIONS
-    },
-    "store_loc": "./tm"
+    }
 }
 ```
 
@@ -98,6 +97,15 @@ Example of an LSTM model configuration
     "layers": 5,
 }
 ```
+
+### Model store location
+
+Specify location where models should be stored
+
+```
+"model_store_loc": "./tm",
+```
+
 
 ### Ensemble
 

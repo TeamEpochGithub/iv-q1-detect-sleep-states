@@ -7,3 +7,6 @@ class PP:
 
     def preprocess(self, data):
         raise NotImplementedError
+    
+    def run(self, data):
+        return self.preprocess(data)

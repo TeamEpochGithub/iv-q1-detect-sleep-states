@@ -9,7 +9,7 @@
 7. [Loss](#loss)
 8. [Hyperparameter optimization](#hyperparameter-optimization)
 9. [Cross validation](#cross-validation)
-10.[Scoring](#scoring)
+10. [Scoring](#scoring)
 
 
 ### Preprocessing steps

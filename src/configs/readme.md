@@ -6,6 +6,10 @@
 4. [Feature engineering data location](#feature-engineering-data-location)
 5. [Models](#models)
 6. [Ensemble](#ensemble)
+7. [Loss](#loss)
+8. [Hyperparameter optimization](#hyperparameter-optimization)
+9. [Cross validation](#cross-validation)
+10.[Scoring](#scoring)
 
 
 ### Preprocessing steps
@@ -130,7 +134,7 @@ Specification for what to do for hyperparameter optimization
 ```
 "hpo": {
     "apply": true | false,
-    "method": hpo1
+    "method": "hpo1"
 }
 ```
 

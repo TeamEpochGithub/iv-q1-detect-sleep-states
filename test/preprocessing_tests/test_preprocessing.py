@@ -1,11 +1,11 @@
 # This file is used to test different preprocessing steps
-import unittest
+from unittest import TestCase
 import pandas as pd
 import sys
 from src.preprocessing.dataframe_mem_reduce import reduce_mem_usage
 
 
-class Test(unittest.TestCase):
+class Test(TestCase):
     def test_preprocessing1(self):
         sys.path.insert(1, '../data')
         # read the data
@@ -25,7 +25,3 @@ class Test(unittest.TestCase):
         event_mem_used_after = reduce_mem_usage(train_events).memory_usage().sum()
 
         self.assertTrue(series_mem_used_before > series_mem_used_after and event_mem_used_before > event_mem_used_after)
-
-
-if __name__ == '__main__':
-    unittest.main()

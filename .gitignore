@@ -174,4 +174,10 @@ src.zip
 # Ignore submission files
 submission.csv
 
+# Ignore default config file
+default_config.json
+
+# Ignore default config file
+default_config.json
+
 .vscode/settings.json

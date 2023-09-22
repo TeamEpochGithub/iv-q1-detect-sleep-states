@@ -6,7 +6,8 @@ class Loss():
         pass
 
     def forward(self, y_pred, y_true):
-        raise NotImplementedError
+        # Forward function
+        pass
 
     def backward(self, y_pred, y_true):
         raise NotImplementedError

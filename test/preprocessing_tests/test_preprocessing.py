@@ -6,7 +6,7 @@ from src.preprocessing.dataframe_mem_reduce import reduce_mem_usage
 
 
 class Test(TestCase):
-    def test_preprocessing1(self):
+    def test_mem_reduce(self):
         sys.path.insert(1, '../data')
         # read the data
         train_events = pd.read_csv("data/train_events.csv")
@@ -24,4 +24,5 @@ class Test(TestCase):
         print('data usage of train_events after mem_reduce:', '\n')
         event_mem_used_after = reduce_mem_usage(train_events).memory_usage().sum()
 
+        # assert that memory usage for both dataframes went down
         self.assertTrue(series_mem_used_before > series_mem_used_after and event_mem_used_before > event_mem_used_after)

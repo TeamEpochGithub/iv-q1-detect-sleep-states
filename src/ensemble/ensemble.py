@@ -7,7 +7,7 @@ import numpy as np
 class Ensemble:
 
     # Init function
-    def __init__(self, models=None, weight_matrix=None):
+    def __init__(self, models=None, weight_matrix=None, combination_method="addition"):
         if models is None:
             self.models = []
         else:
@@ -19,10 +19,11 @@ class Ensemble:
             self.weight_matrix = weight_matrix
 
     def pred(self, data):
+        print("Predicting with ensemble")
         # Run each model
         predictions = []
         for model in self.models:
-            predictions += model.pred(data)
+            predictions.append(model.pred(data))
 
         # Weight the predictions
         predictions = np.array(predictions)

@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from fe import FE
+from src.feature_engineering.fe import FE
 
 
 class ExampleFeatureEngineering(FE):
@@ -20,8 +20,3 @@ class ExampleFeatureEngineering(FE):
 
             # Save file to parquet
             data.to_parquet(target_dir)
-        print(data.head())
-
-
-efe = ExampleFeatureEngineering()
-efe.run()

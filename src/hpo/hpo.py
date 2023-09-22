@@ -9,7 +9,4 @@ class HPO:
 
     def optimize(self):
         print("Optimizing hyperparameters")
-        print("Model: {}".format(self.model))
-        print("Data: {}".format(self.data))
-        print("Params: {}".format(self.params))
         return 1

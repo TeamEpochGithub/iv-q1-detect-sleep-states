@@ -11,7 +11,13 @@
             "type": "example_model",
             "epochs": 100,
             "patch_size": 8,
-            "layers": 5,
+            "layers": 5
+        },
+        "model2name": {
+            "type": "example_model",
+            "epochs": 100,
+            "patch_size": 8,
+            "layers": 5
         }
     },
     "model_store_loc": "./tm",

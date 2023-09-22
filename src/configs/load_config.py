@@ -33,6 +33,9 @@ class ConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+    def get_config(self):
+        return self.config
+
     # Function to retrieve preprocessing steps
     def get_pp_steps(self):
         self.pp_steps = []
@@ -46,11 +49,11 @@ class ConfigLoader:
 
     # Function to retrieve preprocessing data location out path
     def get_pp_out(self):
-        return self.config["preprocessing_loc_out"]
+        return self.config["processed_loc_out"]
 
     # Function to retrieve preprocessing data location in path
     def get_pp_in(self):
-        return self.config["preprocessing_loc_in"]
+        return self.config["processed_loc_in"]
 
     # Function to retrieve feature engineering classes from feature engineering folder
     def get_features(self):
@@ -67,16 +70,16 @@ class ConfigLoader:
 
     # Function to retrieve feature engineering data location out path
     def get_fe_out(self):
-        return self.config["feature_engineering_loc_out"]
+        return self.config["fe_loc_out"]
 
     # Function to retrieve feature engineering data location in path
     def get_fe_in(self):
-        return self.config["feature_engineering_loc_in"]
+        return self.config["fe_loc_in"]
 
     # Function to retrieve model data
     def get_models(self):
         # Loop through models
-        models = {}
+        self.models = {}
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None
@@ -86,9 +89,9 @@ class ConfigLoader:
                 raise ConfigException(
                     "Model not found: " + model_config["type"])
 
-            models[model_config["type"]] = curr_model
+            self.models[model] = curr_model
 
-        return models
+        return self.models
 
     # Function to retrieve ensemble data
     def get_ensemble(self):
@@ -99,7 +102,9 @@ class ConfigLoader:
 
         # Create ensemble
         ensemble = Ensemble(
-            self.config["ensemble"]["models"], self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
+            [self.models[x] for x in self.config["ensemble"]["models"]],
+            self.config["ensemble"]["weights"],
+            self.config["ensemble"]["comb_method"])
 
         return ensemble
 

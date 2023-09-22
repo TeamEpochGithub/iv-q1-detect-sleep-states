@@ -14,5 +14,3 @@ class MemReduce(PP):
     def run(self, df):
         # Function to run preprocessing step
         return self.reduce_mem_usage(df)
-    
-    

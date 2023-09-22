@@ -19,10 +19,11 @@ class Ensemble:
             self.weight_matrix = weight_matrix
 
     def pred(self, data):
+        print("Predicting with ensemble")
         # Run each model
         predictions = []
         for model in self.models:
-            predictions += model.pred(data)
+            predictions.append(model.pred(data))
 
         # Weight the predictions
         predictions = np.array(predictions)

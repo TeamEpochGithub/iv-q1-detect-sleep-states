@@ -15,7 +15,7 @@ class Model:
 
     def pred(self, data):
         # Predict function
-        pass
+        return [1,2]
 
     def evaluate(self, data):
         # Evaluate function

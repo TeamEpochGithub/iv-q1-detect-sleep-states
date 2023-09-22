@@ -1,5 +1,5 @@
 {
-    "name": "default_do_not_change",
+    "name": "config",
     "preprocessing": ["mem_reduce"],
     "processed_loc_out": "./data/processed",
     "processed_loc_in": "./data/raw",
@@ -37,4 +37,3 @@
     },
     "scoring": true
 }
-

@@ -2,7 +2,7 @@
 from unittest import TestCase
 import pandas as pd
 import sys
-from src.preprocessing.dataframe_mem_reduce import reduce_mem_usage
+from src.preprocessing.mem_reduce import MemReduce
 
 
 class Test(TestCase):
@@ -20,9 +20,9 @@ class Test(TestCase):
         # now do the mem_reduce
 
         print('data usage of train_series after mem_reduce:', '\n')
-        series_mem_used_after = reduce_mem_usage(train_series).memory_usage().sum()
+        series_mem_used_after = MemReduce.reduce_mem_usage(train_series).memory_usage().sum()
         print('data usage of train_events after mem_reduce:', '\n')
-        event_mem_used_after = reduce_mem_usage(train_events).memory_usage().sum()
+        event_mem_used_after = MemReduce.reduce_mem_usage(train_events).memory_usage().sum()
 
         # assert that memory usage for both dataframes went down
         self.assertTrue(series_mem_used_before > series_mem_used_after and event_mem_used_before > event_mem_used_after)

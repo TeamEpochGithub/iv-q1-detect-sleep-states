@@ -16,7 +16,9 @@ zip -j -r submission_zip/loss.zip source/loss/
 zip -j -r submission_zip/models.zip source/models/
 zip -j -r submission_zip/preprocessing.zip source/preprocessing/
 zip -j -r submission_zip/score.zip source/score/
+zip -j -r submission_zip/configs source/configs/
 cp source/submit_to_kaggle.py submission_zip/
+cp source/config.json submission_zip/
 
 # Submit folder to kaggle as new dataset version
 kaggle datasets version -p submission_zip -m "Update submission"

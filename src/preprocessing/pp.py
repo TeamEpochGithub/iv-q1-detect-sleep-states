@@ -19,7 +19,7 @@ class PP:
             print(f'Data read from {path}')
         else:
             # recalculate the current path to save the data
-            path = 'data/processed/' + '_'.join(curr) + '.csv'
+            path = 'data/processed/' + '_'.join(curr) + '.parquet'
             print('Preprocessed data does not exist, applying preprocessing')
             processed = self.preprocess(data)
             print(f'Preprocessing has been applied, ready to save the data to {path}')

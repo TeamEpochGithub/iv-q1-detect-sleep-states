@@ -6,7 +6,7 @@ from configs.load_config import ConfigLoader
 
 def submit(test_series_path, submit):
     # Load config
-    config = ConfigLoader('configs/config.json')
+    config = ConfigLoader('source/config.json')
     print(config.get_config())
 
     test = pd.read_parquet(test_series_path)

@@ -2,25 +2,25 @@
 import json
 
 # Preprocessing imports
-from source.preprocessing.mem_reduce import MemReduce
+from preprocessing.mem_reduce import MemReduce
 
 # Feature engineering imports
-from source.feature_engineering.example_feature_engineering import ExampleFeatureEngineering
+from feature_engineering.example_feature_engineering import ExampleFeatureEngineering
 
 # Model imports
-from source.models.example_model import ExampleModel
+from models.example_model import ExampleModel
 
 # Ensemble imports
-from source.ensemble.ensemble import Ensemble
+from ensemble.ensemble import Ensemble
 
 # Loss imports
-from source.loss.loss import Loss
+from loss.loss import Loss
 
 # HPO imports
-from source.hpo.hpo import HPO
+from hpo.hpo import HPO
 
 # CV imports
-from source.cv.cv import CV
+from cv.cv import CV
 
 
 class ConfigLoader:

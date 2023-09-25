@@ -6,6 +6,7 @@ import random
 import submit_to_kaggle
 from configs.load_config import ConfigLoader
 import pandas as pd
+import sys
 
 # Load config file
 config = None
@@ -82,7 +83,7 @@ def train(config, wandb_on=True):
 
 if __name__ == "__main__":
     # Load config file
-    config = ConfigLoader("configs/config.json")
+    config = ConfigLoader("source/config.json")
     
     # Train model
     train(config, False)

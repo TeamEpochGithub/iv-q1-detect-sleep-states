@@ -3,7 +3,8 @@
 # Imports
 import wandb
 import random
-from src.configs.load_config import ConfigLoader
+import submit_to_kaggle
+from configs.load_config import ConfigLoader
 import pandas as pd
 
 # Load config file
@@ -79,5 +80,12 @@ def train(config, wandb_on=True):
         wandb.finish()
 
 
-config = ConfigLoader("src/configs/config.json")
-train(config, True)
+if __name__ == "__main__":
+    # Load config file
+    config = ConfigLoader("configs/config.json")
+    
+    # Train model
+    train(config, False)
+    
+    # Create submission
+    submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)

@@ -26,6 +26,6 @@ class PP:
             if not isinstance(processed, pd.DataFrame):
                 raise TypeError('Preprocessing step did not return a pandas DataFrame')
             else:
-                processed.to_parquet(path)
+                processed.to_parquet(path, compression='zstd')
                 print(f'Preprocessed data has been saved to {path}')
         return processed

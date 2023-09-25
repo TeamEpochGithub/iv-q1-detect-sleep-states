@@ -5,6 +5,7 @@ import json
 from src.preprocessing.mem_reduce import MemReduce
 from src.preprocessing.add_noise import AddNoise
 from src.preprocessing.do_nothing import DoNothing
+from src.preprocessing.add_hour import AddHour
 # Feature engineering imports
 from src.feature_engineering.cumsum_accel import cumsum_accel
 
@@ -50,6 +51,8 @@ class ConfigLoader:
                 self.pp_steps.append(AddNoise())
             elif pp_step == "do_nothing":
                 self.pp_steps.append(DoNothing())
+            elif pp_step == "add_hour":
+                self.pp_steps.append(AddHour())
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)

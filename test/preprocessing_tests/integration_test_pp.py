@@ -8,6 +8,7 @@ if __name__ == "__main__":
     config = ConfigLoader("test/test_config.json")
     start_time = time.time()
     df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
+    print(df.head())
     # Print the elapsed time
 
     # Initialize preprocessing steps
@@ -21,3 +22,4 @@ if __name__ == "__main__":
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Elapsed time for reading 32float parquet: {elapsed_time:.6f} seconds")
+    print(processed.head())

@@ -182,3 +182,6 @@ default_config.json
 
 # Ignore child mind-institute-detect-sleep-states folder
 child-mind-institute-detect-sleep-states/
+
+# Ignores submission_zip folder
+submission_zip/

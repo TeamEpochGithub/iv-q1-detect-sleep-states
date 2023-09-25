@@ -5,8 +5,7 @@ import time
 
 if __name__ == "__main__":
 
-    config = ConfigLoader("src/configs/config.json")
-    config.config["preprocessing"] = []
+    config = ConfigLoader("test/test_config.json")
     start_time = time.time()
     df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
     # Print the elapsed time

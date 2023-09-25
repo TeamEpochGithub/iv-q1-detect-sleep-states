@@ -3,6 +3,10 @@ import json
 
 # Preprocessing imports
 from src.preprocessing.mem_reduce import MemReduce
+from src.preprocessing.add_noise import AddNoise
+from src.preprocessing.do_nothing import DoNothing
+# Feature engineering imports
+from src.feature_engineering.cumsum_accel import cumsum_accel
 
 # Feature engineering imports
 from src.feature_engineering.example_feature_engineering import ExampleFeatureEngineering
@@ -42,6 +46,10 @@ class ConfigLoader:
         for pp_step in self.config["preprocessing"]:
             if pp_step == "mem_reduce":
                 self.pp_steps.append(MemReduce())
+            elif pp_step == "add_noise":
+                self.pp_steps.append(AddNoise())
+            elif pp_step == "do_nothing":
+                self.pp_steps.append(DoNothing())
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)
@@ -62,11 +70,13 @@ class ConfigLoader:
             if fe_step == "example_feature_engineering":
                 self.fe_steps["example_feature_engineering"] = ExampleFeatureEngineering(
                 )
+            elif fe_step == "cumsum_accel":
+                self.fe_steps["cumsum_accel"] = cumsum_accel()
             else:
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
-        return self.fe_steps
+        return self.fe_steps, self.config["feature_engineering"]
 
     # Function to retrieve feature engineering data location out path
     def get_fe_out(self):

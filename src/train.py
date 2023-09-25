@@ -35,10 +35,12 @@ def train(config, wandb_on=True):
         processed = step.run(processed, pp_s[:i+1])
 
     # Initialize feature engineering steps
-    fe_steps = config.get_features()
+    fe_steps, fe_s = config.get_features()
     featured_data = processed
-    for fe_step in fe_steps:
-        feature = fe_steps[fe_step].run(processed)
+    for i, fe_step in enumerate(fe_steps):
+        # Also pass the preprocessing steps to the feature engineering step
+        # to save fe for each possible pp combination
+        feature = fe_steps[fe_step].run(processed, fe_s[:i+1], pp_s)
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
 

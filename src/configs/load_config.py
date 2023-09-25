@@ -45,7 +45,7 @@ class ConfigLoader:
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)
-        return self.pp_steps
+        return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path
     def get_pp_out(self):

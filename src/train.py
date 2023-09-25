@@ -12,6 +12,9 @@ config = None
 
 def train(config, wandb_on=True):
 
+    # Initialize the path used for checking
+    # If pp already exists
+
     if wandb_on:
         # Initialize wandb
         wandb.init(
@@ -24,10 +27,12 @@ def train(config, wandb_on=True):
     df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
 
     # Initialize preprocessing steps
-    pp_steps = config.get_pp_steps()
+    pp_steps, pp_s = config.get_pp_steps()
     processed = df
-    for pp_step in pp_steps:
-        processed = pp_step.run(processed)
+    # Get the preprocessing steps as a list of str to make the paths
+    for i, step in enumerate(pp_steps):
+        # Passes the current list because its needed to write to if the path doesnt exist
+        processed = step.run(processed, pp_s[:i+1])
 
     # Initialize feature engineering steps
     fe_steps = config.get_features()

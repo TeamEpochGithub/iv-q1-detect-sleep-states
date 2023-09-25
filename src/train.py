@@ -12,8 +12,8 @@ config = None
 
 def train(config, wandb_on=True):
 
-    # initialize the path used for checking
-    # if pp already exists
+    # Initialize the path used for checking
+    # If pp already exists
 
     if wandb_on:
         # Initialize wandb
@@ -29,9 +29,9 @@ def train(config, wandb_on=True):
     # Initialize preprocessing steps
     pp_steps, pp_s = config.get_pp_steps()
     processed = df
-    # get the preprocessing steps as a list of str to make the paths
+    # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
-        # passes the current list because its needed to write to if the path doesnt exist
+        # Passes the current list because its needed to write to if the path doesnt exist
         processed = step.run(processed, pp_s[:i+1])
 
     # Initialize feature engineering steps

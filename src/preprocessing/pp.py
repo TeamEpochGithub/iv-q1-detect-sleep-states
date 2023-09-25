@@ -11,14 +11,14 @@ class PP:
         raise NotImplementedError
 
     def run(self, data, curr):
-        # check if the prev path exists
+        # Check if the prev path exists
         path = 'data/processed/' + '_'.join(curr) + '.parquet'
         if os.path.exists(path):
             print(f'Preprocessed data already exists, reading from {path}')
-            processed = pd.read_csv(path)
+            processed = pd.read_parquet(path)
             print(f'Data read from {path}')
         else:
-            # recalculate the current path to save the data
+            # Recalculate the current path to save the data
             path = 'data/processed/' + '_'.join(curr) + '.parquet'
             print('Preprocessed data does not exist, applying preprocessing')
             processed = self.preprocess(data)

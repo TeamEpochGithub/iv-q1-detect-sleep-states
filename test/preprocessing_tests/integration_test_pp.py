@@ -14,9 +14,9 @@ if __name__ == "__main__":
     # Initialize preprocessing steps
     pp_steps, pp_s = config.get_pp_steps()
     processed = df
-    # get the preprocessing steps as a list of str to make the paths
+    # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
-        # passes the current list because its needed to write to if the path doesnt exist
+        # Passes the current list because it's needed to write to if the path doesn't exist
         processed = step.run(processed, pp_s[:i+1])
 
     end_time = time.time()

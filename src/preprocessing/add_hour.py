@@ -1,4 +1,4 @@
-# TODO this garbage slow code is placeholder will be made effcient later
+# TODO this garbage slow code is placeholder will be made efficient later
 from src.preprocessing.pp import PP
 import pandas as pd
 

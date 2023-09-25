@@ -30,7 +30,7 @@ def run(test_series_path, submit):
 
 
 def main():
-    run("../data/test_series.parquet", submit=False)
+    run("data/raw/test_series.parquet", submit=False)
 
 
 if __name__ == "__main__":

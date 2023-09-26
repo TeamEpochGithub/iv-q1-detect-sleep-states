@@ -19,7 +19,9 @@ class PP:
             processed = pl.read_parquet(path)
             print(f'Data read from {path}')
             # convert polars dataframe back to pandas dataframe
+            print('Converting polars dataframe to pandas dataframe')
             processed = processed.to_pandas()
+            print('Conversion complete')
         else:
             # Recalculate the current path to save the data
             print('Preprocessed data does not exist, applying preprocessing')
@@ -31,6 +33,7 @@ class PP:
                 print(f'Preprocessed data has been saved to {path}')
                 print('Converting polars dataframe to pandas dataframe')
                 processed = processed.to_pandas()
+                print('Conversion complete')
             else:
                 # if we got a pandas dataframe, just save it
                 print(f'The data is a pandas dataframe, saving to {path}')

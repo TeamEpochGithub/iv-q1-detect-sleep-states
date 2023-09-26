@@ -89,6 +89,9 @@ class ConfigLoader:
     def get_fe_in(self):
         return self.config["fe_loc_in"]
 
+    def get_log_to_wandb(self):
+        return self.config["log_to_wandb"]
+
     # Function to retrieve model data
     def get_models(self):
         # Loop through models
@@ -96,7 +99,7 @@ class ConfigLoader:
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None
-            if model_config["type"] == "example_model":
+            if model_config["type"] == "example-fc-model":
                 curr_model = ExampleModel(model_config)
             else:
                 raise ConfigException(
@@ -107,25 +110,32 @@ class ConfigLoader:
         return self.models
 
     # Function to retrieve ensemble data
-    def get_ensemble(self):
+    def get_ensemble(self, models):
+
+        currModels = []
         # If length of weights and models is not equal, raise exception
         if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
             raise ConfigException(
                 "Length of weights and models is not equal")
 
+        if len(models) < len(self.config["ensemble"]["models"]):
+            raise ConfigException("You cannot have more ensembles than models.")
+
+        for modelName in self.config["ensemble"]["models"]:
+            if modelName not in models:
+                raise ConfigException(f"Model {modelName} not found in models.")
+            currModels.append(models[modelName])
+
         # Create ensemble
-        ensemble = Ensemble(
-            [self.models[x] for x in self.config["ensemble"]["models"]],
-            self.config["ensemble"]["weights"],
-            self.config["ensemble"]["comb_method"])
+        ensemble = Ensemble(currModels, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
 
     # Function to retrieve loss function
-    def get_loss(self):
+    def get_ensemble_loss(self):
         loss_class = None
-        if self.config["loss"] == "example_loss":
-            loss_class = Loss()
+        if self.config["ensemble_loss"] == "example_loss":
+            loss_class = Loss().get_loss("example_loss")
         else:
             raise ConfigException("Loss function not found: " +
                                   self.config["loss"])

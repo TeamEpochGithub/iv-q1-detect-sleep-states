@@ -10,18 +10,21 @@ import pandas as pd
 config = None
 
 
-def train(config, wandb_on=True):
+def train(config):
 
     # Initialize the path used for checking
     # If pp already exists
-
-    if wandb_on:
+    print(config)
+    # Initialize wandb
+    if config.get_log_to_wandb():
         # Initialize wandb
         wandb.init(
             project='detect-sleep-states',
 
             config=config.get_config()
         )
+    else:
+        print("Not logging to wandb.")
     # Do training here
 
     df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
@@ -44,20 +47,27 @@ def train(config, wandb_on=True):
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
 
-    # Initialize models and train them
+    # Initialize models
     models = config.get_models()
+
     for model in models:
         models[model].train(featured_data)
 
+    print(models)
+
     # Initialize ensemble
-    ensemble = config.get_ensemble()
+    ensemble = config.get_ensemble(models)
     ensemble.pred(featured_data)
 
     # Initialize loss
-    loss = config.get_loss()
+    #TODO assert that every model has a loss function
+    #TODO assert that the loss function is forwarded to the model
+
+    ensemble_loss = config.get_loss()
     loss.forward(featured_data, featured_data)
 
-    # Initialize HPO
+
+    #TODO Hyperparameter optimization for ensembles
     hpo = config.get_hpo()
     hpo.optimize()
 
@@ -78,13 +88,13 @@ def train(config, wandb_on=True):
         loss = 2 ** -epoch + random.random() / epoch + offset
 
         # log metrics to wandb
-        if wandb_on:
+        if config.get_log_to_wandb():
             wandb.log({"acc": acc, "loss": loss})
 
     # [optional] finish the wandb run, necessary in notebooks
-    if wandb_on:
+    if config.get_log_to_wandb():
         wandb.finish()
 
 
 config = ConfigLoader("src/configs/config.json")
-train(config, True)
+train(config)

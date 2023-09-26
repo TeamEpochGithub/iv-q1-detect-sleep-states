@@ -1,0 +1,39 @@
+{
+    "name": "config",
+    "preprocessing": ["add_hour"],
+    "processed_loc_out": "./data/processed",
+    "processed_loc_in": "./data/raw",
+    "feature_engineering": ["cumsum_accel"],
+    "fe_loc_out": "./data/features",
+    "fe_loc_in": "./data/processed",
+    "models": {
+        "model1name": {
+            "type": "example_model",
+            "epochs": 100,
+            "patch_size": 8,
+            "layers": 5
+        },
+        "model2name": {
+            "type": "example_model",
+            "epochs": 100,
+            "patch_size": 8,
+            "layers": 5
+        }
+    },
+    "model_store_loc": "./tm",
+    "ensemble": {
+        "models": ["model1name", "model2name"],
+        "weights": [1, 2],
+        "comb_method": "addition"
+    },
+    "loss": "example_loss",
+    "hpo": {
+        "apply": true,
+        "method": "example_hpo"
+    },
+    "cv": {
+        "apply": true,
+        "method": "example_cv"
+    },
+    "scoring": true
+}

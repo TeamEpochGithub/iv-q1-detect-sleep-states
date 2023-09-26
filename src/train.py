@@ -3,22 +3,74 @@
 # Imports
 import wandb
 import random
+from src.configs.load_config import ConfigLoader
+import pandas as pd
 
 # Load config file
 config = None
 
 
-def train(config):
-    wandb.init(
-        project='detect-sleep-states',
+def train(config, wandb_on=True):
 
-        config={
-            'name': 'setup_run',
-            'learning_rate': 0.01,
-            'epochs': 10,
-        }
-    )
-    # simulate training
+    # Initialize the path used for checking
+    # If pp already exists
+
+    if wandb_on:
+        # Initialize wandb
+        wandb.init(
+            project='detect-sleep-states',
+
+            config=config.get_config()
+        )
+    # Do training here
+
+    df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
+
+    # Initialize preprocessing steps
+    pp_steps, pp_s = config.get_pp_steps()
+    processed = df
+    # Get the preprocessing steps as a list of str to make the paths
+    for i, step in enumerate(pp_steps):
+        # Passes the current list because its needed to write to if the path doesnt exist
+        processed = step.run(processed, pp_s[:i+1])
+
+    # Initialize feature engineering steps
+    fe_steps, fe_s = config.get_features()
+    featured_data = processed
+    for i, fe_step in enumerate(fe_steps):
+        # Also pass the preprocessing steps to the feature engineering step
+        # to save fe for each possible pp combination
+        feature = fe_steps[fe_step].run(processed, fe_s[:i+1], pp_s)
+        # Add feature to featured_data
+        featured_data = pd.concat([featured_data, feature], axis=1)
+
+    # Initialize models and train them
+    models = config.get_models()
+    for model in models:
+        models[model].train(featured_data)
+
+    # Initialize ensemble
+    ensemble = config.get_ensemble()
+    ensemble.pred(featured_data)
+
+    # Initialize loss
+    loss = config.get_loss()
+    loss.forward(featured_data, featured_data)
+
+    # Initialize HPO
+    hpo = config.get_hpo()
+    hpo.optimize()
+
+    # Initialize CV
+    cv = config.get_cv()
+    cv.run()
+
+    # Get scoring
+    scoring = config.get_scoring()
+    if scoring:
+        # Do scoring
+        pass
+
     epochs = 10
     offset = random.random() / 5
     for epoch in range(2, epochs):
@@ -26,10 +78,13 @@ def train(config):
         loss = 2 ** -epoch + random.random() / epoch + offset
 
         # log metrics to wandb
-        wandb.log({"acc": acc, "loss": loss})
+        if wandb_on:
+            wandb.log({"acc": acc, "loss": loss})
 
     # [optional] finish the wandb run, necessary in notebooks
-    wandb.finish()
+    if wandb_on:
+        wandb.finish()
 
 
-train(config)
+config = ConfigLoader("src/configs/config.json")
+train(config, True)

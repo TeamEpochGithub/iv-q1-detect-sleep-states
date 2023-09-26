@@ -3,4 +3,9 @@
 
 class CV():
     def __init__(self):
-        print("CV created")
+        # Init function
+        pass
+
+    def run(self):
+        # Run CV
+        print("Doing cross validation")

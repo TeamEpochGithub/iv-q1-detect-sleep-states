@@ -1,19 +1,18 @@
 # This file does the training of the model
 
 # Imports
-import wandb
-import random
-import submit_to_kaggle
-from configs.load_config import ConfigLoader
 import pandas as pd
-import sys
-import os
+from src.configs.load_config import ConfigLoader
+import submit_to_kaggle
+import random
+import wandb
+
 
 # Load config file
 config = None
 
 
-def train(config, wandb_on=True):
+def main(config, wandb_on=True):
 
     # Initialize the path used for checking
     # If pp already exists
@@ -90,14 +89,12 @@ def train(config, wandb_on=True):
 
 
 if __name__ == "__main__":
-    # Add system path
-    sys.path.append("source/")
-    print(os.getcwd())
+
     # Load config file
-    config = ConfigLoader("source/config.json")
-    
+    config = ConfigLoader("config.json")
+
     # Train model
-    train(config, False)
-    
+    main(config, False)
+
     # Create submission
     submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)

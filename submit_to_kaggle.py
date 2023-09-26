@@ -1,16 +1,8 @@
 import pandas as pd
 import numpy as np
-import os
-
-from source.configs.load_config import ConfigLoader
 
 
-def submit(test_series_path, config_path, submit=False):
-    print(os.getcwd())
-
-    # Load config
-    config = ConfigLoader(config_path)
-    print(config.get_config())
+def submit(test_series_path, submit=False):
 
     test = pd.read_parquet(test_series_path)
     test["timestamp"] = pd.to_datetime(test["timestamp"], utc=True)
@@ -35,4 +27,3 @@ def submit(test_series_path, config_path, submit=False):
 
     if submit:
         submission.to_csv("submission.csv", index=False)
-

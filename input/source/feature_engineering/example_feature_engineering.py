@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from feature_engineering.fe import FE
+from src.feature_engineering.fe import FE
 
 
 class ExampleFeatureEngineering(FE):

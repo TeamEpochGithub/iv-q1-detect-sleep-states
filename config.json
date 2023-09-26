@@ -1,9 +1,9 @@
 {
     "name": "config",
-    "preprocessing": ["mem_reduce"],
+    "preprocessing": [],
     "processed_loc_out": "data/processed",
-    "processed_loc_in": "child-mind-institute-detect-sleep-states",
-    "feature_engineering": ["example_feature_engineering"],
+    "processed_loc_in": "data/raw",
+    "feature_engineering": [],
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "models": {

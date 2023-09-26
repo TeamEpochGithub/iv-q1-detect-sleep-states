@@ -59,8 +59,7 @@ class ConfigLoader:
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
                 case _:
-                    raise ConfigException(
-                    "Preprocessing step not found: " + pp_step)
+                    raise ConfigException("Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path

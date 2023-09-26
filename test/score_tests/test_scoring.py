@@ -69,6 +69,6 @@ class Test(TestCase):
             'event': ['pass', 'pass', 'pass'],
             'score': [1.0, 0.5, 1.0],
             'time': [0, 10, 14.5], })
-        result = score(solution, submission, tolerances, **column_names, plot_precision_recall=True)
+        result = score(solution, submission, tolerances, **column_names, plot_precision_recall=False)
 
         self.assertEqual(result, 0.5)

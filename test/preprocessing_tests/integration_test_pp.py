@@ -1,13 +1,15 @@
 '''THIS IS NOT MEANT TO BE A UNITTEST'''
 from src.configs.load_config import ConfigLoader
-import pandas as pd
 import time
+import polars as pl
 
 if __name__ == "__main__":
 
     config = ConfigLoader("test/test_config.json")
     start_time = time.time()
-    df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
+    # use polars to read parquet because that is significantly faster
+    df = pl.read_parquet(config.get_pp_in() + "/train_series.parquet")
+    # view the data
     print(df.head())
     # Print the elapsed time
 

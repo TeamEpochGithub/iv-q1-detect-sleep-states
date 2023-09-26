@@ -1,4 +1,4 @@
-# TODO this garbage slow code is placeholder will be made efficient later
+import polars as pl
 from src.preprocessing.pp import PP
 import pandas as pd
 
@@ -8,16 +8,15 @@ class AddHour(PP):
         pass
 
     def preprocess(self, data):
-        # the code below should create a new dataframe with the following columns:
-        # timestamp, hour, date, time
-        data.rename(columns={"timestamp": "timestampOld"}, inplace=True)
+        # data['timestamp'] = data['timestamp'].cast(pl.Datetime)
+        if isinstance(data, pd.DataFrame):
+            data = pl.from_pandas(data)
         print('mark1')
-        data['date'] = data["timestampOld"].str.split('T', expand=True)[0]
+        data = data.with_columns(pl.col("timestamp").str.slice(11, 8).alias("time"))
+        data = data.with_columns(pl.col("time").str.to_datetime(format="%H:%M:%S").cast(pl.Datetime))
+        print(data.head())
+        # data.with_columns(pl.col('timestamp').str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
         print('mark2')
-        data['time'] = data['timestampOld'].str.split('T', expand=True)[1].str.split('-', expand=True)[0]
-        print('mark3')
-        data['timestamp'] = pd.to_datetime(data['date'] + ' ' + data['time'])
-        print('mark4')
-        data['hour'] = data['timestamp'].dt.hour.astype("Int8")
-        print('mark5')
+        # convert polars dataframe back to pandas dataframe
+        data = data.to_pandas()
         return data

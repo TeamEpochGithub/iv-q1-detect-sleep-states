@@ -35,4 +35,3 @@ def submit(test_series_path, config_path, submit=False):
 
     if submit:
         submission.to_csv("submission.csv", index=False)
-

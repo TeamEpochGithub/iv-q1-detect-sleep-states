@@ -6,6 +6,8 @@ from src.preprocessing.mem_reduce import MemReduce
 from src.preprocessing.add_noise import AddNoise
 from src.preprocessing.do_nothing import DoNothing
 from src.preprocessing.add_hour import AddHour
+from src.preprocessing.truncate import Truncate
+from src.preprocessing.zip_train_events import ZipTrainEvents
 # Feature engineering imports
 from src.feature_engineering.cumsum_accel import cumsum_accel
 
@@ -53,6 +55,10 @@ class ConfigLoader:
                 self.pp_steps.append(DoNothing())
             elif pp_step == "add_hour":
                 self.pp_steps.append(AddHour())
+            elif pp_step == "zip_train_events":
+                self.pp_steps.append(ZipTrainEvents())
+            elif pp_step == "truncate":
+                self.pp_steps.append(Truncate())
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)

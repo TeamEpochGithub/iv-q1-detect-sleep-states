@@ -131,3 +131,6 @@ webencodings==0.5.1
 websocket-client==1.6.2
 widgetsnbextension==4.0.8
 wrapt==1.15.0
+torch==2.0.1+cu117
+torchaudio==2.0.2+cu117
+torchvision==0.15.2+cu117

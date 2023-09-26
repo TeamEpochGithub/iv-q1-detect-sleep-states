@@ -1,11 +1,11 @@
 {
-    "name": "default_config_do_not_change",
+    "name": "config",
     "preprocessing": ["mem_reduce"],
-    "processed_loc_out": "./data/processed",
-    "processed_loc_in": "./child-mind-institute-detect-sleep-states",
+    "processed_loc_out": "../data/processed",
+    "processed_loc_in": "../child-mind-institute-detect-sleep-states",
     "feature_engineering": ["example_feature_engineering"],
-    "fe_loc_out": "./data/features",
-    "fe_loc_in": "./data/processed",
+    "fe_loc_out": "../data/features",
+    "fe_loc_in": "../data/processed",
     "models": {
         "model1name": {
             "type": "example_model",
@@ -20,7 +20,7 @@
             "layers": 5
         }
     },
-    "model_store_loc": "./tm",
+    "model_store_loc": "../tm",
     "ensemble": {
         "models": ["model1name", "model2name"],
         "weights": [1, 2],

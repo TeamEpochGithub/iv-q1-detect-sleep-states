@@ -7,6 +7,7 @@ import submit_to_kaggle
 from configs.load_config import ConfigLoader
 import pandas as pd
 import sys
+import os
 
 # Load config file
 config = None
@@ -89,6 +90,9 @@ def train(config, wandb_on=True):
 
 
 if __name__ == "__main__":
+    # Add system path
+    sys.path.append("source/")
+    print(os.getcwd())
     # Load config file
     config = ConfigLoader("source/config.json")
     

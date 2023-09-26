@@ -1,12 +1,15 @@
 import pandas as pd
 import numpy as np
+import os
 
-from configs.load_config import ConfigLoader
+from source.configs.load_config import ConfigLoader
 
 
-def submit(test_series_path, submit):
+def submit(test_series_path, config_path, submit=False):
+    print(os.getcwd())
+
     # Load config
-    config = ConfigLoader('source/config.json')
+    config = ConfigLoader(config_path)
     print(config.get_config())
 
     test = pd.read_parquet(test_series_path)

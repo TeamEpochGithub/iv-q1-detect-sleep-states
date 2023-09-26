@@ -1,5 +1,5 @@
 '''THIS IS NOT MEANT TO BE A UNITTEST'''
-from src.configs.load_config import ConfigLoader
+from source.configs.load_config import ConfigLoader
 import pandas as pd
 import time
 

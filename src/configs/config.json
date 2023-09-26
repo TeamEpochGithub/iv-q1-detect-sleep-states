@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "preprocessing": ["mem_reduce"],
+    "preprocessing": ["mem_reduce", "split_windows"],
     "processed_loc_out": "./data/processed",
     "processed_loc_in": "./data/raw",
     "feature_engineering": ["example_feature_engineering"],

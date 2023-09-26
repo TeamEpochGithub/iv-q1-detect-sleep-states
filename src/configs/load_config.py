@@ -6,6 +6,8 @@ from src.preprocessing.mem_reduce import MemReduce
 from src.preprocessing.add_noise import AddNoise
 from src.preprocessing.do_nothing import DoNothing
 from src.preprocessing.add_hour import AddHour
+from src.preprocessing.split_windows import SplitWindows
+
 # Feature engineering imports
 from src.feature_engineering.cumsum_accel import cumsum_accel
 
@@ -45,16 +47,19 @@ class ConfigLoader:
     def get_pp_steps(self):
         self.pp_steps = []
         for pp_step in self.config["preprocessing"]:
-            if pp_step == "mem_reduce":
-                self.pp_steps.append(MemReduce())
-            elif pp_step == "add_noise":
-                self.pp_steps.append(AddNoise())
-            elif pp_step == "do_nothing":
-                self.pp_steps.append(DoNothing())
-            elif pp_step == "add_hour":
-                self.pp_steps.append(AddHour())
-            else:
-                raise ConfigException(
+            match pp_step:
+                case "mem_reduce":
+                    self.pp_steps.append(MemReduce())
+                case "add_noise":
+                    self.pp_steps.append(AddNoise())
+                case "do_nothing":
+                    self.pp_steps.append(DoNothing())
+                case "add_hour":
+                    self.pp_steps.append(AddHour())
+                case "split_windows":
+                    self.pp_steps.append(SplitWindows())
+                case _:
+                    raise ConfigException(
                     "Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]
 

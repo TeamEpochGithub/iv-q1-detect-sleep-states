@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "preprocessing": ["add_hour"],
+    "preprocessing": ["add_state_labels"],
     "processed_loc_out": "./data/processed",
     "processed_loc_in": "./data/raw",
     "feature_engineering": ["cumsum_accel"],

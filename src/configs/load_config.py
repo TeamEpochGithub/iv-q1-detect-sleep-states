@@ -6,6 +6,7 @@ from src.preprocessing.mem_reduce import MemReduce
 from src.preprocessing.add_noise import AddNoise
 from src.preprocessing.do_nothing import DoNothing
 from src.preprocessing.add_hour import AddHour
+from src.preprocessing.add_state_labels import AddStateLabels
 # Feature engineering imports
 from src.feature_engineering.cumsum_accel import cumsum_accel
 
@@ -53,6 +54,8 @@ class ConfigLoader:
                 self.pp_steps.append(DoNothing())
             elif pp_step == "add_hour":
                 self.pp_steps.append(AddHour())
+            elif pp_step == "add_state_labels":
+                self.pp_steps.append(AddStateLabels())
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)

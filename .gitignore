@@ -180,8 +180,5 @@ default_config.json
 # VSCode settings
 .vscode/
 
-# Ignore child mind-institute-detect-sleep-states folder
-child-mind-institute-detect-sleep-states/
-
 # Ignores submission_zip folder
 submission_zip/

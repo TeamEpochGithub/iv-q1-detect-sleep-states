@@ -7,11 +7,11 @@ variables:
   PYTHON_VERSION: "3.10"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-
-cache:
-  paths:
-    - .cache/pip
-    - venv/
+default:
+  cache: &global_cache
+    paths:
+      - .cache/pip
+      - venv/
 
 before_script:
   - python --version  # For debugging
@@ -42,6 +42,11 @@ unittests:
   script:
     - python -m unittest discover  # Run unittests
   allow_failure: false
+  cache:
+    # inherit all global cache settings
+    <<: *global_cache
+    # override the policy
+    policy: pull
 
 
 # We should not run our main on the pipeline, since we would need pre-trained models and data on the gitlab cloud...

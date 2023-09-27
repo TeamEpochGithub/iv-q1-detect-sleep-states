@@ -4,6 +4,8 @@ import json
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.split_windows import SplitWindows
+
 # Feature engineering imports
 from ..feature_engineering.cumsum_accel import cumsum_accel
 
@@ -44,13 +46,15 @@ class ConfigLoader:
     def get_pp_steps(self):
         self.pp_steps = []
         for pp_step in self.config["preprocessing"]:
-            if pp_step == "mem_reduce":
-                self.pp_steps.append(MemReduce())
-            elif pp_step == "add_noise":
-                self.pp_steps.append(AddNoise())
-            else:
-                raise ConfigException(
-                    "Preprocessing step not found: " + pp_step)
+            match pp_step:
+                case "mem_reduce":
+                    self.pp_steps.append(MemReduce())
+                case "add_noise":
+                    self.pp_steps.append(AddNoise())
+                case "split_windows":
+                    self.pp_steps.append(SplitWindows())
+                case _:
+                    raise ConfigException("Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path

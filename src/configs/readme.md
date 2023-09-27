@@ -43,16 +43,24 @@ Features that should be included during training and submission
 
 ``` 
 "feature_engineering": {
-    "fe1": {"window_size": 10},
+    "fe1": {
+        "window_sizes": [5, 10],
+        "features": ["enmo", "anglez"]
+    },
     "fe2": {}
     }
 ```
 
 List of options and their config options
 - "kurtosis"
-    - "window_size": x > 3
-    - "features": Any existing numerical feature
-- fe2
+    - "window_sizes": x > 3
+    - "features": Any existing numerical features
+- "mean"
+    - "window_sizes": x > 3
+    - "features": Any existing numerical features
+- "skewness"
+    - "window_sizes": x > 3
+    - "features": Any existing numerical features
 
 ### Feature engineering data location
 <p>

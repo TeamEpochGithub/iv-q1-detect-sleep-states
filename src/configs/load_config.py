@@ -116,7 +116,7 @@ class ConfigLoader:
     # Function to retrieve ensemble data
     def get_ensemble(self, models):
 
-        currModels = []
+        curr_models = []
         # If length of weights and models is not equal, raise exception
         if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
             raise ConfigException(
@@ -125,13 +125,13 @@ class ConfigLoader:
         if len(models) < len(self.config["ensemble"]["models"]):
             raise ConfigException("You cannot have more ensembles than models.")
 
-        for modelName in self.config["ensemble"]["models"]:
-            if modelName not in models:
-                raise ConfigException(f"Model {modelName} not found in models.")
-            currModels.append(models[modelName])
+        for model_name in self.config["ensemble"]["models"]:
+            if model_name not in models:
+                raise ConfigException(f"Model {model_name} not found in models.")
+            curr_models.append(models[model_name])
 
         # Create ensemble
-        ensemble = Ensemble(currModels, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
+        ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
 

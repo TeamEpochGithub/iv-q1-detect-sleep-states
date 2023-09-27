@@ -7,7 +7,7 @@ from torch.nn.modules import (
     BatchNorm1d,
     TransformerEncoderLayer,
 )
-import torch.nn.functional as F
+from utils import get_activation_fn
 from typing import Optional
 
 class TransformerBatchNormEncoderLayer(nn.modules.Module):
@@ -78,10 +78,3 @@ class TransformerBatchNormEncoderLayer(nn.modules.Module):
         src = self.norm2(src)
         src = src.permute(2, 0, 1)  # restore (seq_len, batch_size, d_model)
         return src
-
-def get_activation_fn(activation: str):
-    if activation == 'relu':
-        return F.relu
-    elif activation == 'gelu':
-        return F.gelu
-    raise ValueError(f"Activation should be relu/gelu, not {activation}.")

@@ -9,6 +9,8 @@ from ..preprocessing.split_windows import SplitWindows
 
 # Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
+from ..feature_engineering.skewness import Skewness
+from ..feature_engineering.mean import Mean
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -74,6 +76,24 @@ class ConfigLoader:
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
                 features = self.config["feature_engineering"]["kurtosis"]["features"]
+                features.sort()
+                features = str(features).replace(" ", "")
+                fe_s.append(fe_step + features + window_sizes)
+            elif fe_step == "skewness":
+                fe_steps["skewness"] = Skewness(self.config["feature_engineering"]["skewness"])
+                window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
+                window_sizes.sort()
+                window_sizes = str(window_sizes).replace(" ", "")
+                features = self.config["feature_engineering"]["skewness"]["features"]
+                features.sort()
+                features = str(features).replace(" ", "")
+                fe_s.append(fe_step + features + window_sizes)
+            elif fe_step == "mean":
+                fe_steps["mean"] = Mean(self.config["feature_engineering"]["mean"])
+                window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
+                window_sizes.sort()
+                window_sizes = str(window_sizes).replace(" ", "")
+                features = self.config["feature_engineering"]["mean"]["features"]
                 features.sort()
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)

@@ -9,6 +9,14 @@
         "kurtosis": {
             "window_sizes": [5, 10],
             "features": ["anglez", "enmo"]
+        },
+        "skewness": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        "mean": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
         }
     },
     "fe_loc_out": "data/features",

@@ -13,7 +13,6 @@ class Kurtosis(RollingWindow):
             for window_size in self.window_sizes:
                 # Create rolling window features for kurtosis
                 data = self.kurtosis(data, window_size, feature)
-        print(data.head(10))
         return data
 
     # Create rolling window features for kurtosis

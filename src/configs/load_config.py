@@ -7,6 +7,7 @@ from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
 from ..feature_engineering.cumsum_accel import cumsum_accel
+from ..preprocessing.add_state_labels import AddStateLabels
 # Feature engineering imports
 from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
 
@@ -53,6 +54,8 @@ class ConfigLoader:
                     self.pp_steps.append(SplitWindows())
                 case "convert_datetime":
                     self.pp_steps.append(ConvertDatetime())
+                case "add_state_labels":
+                    self.pp_steps.append(AddStateLabels())
                 case _:
                     raise ConfigException("Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]

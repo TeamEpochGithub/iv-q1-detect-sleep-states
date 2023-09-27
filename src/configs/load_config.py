@@ -2,30 +2,29 @@
 import json
 
 # Preprocessing imports
-from src.preprocessing.mem_reduce import MemReduce
-from src.preprocessing.add_noise import AddNoise
-from src.preprocessing.do_nothing import DoNothing
-from src.preprocessing.add_hour import AddHour
+from ..preprocessing.mem_reduce import MemReduce
+from ..preprocessing.add_noise import AddNoise
 # Feature engineering imports
-from src.feature_engineering.cumsum_accel import cumsum_accel
+from ..feature_engineering.cumsum_accel import cumsum_accel
 
 # Feature engineering imports
-from src.feature_engineering.example_feature_engineering import ExampleFeatureEngineering
+from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
 
 # Model imports
-from src.models.example_model import ExampleModel
+from ..models.example_model import ExampleModel
 
 # Ensemble imports
-from src.ensemble.ensemble import Ensemble
+from ..ensemble.ensemble import Ensemble
 
 # Loss imports
-from src.loss.loss import Loss
+from ..loss.loss import Loss
 
 # HPO imports
-from src.hpo.hpo import HPO
+from ..hpo.hpo import HPO
+
 
 # CV imports
-from src.cv.cv import CV
+from ..cv.cv import CV
 
 
 class ConfigLoader:
@@ -49,10 +48,6 @@ class ConfigLoader:
                 self.pp_steps.append(MemReduce())
             elif pp_step == "add_noise":
                 self.pp_steps.append(AddNoise())
-            elif pp_step == "do_nothing":
-                self.pp_steps.append(DoNothing())
-            elif pp_step == "add_hour":
-                self.pp_steps.append(AddHour())
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)

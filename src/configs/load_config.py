@@ -1,16 +1,14 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
+
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 
 # Feature engineering imports
-from ..feature_engineering.cumsum_accel import cumsum_accel
-
-# Feature engineering imports
-from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
+from ..feature_engineering.kurtosis import Kurtosis
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -67,18 +65,23 @@ class ConfigLoader:
 
     # Function to retrieve feature engineering classes from feature engineering folder
     def get_features(self):
-        self.fe_steps = {}
+        fe_steps = {}
+        fe_s = []
         for fe_step in self.config["feature_engineering"]:
-            if fe_step == "example_feature_engineering":
-                self.fe_steps["example_feature_engineering"] = ExampleFeatureEngineering(
-                )
-            elif fe_step == "cumsum_accel":
-                self.fe_steps["cumsum_accel"] = cumsum_accel()
+            if fe_step == "kurtosis":
+                fe_steps["kurtosis"] = Kurtosis(self.config["feature_engineering"]["kurtosis"])
+                window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
+                window_sizes.sort()
+                window_sizes = str(window_sizes).replace(" ", "")
+                features = self.config["feature_engineering"]["kurtosis"]["features"]
+                features.sort()
+                features = str(features).replace(" ", "")
+                fe_s.append(fe_step + features + window_sizes)
             else:
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
-        return self.fe_steps, self.config["feature_engineering"]
+        return fe_steps, fe_s
 
     # Function to retrieve feature engineering data location out path
     def get_fe_out(self):

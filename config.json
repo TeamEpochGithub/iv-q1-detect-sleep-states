@@ -1,9 +1,16 @@
 {
     "name": "config",
-    "preprocessing": ["split_windows"],
+    "preprocessing": [
+        "split_windows"
+    ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
-    "feature_engineering": [],
+    "feature_engineering": {
+        "kurtosis": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        }
+    },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "models": {
@@ -22,8 +29,14 @@
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["model1name", "model2name"],
-        "weights": [1, 2],
+        "models": [
+            "model1name",
+            "model2name"
+        ],
+        "weights": [
+            1,
+            2
+        ],
         "comb_method": "addition"
     },
     "loss": "example_loss",

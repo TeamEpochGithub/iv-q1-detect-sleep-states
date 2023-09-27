@@ -42,11 +42,16 @@ Features that should be included during training and submission
 
 
 ``` 
-"feature_engineering": ["fe1", "fe2"]
+"feature_engineering": {
+    "fe1": {"window_size": 10},
+    "fe2": {}
+    }
 ```
 
-List of options
-- fe1
+List of options and their config options
+- "kurtosis"
+    - "window_size": x > 3
+    - "features": Any existing numerical feature
 - fe2
 
 ### Feature engineering data location

@@ -1,12 +1,27 @@
 {
     "name": "config",
     "log_to_wandb": false,
-    "preprocessing": [],
-    "processed_loc_out": "./data/processed",
-    "processed_loc_in": "./data/raw",
-    "feature_engineering": [],
-    "fe_loc_out": "./data/features",
-    "fe_loc_in": "./data/processed",
+    "preprocessing": [
+        "split_windows"
+    ],
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "feature_engineering": {
+        "kurtosis": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        "skewness": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        "mean": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        }
+    },
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
     "models": {
         "ExampleModel": {
             "type": "example-fc-model",

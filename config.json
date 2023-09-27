@@ -1,11 +1,20 @@
 {
-    "name": "default_do_not_change",
-    "preprocessing": ["mem_reduce"],
+    "name": "config",
+<<<<<<< HEAD:src/configs/config.json
+    "preprocessing": ["mem_reduce", "split_windows"],
     "processed_loc_out": "./data/processed",
     "processed_loc_in": "./data/raw",
     "feature_engineering": ["example_feature_engineering"],
     "fe_loc_out": "./data/features",
     "fe_loc_in": "./data/processed",
+=======
+    "preprocessing": [],
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "feature_engineering": [],
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
+>>>>>>> main:config.json
     "models": {
         "model1name": {
             "type": "example_model",
@@ -20,7 +29,7 @@
             "layers": 5
         }
     },
-    "model_store_loc": "./tm",
+    "model_store_loc": "tm",
     "ensemble": {
         "models": ["model1name", "model2name"],
         "weights": [1, 2],
@@ -37,4 +46,3 @@
     },
     "scoring": true
 }
-

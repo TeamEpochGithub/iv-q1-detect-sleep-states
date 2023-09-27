@@ -10,7 +10,7 @@ class Model:
         else:
             self.config = config
 
-    #TODO Make train have X_train and X_test as input which are already splitted!
+    # TODO Make train have X_train and X_test as input which are already splitted!
     def train(self, data):
         """
         Train function for the model. This function should be overwritten by the user.
@@ -35,7 +35,6 @@ class Model:
         """
         pass
 
-
     def evaluate(self, pred, target):
         """
         Evaluation function for the model. This function should be overwritten by the user.
@@ -46,6 +45,14 @@ class Model:
         # Evaluate function
         pass
 
+    def load(self, path):
+        """
+        Load function for the model. This function should be overwritten by the user.
+        :param path: path to load the model from
+        :return:
+        """
+        pass
+
 
 class ModelException(Exception):
     """
@@ -54,4 +61,3 @@ class ModelException(Exception):
 
     def __init__(self, message):
         self.message = message
-

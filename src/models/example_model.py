@@ -196,6 +196,18 @@ class ExampleModel(Model):
         }
         torch.save(checkpoint, path)
 
+    def load(self, path):
+        """
+        Load function for the model.
+        :param path: path to model checkpoint
+        :return:
+        """
+        self.model = SimpleModel(2, 10, 1, self.config)
+        checkpoint = torch.load(path)
+
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.config = checkpoint['config']
+
 class SimpleModel(nn.Module):
     """
     Pytorch implementation of a really simple baseline model.

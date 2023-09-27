@@ -184,5 +184,4 @@ default_config.json
 submission_zip/
 
 #Ignore trained models
-
-tm/
+tm

@@ -131,5 +131,7 @@ webencodings==0.5.1
 websocket-client==1.6.2
 widgetsnbextension==4.0.8
 wrapt==1.15.0
+polars==0.19.3
 wandb
 kaggle
+

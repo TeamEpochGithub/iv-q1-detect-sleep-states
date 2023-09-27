@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "preprocessing": [],
+    "preprocessing": ["convert_datetime"],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {

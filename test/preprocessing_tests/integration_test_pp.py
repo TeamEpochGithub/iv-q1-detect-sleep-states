@@ -9,6 +9,9 @@ if __name__ == "__main__":
     start_time = time.time()
     # use polars to read parquet because that is significantly faster
     df = pl.read_parquet(config.get_pp_in() + "/train_series.parquet")
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time for reading 32float parquet: {elapsed_time:.6f} seconds")
     # view the data
     print(df.head())
     # Print the elapsed time
@@ -21,7 +24,4 @@ if __name__ == "__main__":
         # Passes the current list because it's needed to write to if the path doesn't exist
         processed = step.run(processed, pp_s[:i+1])
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Elapsed time for reading 32float parquet: {elapsed_time:.6f} seconds")
     print(processed.head())

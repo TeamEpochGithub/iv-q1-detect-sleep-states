@@ -5,7 +5,7 @@ import json
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.add_hour import AddHour
+from ..preprocessing.covert_datetime import ConvertDatetime
 # Feature engineering imports
 from ..feature_engineering.cumsum_accel import cumsum_accel
 
@@ -53,8 +53,8 @@ class ConfigLoader:
                     self.pp_steps.append(AddNoise())
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
-                case "add_hour":
-                    self.pp_steps.append(AddHour())
+                case "convert_datetime":
+                    self.pp_steps.append(ConvertDatetime())
                 case _:
                     raise ConfigException("Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]

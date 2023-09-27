@@ -187,6 +187,7 @@ class ExampleModel(Model):
             'config': self.config
         }
         torch.save(checkpoint, path)
+        print("Model saved to: " + path)
 
     def load(self, path):
         """

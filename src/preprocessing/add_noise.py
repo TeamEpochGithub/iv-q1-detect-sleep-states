@@ -2,7 +2,7 @@
 #
 # Path: src/preprocessing/add_noise.py
 
-from ..preprocessing.pp import PP
+from src.preprocessing.pp import PP
 import numpy as np
 
 

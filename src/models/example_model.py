@@ -1,6 +1,6 @@
 # This is a sample model file. You can use this as a template for your own models.
 # The model file should contain a class that inherits from the Model class.
-from ..models.model import Model
+from src.models.model import Model
 
 
 class ExampleModel(Model):

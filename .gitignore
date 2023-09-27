@@ -182,3 +182,7 @@ default_config.json
 
 # Ignores submission_zip folder
 submission_zip/
+
+#Ignore trained models
+
+tm/

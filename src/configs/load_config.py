@@ -6,6 +6,7 @@ from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
+from ..feature_engineering.cumsum_accel import cumsum_accel
 # Feature engineering imports
 from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
 

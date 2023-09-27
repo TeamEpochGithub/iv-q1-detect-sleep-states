@@ -1,4 +1,4 @@
-from src.feature_engineering.fe import FE
+from ..feature_engineering.fe import FE
 import pandas as pd
 
 

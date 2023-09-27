@@ -7,7 +7,6 @@ import pandas as pd
 from src.configs.load_config import ConfigLoader
 from src.preprocessing.zip_train_events import ZipTrainEvents
 
-
 if __name__ == '__main__':
     zip_train_events = ZipTrainEvents()
 
@@ -21,5 +20,5 @@ if __name__ == '__main__':
     onsets = zipped[zipped["event"] == "onset"]
     wakeups = zipped[zipped["event"] == "wakeup"]
 
-    assert(onsets.shape[0] > 0)
+    assert (onsets.shape[0] > 0)
     assert (onsets.shape[0] == wakeups.shape[0])

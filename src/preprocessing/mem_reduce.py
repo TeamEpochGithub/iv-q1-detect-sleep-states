@@ -1,5 +1,5 @@
 # This class is to reduce memory usage of dataframe
-from src.preprocessing.pp import PP
+from ..preprocessing.pp import PP
 import numpy as np
 import gc
 

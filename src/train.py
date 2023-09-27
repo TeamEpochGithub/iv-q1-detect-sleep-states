@@ -47,10 +47,12 @@ def train(config):
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
 
+    print(featured_data.head())
+    #TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
 
-    print(featured_data.info())
     # Initialize models
     models = config.get_models()
+
 
 
     #TODO Add crossvalidation to models

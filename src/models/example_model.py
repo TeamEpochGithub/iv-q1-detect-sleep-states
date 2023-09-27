@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from tqdm import tqdm
 
 from src.loss.loss import Loss
 from src.models.model import Model, ModelException
@@ -19,7 +20,17 @@ class ExampleModel(Model):
         :param config: configuration to set up the model
         """
         super().__init__(config)
-        self.model = SimpleModel(10, 10, 2, config)
+        #Load model
+        self.model = SimpleModel(2, 10, 1, config)
+        self.load_config(config)
+
+        #Check if gpu is available, else return an exception
+        if not torch.cuda.is_available():
+            raise ModelException("GPU not available")
+
+        print("GPU Found: " + torch.cuda.get_device_name(0))
+        self.device = torch.device("cuda")
+
 
     def load_config(self, config):
         """
@@ -27,8 +38,6 @@ class ExampleModel(Model):
         :param config: configuration to set up the model
         :return:
         """
-
-        print(config)
         # Error checks. Check if all necessary parameters are in the config.
         required = ["loss", "epochs", "optimizer"]
         for req in required:
@@ -41,11 +50,8 @@ class ExampleModel(Model):
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], self.model.model.parameters(), config["lr"])
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
         self.config = config
-
-        print("Config loaded")
-        print(self.config)
 
     def get_default_config(self):
         """
@@ -54,20 +60,97 @@ class ExampleModel(Model):
         """
         return {"batch_size": 1, "lr": 0.001}
 
+
     def train(self, data):
         """
         Train function for the model.
         :param data: labelled data
         :return:
         """
-        # Define loss function from config based on current model name from loss class
-        print(self.config)
-        loss = Loss.get_loss(self.config["loss"])
 
         # Get hyperparameters from config (epochs, lr, optimizer)
+        print("----------------")
+        print(f"Training model: {type(self).__name__}")
+        print(f"Hyperparameters: {self.config}")
+        print("----------------")
 
-        # Train function
-        print("Training model")
+        #Load hyperparameters
+        criterion = self.config["loss"]
+        optimizer = self.config["optimizer"]
+        epochs = self.config["epochs"]
+        batch_size = self.config["batch_size"]
+
+
+        #For now only look at enmo and anglez feature of data
+        X = data[["enmo", "anglez"]].to_numpy()
+
+        #Create a y with random regression values
+        y = torch.rand(len(X), 1)
+
+        #Create a tensor from X
+        X = torch.from_numpy(X).float()
+
+
+        # For now we split 50-50 into validation and test
+        X_train = X[:len(X)//2]
+        y_train = y[:len(y)//2]
+        X_test = X[len(X)//2:]
+        y_test = y[len(y)//2:]
+
+        #Create a dataset from X and y
+        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+        test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
+
+        #Print the shapes and types of train and test
+        print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        print(f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        print(f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+
+        #Create a dataloader from the dataset
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
+        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+
+        #Add model and data to device cuda
+        self.model.to("cuda")
+
+
+        #Train the model
+        for epoch in range(epochs):
+            self.model.train(True)
+            avg_loss = 0
+            for i, (x, y) in enumerate(train_dataloader):
+                x = x.to(self.device)
+                y = y.to(self.device)
+
+                #Clear gradients
+                optimizer.zero_grad()
+
+                # Forward pass
+                outputs = self.model(x)
+                loss = criterion(outputs, y)
+
+                # Backward and optimize
+                loss.backward()
+                optimizer.step()
+
+                #Calculate the avg loss for 1 epoch
+                avg_loss += loss.item() / len(train_dataloader)
+
+            #Calculate the validation loss
+            self.model.train(False)
+            avg_val_loss = 0
+            with torch.no_grad():
+                for i, (vx, vy) in enumerate(test_dataloader):
+                    vx = vx.to(self.device)
+                    vy = vy.to(self.device)
+                    voutputs = self.model(vx)
+                    vloss = criterion(voutputs, vy)
+                    avg_val_loss += vloss.item() / len(test_dataloader)
+
+            #Print the avg training and validation loss of 1 epoch in a clean way.
+            print(f'Epoch [{epoch+1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}')
+
 
     def pred(self, data):
         """
@@ -77,7 +160,15 @@ class ExampleModel(Model):
         """
         # Prediction function
         print("Predicting model")
-        return [1, 2]
+        # Run the model on the data and return the predictions
+
+        #Push to device
+        self.model.to(self.device)
+
+        #Make a prediction
+        with torch.no_grad():
+            prediction = self.model(data)
+        return prediction
 
     def evaluate(self, pred, target):
         """
@@ -88,7 +179,11 @@ class ExampleModel(Model):
         """
         # Evaluate function
         print("Evaluating model")
+        # Run the loss function
+        # Return the loss
+
         return 0.5
+
 
 
 class SimpleModel(nn.Module):

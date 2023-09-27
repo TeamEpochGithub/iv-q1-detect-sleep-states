@@ -8,16 +8,9 @@ class Model:
         if config is None:
             self.config = None
         else:
-            self.load_config(config)
+            self.config = config
 
-    def load_config(self, config):
-        """
-        Load config function for the model. This function should be overwritten by the user, since it is model specific.
-        :param config: configuration to set up the model
-        :return:
-        """
-        self.config = config
-
+    #TODO Make train have X_train and X_test as input which are already splitted!
     def train(self, data):
         """
         Train function for the model. This function should be overwritten by the user.
@@ -41,6 +34,7 @@ class Model:
         :return:
         """
         pass
+
 
     def evaluate(self, pred, target):
         """

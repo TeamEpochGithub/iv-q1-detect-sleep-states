@@ -14,7 +14,8 @@ class Loss():
         # Init function
         pass
 
-    def get_loss(self, loss_name):
+    @staticmethod
+    def get_loss(loss_name):
         """
         This function looks up the correct loss function and returns it.
         :param loss_name: name of the loss function

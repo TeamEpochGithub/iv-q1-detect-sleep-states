@@ -47,9 +47,13 @@ def train(config):
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
 
+
+    print(featured_data.info())
     # Initialize models
     models = config.get_models()
 
+
+    #TODO Add crossvalidation to models
     for model in models:
         models[model].train(featured_data)
 
@@ -63,8 +67,6 @@ def train(config):
     #TODO assert that every model has a loss function
     #TODO assert that the loss function is forwarded to the model
 
-    ensemble_loss = config.get_loss()
-    loss.forward(featured_data, featured_data)
 
 
     #TODO Hyperparameter optimization for ensembles
@@ -80,6 +82,10 @@ def train(config):
     if scoring:
         # Do scoring
         pass
+
+    # TODO Add Weights and biases to model training and record loss and acc
+
+    #TODO ADD scoring to WANDB
 
     epochs = 10
     offset = random.random() / 5

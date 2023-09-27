@@ -11,6 +11,7 @@
         "ExampleModel": {
             "type": "example-fc-model",
             "epochs": 5,
+            "batch_size": 32,
             "loss": "mse-torch",
             "optimizer": "adam"
         }

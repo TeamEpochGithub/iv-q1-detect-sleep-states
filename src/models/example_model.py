@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.loss.loss import Loss
-from src.models.model import Model
+from src.models.model import Model, ModelException
+from src.optimizer.optimizer import Optimizer
 
 
 class ExampleModel(Model):
@@ -20,7 +21,39 @@ class ExampleModel(Model):
         super().__init__(config)
         self.model = SimpleModel(10, 10, 2, config)
 
-    # Create different training function
+    def load_config(self, config):
+        """
+        Load config function for the model.
+        :param config: configuration to set up the model
+        :return:
+        """
+
+        print(config)
+        # Error checks. Check if all necessary parameters are in the config.
+        required = ["loss", "epochs", "optimizer"]
+        for req in required:
+            if req not in config:
+                raise ModelException("Config is missing required parameter: " + req)
+
+        #Get default_config
+        default_config = self.get_default_config()
+
+        config["loss"] = Loss.get_loss(config["loss"])
+        config["batch_size"] = config.get("batch_size", default_config["batch_size"])
+        config["lr"] = config.get("lr", default_config["lr"])
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], self.model.model.parameters(), config["lr"])
+        self.config = config
+
+        print("Config loaded")
+        print(self.config)
+
+    def get_default_config(self):
+        """
+        Get default config function for the model.
+        :return: default config
+        """
+        return {"batch_size": 1, "lr": 0.001}
+
     def train(self, data):
         """
         Train function for the model.
@@ -28,9 +61,10 @@ class ExampleModel(Model):
         :return:
         """
         # Define loss function from config based on current model name from loss class
-        loss = Loss.get_loss(self.config["models"][self.__name__]["loss"])
+        print(self.config)
+        loss = Loss.get_loss(self.config["loss"])
 
-        #Get hyperparameters from config (epochs, lr, optimizer)
+        # Get hyperparameters from config (epochs, lr, optimizer)
 
         # Train function
         print("Training model")

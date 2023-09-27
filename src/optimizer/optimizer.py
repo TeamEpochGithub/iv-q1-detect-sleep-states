@@ -11,11 +11,13 @@ class Optimizer():
     """
     This is a static class for loss functions.
     """
+
     def __init__(self):
         # Init function
         pass
 
-    def get_optimizer(self, optimizer_name, learning_rate, model):
+    @staticmethod
+    def get_optimizer(optimizer_name, learning_rate, model):
         """
         This function looks up the correct loss function and returns it.
         :param loss_name: name of the loss function
@@ -34,6 +36,3 @@ class Optimizer():
                 return optim.RMSprop(model.parameters(), lr=learning_rate)
             case _:
                 raise OptimizerException("Optimizer function not found: " + optimizer_name)
-
-
-

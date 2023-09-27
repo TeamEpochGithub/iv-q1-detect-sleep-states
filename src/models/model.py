@@ -2,12 +2,21 @@ class Model:
     """
     Model class with basic methods for training and evaluation. This class should be overwritten by the user.
     """
+
     def __init__(self, config):
         # Init function
         if config is None:
             self.config = None
         else:
-            self.config = config
+            self.load_config(config)
+
+    def load_config(self, config):
+        """
+        Load config function for the model. This function should be overwritten by the user, since it is model specific.
+        :param config: configuration to set up the model
+        :return:
+        """
+        self.config = config
 
     def train(self, data):
         """
@@ -33,7 +42,6 @@ class Model:
         """
         pass
 
-
     def evaluate(self, pred, target):
         """
         Evaluation function for the model. This function should be overwritten by the user.
@@ -43,3 +51,13 @@ class Model:
         """
         # Evaluate function
         pass
+
+
+class ModelException(Exception):
+    """
+    Exception class for the model.
+    """
+
+    def __init__(self, message):
+        self.message = message
+

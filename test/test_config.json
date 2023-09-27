@@ -1,11 +1,13 @@
 {
     "name": "config",
-    "preprocessing": ["add_state_labels"],
-    "processed_loc_out": "./data/processed",
-    "processed_loc_in": "./data/raw",
-    "feature_engineering": ["cumsum_accel"],
-    "fe_loc_out": "./data/features",
-    "fe_loc_in": "./data/processed",
+
+    "preprocessing": [],
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "feature_engineering": [],
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
+
     "models": {
         "model1name": {
             "type": "example_model",

@@ -1,4 +1,3 @@
-# This is the base class for loss
 import torch.optim as optim
 
 
@@ -8,7 +7,7 @@ class OptimizerException(Exception):
 
 class Optimizer():
     """
-    This is a static class for loss functions.
+    This is a static class for optimizer functions.
     """
 
     def __init__(self):
@@ -18,9 +17,11 @@ class Optimizer():
     @staticmethod
     def get_optimizer(optimizer_name, learning_rate, model):
         """
-        This function looks up the correct loss function and returns it.
-        :param loss_name: name of the loss function
-        :return: the loss function
+        This function returns the correct optimizer function.
+        :param optimizer_name: name of the optimizer
+        :param learning_rate: learning rate for the optimizer
+        :param model: model to optimize
+        :return: optimizer function
         """
         match optimizer_name:
             case "adam-torch":

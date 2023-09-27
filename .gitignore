@@ -185,4 +185,3 @@ submission_zip/
 
 #Ignore trained models
 tm
-tm/ExampleModel.pt

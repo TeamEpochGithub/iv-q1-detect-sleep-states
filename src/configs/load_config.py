@@ -7,22 +7,23 @@ from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
 # Feature engineering imports
-from src.feature_engineering.example_feature_engineering import ExampleFeatureEngineering
+from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
 
 # Model imports
-from src.models.example_model import ExampleModel
+from ..models.example_model import ExampleModel
 
 # Ensemble imports
-from src.ensemble.ensemble import Ensemble
+from ..ensemble.ensemble import Ensemble
 
 # Loss imports
-from src.loss.loss import Loss
+from ..loss.loss import Loss
 
 # HPO imports
-from src.hpo.hpo import HPO
+from ..hpo.hpo import HPO
+
 
 # CV imports
-from src.cv.cv import CV
+from ..cv.cv import CV
 
 
 class ConfigLoader:

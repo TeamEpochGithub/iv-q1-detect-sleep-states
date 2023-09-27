@@ -2,25 +2,29 @@
 import json
 
 # Preprocessing imports
-from src.preprocessing.mem_reduce import MemReduce
+from ..preprocessing.mem_reduce import MemReduce
+from ..preprocessing.add_noise import AddNoise
+# Feature engineering imports
+from ..feature_engineering.cumsum_accel import cumsum_accel
 
 # Feature engineering imports
-from src.feature_engineering.example_feature_engineering import ExampleFeatureEngineering
+from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
 
 # Model imports
-from src.models.example_model import ExampleModel
+from ..models.example_model import ExampleModel
 
 # Ensemble imports
-from src.ensemble.ensemble import Ensemble
+from ..ensemble.ensemble import Ensemble
 
 # Loss imports
-from src.loss.loss import Loss
+from ..loss.loss import Loss
 
 # HPO imports
-from src.hpo.hpo import HPO
+from ..hpo.hpo import HPO
+
 
 # CV imports
-from src.cv.cv import CV
+from ..cv.cv import CV
 
 
 class ConfigLoader:
@@ -42,10 +46,12 @@ class ConfigLoader:
         for pp_step in self.config["preprocessing"]:
             if pp_step == "mem_reduce":
                 self.pp_steps.append(MemReduce())
+            elif pp_step == "add_noise":
+                self.pp_steps.append(AddNoise())
             else:
                 raise ConfigException(
                     "Preprocessing step not found: " + pp_step)
-        return self.pp_steps
+        return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path
     def get_pp_out(self):
@@ -62,11 +68,13 @@ class ConfigLoader:
             if fe_step == "example_feature_engineering":
                 self.fe_steps["example_feature_engineering"] = ExampleFeatureEngineering(
                 )
+            elif fe_step == "cumsum_accel":
+                self.fe_steps["cumsum_accel"] = cumsum_accel()
             else:
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
-        return self.fe_steps
+        return self.fe_steps, self.config["feature_engineering"]
 
     # Function to retrieve feature engineering data location out path
     def get_fe_out(self):

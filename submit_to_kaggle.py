@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 
 
-def run(test_series_path, submit):
+def submit(test_series_path, submit=False):
+
     test = pd.read_parquet(test_series_path)
     test["timestamp"] = pd.to_datetime(test["timestamp"], utc=True)
     test["day"] = test["timestamp"].dt.day
@@ -26,12 +27,3 @@ def run(test_series_path, submit):
 
     if submit:
         submission.to_csv("submission.csv", index=False)
-    return 0
-
-
-def main():
-    run("../data/test_series.parquet", submit=False)
-
-
-if __name__ == "__main__":
-    main()

@@ -75,26 +75,25 @@ A list of models and their specified configurations are included here. Multiple 
 }
 ```
 
-#### Implemented Models and config options
+#### Implemented Models types and config options
 
-- LSTM
-    - Epochs (10 < x < 100)
-    - patch_size
-    - layers
-- Transformer
-    - epochs
-    - patch_size
-    - encoder_layers
-    - decoder_layers
+- example-fc-model
+    - epochs (required)
+    - loss (required)
+    - optimizer (required)
+    - lr
+    - batch_size
 
-Example of an LSTM model configuration
+
+Example of an example-fc-model configuration:
 
 ```
-"type1LSTM": {
-    "type": "LSTM",
-    "epochs": 100,
-    "patch_size": 8,
-    "layers": 5,
+"ExampleModel": {
+    "type": "example-fc-model",
+    "epochs": 20,
+    "batch_size": 32,
+    "loss": "mae-torch",
+    "optimizer": "adam-torch"
 }
 ```
 

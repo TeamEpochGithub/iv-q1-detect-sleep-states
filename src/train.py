@@ -53,17 +53,24 @@ def train(config):
     # Initialize models
     models = config.get_models()
 
+    # Get saved models directory from config
+    store_location = config.get_model_store_loc()
 
 
     #TODO Add crossvalidation to models
     for model in models:
         models[model].train(featured_data)
+        models[model].save(store_location + "/" + model + ".pt")
 
     print(models)
 
     # Initialize ensemble
     ensemble = config.get_ensemble(models)
-    ensemble.pred(featured_data)
+
+    #TODO ADD preprocessing of data suitable for predictions
+
+
+    # ensemble.pred(featured_data)
 
     # Initialize loss
     #TODO assert that every model has a loss function

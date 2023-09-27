@@ -175,16 +175,26 @@ class ExampleModel(Model):
         Evaluation function for the model.
         :param pred: predictions
         :param target: targets
-        :return:
+        :return: avg loss of predictions
         """
         # Evaluate function
         print("Evaluating model")
-        # Run the loss function
-        # Return the loss
+        # Calculate the loss of the predictions
+        criterion = self.config["loss"]
+        loss = criterion(pred, target)
+        return loss
 
-        return 0.5
-
-
+    def save(self, path):
+        """
+        Save function for the model.
+        :param path: path to save the model to
+        :return:
+        """
+        checkpoint = {
+            'model_state_dict': self.model.state_dict(),
+            'config': self.config
+        }
+        torch.save(checkpoint, path)
 
 class SimpleModel(nn.Module):
     """

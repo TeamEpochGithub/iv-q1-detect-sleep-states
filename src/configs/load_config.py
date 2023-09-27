@@ -41,6 +41,9 @@ class ConfigLoader:
     def get_config(self):
         return self.config
 
+    def get_model_store_loc(self):
+        return self.config["model_store_loc"]
+
     # Function to retrieve preprocessing steps
     def get_pp_steps(self):
         self.pp_steps = []

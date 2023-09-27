@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from src.loss.loss import Loss
-from src.models.model import Model, ModelException
-from src.optimizer.optimizer import Optimizer
+from ..loss.loss import Loss
+from ..models.model import Model, ModelException
+from ..optimizer.optimizer import Optimizer
 
 
 class ExampleModel(Model):

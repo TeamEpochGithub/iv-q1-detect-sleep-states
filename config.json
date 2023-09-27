@@ -17,7 +17,7 @@
         }
 
     },
-    "model_store_loc": "./tm",
+    "model_store_loc": "tm",
     "ensemble": {
         "models": ["ExampleModel"],
         "weights": [1],

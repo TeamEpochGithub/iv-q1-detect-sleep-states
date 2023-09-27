@@ -11,7 +11,6 @@ config = None
 
 
 def train(config):
-
     # Initialize the path used for checking
     # If pp already exists
     print(config)
@@ -35,7 +34,7 @@ def train(config):
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
         # Passes the current list because its needed to write to if the path doesnt exist
-        processed = step.run(processed, pp_s[:i+1])
+        processed = step.run(processed, pp_s[:i + 1])
 
     # Initialize feature engineering steps
     fe_steps, fe_s = config.get_features()
@@ -43,12 +42,12 @@ def train(config):
     for i, fe_step in enumerate(fe_steps):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
-        feature = fe_steps[fe_step].run(processed, fe_s[:i+1], pp_s)
+        feature = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
 
     print(featured_data.head())
-    #TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
+    # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
 
     # Initialize models
     models = config.get_models()
@@ -56,8 +55,7 @@ def train(config):
     # Get saved models directory from config
     store_location = config.get_model_store_loc()
 
-
-    #TODO Add crossvalidation to models
+    # TODO Add crossvalidation to models #107
     for model in models:
         models[model].train(featured_data)
         models[model].save(store_location + "/" + model + ".pt")
@@ -65,20 +63,16 @@ def train(config):
     print(models)
 
     # Initialize ensemble
-    ensemble = config.get_ensemble(models)
+    #    ensemble = config.get_ensemble(models)
 
-    #TODO ADD preprocessing of data suitable for predictions
-
+    # TODO ADD preprocessing of data suitable for predictions #103
 
     # ensemble.pred(featured_data)
 
     # Initialize loss
-    #TODO assert that every model has a loss function
-    #TODO assert that the loss function is forwarded to the model
+    # TODO assert that every model has a loss function #67
 
-
-
-    #TODO Hyperparameter optimization for ensembles
+    # TODO Hyperparameter optimization for ensembles #101
     hpo = config.get_hpo()
     hpo.optimize()
 
@@ -92,9 +86,9 @@ def train(config):
         # Do scoring
         pass
 
-    # TODO Add Weights and biases to model training and record loss and acc
+    # TODO Add Weights and biases to model training and record loss and acc #106
 
-    #TODO ADD scoring to WANDB
+    # TODO ADD scoring to WANDB #108
 
     epochs = 10
     offset = random.random() / 5

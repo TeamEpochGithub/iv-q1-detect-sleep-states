@@ -10,6 +10,7 @@ class Loss():
     """
     This is a static class for loss functions.
     """
+
     def __init__(self):
         # Init function
         pass
@@ -32,6 +33,3 @@ class Loss():
                 return nn.BCELoss()
             case _:
                 raise LossException("Loss function not found: " + loss_name)
-
-
-

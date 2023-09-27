@@ -1,5 +1,4 @@
 # This is the base class for loss
-import torch
 import torch.optim as optim
 
 

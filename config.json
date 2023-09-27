@@ -1,20 +1,11 @@
 {
     "name": "config",
-<<<<<<< HEAD:src/configs/config.json
-    "preprocessing": ["mem_reduce", "split_windows"],
-    "processed_loc_out": "./data/processed",
-    "processed_loc_in": "./data/raw",
-    "feature_engineering": ["example_feature_engineering"],
-    "fe_loc_out": "./data/features",
-    "fe_loc_in": "./data/processed",
-=======
-    "preprocessing": [],
+    "preprocessing": ["split_windows"],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": [],
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
->>>>>>> main:config.json
     "models": {
         "model1name": {
             "type": "example_model",

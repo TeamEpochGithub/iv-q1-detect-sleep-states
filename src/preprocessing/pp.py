@@ -6,7 +6,6 @@ import polars as pl
 class PP:
     def __init__(self):
         self.use_pandas = True
-        pass
 
     def preprocess(self, data):
         raise NotImplementedError
@@ -19,7 +18,7 @@ class PP:
             # Read the data from the path with polars
             processed = pl.read_parquet(path)
             print(f'Data read from {path}')
-            # If we want to use a pnadas dataframe, convert to pandas
+            # If we want to use a pandas dataframe, convert to pandas
             if self.use_pandas:
                 # convert polars dataframe back to pandas dataframe
                 print('Converting polars dataframe to pandas dataframe')

@@ -7,7 +7,6 @@ variables:
   PYTHON_VERSION: "3.10"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-
 cache:
   paths:
     - .cache/pip
@@ -24,7 +23,7 @@ lint:
   stage: lint
   image: python:$PYTHON_VERSION
   script:
-    - flake8 . --max-line-length=130 --statistics --exit-zero --exclude ./venv
+    - flake8 . --max-line-length=175 --statistics --exit-zero --exclude ./venv
     - ERROR_COUNT=$(flake8 . --max-line-length=130 --count --exclude ./venv --exit-zero | tail -n 1)
     - ERROR_COUNT=$((ERROR_COUNT))
     - echo $ERROR_COUNT
@@ -42,7 +41,6 @@ unittests:
   script:
     - python -m unittest discover  # Run unittests
   allow_failure: false
-
 
 # We should not run our main on the pipeline, since we would need pre-trained models and data on the gitlab cloud...
 #run:

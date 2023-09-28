@@ -10,28 +10,50 @@ import seaborn as sns
 class AddStateLabels(PP):
 
     def preprocess(self, data):
-        # Add state labels to the data
-        # data is the series dataframe so we need to read
-        # the events dataframe
+        # the data will get a Nan column
+        # the code for the series without nan and with nan is not the same
+        # so we have 2 separate loops
         data['NaN'] = 0
         # Read the events dataframe
         events = pd.read_csv('data/raw/train_events.csv')
+        # This part does someneeded pp for getting the NaN series
         df_filled = events.copy()
         onset_mask = df_filled['event'] == 'onset'
         wakeup_mask = df_filled['event'] == 'wakeup'
-        # i think this code updates the steps and thats why the methods messed up
         df_filled.loc[onset_mask, 'step'] = df_filled.groupby('series_id')['step'].ffill().bfill()
         df_filled.loc[wakeup_mask, 'step'] = df_filled.groupby('series_id')['step'].bfill().ffill()
         nan_events = df_filled[pd.isnull(df_filled['timestamp'])].copy()
         nan_series = nan_events['series_id'].unique()
 
-        
+        # This part figures out the series witouth Nan
         series_has_NaN = events.groupby('series_id')['step'].apply(lambda x: x.isnull().any())
         series_has_NaN.value_counts()
         df_has_NaN = series_has_NaN.to_frame()
         df_has_NaN.reset_index(inplace=True)
-        notNaN = df_has_NaN.loc[df_has_NaN.step == False]["series_id"].to_list()
+        notNaN = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
 
+        # Firstly we loop with the series without NaN
+        for i, id in enumerate(notNaN):
+            # Get the current series
+            print(id)
+            current_series = data[data['series_id'] == id]
+            # Save the current series to the data
+            data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN']
+            print(i/len(events['series_id'].unique())*100, '% done')
+
+            # after the mask is applied to the series 
+            # do the asleep awake thing
+            # then apply the mask to the data
+
+            current_series = self.get_train_series(current_series, events, id)
+            # now apply the mask to the data
+            data.loc[data['series_id'] == id, 'awake'] = current_series['awake']
+            plt.figure()
+            plt.title("Series ID" + str(id))
+            sns.lineplot(data=current_series, x="step", y="anglez", hue="awake", linewidth=0.5)
+            plt.show()
+
+        # now loop with the series with NaN
         for i, id in enumerate(nan_series):
             # Get the current series
             current_series = data[data['series_id'] == id]

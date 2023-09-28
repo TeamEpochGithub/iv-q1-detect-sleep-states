@@ -10,13 +10,45 @@ import seaborn as sns
 class AddStateLabels(PP):
 
     def preprocess(self, data):
-        # the data will get a Nan column
-        # the code for the series without nan and with nan is not the same
-        # so we have 2 separate loops
         data['NaN'] = 0
         # Read the events dataframe
         events = pd.read_csv('data/raw/train_events.csv')
+        events_copy = events.copy()
+        events_copy.dropna(inplace=True)
         # This part does someneeded pp for getting the NaN series
+        # This part figures out the series witouth Nan
+        series_has_NaN = events.groupby('series_id')['step'].apply(lambda x: x.isnull().any())
+        series_has_NaN.value_counts()
+        df_has_NaN = series_has_NaN.to_frame()
+        df_has_NaN.reset_index(inplace=True)
+        notNaN = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
+        weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"] 
+        # # Firstly we loop with the series without NaN
+
+        for i, id in enumerate(weird_series):
+            # Get the current series
+            # Save the current series to the data
+            current_series = self.get_train_series(data, events_copy, id)
+            print(current_series["awake"].unique())
+            # now apply the mask to the data
+            data.loc[data['series_id'] == id, 'awake'] = current_series['awake']
+            print(data.loc[data['series_id'] == id, 'awake'].unique())
+            print(i/len(events['series_id'].unique())*100, '% done')
+        # # after handling the series without NaN we handle the weird cases
+
+        
+        for i, id in enumerate(weird_series):
+            # get the events with the current series id
+
+            current_events = events[events["series_id"] == id]
+            # get the last item of the current events
+            last_event = current_events.tail(1)
+            # set awake of current series to 2 for all rows after last_event
+            data.loc[(data['series_id'] == id) & (data['step'] > last_event['step'].values[0]), 'awake'] = 2
+            plt.figure()
+            sns.lineplot(data=data[data['series_id'] == id], x="step", y="anglez", hue="awake", linewidth=0.5)
+            plt.show()
+
         df_filled = events.copy()
         onset_mask = df_filled['event'] == 'onset'
         wakeup_mask = df_filled['event'] == 'wakeup'
@@ -24,35 +56,6 @@ class AddStateLabels(PP):
         df_filled.loc[wakeup_mask, 'step'] = df_filled.groupby('series_id')['step'].bfill().ffill()
         nan_events = df_filled[pd.isnull(df_filled['timestamp'])].copy()
         nan_series = nan_events['series_id'].unique()
-
-        # This part figures out the series witouth Nan
-        series_has_NaN = events.groupby('series_id')['step'].apply(lambda x: x.isnull().any())
-        series_has_NaN.value_counts()
-        df_has_NaN = series_has_NaN.to_frame()
-        df_has_NaN.reset_index(inplace=True)
-        notNaN = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
-
-        # Firstly we loop with the series without NaN
-        for i, id in enumerate(notNaN):
-            # Get the current series
-            print(id)
-            current_series = data[data['series_id'] == id]
-            # Save the current series to the data
-            data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN']
-            print(i/len(events['series_id'].unique())*100, '% done')
-
-            # after the mask is applied to the series 
-            # do the asleep awake thing
-            # then apply the mask to the data
-
-            current_series = self.get_train_series(current_series, events, id)
-            # now apply the mask to the data
-            data.loc[data['series_id'] == id, 'awake'] = current_series['awake']
-            plt.figure()
-            plt.title("Series ID" + str(id))
-            sns.lineplot(data=current_series, x="step", y="anglez", hue="awake", linewidth=0.5)
-            plt.show()
-
         # now loop with the series with NaN
         for i, id in enumerate(nan_series):
             # Get the current series
@@ -62,18 +65,12 @@ class AddStateLabels(PP):
             # Save the current series to the data
             data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN']
             print(i/len(events['series_id'].unique())*100, '% done')
-
-            # after the mask is applied to the series 
-            # do the asleep awake thing
-            # then apply the mask to the data
-
             current_series = self.get_train_series(current_series, events, id)
-            # now apply the mask to the data
             current_series.loc[current_series['NaN'] == 1, 'awake'] = 2
             plt.figure()
-            plt.title("Series ID" + str(id))
             sns.lineplot(data=current_series, x="step", y="anglez", hue="awake", linewidth=0.5)
             plt.show()
+                       
         return data
 
     def get_nan_train_series(self, current_series, train_events, series):
@@ -97,9 +94,9 @@ class AddStateLabels(PP):
         train.loc[mask, "NaN"] = 1
         train.loc[~mask, "NaN"] = 0
         train["NaN"] = train["NaN"].astype("int")
-        plt.figure()
-        sns.lineplot(data=train, x="step", y="anglez", hue="NaN", linewidth=0.5)
-        plt.show()
+        # plt.figure()
+        # sns.lineplot(data=train, x="step", y="anglez", hue="NaN", linewidth=0.5)
+        # plt.show()
         return (train)
 
     def get_train_series(self, train_series, train_events, series):
@@ -112,11 +109,13 @@ class AddStateLabels(PP):
         current_events["awake"] = current_events["event"].replace({"onset": 1, "wakeup": 0})
 
         train = pd.merge(current_series, current_events[['step', 'awake']], on='step', how='left')
+        if 'awake_y' in train.columns:
+            train.rename(columns={'awake_y': 'awake'}, inplace=True)
         train["awake"] = train["awake"].bfill(axis='rows')
         # final section:
         # train_events.groupby('series_id').tail(1)["event"].unique()
         # Result: the last event is always a "wakeup"
         train['awake'] = train['awake'].fillna(1)  # awake
         train["awake"] = train["awake"].astype("int")
-        
-        return train
+
+        return (train)

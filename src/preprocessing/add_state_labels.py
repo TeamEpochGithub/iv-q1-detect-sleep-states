@@ -3,6 +3,7 @@
 from src.preprocessing.pp import PP
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 
 class AddStateLabels(PP):
@@ -26,20 +27,20 @@ class AddStateLabels(PP):
         weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
         # Firstly we loop with the series without NaN
 
-        for i, id in enumerate(notNaN):
+        for i, id in tqdm(enumerate(notNaN)):
             # Get the current series
             # Save the current series to the data
             current_series = self.get_train_series(data, events_copy, id)
-            # this is needed
-            # idk why but without it it doesnt work
-            current_series = current_series.set_index('step')
-            data = data.set_index('step')
+            # this is needed because pandas is stupid
+            awake_arr = current_series['awake'].to_numpy()
+            # data = data.set_index('step')
             # update the data awake column with the current series awake column
-            data.loc[data['series_id'] == id, 'awake'] = current_series['awake']
+            data.loc[data['series_id'] == id, 'awake'] = awake_arr
+            print(data.loc[data['series_id'] == id, 'awake'].unique())
 
         # after handling the series without NaN we handle the weird cases
         # and add 2s for the awake labels
-        for i, id in enumerate(weird_series):
+        for i, id in tqdm(enumerate(weird_series)):
             # get the events with the current series id
             current_events = events[events["series_id"] == id]
             # get the last item of the current events
@@ -56,7 +57,7 @@ class AddStateLabels(PP):
         nan_events = df_filled[pd.isnull(df_filled['timestamp'])].copy()
         nan_series = nan_events['series_id'].unique()
         # now loop with the series with NaN
-        for i, id in enumerate(nan_series):
+        for i, id in tqdm(enumerate(nan_series)):
             # Get the current series
             current_series = data[data['series_id'] == id]
             current_series = self.get_nan_train_series(current_series, nan_events, id)

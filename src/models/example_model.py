@@ -21,7 +21,7 @@ class ExampleModel(Model):
 
         self.model_type = "state-prediction"
         # Load model
-        self.model = SimpleModel(2, 10, 1, config)
+        self.model = SimpleModel(8, 10, 1, config)
         self.load_config(config)
 
         # Check if gpu is available, else return an exception

@@ -32,18 +32,20 @@ from ..cv.cv import CV
 class ConfigLoader:
 
     # Initiate class using config path
-    def __init__(self, config_path):
+    def __init__(self, config_path: str):
         self.config_path = config_path
 
         # Read JSON from file
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+    # Get full configuration
     def get_config(self):
         return self.config
-
-    def get_model_store_loc(self):
-        return self.config["model_store_loc"]
+    
+    # Get boolean for whether to use wandb
+    def get_log_to_wandb(self):
+        return self.config["log_to_wandb"]
 
     # Function to retrieve preprocessing steps
     def get_pp_steps(self):
@@ -116,8 +118,9 @@ class ConfigLoader:
     def get_fe_in(self):
         return self.config["fe_loc_in"]
 
-    def get_log_to_wandb(self):
-        return self.config["log_to_wandb"]
+    # Function to retrieve pretraining data
+    def get_pretraining(self):
+        return self.config["pretraining"]
 
     # Function to retrieve model data
     def get_models(self):
@@ -135,6 +138,10 @@ class ConfigLoader:
             self.models[model] = curr_model
 
         return self.models
+
+    # Getter for model store location
+    def get_model_store_loc(self):
+        return self.config["model_store_loc"]
 
     # Function to retrieve ensemble data
     def get_ensemble(self, models):

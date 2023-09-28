@@ -11,7 +11,7 @@ import wandb
 config = None
 
 
-def main(config, wandb_on=True):
+def main(config: ConfigLoader):
     # Initialize the path used for checking
     # If pp already exists
     print(config)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Train model
-    main(config, False)
+    main(config)
 
     # Create submission
     submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)

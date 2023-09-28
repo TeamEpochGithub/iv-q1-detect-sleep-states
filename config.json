@@ -22,6 +22,11 @@
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
+    "pretraining": {
+        "apply": true,
+        "train_test_split": 0.8,
+        "standardization": true
+    },
     "models": {
         "ExampleModel": {
             "type": "example-fc-model",

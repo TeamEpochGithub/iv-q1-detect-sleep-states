@@ -3,8 +3,7 @@
 from src.preprocessing.pp import PP
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 class AddStateLabels(PP):
 
@@ -24,7 +23,7 @@ class AddStateLabels(PP):
 
         # this finds the series ids without NaN
         notNaN = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
-        weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"] 
+        weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
         # Firstly we loop with the series without NaN
 
         for i, id in enumerate(notNaN):
@@ -71,7 +70,6 @@ class AddStateLabels(PP):
 
         if 'NaN' in data.columns:
             data.drop(columns=['NaN'], inplace=True)
-        
         return data
 
     # This is copied over from EDA-Hugo

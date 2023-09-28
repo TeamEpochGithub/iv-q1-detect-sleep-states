@@ -6,6 +6,7 @@ from src.configs.load_config import ConfigLoader
 import submit_to_kaggle
 import random
 import wandb
+from sklearn.model_selection import GroupShuffleSplit, train_test_split
 
 # Load config file
 config = None
@@ -25,9 +26,9 @@ def main(config: ConfigLoader):
         )
     else:
         print("Not logging to wandb.")
+    
     # Do training here
-
-    df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
+    df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
 
     # Initialize preprocessing steps
     pp_steps, pp_s = config.get_pp_steps()
@@ -43,13 +44,34 @@ def main(config: ConfigLoader):
     for i, fe_step in enumerate(fe_steps):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
-        feature = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
+        featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
         # Add feature to featured_data
-        featured_data = pd.concat([featured_data, feature], axis=1)
+        # featured_data = pd.concat([featured_data, feature], axis=1)
 
-    print(featured_data.head())
-    # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
+    # Pretrain processstep (splitting data into train and test, standardization, etc.)
+    print("-------- PRETRAINING ----------")
+    pretrain = config.get_pretraining()
+    # Train test split
+    groups = featured_data["series_id"]
+    gss = GroupShuffleSplit(n_splits=1, test_size=pretrain["test_size"], random_state=42)
+    train_idx, test_idx = next(gss.split(featured_data, groups=groups))
+    train_data = featured_data.iloc[train_idx]
+    test_data = featured_data.iloc[test_idx]
 
+    # Print the series_id and their windows in the train_data set
+    print("Train data:")
+    for series_id, group in train_data.groupby("series_id"):
+        print(f"Series ID: {series_id}")
+        for window in group["window"].unique():
+            print(f"\tWindow: {window}")
+
+    # Print the series_id and their windows in the test_data set
+    print("Test data:")
+    for series_id, group in test_data.groupby("series_id"):
+        print(f"Series ID: {series_id}")
+        for window in group["window"].unique():
+            print(f"\tWindow: {window}")
+    pass
     # Initialize models
     models = config.get_models()
 

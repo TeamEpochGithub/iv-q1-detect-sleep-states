@@ -14,6 +14,7 @@ from ..feature_engineering.mean import Mean
 
 # Model imports
 from ..models.example_model import ExampleModel
+from ..models.transformer.transformer import Transformer
 
 # Ensemble imports
 from ..ensemble.ensemble import Ensemble
@@ -128,6 +129,8 @@ class ConfigLoader:
             curr_model = None
             if model_config["type"] == "example-fc-model":
                 curr_model = ExampleModel(model_config)
+            elif model_config["type"] == "transformer":
+                curr_model = Transformer(model_config)
             else:
                 raise ConfigException(
                     "Model not found: " + model_config["type"])

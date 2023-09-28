@@ -84,6 +84,8 @@ class Transformer(Model):
         batch_size = self.config["batch_size"]
 
         # For now only look at enmo and anglez feature of data
+        print("-------------------")
+        print(data.head())
         X = data[["enmo", "anglez"]].to_numpy()
 
         # Create a y with random regression values

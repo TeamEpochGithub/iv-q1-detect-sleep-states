@@ -23,8 +23,8 @@
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "models": {
-        "ExampleModel": {
-            "type": "example-fc-model",
+        "Transformer": {
+            "type": "transformer",
             "epochs": 20,
             "batch_size": 32,
             "loss": "mae-torch",
@@ -34,7 +34,7 @@
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ExampleModel"],
+        "models": ["Transformer"],
         "weights": [1],
         "comb_method": "addition"
     },

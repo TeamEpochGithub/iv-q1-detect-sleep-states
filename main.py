@@ -14,7 +14,7 @@ config = None
 def main(config, wandb_on=True):
     # Initialize the path used for checking
     # If pp already exists
-    print(config)
+
     # Initialize wandb
     if config.get_log_to_wandb():
         # Initialize wandb
@@ -30,14 +30,17 @@ def main(config, wandb_on=True):
     df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
 
     # Initialize preprocessing steps
+    print("---------- PREPROCESSING ----------")
     pp_steps, pp_s = config.get_pp_steps()
     processed = df
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
         # Passes the current list because its needed to write to if the path doesnt exist
         processed = step.run(processed, pp_s[:i + 1])
+        
 
     # Initialize feature engineering steps
+    print("---------- FEATURE ENGINEERING ----------")
     fe_steps, fe_s = config.get_features()
     featured_data = processed
     for i, fe_step in enumerate(fe_steps):
@@ -47,10 +50,11 @@ def main(config, wandb_on=True):
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
 
-    print(featured_data.head())
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
+    print("---------- PRE-TRAINING ----------")
 
     # Initialize models
+    print("---------- TRAINING ----------")
     models = config.get_models()
 
     # Get saved models directory from config
@@ -60,8 +64,6 @@ def main(config, wandb_on=True):
     for model in models:
         models[model].train(featured_data)
         models[model].save(store_location + "/" + model + ".pt")
-
-    print(models)
 
     # Initialize ensemble
     #    ensemble = config.get_ensemble(models)

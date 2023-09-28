@@ -7,7 +7,7 @@ from torch.nn.modules import (
     BatchNorm1d,
     TransformerEncoderLayer,
 )
-from utils import get_activation_fn
+from .utils import get_activation_fn
 from typing import Optional
 
 class TransformerBatchNormEncoderLayer(nn.modules.Module):

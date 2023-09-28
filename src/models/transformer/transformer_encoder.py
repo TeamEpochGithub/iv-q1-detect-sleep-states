@@ -1,7 +1,7 @@
 import torch
 from torch import nn, Tensor
-from encoder import TransformerBatchNormEncoderLayer
-from positional_encoding import get_pos_encoder
+from .encoder import TransformerBatchNormEncoderLayer
+from .positional_encoding import get_pos_encoder
 from torch.nn.modules import TransformerEncoderLayer
 
 class TSTransformerEncoder(nn.Module):

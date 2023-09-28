@@ -18,6 +18,8 @@ class ExampleModel(Model):
         :param config: configuration to set up the model
         """
         super().__init__(config)
+
+        self.model_type = "state-prediction"
         # Load model
         self.model = SimpleModel(2, 10, 1, config)
         self.load_config(config)
@@ -56,6 +58,13 @@ class ExampleModel(Model):
         :return: default config
         """
         return {"batch_size": 1, "lr": 0.001}
+
+    def get_type(self):
+        """
+        Get type function for the model.
+        :return:
+        """
+        return self.model_type
 
     def train(self, data):
         """

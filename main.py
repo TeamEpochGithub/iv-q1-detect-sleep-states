@@ -81,6 +81,14 @@ def main(config, wandb_on=True):
     cv = config.get_cv()
     cv.run()
 
+    # Train model fully on all data
+    # TODO Mark best model from CV/HPO and train it on all data
+    if config.get_train_for_submission():
+        best_model = None
+        best_model.train(featured_data)
+        # Add submit in name for saving
+        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
+
     # Get scoring
     scoring = config.get_scoring()
     if scoring:
@@ -90,7 +98,6 @@ def main(config, wandb_on=True):
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
-
     epochs = 10
     offset = random.random() / 5
     for epoch in range(2, epochs):

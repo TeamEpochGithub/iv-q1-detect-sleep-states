@@ -33,7 +33,7 @@ class AddStateLabels(PP):
             # Save the current series to the data
             current_series = self.get_train_series(data, events_copy, id)
             # this is needed because pandas is stupid
-            awake_arr = current_series['awake'].to_numpy()            
+            awake_arr = current_series['awake'].to_numpy()      
             # update the data awake column with the current series awake column
             data.loc[data['series_id'] == id, 'awake'] = awake_arr
 

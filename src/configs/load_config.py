@@ -7,10 +7,13 @@ from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
+from ..preprocessing.add_state_labels import AddStateLabels
+
 # Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.mean import Mean
+
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -58,6 +61,8 @@ class ConfigLoader:
                     self.pp_steps.append(SplitWindows())
                 case "convert_datetime":
                     self.pp_steps.append(ConvertDatetime())
+                case "add_state_labels":
+                    self.pp_steps.append(AddStateLabels())
                 case _:
                     raise ConfigException("Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]

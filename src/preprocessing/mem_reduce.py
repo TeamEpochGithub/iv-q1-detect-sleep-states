@@ -17,8 +17,9 @@ class MemReduce(PP):
         # so we can decode it later
         data = pl.from_pandas(data)
         data = data.with_columns(pl.col("timestamp").str.slice(0, 18).alias("datetime"))
-        data = data.with_columns(pl.col("timestamp").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
+        data = data.with_columns(pl.col("datetime").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
         # remove the timestamp column
+        data.drop("timestamp")
         data = data.to_pandas()
         encoding = dict(zip(data['series_id'].unique(), range(len(data['series_id'].unique()))))
         with open('series_id_encoding.json', 'w') as f:

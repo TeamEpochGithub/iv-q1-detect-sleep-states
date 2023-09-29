@@ -17,26 +17,25 @@ class AddStateLabels(PP):
         events_copy = events.copy()
         events_copy.dropna(inplace=True)
         # This part does some needed pp for getting the NaN series
-        series_has_NaN = events.groupby('series_id')['step'].apply(lambda x: x.isnull().any())
-        series_has_NaN.value_counts()
-        df_has_NaN = series_has_NaN.to_frame()
+        series_has_nan = events.groupby('series_id')['step'].apply(lambda x: x.isnull().any())
+        series_has_nan.value_counts()
+        df_has_NaN = series_has_nan.to_frame()
         df_has_NaN.reset_index(inplace=True)
 
         # this finds the series ids without NaN
-        notNaN = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
+        not_nan = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
+        # The series that do not have Nans but have missing labels at the end
         weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
         # Firstly we loop with the series without NaN
 
-        for i, id in tqdm(enumerate(notNaN)):
+        for i, id in tqdm(enumerate(not_nan)):
             # Get the current series
             # Save the current series to the data
             current_series = self.get_train_series(data, events_copy, id)
             # this is needed because pandas is stupid
-            awake_arr = current_series['awake'].to_numpy()
-            # data = data.set_index('step')
+            awake_arr = current_series['awake'].to_numpy()            
             # update the data awake column with the current series awake column
             data.loc[data['series_id'] == id, 'awake'] = awake_arr
-            print(data.loc[data['series_id'] == id, 'awake'].unique())
 
         # after handling the series without NaN we handle the weird cases
         # and add 2s for the awake labels
@@ -63,7 +62,6 @@ class AddStateLabels(PP):
             current_series = self.get_nan_train_series(current_series, nan_events, id)
 
             data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN']
-            print(i/len(events['series_id'].unique())*100, '% done')
             current_series = self.get_train_series(current_series, events, id)
             current_series.loc[current_series['NaN'] == 1, 'awake'] = 2
 
@@ -93,7 +91,7 @@ class AddStateLabels(PP):
         train.loc[mask, "NaN"] = 1
         train.loc[~mask, "NaN"] = 0
         train["NaN"] = train["NaN"].astype("int")
-        return (train)
+        return train
 
     # This is copied over from EDA-Hugo
     def get_train_series(self, train_series, train_events, series):
@@ -115,4 +113,4 @@ class AddStateLabels(PP):
         train['awake'] = train['awake'].fillna(1)  # awake
         train["awake"] = train["awake"].astype("int")
 
-        return (train)
+        return train

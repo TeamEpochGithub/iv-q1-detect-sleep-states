@@ -1,5 +1,4 @@
-from ..loss.loss import Loss
-from ..models.model import Model, ModelException
+from ..models.model import Model
 from ..util.state_to_event import find_events
 
 
@@ -24,16 +23,9 @@ class ClassicBaseModel(Model):
         :return:
         """
 
-        # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss"]
-        for req in required:
-            if req not in config:
-                raise ModelException("Config is missing required parameter: " + req)
-
         # Get default_config
         default_config = self.get_default_config()
 
-        config["loss"] = Loss.get_loss(config["loss"])
         config["median_window"] = config.get("median_window", default_config["median_window"])
         config["threshold"] = config.get("threshold", default_config["threshold"])
         self.config = config

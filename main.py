@@ -42,9 +42,7 @@ def main(config, wandb_on=True):
     for i, fe_step in enumerate(fe_steps):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
-        feature = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-        # Add feature to featured_data
-        featured_data = pd.concat([featured_data, feature], axis=1)
+        featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
 
     print(featured_data.head())
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
@@ -53,21 +51,14 @@ def main(config, wandb_on=True):
     models = config.get_models()
 
     # Get saved models directory from config
-    store_location = config.get_model_store_loc()
+    # store_location = config.get_model_store_loc()
 
     # TODO Add crossvalidation to models #107
-    for model in models:
-        models[model].train(featured_data)
-        models[model].save(store_location + "/" + model + ".pt")
-
-    print(models)
-
-    # Initialize ensemble
-    #    ensemble = config.get_ensemble(models)
+    ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
 
-    # ensemble.pred(featured_data)
+    ensemble.pred(featured_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67

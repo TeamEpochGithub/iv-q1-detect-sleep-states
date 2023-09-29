@@ -2,6 +2,7 @@
 
 # Imports
 import numpy as np
+import pandas as pd
 
 
 class Ensemble:
@@ -18,12 +19,22 @@ class Ensemble:
         else:
             self.weight_matrix = weight_matrix
 
-    def pred(self, data):
+    def pred(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        :param data: complete dataset with engineered features
+        :return: numpy array with per every day one tuple of onset and awake
+        """
+
         print("Predicting with ensemble")
         # Run each model
         predictions = []
         for model in self.models:
-            predictions.append(model.pred(data))
+            # group data by series_id, apply model.pred to each group, and get the output pairs
+            model_pred = (data.groupby('series_id').apply(model.pred).reset_index(0, drop=True))
+
+            # split the series of tuples into two columns
+            model_pred = pd.DataFrame(model_pred.to_list(), columns=['onset', 'awake'])
+            predictions.append(model_pred)
 
         # Weight the predictions
         predictions = np.array(predictions)

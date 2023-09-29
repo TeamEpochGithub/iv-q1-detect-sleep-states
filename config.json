@@ -2,6 +2,7 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "add_state_labels",
         "split_windows"
     ],
     "processed_loc_out": "data/processed",
@@ -22,6 +23,10 @@
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
+    "pre_training": {
+        "cv": 5,
+        "standardize": "standard_scaler"
+    },
     "models": {
         "ExampleModel": {
             "type": "example-fc-model",
@@ -47,5 +52,6 @@
         "apply": true,
         "method": "example_cv"
     },
+    "train_for_submission": false,
     "scoring": true
 }

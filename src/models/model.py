@@ -53,6 +53,13 @@ class Model:
         """
         pass
 
+    def get_type(self):
+        """
+        Get type function for the model. This function should be overwritten by the user.
+        :return:
+        """
+        pass
+
 
 class ModelException(Exception):
     """

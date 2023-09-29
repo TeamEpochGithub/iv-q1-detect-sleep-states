@@ -10,10 +10,8 @@ import wandb
 config = None
 
 
-def main(config, wandb_on=True):
-    # Initialize the path used for checking
-    # If pp already exists
-    print(config)
+def main(config: ConfigLoader):
+
     # Initialize wandb
     if config.get_log_to_wandb():
         # Initialize wandb
@@ -24,8 +22,8 @@ def main(config, wandb_on=True):
         )
     else:
         print("Not logging to wandb.")
-    # Do training here
 
+    # Do training here
     df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
 
     # Initialize preprocessing steps
@@ -43,8 +41,7 @@ def main(config, wandb_on=True):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
         featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-
-    print(featured_data.head())
+        
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
 
     # Initialize models
@@ -99,7 +96,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Train model
-    main(config, False)
+    main(config)
 
     # Create submission
     submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)

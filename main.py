@@ -51,7 +51,7 @@ def main(config, wandb_on=True):
     models = config.get_models()
 
     # Get saved models directory from config
-    # store_location = config.get_model_store_loc()
+    store_location = config.get_model_store_loc()
 
     # TODO Add crossvalidation to models #107
     ensemble = config.get_ensemble(models)
@@ -70,6 +70,14 @@ def main(config, wandb_on=True):
     # Initialize CV
     cv = config.get_cv()
     cv.run()
+
+    # Train model fully on all data
+    # TODO Mark best model from CV/HPO and train it on all data
+    if config.get_train_for_submission():
+        best_model = None
+        best_model.train(featured_data)
+        # Add submit in name for saving
+        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
 
     # Get scoring
     scoring = config.get_scoring()

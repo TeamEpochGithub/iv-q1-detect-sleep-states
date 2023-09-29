@@ -192,6 +192,10 @@ class ConfigLoader:
 
         return cv_class
 
+    # Function to retrieve train for submission
+    def get_train_for_submission(self):
+        return self.config["train_for_submission"]
+
     # Function to retrieve scoring
     def get_scoring(self):
         return self.config["scoring"]

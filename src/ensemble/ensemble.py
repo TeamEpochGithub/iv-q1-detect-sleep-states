@@ -30,7 +30,9 @@ class Ensemble:
         predictions = []
         for model in self.models:
             # group data by series_id, apply model.pred to each group, and get the output pairs
-            model_pred = (data.groupby('series_id').apply(model.pred).reset_index(0, drop=True))
+            model_pred = (data
+                          .groupby(['series_id', 'window'])
+                          .apply(model.pred).reset_index(0, drop=True))
 
             # split the series of tuples into two columns
             model_pred = pd.DataFrame(model_pred.to_list(), columns=['onset', 'awake'])

@@ -1,6 +1,5 @@
 import pandas as pd
 from src.preprocessing.pp import PP
-import matplotlib.pyplot as plt
 
 
 class SplitWindows(PP):

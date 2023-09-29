@@ -41,7 +41,7 @@ def main(config: ConfigLoader):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
         featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-        
+
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
 
     # Initialize models

@@ -4,7 +4,7 @@ import torch.nn as nn
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-
+from ..logger.logger import logger
 
 class ExampleModel(Model):
     """

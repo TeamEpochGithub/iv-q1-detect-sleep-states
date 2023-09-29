@@ -1,20 +1,20 @@
 # This file does the training of the model
 
+import random
+
 # Imports
 import pandas as pd
-from src.configs.load_config import ConfigLoader
+
 import submit_to_kaggle
-import random
 import wandb
+from src.configs.load_config import ConfigLoader
+from src.logger.logger import logger
 
-# Load config file
-config = None
 
+def main(config: ConfigLoader):
 
-def main(config, wandb_on=True):
-    # Initialize the path used for checking
-    # If pp already exists
-    print(config)
+    logger.info("Start of main.")
+
     # Initialize wandb
     if config.get_log_to_wandb():
         # Initialize wandb
@@ -117,8 +117,8 @@ if __name__ == "__main__":
     # Load config file
     config = ConfigLoader("config.json")
 
-    # Train model
-    main(config, False)
+    # Run main
+    main(config)
 
-    # Create submission
+    # Create submission (predict on test data)
     submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)

@@ -8,8 +8,8 @@ def find_events(pred: np.ndarray):
      """
     pred = np.clip(pred, 0, 1)  # TODO: make this work for non-wear
     transition = np.diff(np.round(pred))
-    onsets = np.where(transition == -1)
-    awakes = np.where(transition == 1)
+    onsets = np.where(transition == -1)[0]
+    awakes = np.where(transition == 1)[0]
 
     # TODO: make this work for a single onset or a single awake
     if np.size(onsets) == 0 or np.size(awakes) == 0:
@@ -23,6 +23,8 @@ def find_events(pred: np.ndarray):
 
     # return the best combination with argmax
     best_o, best_a = np.unravel_index(scores.argmax(), scores.shape)
+    if np.max(scores.flat) == 0:
+        return np.nan, np.nan
     return onsets[best_o], awakes[best_a]
 
 

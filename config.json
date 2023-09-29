@@ -2,6 +2,7 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "add_state_labels",
         "split_windows"
     ],
     "processed_loc_out": "data/processed",
@@ -10,24 +11,20 @@
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
-    "pretraining": {
-        "apply": true,
+    "pre_training": {
+        "cv": 5,
         "test_size": 0.2,
-        "standardization": true
+        "standardize": "standard_scaler"
     },
     "models": {
-        "ExampleModel": {
-            "type": "example-fc-model",
-            "epochs": 20,
-            "batch_size": 32,
-            "loss": "mae-torch",
-            "optimizer": "adam-torch"
+        "ClassicModel": {
+            "type": "classic-base-model"
         }
 
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ExampleModel"],
+        "models": ["ClassicModel"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -40,5 +37,6 @@
         "apply": true,
         "method": "example_cv"
     },
+    "train_for_submission": false,
     "scoring": true
 }

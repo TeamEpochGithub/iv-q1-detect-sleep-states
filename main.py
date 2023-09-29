@@ -4,7 +4,6 @@
 import pandas as pd
 from src.configs.load_config import ConfigLoader
 import submit_to_kaggle
-import random
 import wandb
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 
@@ -13,9 +12,6 @@ config = None
 
 
 def main(config: ConfigLoader):
-    # Initialize the path used for checking
-    # If pp already exists
-    print(config)
     # Initialize wandb
     if config.get_log_to_wandb():
         # Initialize wandb
@@ -26,9 +22,9 @@ def main(config: ConfigLoader):
         )
     else:
         print("Not logging to wandb.")
-    
+
     # Do training here
-    df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
+    df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
 
     # Initialize preprocessing steps
     pp_steps, pp_s = config.get_pp_steps()
@@ -45,8 +41,6 @@ def main(config: ConfigLoader):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
         featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-        # Add feature to featured_data
-        # featured_data = pd.concat([featured_data, feature], axis=1)
 
     # Pretrain processstep (splitting data into train and test, standardization, etc.)
     print("-------- PRETRAINING ----------")
@@ -79,18 +73,11 @@ def main(config: ConfigLoader):
     store_location = config.get_model_store_loc()
 
     # TODO Add crossvalidation to models #107
-    for model in models:
-        models[model].train(featured_data)
-        models[model].save(store_location + "/" + model + ".pt")
-
-    print(models)
-
-    # Initialize ensemble
-    #    ensemble = config.get_ensemble(models)
+    ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
 
-    # ensemble.pred(featured_data)
+    ensemble.pred(featured_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
@@ -103,6 +90,14 @@ def main(config: ConfigLoader):
     cv = config.get_cv()
     cv.run()
 
+    # Train model fully on all data
+    # TODO Mark best model from CV/HPO and train it on all data
+    if config.get_train_for_submission():
+        best_model = None
+        best_model.train(featured_data)
+        # Add submit in name for saving
+        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
+
     # Get scoring
     scoring = config.get_scoring()
     if scoring:
@@ -112,16 +107,6 @@ def main(config: ConfigLoader):
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
-
-    epochs = 10
-    offset = random.random() / 5
-    for epoch in range(2, epochs):
-        acc = 1 - 2 ** -epoch - random.random() / epoch - offset
-        loss = 2 ** -epoch + random.random() / epoch + offset
-
-        # log metrics to wandb
-        if config.get_log_to_wandb():
-            wandb.log({"acc": acc, "loss": loss})
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():

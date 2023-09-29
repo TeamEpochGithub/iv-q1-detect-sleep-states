@@ -1,7 +1,7 @@
 {
     "name": "config",
     "log_to_wandb": false,
-    "preprocessing": ["convert_datetime"],
+    "preprocessing": ["add_state_labels"],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
@@ -20,6 +20,7 @@
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
+
     "models": {
         "ExampleModel": {
             "type": "example-fc-model",

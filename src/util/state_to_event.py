@@ -12,7 +12,7 @@ def find_events(pred: np.ndarray):
     awakes = np.where(transition == 1)
 
     # TODO: make this work for a single onset or a single awake
-    if len(onsets) == 0 or len(awakes) == 0:
+    if np.size(onsets) == 0 or np.size(awakes) == 0:
         return np.nan, np.nan
 
     # iterate through every (valid) combination of onset and awake

@@ -1,7 +1,7 @@
 {
     "name": "config",
     "log_to_wandb": false,
-    "preprocessing": ["add_state_labels"],
+    "preprocessing": ["mem_reduce"],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {

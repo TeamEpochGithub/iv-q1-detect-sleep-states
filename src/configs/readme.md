@@ -14,15 +14,17 @@
 
 ### Preprocessing steps
 
-These steps are executed in the order placed in the directionary
+These steps are executed in the order placed in the dictionary
 
 ```
 "preprocessing": ["pp1", "pp2"]
 ```
 
 List of options:
-- pp1
-- pp2
+- add_noise
+- convert_datetime
+- split_windows (currently 24h hardcoded)
+
 
 ### Preprocessing data location
 <p>
@@ -42,12 +44,25 @@ Features that should be included during training and submission
 
 
 ``` 
-"feature_engineering": ["fe1", "fe2"]
+"feature_engineering": {
+    "fe1": {
+        "window_sizes": [5, 10],
+        "features": ["enmo", "anglez"]
+    },
+    "fe2": {}
+    }
 ```
 
-List of options
-- fe1
-- fe2
+List of options and their config options
+- "kurtosis"
+    - "window_sizes": x > 3
+    - "features": Any existing numerical features
+- "mean"
+    - "window_sizes": x > 3
+    - "features": Any existing numerical features
+- "skewness"
+    - "window_sizes": x > 3
+    - "features": Any existing numerical features
 
 ### Feature engineering data location
 <p>
@@ -60,10 +75,29 @@ Location in: Data needed by feature engineering is stored in this location
 "fe_loc_in": "./data/processed"
 ```
 
-### Models
+### Pre-training step
 
+This step includes preparing the data for inputting in the model.
+List of options and their config options
+- "cv": > 0 (number of folds)
+- "train_test_split": > 0 (percentage of data to be used for training)
+- "standardize": method used for standardization
+    - "minmax"
+    - "standard"
+
+You are not able to select cv and train_test_split at the same time.
+
+Example:
+```
+"pre_training": {
+    "cv": 5,
+    "standardize": "standard_scaler"
+}
+```
+
+### Models
 A list of models and their specified configurations are included here. Multiple can be entered as this allows for the creation of ensembles. Additionally, the location they should be stored is included.
- 
+These models should either be a statistical, regression or state_prediction model that predicts the current timestep
 ``` 
 "models": {
     "model1name": {
@@ -75,39 +109,38 @@ A list of models and their specified configurations are included here. Multiple 
 }
 ```
 
-#### Implemented Models and config options
+#### Implemented Models types and config options
+It should 
+- example-fc-model
+    - epochs (required)
+    - loss (required)
+    - optimizer (required)
+    - lr
+    - batch_size
 
-- LSTM
-    - Epochs (10 < x < 100)
-    - patch_size
-    - layers
-- Transformer
-    - epochs
-    - patch_size
-    - encoder_layers
-    - decoder_layers
 
-Example of an LSTM model configuration
+Example of an example-fc-model configuration:
 
 ```
-"type1LSTM": {
-    "type": "LSTM",
-    "epochs": 100,
-    "patch_size": 8,
-    "layers": 5,
+"ExampleModel": {
+    "type": "example-fc-model",
+    "epochs": 20,
+    "batch_size": 32,
+    "loss": "mae-torch",
+    "optimizer": "adam-torch"
 }
 ```
 
 ### Model store location
-
-Specify location where models should be stored
-
+Specify location where models should be stored, furthermore, the config should be stored together 
 ```
 "model_store_loc": "./tm",
 ```
 
 
 ### Ensemble
+
+For now, we support just an ensemble of 1 function.
 
 Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined
 
@@ -125,17 +158,22 @@ Combination methods
 
 ### Loss
 
-Loss function to use for models
-
+Current loss functions that are implemented. Returns a LossException if a loss function has not been found.
+Example:
 ```
-    "loss": "MSE"
+    "loss": "mse-torch"
 ```
 
 Options
-- MSE
-- MAE
+- "mse-torch"
+- "mae-torch"
+- "crossentropy-torch"
+- "binarycrossentropy-torch"
 
 ### Hyperparameter optimization
+Is going to implemented in the future, the plan is to automatically detect if multiple model values are given, and then applying a hyperparameter optimization.
+
+
 
 Specification for what to do for hyperparameter optimization
 
@@ -150,19 +188,7 @@ Options
 - hpo1
 - hpo2
 
-### Cross validation
 
-Choose specification for the cross validation and whether to do it or not
-
-```
-"cv": {
-    "apply": true | false,
-    "method": "stratifiedkfold
-}
-```
-
-Cross validation options
-- StratifiedKFold
 
 ### Scoring
 
@@ -170,4 +196,10 @@ Choose whether to do the scoring and show plots
 
 ```
 "scoring": True | False
+```
+
+### Train for submission
+Once we have a model that we want to use for submission, we can train it on all the data we have available. This is done by setting the following to true:
+```
+"train_for_submission": True
 ```

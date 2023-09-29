@@ -1,32 +1,48 @@
 {
     "name": "config",
-    "preprocessing": ["split_windows"],
+    "log_to_wandb": false,
+    "preprocessing": [
+        "split_windows"
+    ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
-    "feature_engineering": [],
+    "feature_engineering": {
+        "kurtosis": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        "skewness": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        "mean": {
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        }
+    },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
+    "pre_training": {
+        "cv": 5,
+        "standardize": "standard_scaler"
+    },
     "models": {
-        "model1name": {
-            "type": "example_model",
-            "epochs": 100,
-            "patch_size": 8,
-            "layers": 5
-        },
-        "model2name": {
-            "type": "example_model",
-            "epochs": 100,
-            "patch_size": 8,
-            "layers": 5
+        "ExampleModel": {
+            "type": "example-fc-model",
+            "epochs": 20,
+            "batch_size": 32,
+            "loss": "mae-torch",
+            "optimizer": "adam-torch"
         }
+
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["model1name", "model2name"],
-        "weights": [1, 2],
+        "models": ["ExampleModel"],
+        "weights": [1],
         "comb_method": "addition"
     },
-    "loss": "example_loss",
+    "ensemble_loss": "mse-torch",
     "hpo": {
         "apply": true,
         "method": "example_hpo"
@@ -35,5 +51,6 @@
         "apply": true,
         "method": "example_cv"
     },
+    "train_for_submission": false,
     "scoring": true
 }

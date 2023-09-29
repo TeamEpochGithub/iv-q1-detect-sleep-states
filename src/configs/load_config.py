@@ -1,15 +1,19 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
+
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
-from ..feature_engineering.cumsum_accel import cumsum_accel
 from ..preprocessing.add_state_labels import AddStateLabels
+
 # Feature engineering imports
-from ..feature_engineering.example_feature_engineering import ExampleFeatureEngineering
+from ..feature_engineering.kurtosis import Kurtosis
+from ..feature_engineering.skewness import Skewness
+from ..feature_engineering.mean import Mean
+
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -41,6 +45,9 @@ class ConfigLoader:
     def get_config(self):
         return self.config
 
+    def get_model_store_loc(self):
+        return self.config["model_store_loc"]
+
     # Function to retrieve preprocessing steps
     def get_pp_steps(self):
         self.pp_steps = []
@@ -70,18 +77,41 @@ class ConfigLoader:
 
     # Function to retrieve feature engineering classes from feature engineering folder
     def get_features(self):
-        self.fe_steps = {}
+        fe_steps = {}
+        fe_s = []
         for fe_step in self.config["feature_engineering"]:
-            if fe_step == "example_feature_engineering":
-                self.fe_steps["example_feature_engineering"] = ExampleFeatureEngineering(
-                )
-            elif fe_step == "cumsum_accel":
-                self.fe_steps["cumsum_accel"] = cumsum_accel()
+            if fe_step == "kurtosis":
+                fe_steps["kurtosis"] = Kurtosis(self.config["feature_engineering"]["kurtosis"])
+                window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
+                window_sizes.sort()
+                window_sizes = str(window_sizes).replace(" ", "")
+                features = self.config["feature_engineering"]["kurtosis"]["features"]
+                features.sort()
+                features = str(features).replace(" ", "")
+                fe_s.append(fe_step + features + window_sizes)
+            elif fe_step == "skewness":
+                fe_steps["skewness"] = Skewness(self.config["feature_engineering"]["skewness"])
+                window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
+                window_sizes.sort()
+                window_sizes = str(window_sizes).replace(" ", "")
+                features = self.config["feature_engineering"]["skewness"]["features"]
+                features.sort()
+                features = str(features).replace(" ", "")
+                fe_s.append(fe_step + features + window_sizes)
+            elif fe_step == "mean":
+                fe_steps["mean"] = Mean(self.config["feature_engineering"]["mean"])
+                window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
+                window_sizes.sort()
+                window_sizes = str(window_sizes).replace(" ", "")
+                features = self.config["feature_engineering"]["mean"]["features"]
+                features.sort()
+                features = str(features).replace(" ", "")
+                fe_s.append(fe_step + features + window_sizes)
             else:
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
-        return self.fe_steps, self.config["feature_engineering"]
+        return fe_steps, fe_s
 
     # Function to retrieve feature engineering data location out path
     def get_fe_out(self):
@@ -91,6 +121,9 @@ class ConfigLoader:
     def get_fe_in(self):
         return self.config["fe_loc_in"]
 
+    def get_log_to_wandb(self):
+        return self.config["log_to_wandb"]
+
     # Function to retrieve model data
     def get_models(self):
         # Loop through models
@@ -98,7 +131,7 @@ class ConfigLoader:
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None
-            if model_config["type"] == "example_model":
+            if model_config["type"] == "example-fc-model":
                 curr_model = ExampleModel(model_config)
             else:
                 raise ConfigException(
@@ -109,25 +142,32 @@ class ConfigLoader:
         return self.models
 
     # Function to retrieve ensemble data
-    def get_ensemble(self):
+    def get_ensemble(self, models):
+
+        curr_models = []
         # If length of weights and models is not equal, raise exception
         if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
             raise ConfigException(
                 "Length of weights and models is not equal")
 
+        if len(models) < len(self.config["ensemble"]["models"]):
+            raise ConfigException("You cannot have more ensembles than models.")
+
+        for model_name in self.config["ensemble"]["models"]:
+            if model_name not in models:
+                raise ConfigException(f"Model {model_name} not found in models.")
+            curr_models.append(models[model_name])
+
         # Create ensemble
-        ensemble = Ensemble(
-            [self.models[x] for x in self.config["ensemble"]["models"]],
-            self.config["ensemble"]["weights"],
-            self.config["ensemble"]["comb_method"])
+        ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
 
     # Function to retrieve loss function
-    def get_loss(self):
+    def get_ensemble_loss(self):
         loss_class = None
-        if self.config["loss"] == "example_loss":
-            loss_class = Loss()
+        if self.config["ensemble_loss"] == "example_loss":
+            loss_class = Loss().get_loss("example_loss")
         else:
             raise ConfigException("Loss function not found: " +
                                   self.config["loss"])
@@ -155,6 +195,10 @@ class ConfigLoader:
                                   self.config["cv"]["method"])
 
         return cv_class
+
+    # Function to retrieve train for submission
+    def get_train_for_submission(self):
+        return self.config["train_for_submission"]
 
     # Function to retrieve scoring
     def get_scoring(self):

@@ -4,9 +4,9 @@ import pandas as pd
 
 
 class FE:
-    def __init__(self):
+    def __init__(self, config):
         # Init function
-        pass
+        self.config = config
 
     def fe(self, data):
         # Feature engineering function

@@ -13,7 +13,7 @@ class MyTestCase(unittest.TestCase):
         start_time = pd.Timestamp(year=2023, month=1, day=1, hour=14)  # start 1 hour too early
         end_time = start_time + pd.Timedelta(days=2)  # Add 1.5 days to the start time
         timestamps = pd.date_range(start=start_time, end=end_time, freq='5S')
-        df = pd.DataFrame({'timestamp': timestamps, 'series_id': np.zeros(len(timestamps))})
+        df = pd.DataFrame({'timestamp': timestamps, 'series_id': np.zeros(len(timestamps)), 'step': np.zeros(len(timestamps))})
 
         # define expected window boundaries
         window_1_start = int(60 * 60 / 5)

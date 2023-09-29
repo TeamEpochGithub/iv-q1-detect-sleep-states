@@ -1,19 +1,18 @@
-# This file does the training of the model
-
 import random
 
-# Imports
 import pandas as pd
 
 import submit_to_kaggle
 import wandb
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
+from src.util.printing_utils import print_section_separator
 
 
 def main(config: ConfigLoader):
+    logger.info("Start of new main run")
 
-    logger.info("Start of main.")
+    print_section_separator("Test", spacing=1)
 
     # Initialize wandb
     if config.get_log_to_wandb():

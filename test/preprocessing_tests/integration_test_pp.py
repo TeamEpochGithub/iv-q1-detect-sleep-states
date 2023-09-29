@@ -2,8 +2,6 @@
 from src.configs.load_config import ConfigLoader
 import time
 import pandas as pd
-from pandarallel import pandarallel
-pandarallel.initialize(progress_bar=True)
 
 
 if __name__ == "__main__":

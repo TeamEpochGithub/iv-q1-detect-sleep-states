@@ -71,7 +71,7 @@ class SplitWindows(PP):
                                    'anglez': [0] * (-index_start - 1),
                                    'step': [group['step'].iloc[0] - i for i in range(1, -index_start)],
                                    'series_id': [group['series_id'].iloc[0]] * (-index_start - 1),
-                                   'awake': [0] * (-index_start - 1)
+                                   'awake': [2] * (-index_start - 1)
                                    })
             # Sort dataframe by step
             pad_df = pad_df.sort_values('step')
@@ -96,7 +96,7 @@ class SplitWindows(PP):
                                    'anglez': [0] * (-index_end - 1),
                                    'step': [group['step'].iloc[-1] + i for i in range(1, -index_end)],
                                    'series_id': [group['series_id'].iloc[-1]] * (-index_end - 1),
-                                   'awake': [0] * (-index_end - 1)
+                                   'awake': [2] * (-index_end - 1)
                                    })
             # Sort dataframe by step
             pad_df = pad_df.sort_values('step')
@@ -108,7 +108,7 @@ class SplitWindows(PP):
                                    'anglez': [0] * (-index_end - 1),
                                    'step': [group['step'].iloc[-1] + i for i in range(1, -index_end)],
                                    'series_id': [group['series_id'].iloc[-1]] * (-index_end - 1),
-                                   'awake': [0] * (-index_end - 1)
+                                   'awake': [2] * (-index_end - 1)
                                    })
             # Sort dataframe by step
             pad_df = pad_df.sort_values('step')

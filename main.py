@@ -4,7 +4,6 @@
 import pandas as pd
 from src.configs.load_config import ConfigLoader
 import submit_to_kaggle
-import random
 import wandb
 
 # Load config file

@@ -1,9 +1,5 @@
-import torch
-import torch.nn as nn
-
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
-from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import find_events
 
 
@@ -58,7 +54,7 @@ class ClassicBaseModel(Model):
 
         # Get hyperparameters from config (epochs, lr, optimizer)
         print("----------------")
-        print(f"Training classic baseline model not needed")
+        print("Training classic baseline model not needed")
         print("----------------")
 
     def pred(self, data):

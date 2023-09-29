@@ -159,6 +159,7 @@ class ConfigLoader:
 
         return ensemble
     # Function to retrieve loss function
+
     def get_ensemble_loss(self):
         loss_class = None
         if self.config["ensemble_loss"] == "example_loss":

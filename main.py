@@ -4,7 +4,6 @@
 import pandas as pd
 from src.configs.load_config import ConfigLoader
 import submit_to_kaggle
-import random
 import wandb
 
 # Load config file
@@ -44,8 +43,6 @@ def main(config, wandb_on=True):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
         featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-        # Add feature to featured_data
-        # featured_data = pd.concat([featured_data, feature], axis=1)
 
     print(featured_data.head())
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
@@ -57,18 +54,11 @@ def main(config, wandb_on=True):
     store_location = config.get_model_store_loc()
 
     # TODO Add crossvalidation to models #107
-    for model in models:
-        models[model].train(featured_data)
-        models[model].save(store_location + "/" + model + ".pt")
-
-    print(models)
-
-    # Initialize ensemble
-    #    ensemble = config.get_ensemble(models)
+    ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
 
-    # ensemble.pred(featured_data)
+    ensemble.pred(featured_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
@@ -98,15 +88,6 @@ def main(config, wandb_on=True):
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
-    epochs = 10
-    offset = random.random() / 5
-    for epoch in range(2, epochs):
-        acc = 1 - 2 ** -epoch - random.random() / epoch - offset
-        loss = 2 ** -epoch + random.random() / epoch + offset
-
-        # log metrics to wandb
-        if config.get_log_to_wandb():
-            wandb.log({"acc": acc, "loss": loss})
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():

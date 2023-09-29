@@ -1,7 +1,7 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
-
+from ..models.classicbasemodel import ClassicBaseModel
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
@@ -131,12 +131,13 @@ class ConfigLoader:
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None
-            if model_config["type"] == "example-fc-model":
-                curr_model = ExampleModel(model_config)
-            else:
-                raise ConfigException(
-                    "Model not found: " + model_config["type"])
-
+            match model_config["type"]:
+                case "example-fc-model":
+                    curr_model = ExampleModel(model_config)
+                case "classic-base-model":
+                    curr_model = ClassicBaseModel(model_config)
+                case _:
+                    raise ConfigException("Model not found: " + model_config["type"])
             self.models[model] = curr_model
 
         return self.models
@@ -162,8 +163,8 @@ class ConfigLoader:
         ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
-
     # Function to retrieve loss function
+
     def get_ensemble_loss(self):
         loss_class = None
         if self.config["ensemble_loss"] == "example_loss":

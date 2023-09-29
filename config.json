@@ -2,6 +2,7 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "add_state_labels",
         "split_windows"
     ],
     "processed_loc_out": "data/processed",

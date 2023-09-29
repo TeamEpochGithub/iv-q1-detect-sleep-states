@@ -9,7 +9,7 @@ from tqdm import tqdm
 class AddStateLabels(PP):
 
     def preprocess(self, data):
-        # initialize the columns
+        # Initialize the columns
         data['NaN'] = 0
         data['awake'] = 0
         # Read the events dataframe
@@ -17,27 +17,29 @@ class AddStateLabels(PP):
         events_copy = events.copy()
         events_copy.dropna(inplace=True)
         # This part does some needed pp for getting the NaN series
-        series_has_nan = events.groupby('series_id')['step'].apply(lambda x: x.isnull().any())
+        series_has_nan = events.groupby(
+            'series_id')['step'].apply(lambda x: x.isnull().any())
         series_has_nan.value_counts()
         df_has_NaN = series_has_nan.to_frame()
         df_has_NaN.reset_index(inplace=True)
 
-        # this finds the series ids without NaN
+        # Finds series ids without NaN
         not_nan = df_has_NaN.loc[df_has_NaN.step == 0]["series_id"].to_list()
         # The series that do not have Nans but have missing labels at the end
-        weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
-        # Firstly we loop with the series without NaN
+        weird_series = ["0cfc06c129cc", "31011ade7c0a",
+                        "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
 
+        # Firstly we loop with the series without NaN
         for i, id in tqdm(enumerate(not_nan)):
             # Get the current series
             # Save the current series to the data
             current_series = self.get_train_series(data, events_copy, id)
             # this is needed because pandas is stupid
-            awake_arr = current_series['awake'].to_numpy()      
+            awake_arr = current_series['awake'].to_numpy()
             # update the data awake column with the current series awake column
             data.loc[data['series_id'] == id, 'awake'] = awake_arr
 
-        # after handling the series without NaN we handle the weird cases
+        # After handling the series without NaN we handle the weird cases
         # and add 2s for the awake labels
         for i, id in tqdm(enumerate(weird_series)):
             # get the events with the current series id
@@ -45,7 +47,8 @@ class AddStateLabels(PP):
             # get the last item of the current events
             last_event = current_events.tail(1)
             # set awake of current series to 2 for all rows after last_event
-            data.loc[(data['series_id'] == id) & (data['step'] > last_event['step'].values[0]), 'awake'] = 2
+            data.loc[(data['series_id'] == id) & (data['step'] >
+                                                  last_event['step'].values[0]), 'awake'] = 2
 
         # magic code i copied from EDA-Hugo to do the NaN stuff
         df_filled = events.copy()
@@ -61,13 +64,15 @@ class AddStateLabels(PP):
         for i, id in tqdm(enumerate(nan_series)):
             # Get the current series
             current_series = data[data['series_id'] == id]
-            current_series = self.get_nan_train_series(current_series, nan_events, id)
+            current_series = self.get_nan_train_series(
+                current_series, nan_events, id)
 
             data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN']
             current_series = self.get_train_series(current_series, events, id)
             current_series.loc[current_series['NaN'] == 1, 'awake'] = 2
 
-            data.loc[data['series_id'] == id, 'awake'] = current_series['awake']
+            data.loc[data['series_id'] == id,
+                     'awake'] = current_series['awake']
 
         if 'NaN' in data.columns:
             data.drop(columns=['NaN'], inplace=True)
@@ -78,8 +83,10 @@ class AddStateLabels(PP):
         current_events = train_events[train_events["series_id"] == series].copy(
         )
 
-        current_events["pseudo-NaN"] = current_events["event"].replace({"onset": 1, "wakeup": 0})
-        train = pd.merge(current_series, current_events[['step', 'pseudo-NaN']], on='step', how='left')
+        current_events["pseudo-NaN"] = current_events["event"].replace(
+            {"onset": 1, "wakeup": 0})
+        train = pd.merge(current_series, current_events[[
+                         'step', 'pseudo-NaN']], on='step', how='left')
 
         # Set before filling so setup pseudo-NaN / sleeps
         train["pseudo-NaN"] = train["pseudo-NaN"].bfill(axis='rows')

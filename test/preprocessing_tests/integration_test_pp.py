@@ -12,7 +12,7 @@ if __name__ == "__main__":
     df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print(f"Elapsed time for reading 32float parquet: {elapsed_time:.6f} seconds")     
+    print(f"Elapsed time for reading 32float parquet: {elapsed_time:.6f} seconds")
     print('memory usage before:')
     print(df.memory_usage(deep=True).sum()/(1024*1024))
     # Print the elapsed time

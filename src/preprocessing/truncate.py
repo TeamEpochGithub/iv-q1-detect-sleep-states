@@ -1,5 +1,6 @@
 import pandas as pd
 from src.preprocessing.pp import PP, PPException
+from ..logger.logger import logger
 
 
 class Truncate(PP):
@@ -17,11 +18,13 @@ class Truncate(PP):
         :raises PPException: If AddStateLabels wasn't used before
         """
         if "awake" not in data.columns:
+            logger.critical("No awake column. Did you run AddStateLabels before?")
             raise PPException("No awake column. Did you run AddStateLabels before?")
 
         # Truncate does not work with windowing yet
         if "window" in data.columns:
+            logger.critical("Truncate does not work with windowing yet")
             raise NotImplementedError()
 
-        last_index: int = data[(data["awake"] != 2)].last_valid_index()
-        return data.truncate(after=last_index)
+        logger.info("------ Truncating data without windowing")
+        return data.groupby("series_id").apply(lambda x: x.truncate(after=x[(x["awake"] != 2)].last_valid_index()))

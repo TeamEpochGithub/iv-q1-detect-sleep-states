@@ -3,7 +3,8 @@
     "log_to_wandb": false,
     "preprocessing": [
         "add_state_labels",
-        "split_windows"
+        "split_windows",
+        "remove_unlabeled"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",

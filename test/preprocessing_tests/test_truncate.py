@@ -32,7 +32,7 @@ class TestTruncate(TestCase):
 
     def test_truncate(self) -> None:
         df = pd.DataFrame({
-            "series_id": np.repeat("test", 20),
+            "series_id": np.concatenate((np.repeat("test0", 6), np.repeat("test1", 14))),
             "step": range(20),
             "timestamp": pd.date_range(datetime.today(), periods=20, freq="5S"),
             "anglez": np.random.uniform(2, 5, 20),
@@ -42,7 +42,7 @@ class TestTruncate(TestCase):
         })
 
         df_test: pd.DataFrame = self.truncate.preprocess(df)
-        self.assertEqual(16, df_test.shape[0])
+        self.assertEqual(15, df_test.shape[0])
 
     def test_truncate_no_change(self) -> None:
         df = pd.DataFrame({

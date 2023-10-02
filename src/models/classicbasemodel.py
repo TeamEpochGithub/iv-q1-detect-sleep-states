@@ -52,8 +52,8 @@ class ClassicBaseModel(Model):
     def pred(self, data):
         """
         Prediction function for the model.
-        :param data: unlabelled data for a single day window
-        :return:
+        :param data: unlabelled data for a single day window as pandas dataframe
+        :return: two timestamps, or NaN if no sleep was detected
         """
         # Get the data from the data tuple
         state_pred = self.predict_state_labels(data)

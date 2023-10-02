@@ -15,7 +15,7 @@ def submit(config: ConfigLoader, test_series_path, submit=False):
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
         # Passes the current list because it's needed to write to if the path doesn't exist
-        processed = step.run(processed, pp_s[:i + 1])
+        processed = step.run(processed, pp_s[:i + 1], save_result=False)
 
     # Initialize feature engineering steps
     fe_steps, fe_s = config.get_features()
@@ -23,7 +23,7 @@ def submit(config: ConfigLoader, test_series_path, submit=False):
     for i, fe_step in enumerate(fe_steps):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
-        featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
+        featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s, save_result=False)
 
     # Initialize models
     models = config.get_models()

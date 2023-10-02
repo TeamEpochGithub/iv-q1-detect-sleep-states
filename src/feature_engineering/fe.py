@@ -12,7 +12,7 @@ class FE:
         # Feature engineering function
         raise NotImplementedError
 
-    def run(self, data, fe_s, pp_s):
+    def run(self, data, fe_s, pp_s, save_result=True):
         # Summarize the code below
         # Check if the prev path exists
         # If it does, read from it
@@ -30,7 +30,7 @@ class FE:
             print(f'Features have been extracted, ready to save the data to {feature_path}')
             if not isinstance(processed, pd.DataFrame):
                 raise TypeError('Preprocessing step did not return a pandas DataFrame')
-            else:
+            elif save_result:
                 processed.to_parquet(feature_path, compression='zstd')
                 print(f'Features have been saved to {feature_path}')
         return processed

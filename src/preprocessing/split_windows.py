@@ -58,14 +58,27 @@ class SplitWindows(PP):
         else:
             amount_of_padding_start += initial_steps - self.steps_before
 
+        # Create numpy arrays of zeros for enmo, anglez, and awake
+        enmo = np.zeros(amount_of_padding_start)
+        anglez = np.zeros(amount_of_padding_start)
+        awake = np.full(amount_of_padding_start, 2)
 
-        start_pad_df = pd.DataFrame({'timestamp': [first_time - pd.Timedelta(seconds=(amount_of_padding_start - i + 1) * 5) for i in reversed(range(amount_of_padding_start))],
-                                     'enmo': [0] * amount_of_padding_start,
-                                     'anglez': [0] * amount_of_padding_start,
-                                     'step': [-i for i in reversed(range(1, amount_of_padding_start + 1))],
-                                     'series_id': [curr_series_id] * amount_of_padding_start,
-                                     'awake': [2] * amount_of_padding_start
-                                     })
+        # Create a numpy array of step values
+        step = -np.arange(1, amount_of_padding_start + 1)
+
+        # Create a numpy array of timestamps
+        timestamps = first_time - np.arange(1, amount_of_padding_start + 1) * pd.Timedelta(seconds=5)
+
+        # Create a numpy array of series ids
+        series_id = np.full(amount_of_padding_start, curr_series_id)
+
+        # Create the start padding dataframe
+        start_pad_df = pd.DataFrame({'timestamp': timestamps,
+                                    'enmo': enmo,
+                                    'anglez': anglez,
+                                    'step': step,
+                                    'series_id': series_id,
+                                    'awake': awake})
 
         # Find the timestamp of the last row for each series_id
         last_time = group['timestamp'].iloc[-1]
@@ -81,13 +94,28 @@ class SplitWindows(PP):
             amount_of_padding_end += (self.steps_before - 1) - last_steps
 
         last_step = group['step'].iloc[-1]
-        end_pad_df = pd.DataFrame({'timestamp': [last_time + pd.Timedelta(seconds=i * 5) for i in range(1, amount_of_padding_end + 1)],
-                                   'enmo': [0] * amount_of_padding_end,
-                                   'anglez': [0] * amount_of_padding_end,
-                                   'step': [last_step + i for i in range(1, amount_of_padding_end + 1)],
-                                   'series_id': [curr_series_id] * amount_of_padding_end,
-                                   'awake': [2] * amount_of_padding_end
-                                   })
+        
+        # Create numpy arrays of zeros for enmo, anglez, and awake
+        enmo = np.zeros(amount_of_padding_end)
+        anglez = np.zeros(amount_of_padding_end)
+        awake = np.full(amount_of_padding_end, 2)
+
+        # Create a numpy array of step values
+        step = np.arange(last_step + 1, last_step + amount_of_padding_end + 1)
+
+        # Create a numpy array of timestamps
+        timestamps = last_time + np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
+
+        # Create a numpy array of series ids
+        series_id = np.full(amount_of_padding_end, curr_series_id)
+
+        # Create the end padding dataframe
+        end_pad_df = pd.DataFrame({'timestamp': timestamps,
+                                'enmo': enmo,
+                                'anglez': anglez,
+                                'step': step,
+                                'series_id': series_id,
+                                'awake': awake})
 
         # Concatenate the dfs
         dfs_to_concat = [start_pad_df, group, end_pad_df]

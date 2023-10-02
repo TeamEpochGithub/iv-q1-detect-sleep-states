@@ -6,7 +6,7 @@ class RemoveUnlabeled(PP):
     """Preprocessing step that removes the unlabelled data
 
     After adding the "awake" column with AddStateLabels, this will only keep the labeled data
-    by dropping all the columns where "awake" is 2.
+    by dropping all the rows where "awake" is 2.
     If the "window" column in present, only drop the windows where all the "awake" values are 2.
     """
 

@@ -1,5 +1,12 @@
+<< << << < HEAD
 import random
 
+import pandas as pd
+
+== == == =
+# This file does the training of the model
+
+# Imports
 import pandas as pd
 
 import submit_to_kaggle
@@ -24,8 +31,8 @@ def main(config: ConfigLoader):
         )
     else:
         print("Not logging to wandb.")
-    # Do training here
 
+    # Do training here
     df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
 
     # Initialize preprocessing steps
@@ -42,11 +49,8 @@ def main(config: ConfigLoader):
     for i, fe_step in enumerate(fe_steps):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination
-        feature = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-        # Add feature to featured_data
-        featured_data = pd.concat([featured_data, feature], axis=1)
+        featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
 
-    print(featured_data.head())
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
 
     # Initialize models
@@ -56,18 +60,11 @@ def main(config: ConfigLoader):
     store_location = config.get_model_store_loc()
 
     # TODO Add crossvalidation to models #107
-    for model in models:
-        models[model].train(featured_data)
-        models[model].save(store_location + "/" + model + ".pt")
-
-    print(models)
-
-    # Initialize ensemble
-    #    ensemble = config.get_ensemble(models)
+    ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
 
-    # ensemble.pred(featured_data)
+    ensemble.pred(featured_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
@@ -97,15 +94,6 @@ def main(config: ConfigLoader):
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
-    epochs = 10
-    offset = random.random() / 5
-    for epoch in range(2, epochs):
-        acc = 1 - 2 ** -epoch - random.random() / epoch - offset
-        loss = 2 ** -epoch + random.random() / epoch + offset
-
-        # log metrics to wandb
-        if config.get_log_to_wandb():
-            wandb.log({"acc": acc, "loss": loss})
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():
@@ -116,8 +104,12 @@ if __name__ == "__main__":
     # Load config file
     config = ConfigLoader("config.json")
 
-    # Run main
-    main(config)
+<< << << < HEAD
+# Run main
+== == == =
+# Train model
+>> >> >> > main
+main(config)
 
-    # Create submission (predict on test data)
-    submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)
+# Create submission (predict on test data)
+submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)

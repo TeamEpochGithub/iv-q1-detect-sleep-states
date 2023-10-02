@@ -2,6 +2,7 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "add_state_labels",
         "split_windows"
     ],
     "processed_loc_out": "data/processed",
@@ -27,18 +28,14 @@
         "standardize": "standard_scaler"
     },
     "models": {
-        "ExampleModel": {
-            "type": "example-fc-model",
-            "epochs": 20,
-            "batch_size": 32,
-            "loss": "mae-torch",
-            "optimizer": "adam-torch"
+        "ClassicModel": {
+            "type": "classic-base-model"
         }
 
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ExampleModel"],
+        "models": ["ClassicModel"],
         "weights": [1],
         "comb_method": "addition"
     },

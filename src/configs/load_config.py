@@ -1,16 +1,19 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
-
+from ..models.classicbasemodel import ClassicBaseModel
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
+from ..preprocessing.add_state_labels import AddStateLabels
+
 # Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.mean import Mean
+
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -58,6 +61,8 @@ class ConfigLoader:
                     self.pp_steps.append(SplitWindows())
                 case "convert_datetime":
                     self.pp_steps.append(ConvertDatetime())
+                case "add_state_labels":
+                    self.pp_steps.append(AddStateLabels())
                 case _:
                     raise ConfigException("Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]
@@ -126,12 +131,13 @@ class ConfigLoader:
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None
-            if model_config["type"] == "example-fc-model":
-                curr_model = ExampleModel(model_config)
-            else:
-                raise ConfigException(
-                    "Model not found: " + model_config["type"])
-
+            match model_config["type"]:
+                case "example-fc-model":
+                    curr_model = ExampleModel(model_config)
+                case "classic-base-model":
+                    curr_model = ClassicBaseModel(model_config)
+                case _:
+                    raise ConfigException("Model not found: " + model_config["type"])
             self.models[model] = curr_model
 
         return self.models
@@ -157,8 +163,8 @@ class ConfigLoader:
         ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
-
     # Function to retrieve loss function
+
     def get_ensemble_loss(self):
         loss_class = None
         if self.config["ensemble_loss"] == "example_loss":

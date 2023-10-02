@@ -3,6 +3,7 @@ from src.configs.load_config import ConfigLoader
 import time
 import polars as pl
 
+
 if __name__ == "__main__":
 
     config = ConfigLoader("test/test_config.json")

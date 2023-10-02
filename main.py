@@ -1,9 +1,3 @@
-<< << << < HEAD
-import random
-
-import pandas as pd
-
-== == == =
 # This file does the training of the model
 
 # Imports
@@ -17,9 +11,10 @@ from src.util.printing_utils import print_section_separator
 
 
 def main(config: ConfigLoader):
-    logger.info("Start of new main run")
+    print_section_separator("Q1 - Detect Sleep States", spacing=0, separator_length=100)
+    logger.info("Start of main.py")
+    print("Starting main.py...")
 
-    print_section_separator("Test", spacing=1)
 
     # Initialize wandb
     if config.get_log_to_wandb():
@@ -29,12 +24,14 @@ def main(config: ConfigLoader):
 
             config=config.get_config()
         )
+        print("Logging to wandb.")
     else:
         print("Not logging to wandb.")
 
     # Do training here
-    df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
-
+    to_load = config.get_pp_in() + "/train.parquet"
+    df = pd.read_parquet(to_load)
+    print("")
     # Initialize preprocessing steps
     pp_steps, pp_s = config.get_pp_steps()
     processed = df
@@ -104,11 +101,7 @@ if __name__ == "__main__":
     # Load config file
     config = ConfigLoader("config.json")
 
-<< << << < HEAD
 # Run main
-== == == =
-# Train model
->> >> >> > main
 main(config)
 
 # Create submission (predict on test data)

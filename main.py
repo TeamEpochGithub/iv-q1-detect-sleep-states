@@ -2,9 +2,9 @@
 
 # Imports
 import pandas as pd
-
-import submit_to_kaggle
 import wandb
+
+from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
@@ -173,8 +173,8 @@ if __name__ == "__main__":
     # Load config file
     config = ConfigLoader("config.json")
 
-# Run main
-main(config)
+    # Run main
+    main(config)
 
-# Create submission (predict on test data)
-submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)
+    # Create submission
+    submit_to_kaggle.submit(config, config.get_pp_in() + "/test_series.parquet", False)

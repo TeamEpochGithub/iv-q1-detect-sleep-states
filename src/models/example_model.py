@@ -143,7 +143,8 @@ class ExampleModel(Model):
                     avg_val_loss += vloss.item() / len(test_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
+                        f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
     def pred(self, data):
         """

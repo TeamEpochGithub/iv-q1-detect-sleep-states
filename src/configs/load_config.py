@@ -37,6 +37,7 @@ class ConfigLoader:
 
     # Initiate class using config path
     def __init__(self, config_path):
+        self.pp_steps = []
         self.config_path = config_path
 
         # Read JSON from file
@@ -50,7 +51,7 @@ class ConfigLoader:
         return self.config["model_store_loc"]
 
     # Function to retrieve preprocessing steps
-    def get_pp_steps(self):
+    def get_pp_steps(self, training=True):
         self.pp_steps = []
         for pp_step in self.config["preprocessing"]:
             match pp_step:
@@ -61,11 +62,14 @@ class ConfigLoader:
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
                 case "add_state_labels":
-                    self.pp_steps.append(AddStateLabels())
+                    if training:
+                        self.pp_steps.append(AddStateLabels())
                 case "remove_unlabeled":
-                    self.pp_steps.append(RemoveUnlabeled())
+                    if training:
+                        self.pp_steps.append(RemoveUnlabeled())
                 case "truncate":
-                    self.pp_steps.append(Truncate())
+                    if training:
+                        self.pp_steps.append(Truncate())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

@@ -42,17 +42,6 @@ Location in: Data needed by preprocessing is stored in this location
 
 Features that should be included during training and submission
 
-
-``` 
-"feature_engineering": {
-    "fe1": {
-        "window_sizes": [5, 10],
-        "features": ["enmo", "anglez"]
-    },
-    "fe2": {}
-    }
-```
-
 List of options and their config options
 - "kurtosis"
     - "window_sizes": x > 3
@@ -63,6 +52,17 @@ List of options and their config options
 - "skewness"
     - "window_sizes": x > 3
     - "features": Any existing numerical features
+
+Example:
+``` 
+"feature_engineering": {
+    "fe1": {
+        "window_sizes": [5, 10],
+        "features": ["enmo", "anglez"]
+    },
+    "fe2": {}
+    }
+```
 
 ### Feature engineering data location
 <p>
@@ -80,7 +80,7 @@ Location in: Data needed by feature engineering is stored in this location
 This step includes preparing the data for inputting in the model.
 List of options and their config options
 - "cv": > 0 (number of folds)
-- "train_test_split": > 0 (percentage of data to be used for training)
+- "test_size": > 0 (percentage of data to be used for testing)
 - "standardize": method used for standardization
     - "minmax"
     - "standard"
@@ -90,8 +90,8 @@ You are not able to select cv and train_test_split at the same time.
 Example:
 ```
 "pre_training": {
-    "cv": 5,
-    "standardize": "standard_scaler"
+    "cv": 5, || "test_size": 0.2,
+    "standardize": "standard"
 }
 ```
 

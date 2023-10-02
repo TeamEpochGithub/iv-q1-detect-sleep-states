@@ -45,7 +45,7 @@ class ConfigLoader:
     # Get full configuration
     def get_config(self):
         return self.config
-    
+
     # Get boolean for whether to use wandb
     def get_log_to_wandb(self):
         return self.config["log_to_wandb"]
@@ -66,7 +66,8 @@ class ConfigLoader:
                 case "add_state_labels":
                     self.pp_steps.append(AddStateLabels())
                 case _:
-                    raise ConfigException("Preprocessing step not found: " + pp_step)
+                    raise ConfigException(
+                        "Preprocessing step not found: " + pp_step)
         return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path
@@ -83,7 +84,8 @@ class ConfigLoader:
         fe_s = []
         for fe_step in self.config["feature_engineering"]:
             if fe_step == "kurtosis":
-                fe_steps["kurtosis"] = Kurtosis(self.config["feature_engineering"]["kurtosis"])
+                fe_steps["kurtosis"] = Kurtosis(
+                    self.config["feature_engineering"]["kurtosis"])
                 window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -92,7 +94,8 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             elif fe_step == "skewness":
-                fe_steps["skewness"] = Skewness(self.config["feature_engineering"]["skewness"])
+                fe_steps["skewness"] = Skewness(
+                    self.config["feature_engineering"]["skewness"])
                 window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -101,7 +104,8 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             elif fe_step == "mean":
-                fe_steps["mean"] = Mean(self.config["feature_engineering"]["mean"])
+                fe_steps["mean"] = Mean(
+                    self.config["feature_engineering"]["mean"])
                 window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -125,7 +129,7 @@ class ConfigLoader:
 
     # Function to retrieve pretraining data
     def get_pretraining(self):
-        return self.config["pretraining"]
+        return self.config["pre_training"]
 
     # Function to retrieve model data
     def get_models(self):
@@ -140,7 +144,8 @@ class ConfigLoader:
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config)
                 case _:
-                    raise ConfigException("Model not found: " + model_config["type"])
+                    raise ConfigException(
+                        "Model not found: " + model_config["type"])
             self.models[model] = curr_model
 
         return self.models
@@ -159,15 +164,18 @@ class ConfigLoader:
                 "Length of weights and models is not equal")
 
         if len(models) < len(self.config["ensemble"]["models"]):
-            raise ConfigException("You cannot have more ensembles than models.")
+            raise ConfigException(
+                "You cannot have more ensembles than models.")
 
         for model_name in self.config["ensemble"]["models"]:
             if model_name not in models:
-                raise ConfigException(f"Model {model_name} not found in models.")
+                raise ConfigException(
+                    f"Model {model_name} not found in models.")
             curr_models.append(models[model_name])
 
         # Create ensemble
-        ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
+        ensemble = Ensemble(
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
     # Function to retrieve loss function

@@ -2,8 +2,10 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "mem_reduce",
         "add_state_labels",
-        "split_windows"
+        "split_windows",
+        "remove_unlabeled"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -31,7 +33,6 @@
         "ClassicModel": {
             "type": "classic-base-model"
         }
-
     },
     "model_store_loc": "tm",
     "ensemble": {

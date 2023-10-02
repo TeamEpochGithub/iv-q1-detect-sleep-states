@@ -1,5 +1,5 @@
 '''This class is used to add the state labels like pseudo-NaN, asleep and dont predict to the data'''
-
+from ..logger.logger import logger
 from src.preprocessing.pp import PP
 import pandas as pd
 import numpy as np
@@ -39,6 +39,7 @@ class AddStateLabels(PP):
             # update the data awake column with the current series awake column
             data.loc[data['series_id'] == id, 'awake'] = awake_arr
 
+        logger.debug("------ Finished handling series without NaN")
         # After handling the series without NaN we handle the weird cases
         # and add 2s for the awake labels
         for i, id in tqdm(enumerate(weird_series)):
@@ -50,6 +51,7 @@ class AddStateLabels(PP):
             data.loc[(data['series_id'] == id) & (data['step'] >
                                                   last_event['step'].values[0]), 'awake'] = 2
 
+        logger.debug("------ Finished handling weird series")
         # magic code i copied from EDA-Hugo to do the NaN stuff
         df_filled = events.copy()
         onset_mask = df_filled['event'] == 'onset'
@@ -73,6 +75,8 @@ class AddStateLabels(PP):
 
             data.loc[data['series_id'] == id,
                      'awake'] = current_series['awake']
+
+        logger.debug("------ Finished handling series with NaN")
 
         if 'NaN' in data.columns:
             data.drop(columns=['NaN'], inplace=True)

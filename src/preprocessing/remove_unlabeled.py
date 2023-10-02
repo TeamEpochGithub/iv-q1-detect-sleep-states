@@ -1,5 +1,6 @@
 import pandas as pd
 from src.preprocessing.pp import PP, PPException
+from ..logger.logger import logger
 
 
 class RemoveUnlabeled(PP):
@@ -18,9 +19,12 @@ class RemoveUnlabeled(PP):
         :raises PPException: If AddStateLabels wasn't used before
         """
         if "awake" not in data.columns:
+            logger.critical("No awake column. Did you run AddStateLabels before?")
             raise PPException("No awake column. Did you run AddStateLabels before?")
 
-        if "window" not in data.columns:
-            return data[(data["awake"] != 2)]
+        if "window" in data.columns:
+            logger.info("------ Removing unlabeled data with windowing")
+            return data.groupby(["window"]).filter(lambda x: (x['awake'] != 2).any())
 
-        return data.groupby(["window"]).filter(lambda x: (x['awake'] != 2).any())
+        logger.info("------ Removing unlabeled data without windowing")
+        return data[(data["awake"] != 2)]

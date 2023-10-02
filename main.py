@@ -7,6 +7,8 @@ import submit_to_kaggle
 import wandb
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+import gc
+import numpy as np
 
 # Load config file
 config = None
@@ -25,7 +27,7 @@ def main(config: ConfigLoader):
         print("Not logging to wandb.")
 
     # Do training here
-    df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
+    df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
 
     # Initialize preprocessing steps
     print("-------- PREPROCESSING ----------")
@@ -35,6 +37,10 @@ def main(config: ConfigLoader):
     for i, step in enumerate(pp_steps):
         # Passes the current list because its needed to write to if the path doesnt exist
         processed = step.run(processed, pp_s[:i + 1])
+        
+        # Garbage collect
+        gc.collect()
+
 
     # Initialize feature engineering steps
     print("-------- FEATURE ENGINEERING ----------")
@@ -48,6 +54,14 @@ def main(config: ConfigLoader):
     # Pretrain processstep (splitting data into train and test, standardization, etc.)
     print("-------- PRETRAINING ----------")
     pretrain = config.get_pretraining()
+
+
+    # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
+    exclude_x = ['timestamp', 'window', 'step', 'awake']
+    keep_y_train_columns = ['awake']
+    x_columns = featured_data.columns.drop(exclude_x)
+    X_featured_data = featured_data[x_columns].to_numpy().reshape(-1, 17280, len(x_columns))
+    Y_featured_data = featured_data[keep_y_train_columns].to_numpy().reshape(-1, 17280, 3)
 
     # Standardize data
     exclude_columns = ['series_id', 'timestamp',
@@ -70,7 +84,7 @@ def main(config: ConfigLoader):
 
     # Train test split on series id
     # Check if test size key exists in pretrain
-    train_data = None
+    train_data: pd.DataFrame = None
     test_data = None
     if "test_size" in pretrain:
         groups = featured_data["series_id"]

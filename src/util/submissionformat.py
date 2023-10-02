@@ -23,4 +23,3 @@ def to_submission_format(df: pd.DataFrame) -> pd.DataFrame:
 
     df['step'] = df['step'].astype(int)
     return df
-

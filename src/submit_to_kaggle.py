@@ -1,6 +1,6 @@
-import pandas as pd
-import numpy as np
 import os
+
+import pandas as pd
 
 from src.configs.load_config import ConfigLoader
 from src.util.submissionformat import to_submission_format

@@ -99,4 +99,4 @@ if __name__ == "__main__":
     main(config)
 
     # Create submission
-    submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)
+    submit_to_kaggle.submit(config, config.get_pp_in() + "/test_series.parquet", False)

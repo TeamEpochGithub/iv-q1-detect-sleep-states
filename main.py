@@ -2,9 +2,9 @@
 
 # Imports
 import pandas as pd
+import wandb
 
 import submit_to_kaggle
-import wandb
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
@@ -16,7 +16,7 @@ def main(config: ConfigLoader):
     :param config: loaded config
     :return: nothing
     """
-    print_section_separator("Q1 - Detect Sleep States", spacing=0, separator_length=200)
+    print_section_separator("Q1 - Detect Sleep States- Kaggle", spacing=0, separator_length=200)
     logger.info("Start of main.py")
 
     # Initialize wandb
@@ -51,15 +51,21 @@ def main(config: ConfigLoader):
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
         logger.info("Running preprocessing step " + str(i) + ": " + str(pp_s[i]))
-        # Passes the current list because its needed to write to if the path doesnt exist
+        # Passes the current list because it's needed to write to if the path doesn't exist
         processed = step.run(processed, pp_s[:i + 1])
 
-    # Initialize feature engineering steps
+    # ------------------------- #
+    #    Feature Engineering    #
+    # ------------------------- #
+
+    print_section_separator("Feature engineering", spacing=0)
+
     fe_steps, fe_s = config.get_features()
+    logger.info("Feature engineering steps: " + str(fe_s))
     featured_data = processed
     for i, fe_step in enumerate(fe_steps):
-        # Also pass the preprocessing steps to the feature engineering step
-        # to save fe for each possible pp combination
+        logger.info("Running feature engineering step " + str(i) + ": " + str(fe_s[i]))
+        # Passes the current list because it's needed to write to if the path doesn't exist
         featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
 
     # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103

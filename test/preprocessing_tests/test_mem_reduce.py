@@ -14,18 +14,13 @@ class Test(TestCase):
         # so we need to save it and then put it back
         # this is because the series_id's are different between the two
         # series
-        with open('series_id_encoding.json', 'r') as f:
-            encoding = json.load(f)
 
         series_mem_used_before = train_series.memory_usage().sum()
         print('data usage of test_series before mem_reduce:', series_mem_used_before)
         # now do the mem_reduce
 
-        series_mem_used_after = mem_reducer.reduce_mem_usage(train_series).memory_usage().sum()
+        series_mem_used_after = mem_reducer.reduce_mem_usage(train_series, encoding_name='test_encoding.json').memory_usage().sum()
         print('data usage of test_series after mem_reduce:', series_mem_used_after)
 
-        # put the encoding back
-        with open('series_id_encoding.json', 'w') as f:
-            json.dump(encoding, f)
         # assert that memory usage for both dataframes went down
         self.assertTrue(series_mem_used_before > series_mem_used_after)

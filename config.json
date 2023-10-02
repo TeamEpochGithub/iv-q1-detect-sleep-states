@@ -2,6 +2,7 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "mem_reduce",
         "add_state_labels",
         "split_windows"
     ],

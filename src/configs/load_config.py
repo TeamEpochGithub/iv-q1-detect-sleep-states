@@ -1,7 +1,7 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
-from ..models.classicbasemodel import ClassicBaseModel
+from ..models.classic_base_model import ClassicBaseModel
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise

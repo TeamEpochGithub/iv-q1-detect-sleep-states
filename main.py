@@ -10,11 +10,11 @@ from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
 
 
-def main(config: ConfigLoader):
+def main(config: ConfigLoader) -> None:
     """
     Main function for training the model
+
     :param config: loaded config
-    :return: nothing
     """
     print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
     logger.info("Start of main.py")

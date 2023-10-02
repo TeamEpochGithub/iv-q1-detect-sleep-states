@@ -21,8 +21,12 @@ if __name__ == "__main__":
     pp_steps, pp_s = config.get_pp_steps()
     processed = df
     # Get the preprocessing steps as a list of str to make the paths
+    start_time = time.time()
     for i, step in enumerate(pp_steps):
         # Passes the current list because it's needed to write to if the path doesn't exist
         processed = step.run(processed, pp_s[:i+1])
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time for preprocessing: {elapsed_time:.6f} seconds")
     print('memory usage after:')
     print(processed.memory_usage(deep=True).sum()/(1024*1024))

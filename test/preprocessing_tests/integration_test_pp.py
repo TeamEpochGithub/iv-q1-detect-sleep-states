@@ -23,6 +23,6 @@ if __name__ == "__main__":
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
         # Passes the current list because it's needed to write to if the path doesn't exist
-        processed = step.run(processed, pp_s[:i+1])
+        processed = step.run(processed, pp_s)
 
     print(processed.head())

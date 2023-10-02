@@ -26,7 +26,11 @@ class Ensemble:
         and converts the window-relative steps to absolute steps since the start of the series
 
         :param data: complete dataset with engineered features
-        :return: numpy array with per every day one tuple of onset and awake
+        :return: dataframe, example:
+                   series_id  window     onset    wakeup
+            0   038441c925bb     0.0    5046.0    8794.0
+            1   038441c925bb     1.0   20336.0   23482.0
+            2   038441c925bb     2.0   40049.0   44322.0
         """
 
         print("Predicting with ensemble")
@@ -48,7 +52,13 @@ class Ensemble:
         predictions = np.average(
             predictions, axis=0, weights=self.weight_matrix)
 
-        return predictions
+        # Return a dataframe with the prediction for each series_id and window
+        output_df = (data.groupby(['series_id', 'window'])
+                         .apply(lambda x: x.iloc[0][['series_id', 'window']])
+                         .reset_index(drop=True))
+        output_df['onset'] = predictions[:, 0]
+        output_df['wakeup'] = predictions[:, 1]
+        return output_df
 
 
 def pred_window(window: pd.DataFrame, model):

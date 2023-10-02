@@ -3,7 +3,7 @@
 # Imports
 import pandas as pd
 from src.configs.load_config import ConfigLoader
-import submit_to_kaggle
+from src import submit_to_kaggle
 import wandb
 
 # Load config file

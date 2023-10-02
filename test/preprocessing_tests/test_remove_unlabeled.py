@@ -9,6 +9,10 @@ from src.preprocessing.remove_unlabeled import RemoveUnlabeled
 
 
 class TestRemoveUnlabeled(TestCase):
+    """
+    Tests the RemoveUnlabeled class.
+    """
+
     remove_unlabeled = RemoveUnlabeled()
 
     def test_no_state(self) -> None:

@@ -11,6 +11,10 @@ from src.preprocessing.truncate import Truncate
 
 
 class TestTruncate(TestCase):
+    """
+    Tests the Truncate class.
+    """
+
     truncate = Truncate()
 
     def test_no_state(self) -> None:

@@ -37,6 +37,17 @@ Location in: Data needed by preprocessing is stored in this location
 "processed_loc_in": "./data/raw"
 ```
 
+List of options and what they do
+- "add-noise"
+    - Adds gaussian noise to the sensor data
+- "add_state_labels"
+    - Labels the data in a way that each timestep gets a label. 0: asleep, 1: awake, 2: NaN, not labeled
+- "mem_reduce"
+    - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
+    a datetime object
+- "split_windows"
+    - Splits the data in to 24 hour long windows
+
 
 ### Feature engineering
 

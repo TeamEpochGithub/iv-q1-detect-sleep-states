@@ -1,6 +1,6 @@
 import textwrap
 
-def print_section_separator(title, spacing=2, separator_length=60):
+def print_section_separator(title, spacing=2, separator_length=150):
     separator_char = '='
     title_char = ' '
     separator = separator_char * separator_length

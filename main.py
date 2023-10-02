@@ -11,10 +11,13 @@ from src.util.printing_utils import print_section_separator
 
 
 def main(config: ConfigLoader):
-    print_section_separator("Q1 - Detect Sleep States", spacing=0, separator_length=100)
+    """
+    Main function for training the model
+    :param config: loaded config
+    :return: nothing
+    """
+    print_section_separator("Q1 - Detect Sleep States", spacing=0, separator_length=200)
     logger.info("Start of main.py")
-    print("Starting main.py...")
-
 
     # Initialize wandb
     if config.get_log_to_wandb():
@@ -24,19 +27,30 @@ def main(config: ConfigLoader):
 
             config=config.get_config()
         )
-        print("Logging to wandb.")
+        logger.info("Logging to wandb")
     else:
-        print("Not logging to wandb.")
+        logger.info("Not logging to wandb")
 
     # Do training here
-    to_load = config.get_pp_in() + "/train.parquet"
+    to_load = config.get_pp_in() + "/test_series.parquet"
     df = pd.read_parquet(to_load)
-    print("")
+
+    logger.info("Loaded data from " + to_load)
+
+    # ------------------- #
+    #    Preprocessing    #
+    # ------------------- #
+
+    print_section_separator("Preprocessing", spacing=0)
+
     # Initialize preprocessing steps
     pp_steps, pp_s = config.get_pp_steps()
+    logger.info("Preprocessing steps: " + str(pp_s))
+
     processed = df
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
+        logger.info("Running preprocessing step " + str(i) + ": " + str(pp_s[i]))
         # Passes the current list because its needed to write to if the path doesnt exist
         processed = step.run(processed, pp_s[:i + 1])
 

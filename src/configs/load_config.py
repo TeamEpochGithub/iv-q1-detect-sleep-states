@@ -128,6 +128,7 @@ class ConfigLoader:
     def get_models(self):
         # Loop through models
         self.models = {}
+        logger.info("Models: " + str(self.config.get("models")))
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None

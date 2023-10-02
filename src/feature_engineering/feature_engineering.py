@@ -26,9 +26,9 @@ class FE:
         if os.path.exists(feature_path):
             logger.info(f'--- Feature already exists, reading from {feature_path}')
             processed = pd.read_parquet(feature_path)
-            logger.info(f'--- Data read from {feature_path}')
+            logger.info('--- Data read from {feature_path}')
         else:
-            logger.info(f'--- Features do not exist, extracting features')
+            logger.info('--- Features do not exist, extracting features')
             processed = self.feature_engineering(data)
             logger.info(f'--- Features have been extracted, ready to save the data to {feature_path}')
             if not isinstance(processed, pd.DataFrame):

@@ -21,7 +21,7 @@ file_handler = logging.FileHandler(log_file_path)
 # Set the log message format\
 log_format = "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s"
 
-#Log formatter
+# Log formatter
 formatter = logging.Formatter(log_format)
 file_handler.setFormatter(formatter)
 

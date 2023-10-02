@@ -1,3 +1,4 @@
+from ..logger.logger import logger
 from ..models.model import Model
 from ..util.state_to_event import find_events
 
@@ -45,9 +46,7 @@ class ClassicBaseModel(Model):
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
-        print("----------------")
-        print("Training classic baseline model not needed")
-        print("----------------")
+        logger.info("--- Training of statistical model not necessary")
 
     def pred(self, data):
         """

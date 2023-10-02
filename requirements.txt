@@ -140,5 +140,5 @@ torchvision==0.15.2+cu117
 polars==0.19.3
 wandb
 kaggle
-
+coloredlogs==15.0.1
 

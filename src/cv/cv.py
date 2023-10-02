@@ -1,4 +1,5 @@
 # This is the base class for all CVs. It contains the basic functionality
+from ..logger.logger import logger
 
 
 class CV():
@@ -8,4 +9,4 @@ class CV():
 
     def run(self):
         # Run CV
-        print("Doing cross validation")
+        logger.info("Cross validation not implemented yet")

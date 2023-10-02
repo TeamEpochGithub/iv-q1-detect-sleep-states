@@ -1,5 +1,6 @@
 # Class for mean feature
 from ..feature_engineering.rolling_window import RollingWindow
+from ..logger.logger import logger
 
 
 class Mean(RollingWindow):
@@ -7,12 +8,15 @@ class Mean(RollingWindow):
     def __init__(self, config):
         super().__init__(config)
 
-    def fe(self, data):
+    def feature_engineering(self, data):
+        logger.debug("------ All features: " + str(self.features))
         # Loop through window sizes
         for feature in self.features:
             for window_size in self.window_sizes:
                 # Create rolling window features for mean
                 data = self.mean(data, window_size, feature)
+            logger.debug("--------- Feature done: " + str(feature))
+        logger.debug("------ All features done")
         return data
 
     # Create rolling window features for mean

@@ -25,3 +25,7 @@ class PP:
             processed.to_parquet(path, compression='zstd')
 
         return processed
+
+
+class PPException(Exception):
+    pass

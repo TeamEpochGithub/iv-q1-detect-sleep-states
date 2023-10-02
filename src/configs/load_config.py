@@ -7,13 +7,10 @@ from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.convert_datetime import ConvertDatetime
-<<<<<<< HEAD
 from src.preprocessing.truncate import Truncate
 from src.preprocessing.zip_train_events import ZipTrainEvents
-=======
 from ..preprocessing.add_state_labels import AddStateLabels
 
->>>>>>> main
 # Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.skewness import Skewness

@@ -1,4 +1,4 @@
-from src.feature_engineering.fe import FE
+from src.feature_engineering.feature_engineering import FE
 
 
 class RollingWindow(FE):
@@ -9,6 +9,6 @@ class RollingWindow(FE):
         self.features = self.config["features"]
         self.features.sort()
 
-    def fe(self, data):
+    def feature_engineering(self, data):
         # Group the data
         return data

@@ -4,6 +4,8 @@
 import numpy as np
 import pandas as pd
 
+from ..logger.logger import logger
+
 
 class Ensemble:
 
@@ -33,7 +35,7 @@ class Ensemble:
             2   038441c925bb     2.0   40049.0   44322.0
         """
 
-        print("Predicting with ensemble")
+        logger.info("Predicting with ensemble")
         # Run each model
         predictions = []
         for model in self.models:

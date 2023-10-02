@@ -2,6 +2,7 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
+        "mem_reduce",
         "add_state_labels",
         "split_windows"
     ],
@@ -30,15 +31,7 @@
     "models": {
         "ClassicModel": {
             "type": "classic-base-model"
-        },
-        "ExampleModel": {
-    "type": "example-fc-model",
-    "epochs": 20,
-    "batch_size": 32,
-    "loss": "mae-torch",
-    "optimizer": "adam-torch"
-}
-
+        }
     },
     "model_store_loc": "tm",
     "ensemble": {

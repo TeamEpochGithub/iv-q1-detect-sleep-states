@@ -48,7 +48,7 @@ class ConfigLoader:
         return self.config["model_store_loc"]
 
     # Function to retrieve preprocessing steps
-    def get_pp_steps(self):
+    def get_pp_steps(self, training=True):
         self.pp_steps = []
         for pp_step in self.config["preprocessing"]:
             match pp_step:
@@ -59,7 +59,8 @@ class ConfigLoader:
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
                 case "add_state_labels":
-                    self.pp_steps.append(AddStateLabels())
+                    if training:
+                        self.pp_steps.append(AddStateLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

@@ -12,12 +12,14 @@ class MemReduce(PP):
         df = self.reduce_mem_usage(data)
         return df
 
-    def reduce_mem_usage(self, data: pd.DataFrame) -> pd.DataFrame:
+    def reduce_mem_usage(self, data: pd.DataFrame, filename=None) -> pd.DataFrame:
+        if filename is None:
+            filename = 'series_id_encoding.json'
+
         # we should make the series id in to an int16
         # and save an encoding (a dict) as a json file somewhere
-        # so we can decode it later
+        # so, we can decode it later
         encoding = dict(zip(data['series_id'].unique(), range(len(data['series_id'].unique()))))
-        filename = 'series_id_encoding.json'
         with open(filename, 'w') as f:
             json.dump(encoding, f)
         logger.debug(f"------ Done saving series encoding to {filename}")
@@ -30,10 +32,8 @@ class MemReduce(PP):
             if isinstance(data, pd.DataFrame):
                 data = pl.from_pandas(data)
         data = pl.from_pandas(data)
-        data = data.with_columns(pl.col("timestamp").str.slice(0, 18).alias("datetime"))
-        data = data.with_columns(pl.col("datetime").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
+        data = data.with_columns(pl.col("timestamp").str.slice(0, 18))
+        data = data.with_columns(pl.col("timestamp").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
         logger.debug("------ Done converting timestamp to datetime")
-        # remove the timestamp column
-        data = data.drop("timestamp")
         data = data.to_pandas()
         return data

@@ -13,7 +13,7 @@ class PP:
     def preprocess(self, data):
         raise NotImplementedError
 
-    def run(self, data, curr):
+    def run(self, data, curr, save_result=True):
         # Check if the prev path exists
         path = 'data/processed/' + '_'.join(curr) + '.parquet'
         if os.path.exists(path):
@@ -28,7 +28,11 @@ class PP:
             # Recalculate the current path to save the data
             logger.info('--- Cache not found, preprocessing data...')
             processed = self.preprocess(data)
-            processed.to_parquet(path, compression='zstd')
-            logger.info(f'--- Done preprocessing, saved to {path}')
+
+            if save_result:
+                processed.to_parquet(path, compression='zstd')
+                logger.info(f'--- Done preprocessing, saved to {path}')
+            else:
+                logger.info('--- Done preprocessing, not saving result')
 
         return processed

@@ -9,7 +9,7 @@ if __name__ == "__main__":
     config = ConfigLoader("test/test_config.json")
     start_time = time.time()
     # use polars to read parquet because that is significantly faster
-    df = pd.read_parquet(config.get_pp_in() + "/train_series.parquet")
+    df = pd.read_parquet(config.get_pp_in() + "/first_series.parquet")
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Elapsed time for reading 32float parquet: {elapsed_time:.6f} seconds")

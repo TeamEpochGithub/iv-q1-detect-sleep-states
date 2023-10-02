@@ -1,6 +1,7 @@
 # Base class for preprocessing
 import os
 import pandas as pd
+import polars as pl
 
 
 class PP:
@@ -16,7 +17,10 @@ class PP:
         if os.path.exists(path):
             print(f'Preprocessed data already exists, reading from {path}')
             # Read the data from the path with polars
-            processed = pd.read_parquet(path)
+            if self.use_pandas:
+                processed = pd.read_parquet(path)
+            else:
+                processed = pl.read_parquet(path)
             print(f'Data read from {path}')
         else:
             # Recalculate the current path to save the data

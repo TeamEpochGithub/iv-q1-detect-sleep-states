@@ -6,7 +6,6 @@ from ..models.classicbasemodel import ClassicBaseModel
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.convert_datetime import ConvertDatetime
 from ..preprocessing.add_state_labels import AddStateLabels
 
 # Feature engineering imports
@@ -59,8 +58,6 @@ class ConfigLoader:
                     self.pp_steps.append(AddNoise())
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
-                case "convert_datetime":
-                    self.pp_steps.append(ConvertDatetime())
                 case "add_state_labels":
                     if training:
                         self.pp_steps.append(AddStateLabels())

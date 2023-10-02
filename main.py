@@ -32,11 +32,10 @@ def main(config: ConfigLoader):
     # Initialize preprocessing steps
     print("-------- PREPROCESSING ----------")
     pp_steps, pp_s = config.get_pp_steps()
-    processed = df
     # Get the preprocessing steps as a list of str to make the paths
     for i, step in enumerate(pp_steps):
         # Passes the current list because its needed to write to if the path doesnt exist
-        processed = step.run(processed, pp_s[:i + 1])
+        df = step.run(df, pp_s[:i + 1])
         
         # Garbage collect
         gc.collect()
@@ -45,7 +44,7 @@ def main(config: ConfigLoader):
     # Initialize feature engineering steps
     print("-------- FEATURE ENGINEERING ----------")
     fe_steps, fe_s = config.get_features()
-    featured_data = processed
+    featured_data = df
     for i, fe_step in enumerate(fe_steps):
         # Also pass the preprocessing steps to the feature engineering step
         # to save fe for each possible pp combination

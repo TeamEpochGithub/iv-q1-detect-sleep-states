@@ -5,17 +5,15 @@ from ..models.classicbasemodel import ClassicBaseModel
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.convert_datetime import ConvertDatetime
-from src.preprocessing.truncate import Truncate
-from src.preprocessing.zip_train_events import ZipTrainEvents
+from ..preprocessing.truncate import Truncate
 from ..preprocessing.add_state_labels import AddStateLabels
 
 # Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.mean import Mean
-
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -28,7 +26,6 @@ from ..loss.loss import Loss
 
 # HPO imports
 from ..hpo.hpo import HPO
-
 
 # CV imports
 from ..cv.cv import CV
@@ -61,12 +58,10 @@ class ConfigLoader:
                     self.pp_steps.append(AddNoise())
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
-                case "convert_datetime":
-                    self.pp_steps.append(ConvertDatetime())
                 case "add_state_labels":
                     self.pp_steps.append(AddStateLabels())
-                case "zip_train_events":
-                    self.pp_steps.append(ZipTrainEvents())
+                case "remove_unlabeled":
+                    self.pp_steps.append(RemoveUnlabeled())
                 case "truncate":
                     self.pp_steps.append(Truncate())
                 case _:
@@ -169,6 +164,7 @@ class ConfigLoader:
         ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
+
     # Function to retrieve loss function
 
     def get_ensemble_loss(self):

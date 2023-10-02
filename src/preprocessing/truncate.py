@@ -8,8 +8,9 @@ class Truncate(PP):
     After adding the "awake" column with AddStateLabels,
     this will look at the last time the participant is either awake or asleep and truncate all data after that.
     """
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Truncates the unlabelled end of the data
+        """Truncates the unlabeled end of the data
 
         :param data: The labeled dataframe to truncate
         :return: The dataframe without the unlabeled end

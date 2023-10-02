@@ -10,7 +10,6 @@ class SplitWindows(PP):
 
     def preprocess(self, df):
 
-
         # Pad the series with 0s
         df = df.groupby('series_id').apply(
             self.pad_series).reset_index(drop=True)

@@ -10,8 +10,6 @@ class SplitWindows(PP):
 
     def preprocess(self, df):
 
-        # Convert timestamp to datetime
-        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
 
         # Pad the series with 0s
         df = df.groupby('series_id').apply(

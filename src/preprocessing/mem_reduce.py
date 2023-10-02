@@ -28,9 +28,9 @@ class MemReduce(PP):
             if isinstance(data, pd.DataFrame):
                 data = pl.from_pandas(data)
         data = pl.from_pandas(data)
-        data = data.with_columns(pl.col("timestamp").str.slice(0, 18).alias("datetime"))
-        data = data.with_columns(pl.col("datetime").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
+        data = data.with_columns(pl.col("timestamp").str.slice(0, 18))
+        data = data.with_columns(pl.col("timestamp").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
         # remove the timestamp column
-        data = data.drop("timestamp")
+        # data = data.drop("timestamp")
         data = data.to_pandas()
         return data

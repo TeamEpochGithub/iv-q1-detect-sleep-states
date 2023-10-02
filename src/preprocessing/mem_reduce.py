@@ -12,9 +12,9 @@ class MemReduce(PP):
         return df
 
     def reduce_mem_usage(self, data: pd.DataFrame) -> pd.DataFrame:
-        # we should make the series id in to an int16
-        # and save an encoding (a dict) as a json file somewhere
-        # so we can decode it later
+        """ 
+        Make a dict to map all unique ids to an int and storethe encoding to .        
+        """
         encoding = dict(zip(data['series_id'].unique(), range(len(data['series_id'].unique()))))
         with open('series_id_encoding.json', 'w') as f:
             json.dump(encoding, f)

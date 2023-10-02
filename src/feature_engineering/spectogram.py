@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import signal
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from scipy import signal
 
+
+# TODO make it work with current config...
 
 # stft(enmo.to_numpy(), fs, nperseg=256)
 def spectogram(plot=False, y=None, fs=None, nperseg=256):

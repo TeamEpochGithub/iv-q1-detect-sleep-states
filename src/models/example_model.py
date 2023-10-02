@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
@@ -21,15 +22,8 @@ class ExampleModel(Model):
 
         self.model_type = "state-prediction"
         # Load model
-        self.model = SimpleModel(8, 10, 1, config)
+        self.model = SimpleModel(2, 10, 1, config)
         self.load_config(config)
-
-        # Check if gpu is available, else return an exception
-        if not torch.cuda.is_available():
-            raise ModelException("GPU not available")
-
-        print("GPU Found: " + torch.cuda.get_device_name(0))
-        self.device = torch.device("cuda")
 
     def load_config(self, config):
         """
@@ -41,6 +35,7 @@ class ExampleModel(Model):
         required = ["loss", "epochs", "optimizer"]
         for req in required:
             if req not in config:
+                logger.critical("------ Config is missing required parameter: " + req)
                 raise ModelException("Config is missing required parameter: " + req)
 
         # Get default_config
@@ -74,16 +69,13 @@ class ExampleModel(Model):
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
-        print("----------------")
-        print(f"Training model: {type(self).__name__}")
-        print(f"Hyperparameters: {self.config}")
-        print("----------------")
-
         # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+
+        # TODO Replace after pretrain
 
         # For now only look at enmo and anglez feature of data
         X = data[["enmo", "anglez"]].to_numpy()
@@ -105,10 +97,10 @@ class ExampleModel(Model):
         test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
 
         # Print the shapes and types of train and test
-        print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        print(f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        print(f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
@@ -151,7 +143,7 @@ class ExampleModel(Model):
                     avg_val_loss += vloss.item() / len(test_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            print(f'Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}')
+            logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
     def pred(self, data):
         """
@@ -160,7 +152,7 @@ class ExampleModel(Model):
         :return:
         """
         # Prediction function
-        print("Predicting model")
+        logger.info("--- Predicting model")
         # Run the model on the data and return the predictions
 
         # Push to device
@@ -179,7 +171,7 @@ class ExampleModel(Model):
         :return: avg loss of predictions
         """
         # Evaluate function
-        print("Evaluating model")
+        logger.info("--- Evaluating model")
         # Calculate the loss of the predictions
         criterion = self.config["loss"]
         loss = criterion(pred, target)
@@ -196,7 +188,7 @@ class ExampleModel(Model):
             'config': self.config
         }
         torch.save(checkpoint, path)
-        print("Model saved to: " + path)
+        logger.info("--- Model saved to: " + path)
 
     def load(self, path):
         """
@@ -209,6 +201,8 @@ class ExampleModel(Model):
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.config = checkpoint['config']
+
+        logger.info("Model loaded from: " + path)
 
 
 class SimpleModel(nn.Module):

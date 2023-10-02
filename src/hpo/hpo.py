@@ -1,4 +1,5 @@
 # This is the hyperparameter optimization class file
+from ..logger.logger import logger
 
 
 class HPO:
@@ -8,5 +9,5 @@ class HPO:
         self.params = params
 
     def optimize(self):
-        print("Optimizing hyperparameters")
+        logger.info("Hyperparameter optimization not implemented yet")
         return 1

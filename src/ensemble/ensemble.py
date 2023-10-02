@@ -4,6 +4,8 @@
 import numpy as np
 import pandas as pd
 
+from ..logger.logger import logger
+
 
 class Ensemble:
 
@@ -25,7 +27,7 @@ class Ensemble:
         :return: numpy array with per every day one tuple of onset and awake
         """
 
-        print("Predicting with ensemble")
+        logger.info("Predicting with ensemble")
         # Run each model
         predictions = []
         for model in self.models:

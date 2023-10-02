@@ -1,9 +1,10 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from src.logger.logger import logger
 
 
 def submit(test_series_path, submit=False):
-
     test = pd.read_parquet(test_series_path)
     test["timestamp"] = pd.to_datetime(test["timestamp"], utc=True)
     test["day"] = test["timestamp"].dt.day
@@ -27,3 +28,4 @@ def submit(test_series_path, submit=False):
 
     if submit:
         submission.to_csv("submission.csv", index=False)
+        logger.info("Submission file created")

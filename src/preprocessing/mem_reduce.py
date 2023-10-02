@@ -1,5 +1,6 @@
 # This class is to reduce memory usage of dataframe
 from ..preprocessing.pp import PP
+from ..logger.logger import logger
 import json
 import pandas as pd
 import polars as pl
@@ -16,9 +17,10 @@ class MemReduce(PP):
         # and save an encoding (a dict) as a json file somewhere
         # so we can decode it later
         encoding = dict(zip(data['series_id'].unique(), range(len(data['series_id'].unique()))))
-        with open('series_id_encoding.json', 'w') as f:
+        filename = 'series_id_encoding.json'
+        with open(filename, 'w') as f:
             json.dump(encoding, f)
-        print(data.dtypes)
+        logger.debug(f"------ Done saving series encoding to {filename}")
         data['series_id'] = data['series_id'].map(encoding)
         data['series_id'] = data['series_id'].astype('int16')
 
@@ -30,6 +32,7 @@ class MemReduce(PP):
         data = pl.from_pandas(data)
         data = data.with_columns(pl.col("timestamp").str.slice(0, 18).alias("datetime"))
         data = data.with_columns(pl.col("datetime").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
+        logger.debug("------ Done converting timestamp to datetime")
         # remove the timestamp column
         data = data.drop("timestamp")
         data = data.to_pandas()

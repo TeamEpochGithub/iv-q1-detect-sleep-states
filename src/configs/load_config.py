@@ -13,6 +13,7 @@ from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.mean import Mean
 
+from ..logger.logger import logger
 
 # Model imports
 from ..models.example_model import ExampleModel
@@ -25,7 +26,6 @@ from ..loss.loss import Loss
 
 # HPO imports
 from ..hpo.hpo import HPO
-
 
 # CV imports
 from ..cv.cv import CV
@@ -61,7 +61,9 @@ class ConfigLoader:
                 case "add_state_labels":
                     self.pp_steps.append(AddStateLabels())
                 case _:
+                    logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
+
         return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path
@@ -105,6 +107,7 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             else:
+                logger.critical("Feature engineering step not found: " + fe_step)
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
@@ -134,6 +137,7 @@ class ConfigLoader:
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config)
                 case _:
+                    logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])
             self.models[model] = curr_model
 
@@ -145,14 +149,16 @@ class ConfigLoader:
         curr_models = []
         # If length of weights and models is not equal, raise exception
         if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
-            raise ConfigException(
-                "Length of weights and models is not equal")
+            logger.critical("Length of weights and models is not equal")
+            raise ConfigException("Length of weights and models is not equal")
 
         if len(models) < len(self.config["ensemble"]["models"]):
+            logger.critical("You cannot have more ensembles than models.")
             raise ConfigException("You cannot have more ensembles than models.")
 
         for model_name in self.config["ensemble"]["models"]:
             if model_name not in models:
+                logger.critical(f"Model {model_name} not found in models.")
                 raise ConfigException(f"Model {model_name} not found in models.")
             curr_models.append(models[model_name])
 
@@ -160,6 +166,7 @@ class ConfigLoader:
         ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
+
     # Function to retrieve loss function
 
     def get_ensemble_loss(self):
@@ -167,8 +174,8 @@ class ConfigLoader:
         if self.config["ensemble_loss"] == "example_loss":
             loss_class = Loss().get_loss("example_loss")
         else:
-            raise ConfigException("Loss function not found: " +
-                                  self.config["loss"])
+            logger.critical("Loss function not found: " + self.config["loss"])
+            raise ConfigException("Loss function not found: " + self.config["loss"])
 
         return loss_class
 

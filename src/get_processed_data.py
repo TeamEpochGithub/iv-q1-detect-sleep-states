@@ -17,7 +17,7 @@ def get_processed_data(config, series_path, save_output=True):
         if os.path.exists(path):
             logger.info(f'--- Reading existing file at: {path}')
             processed = pd.read_parquet(path)
-            logger.info(f'--- Finished reading')
+            logger.info('--- Finished reading')
             break
         else:
             logger.debug(f'--- File not found at: {path}')
@@ -40,5 +40,5 @@ def get_processed_data(config, series_path, save_output=True):
         if save_output:
             logger.info(f'--- Saving to: {path}')
             processed.to_parquet(path)
-            logger.info(f'--- Finished saving')
+            logger.info('--- Finished saving')
     return processed

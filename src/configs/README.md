@@ -53,6 +53,8 @@ List of options and what they do
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled`
     - Removes all the data points where there is no labeled data
+- `add_events_labels`
+    - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
 - `truncate`
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end

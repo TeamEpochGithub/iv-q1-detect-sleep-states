@@ -35,7 +35,7 @@ def get_processed_data(config, series_path, save_output=True):
         step = steps[i+j]
         logger.info(f'--- Applying step: {step_names[i+j]}')
         processed = step.run(processed)
-        print(gc.collect())
+        gc.collect()
         # save the result
         logger.info('--- Step was applied')
         if save_output:

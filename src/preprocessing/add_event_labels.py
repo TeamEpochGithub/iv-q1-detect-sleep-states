@@ -38,7 +38,6 @@ class AddEventLabels(PP):
             logger.critical("--- Found more than 1 missing event in 1 window... This should never happen..")
             raise PPException("Found more than 1 missing event in 1 window... This should never happen..")
 
-
         # If we have 1/2 sleep onsets, we pick first onset
         if len(sleep_onsets) == 1 or len(sleep_onsets) == 2:
             data["onset"] = np.int16(sleep_onsets[0])

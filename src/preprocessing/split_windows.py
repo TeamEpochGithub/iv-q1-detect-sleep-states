@@ -36,7 +36,7 @@ class SplitWindows(PP):
     def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 
         # Garbage collect
-        #gc.collect()
+        gc.collect()
 
         # Pad types
         pad_type = {'step': np.uint32, 'series_id': np.uint16, 'awake': np.uint8, 'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}

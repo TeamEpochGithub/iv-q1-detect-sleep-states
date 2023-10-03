@@ -51,14 +51,8 @@ def main(config: ConfigLoader, series_path) -> None:
     pretrain = config.get_pretraining()
 
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"])
+    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
 
-    # Standardize data
-    standardize(X_train, pretrain["standardize"])
-    standardize(X_test, pretrain["standardize"])
-
-    
-    
     cv = 0
     if "cv" in pretrain:
         cv = config.get_cv()
@@ -73,7 +67,7 @@ def main(config: ConfigLoader, series_path) -> None:
     print("-------- TRAINING MODELS ----------")
     models = config.get_models()
     for model in models:
-        models[model].train(train_data)
+        models[model].train(X_train, X_test, Y_train, Y_test)
 
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)

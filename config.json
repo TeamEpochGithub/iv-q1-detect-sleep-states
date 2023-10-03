@@ -20,13 +20,16 @@
         "standardize": "standard"
     },
     "models": {
-        "ClassicModel": {
-            "type": "classic-base-model"
+        "ExampleModel": {
+            "type": "example-fc-model",
+            "loss": "mae-torch",
+            "optimizer": "adam-torch",
+            "epochs": 20
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ClassicModel"],
+        "models": ["ExampleModel"],
         "weights": [1],
         "comb_method": "addition"
     },

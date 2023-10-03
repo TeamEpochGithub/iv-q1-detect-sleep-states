@@ -4,9 +4,12 @@ from src.configs.load_config import ConfigException
 from src.logger import logger
 
 
-def standardize(df: pd.DataFrame, method: str) -> None:
+def standardize(df: pd.DataFrame, method: str) -> pd.DataFrame:
     # Select columns that start with 'f_' for standardization
-    data_to_standardize = df.filter(regex='^f_')
+    # data_to_standardize = df.filter(regex='^f_')
+    # if data_to_standardize.empty:
+    #     return df
+    data_to_standardize = df[['enmo', 'anglez']]
 
     if method == "standard":
         scaler = StandardScaler()
@@ -19,7 +22,7 @@ def standardize(df: pd.DataFrame, method: str) -> None:
         raise ConfigException("Standardization method not found: " + method)
     
     # Standardize data
-    data_to_standardize = scaler.fit_transform(data_to_standardize)
-    df.loc[:, data_to_standardize.columns] = data_to_standardize
+    standardized_data = scaler.fit_transform(data_to_standardize)
+    df.loc[:, data_to_standardize.columns] = standardized_data
 
     return df

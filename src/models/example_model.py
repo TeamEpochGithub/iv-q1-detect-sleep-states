@@ -61,7 +61,7 @@ class ExampleModel(Model):
         """
         return self.model_type
 
-    def train(self, data):
+    def train(self, X_train, X_test, Y_train, Y_test):
         """
         Train function for the model.
         :param data: labelled data
@@ -75,32 +75,17 @@ class ExampleModel(Model):
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
-        # TODO Replace after pretrain
 
-        # For now only look at enmo and anglez feature of data
-        X = data[["enmo", "anglez"]].to_numpy()
-
-        # Create a y with random regression values
-        y = torch.rand(len(X), 1)
-
-        # Create a tensor from X
-        X = torch.from_numpy(X).float()
-
-        # For now we split 50-50 into validation and test
-        X_train = X[:len(X) // 2]
-        y_train = y[:len(y) // 2]
-        X_test = X[len(X) // 2:]
-        y_test = y[len(y) // 2:]
 
         # Create a dataset from X and y
-        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
-        test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
+        train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
+        test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)
 
         # Print the shapes and types of train and test
-        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        logger.info(f"--- X_train shape: {X_train.shape}, Y_train shape: {Y_train.shape}")
+        logger.info(f"--- X_test shape: {X_test.shape}, Y_test shape: {Y_test.shape}")
+        logger.info(f"--- X_train type: {X_train.dtype}, Y_train type: {Y_train.dtype}")
+        logger.info(f"--- X_test type: {X_test.dtype}, Y_test type: {Y_test.dtype}")
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)

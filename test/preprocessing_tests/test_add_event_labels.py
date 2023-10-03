@@ -45,7 +45,7 @@ class TestAddEventLabels(TestCase):
 
     def test_preprocess_event_labels_only_sleep(self):
         """
-        This test should test the most common case (going from awake to sleep to awake) of the AddEventLabels preprocessing step.
+        This test should test a case where there is no sleep awakening and only an onset.
         """
         df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),
                    "enmo": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -82,9 +82,9 @@ class TestAddEventLabels(TestCase):
         self.assertEqual("int16", df["onset"].dtype)
         self.assertEqual("int16", df["wakeup"].dtype)
 
-    def test_preprocess_event_labels_no_window(self):
+    def test_preprocess_event_labels_no_valid_sleep(self):
         """
-        This test should test the most common case (going from awake to sleep to awake) of the AddEventLabels preprocessing step.
+        This test should test a case where there is no valid onset / wakeup.
         """
         df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),
                    "enmo": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],

@@ -20,8 +20,11 @@ class AddEventLabels(PP):
         """
 
         if "window" not in data.columns:
-            logger.critical("No window column. Did you run Windowing before?")
-            raise PPException("No window column. Did you run Windowing before?")
+            logger.critical("No window column. Did you run SplitWindows before?")
+            raise PPException("No window column. Did you run SplitWindows before?")
+        if "awake" not in data.columns:
+            logger.critical("No awake column. Did you run AddStateLabels before?")
+            raise PPException("No awake column. Did you run AddStateLabels before?")
 
         # Find transitions from 1 to 0 (excluding 2-1 and 1-2 transitions)
         sleep_onsets = data[(data['awake'].diff() == -1) & (data['awake'].shift() == 1)]["step"].tolist()
@@ -31,12 +34,12 @@ class AddEventLabels(PP):
 
         # This should never happen
         if len(sleep_onsets) >= 2 and len(sleep_awakes) >= 2:
-            logger.critical("--- Found 2 onsets and 2 awake transitions in 1 window... This should never happen..")
-            raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen..")
+            logger.critical("--- Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
+            raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
 
         if abs(len(sleep_onsets) - len(sleep_awakes)) > 1:
-            logger.critical("--- Found more than 1 missing event in 1 window... This should never happen..")
-            raise PPException("Found more than 1 missing event in 1 window... This should never happen..")
+            logger.critical("--- Found more than 1 missing event in 1 window... This should never happen...")
+            raise PPException("Found more than 1 missing event in 1 window... This should never happen...")
 
         # If we have 1/2 sleep onsets, we pick first onset
         if len(sleep_onsets) == 1 or len(sleep_onsets) == 2:

@@ -20,7 +20,6 @@
         "ClassicModel": {
             "type": "classic-base-model"
         }
-
     },
     "model_store_loc": "tm",
     "ensemble": {

@@ -20,7 +20,7 @@ def standardize(df: pd.DataFrame, method: str) -> pd.DataFrame:
     else:
         logger.critical("Standardization method not found: " + method)
         raise ConfigException("Standardization method not found: " + method)
-    
+
     # Standardize data
     standardized_data = scaler.fit_transform(data_to_standardize)
     df.loc[:, data_to_standardize.columns] = standardized_data

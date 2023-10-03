@@ -75,8 +75,6 @@ class ExampleModel(Model):
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
-
-
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, Y_train)
         test_dataset = torch.utils.data.TensorDataset(X_test, Y_test)

@@ -2,13 +2,11 @@
 
 # Imports
 import wandb
-from sklearn.model_selection import GroupShuffleSplit
 
 from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
-from src.pre_train.standardization import standardize
 from src.pre_train.train_test_split import train_test_split
 from src.get_processed_data import get_processed_data
 
@@ -91,7 +89,7 @@ def main(config: ConfigLoader, series_path) -> None:
     ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
-
+    test_data = None
     ensemble.pred(test_data)
 
     # Initialize loss

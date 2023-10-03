@@ -65,6 +65,11 @@ def main(config: ConfigLoader, series_path) -> None:
         models[model].train(featured_data)
         models[model].save(store_location + "/" + model + ".pt")
 
+    # TODO Hyperparameter Optimization #101
+    # Store optimal models
+    for i, model in enumerate(models):
+        models[model].save(store_location + "/optimal_" + model + ".pt")
+
     # Get saved models directory from config
     store_location = config.get_model_store_loc()
 
@@ -88,7 +93,7 @@ def main(config: ConfigLoader, series_path) -> None:
     # ------------------------------------------------------- #
 
     print_section_separator("Hyperparameter optimization for ensemble", spacing=0)
-    # TODO Hyperparameter optimization for ensembles #101
+    # TODO Hyperparameter optimization for ensembles
     hpo = config.get_hpo()
     hpo.optimize()
 
@@ -108,11 +113,15 @@ def main(config: ConfigLoader, series_path) -> None:
 
     # TODO Mark best model from CV/HPO and train it on all data
     if config.get_train_for_submission():
-        logger.info("Training best model for submission")
-        best_model = None
-        best_model.train(featured_data)
-        # Add submit in name for saving
-        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
+        logger.info("Retraining models for submission")
+
+        # Retrain all models with optimal parameters
+        for i, model in enumerate(models):
+            models[model].load(store_location + "/optimal_" + model + ".pt")
+            logger.info("Retraining model " + str(i) + ": " + model)
+
+            models[model].train(featured_data)
+            models[model].save(store_location + "/submit_" + model + ".pt")
     else:
         logger.info("Not training best model for submission")
 

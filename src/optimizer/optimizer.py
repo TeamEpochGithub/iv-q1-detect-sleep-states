@@ -1,21 +1,22 @@
 import torch.optim as optim
+from torch import nn
 
 
 class OptimizerException(Exception):
     pass
 
 
-class Optimizer():
+class Optimizer:
     """
     This is a static class for optimizer functions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Init function
         pass
 
     @staticmethod
-    def get_optimizer(optimizer_name, learning_rate, model):
+    def get_optimizer(optimizer_name: str, learning_rate: float, model: nn.Module):
         """
         This function returns the correct optimizer function.
         :param optimizer_name: name of the optimizer

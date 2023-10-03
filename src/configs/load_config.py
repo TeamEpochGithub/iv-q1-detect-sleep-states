@@ -5,7 +5,9 @@ from ..models.classic_base_model import ClassicBaseModel
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
+from ..preprocessing.truncate import Truncate
 from ..preprocessing.add_state_labels import AddStateLabels
 
 # Feature engineering imports
@@ -35,6 +37,7 @@ class ConfigLoader:
 
     # Initiate class using config path
     def __init__(self, config_path):
+        self.pp_steps = []
         self.config_path = config_path
 
         # Read JSON from file
@@ -61,6 +64,12 @@ class ConfigLoader:
                 case "add_state_labels":
                     if training:
                         self.pp_steps.append(AddStateLabels())
+                case "remove_unlabeled":
+                    if training:
+                        self.pp_steps.append(RemoveUnlabeled())
+                case "truncate":
+                    if training:
+                        self.pp_steps.append(Truncate())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

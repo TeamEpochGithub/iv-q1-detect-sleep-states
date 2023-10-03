@@ -3,7 +3,6 @@ from src.configs.load_config import ConfigLoader
 import time
 from src.get_processed_data import get_processed_data
 
-
 if __name__ == "__main__":
 
     config = ConfigLoader("test/test_config.json")

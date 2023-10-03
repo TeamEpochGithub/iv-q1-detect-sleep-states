@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import polars as pl
 import gc
+import numpy as np
 
 
 class MemReduce(PP):
@@ -40,4 +41,7 @@ class MemReduce(PP):
         logger.debug("------ Done converting timestamp to datetime")
         data = data.to_pandas()
         gc.collect()
+        pad_type = {'step': np.uint32, 'series_id': np.uint16, 'enmo': np.float32,
+                    'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
+        data = data.astype(pad_type)
         return data

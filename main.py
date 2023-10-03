@@ -10,6 +10,7 @@ from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
 from src.pre_train.standardization import standardize
+from src.pre_train.train_test_split import train_test_split
 
 
 def main(config: ConfigLoader) -> None:
@@ -80,31 +81,13 @@ def main(config: ConfigLoader) -> None:
     pretrain = config.get_pretraining()
 
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    exclude_x = ['timestamp', 'window', 'step', 'awake']
-    keep_y_train_columns = []
-    if 'awake' in featured_data.columns:
-        keep_y_train_columns.append('awake')
-    x_columns = featured_data.columns.drop(exclude_x)
-    X_featured_data = featured_data[x_columns].to_numpy().reshape(-1, 17280, len(x_columns))
-    Y_featured_data = featured_data[keep_y_train_columns].to_numpy().reshape(-1, 17280, len(keep_y_train_columns))
-    X_train, X_test, Y_train, Y_test = train_test_split(X_featured_data, Y_featured_data, test_size=0.2, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"])
 
     # Standardize data
     standardize(X_train, pretrain["standardize"])
     standardize(X_test, pretrain["standardize"])
 
-    # Train test split on series id
-    # Check if test size key exists in pretrain
-    train_data: pd.DataFrame = None
-    test_data = None
-    if "test_size" in pretrain:
-        groups = featured_data["series_id"]
-        gss = GroupShuffleSplit(
-            n_splits=1, test_size=pretrain["test_size"], random_state=42)
-        train_idx, test_idx = next(gss.split(featured_data, groups=groups))
-        train_data = featured_data.iloc[train_idx]
-        test_data = featured_data.iloc[test_idx]
-        print("Data split into train and test")
+    
     
     cv = 0
     if "cv" in pretrain:

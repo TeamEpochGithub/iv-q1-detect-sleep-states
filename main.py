@@ -4,7 +4,6 @@
 import pandas as pd
 import wandb
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import gc
 import numpy as np
 
@@ -12,6 +11,8 @@ from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
+from src.pre_train.standardization import standardize
+import cProfile
 
 
 def main(config: ConfigLoader) -> None:
@@ -73,10 +74,13 @@ def main(config: ConfigLoader) -> None:
         # Passes the current list because it's needed to write to if the path doesn't exist
         featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
 
-    # Pretrain processstep (splitting data into train and test, standardization, etc.)
-    print("-------- PRETRAINING ----------")
-    pretrain = config.get_pretraining()
+    # ------------------------- #
+    #         Pre-train         #
+    # ------------------------- #
 
+    print_section_separator("Pre-train", spacing=0)
+
+    pretrain = config.get_pretraining()
 
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     exclude_x = ['timestamp', 'window', 'step', 'awake']
@@ -86,25 +90,11 @@ def main(config: ConfigLoader) -> None:
     x_columns = featured_data.columns.drop(exclude_x)
     X_featured_data = featured_data[x_columns].to_numpy().reshape(-1, 17280, len(x_columns))
     Y_featured_data = featured_data[keep_y_train_columns].to_numpy().reshape(-1, 17280, len(keep_y_train_columns))
+    X_train, X_test, Y_train, Y_test = train_test_split(X_featured_data, Y_featured_data, test_size=0.2, random_state=42)
 
     # Standardize data
-    exclude_columns = ['series_id', 'timestamp',
-                       'window', 'step', 'awake']  # 'onset', 'wakeup']
-    scaler = None
-    if pretrain["standardize"] == "standard":
-        scaler = StandardScaler()
-    elif pretrain["standardize"] == "minmax":
-        scaler = MinMaxScaler()
-
-    # Drop columns to exclude from standardization
-    data_to_standardize = featured_data.drop(columns=exclude_columns)
-    data_to_standardize = scaler.fit_transform(data_to_standardize)
-    # Add columns back to standardized data
-    standardized_data = pd.DataFrame(
-        data_to_standardize, columns=featured_data.columns.drop(exclude_columns))
-    featured_data = pd.concat(
-        [featured_data[exclude_columns], standardized_data], axis=1)
-    print("Data standardized")
+    standardize(X_train, pretrain["standardize"])
+    standardize(X_test, pretrain["standardize"])
 
     # Train test split on series id
     # Check if test size key exists in pretrain
@@ -118,15 +108,10 @@ def main(config: ConfigLoader) -> None:
         train_data = featured_data.iloc[train_idx]
         test_data = featured_data.iloc[test_idx]
         print("Data split into train and test")
-    else:
+    
+    cv = 0
+    if "cv" in pretrain:
         cv = config.get_cv()
-        print("Crossvalidation will be used instead of train test split")
-
-    # ------------------------- #
-    #         Pre-train         #
-    # ------------------------- #
-
-    print_section_separator("Pre-train", spacing=0)
 
     # ------------------------- #
     #          Training         #
@@ -230,7 +215,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config)
+    cProfile.run('main(config)')
 
     # Create submission
     submit_to_kaggle.submit(config, config.get_pp_in() + "/test_series.parquet", False)

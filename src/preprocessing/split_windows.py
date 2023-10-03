@@ -22,16 +22,17 @@ class SplitWindows(PP):
 
         df = df.groupby('series_id').progress_apply(
             self.pad_series).reset_index(drop=True)
-        print("Padding done")
+
         # Split the data into 24 hour windows per series_id
         df = df.groupby('series_id').progress_apply(
             self.preprocess_series).reset_index(0, drop=True)
 
         return df
 
-    def preprocess_series(self, df: pd.DataFrame) -> pd.DataFrame:
-        df['window'] = df.index // self.window_size
-        return df
+    def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:
+        series['window'] = series.reset_index(0, drop=True).index // self.window_size
+        series.astype({'window': np.uint8})
+        return series
 
     def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 
@@ -64,10 +65,10 @@ class SplitWindows(PP):
         awake = np.full(amount_of_padding_start, 2)
 
         # Create a numpy array of step values
-        step = -np.arange(1, amount_of_padding_start + 1)
+        step = (-np.arange(1, amount_of_padding_start + 1))[::-1]
 
-        # Create a numpy array of timestamps
-        timestamps = first_time - np.arange(1, amount_of_padding_start + 1) * pd.Timedelta(seconds=5)
+        # Create a numpy array of timestamps using date range
+        timestamps = (first_time - np.arange(1, amount_of_padding_start + 1) * pd.Timedelta(seconds=5))[::-1]
 
         # Create a numpy array of series ids
         series_id = np.full(amount_of_padding_start, curr_series_id)
@@ -103,8 +104,9 @@ class SplitWindows(PP):
         # Create a numpy array of step values
         step = np.arange(last_step + 1, last_step + amount_of_padding_end + 1)
 
-        # Create a numpy array of timestamps
+        # Create a numpy array of timestamps using date range
         timestamps = last_time + np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
+
 
         # Create a numpy array of series ids
         series_id = np.full(amount_of_padding_end, curr_series_id)

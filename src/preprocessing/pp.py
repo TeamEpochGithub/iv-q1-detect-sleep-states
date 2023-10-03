@@ -36,3 +36,7 @@ class PP:
                 logger.info('--- Done preprocessing, not saving result')
 
         return processed
+
+
+class PPException(Exception):
+    pass

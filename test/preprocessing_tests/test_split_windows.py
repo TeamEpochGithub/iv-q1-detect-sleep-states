@@ -10,10 +10,13 @@ class MyTestCase(unittest.TestCase):
         split_windows = SplitWindows(15)
 
         # Create a two-day long dataframe, with 5 seconds per step
-        start_time = pd.Timestamp(year=2023, month=1, day=1, hour=16)  # start 1 hour too early
-        end_time = start_time + pd.Timedelta(days=2)  # Add 1.5 days to the start time
+        # start 1 hour too early
+        start_time = pd.Timestamp(year=2023, month=1, day=1, hour=16)
+        # Add 1.5 days to the start time
+        end_time = start_time + pd.Timedelta(days=2)
         timestamps = pd.date_range(start=start_time, end=end_time, freq='5S')
-        df = pd.DataFrame({'timestamp': timestamps, 'series_id': np.zeros(len(timestamps)), 'step': np.zeros(len(timestamps), dtype=np.uint32), 'awake': np.zeros(len(timestamps), dtype=np.uint8)})
+        df = pd.DataFrame({'timestamp': timestamps, 'series_id': np.zeros(len(timestamps)), 'step': np.zeros(
+            len(timestamps), dtype=np.uint32), 'awake': np.zeros(len(timestamps), dtype=np.uint8)})
 
         # define expected window boundaries
         window_1_start = int(24 * 60 * 60 / 5)

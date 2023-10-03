@@ -1,6 +1,5 @@
 import pandas as pd
 from src.preprocessing.pp import PP
-from matplotlib import pyplot as plt
 from tqdm import tqdm
 import numpy as np
 import gc
@@ -37,7 +36,7 @@ class SplitWindows(PP):
     def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 
         # Garbage collect
-        gc.collect()
+        #gc.collect()
 
         # Pad types
         pad_type = {'step': np.uint32, 'series_id': np.uint16, 'awake': np.uint8, 'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
@@ -89,10 +88,7 @@ class SplitWindows(PP):
 
         # Pad the end with enmo = 0 and anglez = 0 and steps being relative to the last step until timestamp is 15:00:00
         amount_of_padding_end = 0
-        if last_steps > self.steps_before:
-            amount_of_padding_end += (self.steps_before - 1) + (self.window_size - last_steps)
-        else:
-            amount_of_padding_end += (self.steps_before - 1) - last_steps
+        amount_of_padding_end = 17280 - ((len(start_pad_df) + len(group)) % 17280)
 
         last_step = group['step'].iloc[-1]
         
@@ -106,7 +102,6 @@ class SplitWindows(PP):
 
         # Create a numpy array of timestamps using date range
         timestamps = last_time + np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
-
 
         # Create a numpy array of series ids
         series_id = np.full(amount_of_padding_end, curr_series_id)

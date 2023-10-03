@@ -4,15 +4,12 @@
 import pandas as pd
 import wandb
 from sklearn.model_selection import GroupShuffleSplit
-import gc
-import numpy as np
 
 from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
 from src.pre_train.standardization import standardize
-import cProfile
 
 
 def main(config: ConfigLoader) -> None:
@@ -215,7 +212,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    cProfile.run('main(config)')
+    main(config)
 
     # Create submission
     submit_to_kaggle.submit(config, config.get_pp_in() + "/test_series.parquet", False)

@@ -1,5 +1,7 @@
 # Base class for preprocessing
+from ..logger.logger import logger
 import os
+
 import pandas as pd
 import gc
 

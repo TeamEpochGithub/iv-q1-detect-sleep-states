@@ -1,7 +1,6 @@
 # This file does the training of the model
 
 # Imports
-import pandas as pd
 import wandb
 from sklearn.model_selection import GroupShuffleSplit
 
@@ -11,9 +10,10 @@ from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
 from src.pre_train.standardization import standardize
 from src.pre_train.train_test_split import train_test_split
+from src.get_processed_data import get_processed_data
 
 
-def main(config: ConfigLoader) -> None:
+def main(config: ConfigLoader, series_path) -> None:
     """
     Main function for training the model
 
@@ -34,43 +34,13 @@ def main(config: ConfigLoader) -> None:
     else:
         logger.info("Not logging to wandb")
 
-    # Do training here
-    to_load = config.get_pp_in() + "/train_series.parquet"
-    df = pd.read_parquet(to_load)
+    # ------------------------------------------- #
+    #    Preprocessing and feature Engineering    #
+    # ------------------------------------------- #
 
-    logger.info("Loaded data from " + to_load)
+    print_section_separator("Preprocessing and feature engineering", spacing=0)
 
-    # ------------------- #
-    #    Preprocessing    #
-    # ------------------- #
-
-    print_section_separator("Preprocessing", spacing=0)
-
-    # Initialize preprocessing steps
-    print("-------- PREPROCESSING ----------")
-    pp_steps, pp_s = config.get_pp_steps()
-    logger.info("Preprocessing steps: " + str(pp_s))
-
-    processed = df
-    # Get the preprocessing steps as a list of str to make the paths
-    for i, step in enumerate(pp_steps):
-        logger.info("Running preprocessing step " + str(i) + ": " + str(pp_s[i]))
-        # Passes the current list because it's needed to write to if the path doesn't exist
-        processed = step.run(processed, pp_s[:i + 1])
-
-    # ------------------------- #
-    #    Feature Engineering    #
-    # ------------------------- #
-
-    print_section_separator("Feature engineering", spacing=0)
-
-    fe_steps, fe_s = config.get_features()
-    logger.info("Feature engineering steps: " + str(fe_s))
-    featured_data = processed
-    for i, fe_step in enumerate(fe_steps):
-        logger.info("Running feature engineering step " + str(i) + ": " + str(fe_s[i]))
-        # Passes the current list because it's needed to write to if the path doesn't exist
-        featured_data = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
+    featured_data = get_processed_data(config, series_path, save_output=True)
 
     # ------------------------- #
     #         Pre-train         #
@@ -195,7 +165,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config)
+    main(config, "data/raw/test_series.parquet")
 
     # Create submission
-    submit_to_kaggle.submit(config, config.get_pp_in() + "/test_series.parquet", False)
+    submit_to_kaggle.submit(config, "data/raw/test_series.parquet", False)

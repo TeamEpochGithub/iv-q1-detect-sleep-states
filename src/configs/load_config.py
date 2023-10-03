@@ -1,40 +1,37 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
-from ..models.classic_base_model import ClassicBaseModel
-# Preprocessing imports
-from ..preprocessing.mem_reduce import MemReduce
-from ..preprocessing.add_noise import AddNoise
-from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.add_state_labels import AddStateLabels
-
-# Feature engineering imports
-from ..feature_engineering.kurtosis import Kurtosis
-from ..feature_engineering.skewness import Skewness
-from ..feature_engineering.mean import Mean
-
-from ..logger.logger import logger
-
-# Model imports
-from ..models.example_model import ExampleModel
-
-# Ensemble imports
-from ..ensemble.ensemble import Ensemble
-
-# Loss imports
-from ..loss.loss import Loss
-
-# HPO imports
-from ..hpo.hpo import HPO
-
 # CV imports
 from ..cv.cv import CV
+# Ensemble imports
+from ..ensemble.ensemble import Ensemble
+# Feature engineering imports
+from ..feature_engineering.kurtosis import Kurtosis
+from ..feature_engineering.mean import Mean
+from ..feature_engineering.skewness import Skewness
+# HPO imports
+from ..hpo.hpo import HPO
+from ..logger.logger import logger
+# Loss imports
+from ..loss.loss import Loss
+from ..models.classic_base_model import ClassicBaseModel
+# Model imports
+from ..models.example_model import ExampleModel
+from ..preprocessing.add_event_labels import AddEventLabels
+from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_state_labels import AddStateLabels
+# Preprocessing imports
+from ..preprocessing.mem_reduce import MemReduce
+from ..preprocessing.remove_unlabeled import RemoveUnlabeled
+from ..preprocessing.split_windows import SplitWindows
+from ..preprocessing.truncate import Truncate
 
 
 class ConfigLoader:
 
     # Initiate class using config path
-    def __init__(self, config_path: str):
+    def __init__(self, config_path):
+        self.pp_steps = []
         self.config_path = config_path
 
         # Read JSON from file
@@ -63,6 +60,15 @@ class ConfigLoader:
                 case "add_state_labels":
                     if training:
                         self.pp_steps.append(AddStateLabels())
+                case "remove_unlabeled":
+                    if training:
+                        self.pp_steps.append(RemoveUnlabeled())
+                case "truncate":
+                    if training:
+                        self.pp_steps.append(Truncate())
+                case "add_event_labels":
+                    if training:
+                        self.pp_steps.append(AddEventLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

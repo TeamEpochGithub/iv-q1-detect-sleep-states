@@ -32,7 +32,7 @@ class MemReduce(PP):
             if isinstance(data, pd.DataFrame):
                 data = pl.from_pandas(data)
         data = pl.from_pandas(data)
-        data = data.with_columns(pl.col("timestamp").str.slice(0, 18))
+        data = data.with_columns(pl.col("timestamp").str.slice(0, 19))
         data = data.with_columns(pl.col("timestamp").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
         logger.debug("------ Done converting timestamp to datetime")
         data = data.to_pandas()

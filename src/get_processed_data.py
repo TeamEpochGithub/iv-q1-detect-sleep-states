@@ -15,13 +15,12 @@ def get_processed_data(config, series_path, save_output=True):
         path = config.get_pp_out() + '/' + '_'.join(step_names[:i]) + '.parquet'
         # check if the final result of the preprocessing exists
         if os.path.exists(path):
-            logger.info(f'--- Found existing file at: {path}')
-            logger.info(f'--- Reading from: {path}')
+            logger.info(f'--- Reading existing file at: {path}')
             processed = pd.read_parquet(path)
-            logger.info(f'--- Data read from: {path}')
+            logger.info(f'--- Finished reading')
             break
         else:
-            logger.info(f'--- File not found at: {path}')
+            logger.debug(f'--- File not found at: {path}')
 
     if i == 0:
         logger.info(f'--- No files found, reading from: {series_path}')
@@ -41,5 +40,5 @@ def get_processed_data(config, series_path, save_output=True):
         if save_output:
             logger.info(f'--- Saving to: {path}')
             processed.to_parquet(path)
-            logger.info(f'--- Saved to: {path}')
+            logger.info(f'--- Finished saving')
     return processed

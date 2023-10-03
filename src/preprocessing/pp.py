@@ -9,3 +9,7 @@ class PP:
 
     def run(self, data):
         return self.preprocess(data)
+
+
+class PPException(Exception):
+    pass

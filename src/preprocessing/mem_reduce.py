@@ -4,6 +4,7 @@ from ..logger.logger import logger
 import json
 import pandas as pd
 import polars as pl
+import gc
 
 
 class MemReduce(PP):
@@ -31,9 +32,12 @@ class MemReduce(PP):
         if not self.use_pandas:
             if isinstance(data, pd.DataFrame):
                 data = pl.from_pandas(data)
+                gc.colect()
         data = pl.from_pandas(data)
+        gc.collect()
         data = data.with_columns(pl.col("timestamp").str.slice(0, 19))
         data = data.with_columns(pl.col("timestamp").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
         logger.debug("------ Done converting timestamp to datetime")
         data = data.to_pandas()
+        gc.collect()
         return data

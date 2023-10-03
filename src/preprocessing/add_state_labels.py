@@ -80,6 +80,8 @@ class AddStateLabels(PP):
 
         if 'NaN' in data.columns:
             data.drop(columns=['NaN'], inplace=True)
+        # convert the awake column to int8
+        data['awake'] = data['awake'].astype('int8')
         return data
 
     # This is copied over from EDA-Hugo

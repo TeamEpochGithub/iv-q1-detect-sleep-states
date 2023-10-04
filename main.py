@@ -7,7 +7,7 @@ from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
-from src.pre_train.train_test_split import train_test_split
+from src.pre_train.train_test_split import train_test_split, split_on_labels
 from src.get_processed_data import get_processed_data
 
 
@@ -132,7 +132,7 @@ def main(config: ConfigLoader, series_path) -> None:
             models[model].load(store_location + "/optimal_" + model + ".pt")
             logger.info("Retraining model " + str(i) + ": " + model)
 
-            models[model].train(featured_data)
+            models[model].train_full(split_on_labels(featured_data))
             models[model].save(store_location + "/submit_" + model + ".pt")
     else:
         logger.info("Not training best model for submission")

@@ -20,10 +20,19 @@ class ExampleModel(Model):
         """
         super().__init__(config)
 
+        # Check if gpu is available, else return an exception
+        if not torch.cuda.is_available():
+            logger.critical("GPU not available")
+            raise ModelException("GPU not available")
+
+        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
+        self.device = torch.device("cuda")
+
         self.model_type = "state-prediction"
         # Load model
         self.model = SimpleModel(2, 10, 1, config)
         self.load_config(config)
+
 
     def load_config(self, config):
         """

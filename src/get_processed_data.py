@@ -4,8 +4,8 @@ import pandas as pd
 import gc
 
 
-def get_processed_data(config, series_path, save_output=True):
-    pp_steps, pp_step_names = config.get_pp_steps()
+def get_processed_data(config, series_path, save_output=True, training=True):
+    pp_steps, pp_step_names = config.get_pp_steps(training)
     fe_steps, fe_step_names = config.get_features()
     fe_steps = [fe_steps[key] for key in fe_steps]
     step_names = pp_step_names + fe_step_names

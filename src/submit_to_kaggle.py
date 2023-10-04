@@ -7,7 +7,7 @@ from src.util.submissionformat import to_submission_format
 
 def submit(config: ConfigLoader, test_series_path, submit=False):
 
-    featured_data = get_processed_data(config, test_series_path, save_output=False)
+    featured_data = get_processed_data(config, test_series_path, save_output=False, training=False)
     # Initialize models
     models = config.get_models()
 

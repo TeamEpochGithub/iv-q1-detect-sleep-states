@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-
+#TODO Make it work with our data
 class conbr_block(nn.Module):
     def __init__(self, in_layer, out_layer, kernel_size, stride, dilation):
         super(conbr_block, self).__init__()

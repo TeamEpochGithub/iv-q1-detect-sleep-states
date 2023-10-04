@@ -7,7 +7,6 @@ from ...loss.loss import Loss
 from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
 from .transformer_encoder import TSTransformerEncoderClassiregressor
-from torchsummary import summary
 import torchinfo
 
 
@@ -23,7 +22,9 @@ class Transformer(Model):
         """
         super().__init__(config)
         # Init model
-        self.model = TSTransformerEncoderClassiregressor(**self.load_transformer_config(config))
+        self.transformer_config = self.load_transformer_config(config)
+        self.model = TSTransformerEncoderClassiregressor(
+            **self.transformer_config)
         self.load_config(config)
 
         # Check if gpu is available, else return an exception
@@ -43,17 +44,22 @@ class Transformer(Model):
         required = ["loss", "epochs", "optimizer"]
         for req in required:
             if req not in config:
-                logger.critical("------ Config is missing required parameter: " + req)
-                raise ModelException("Config is missing required parameter: " + req)
+                logger.critical(
+                    "------ Config is missing required parameter: " + req)
+                raise ModelException(
+                    "Config is missing required parameter: " + req)
 
         # Get default_config
         default_config = self.get_default_config()
 
         config["loss"] = Loss.get_loss(config["loss"])
-        config["batch_size"] = config.get("batch_size", default_config["batch_size"])
+        config["batch_size"] = config.get(
+            "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
-        config["patch_size"] = config.get("patch_size", default_config["patch_size"])
+        config["optimizer"] = Optimizer.get_optimizer(
+            config["optimizer"], config["lr"], self.model)
+        config["patch_size"] = config.get(
+            "patch_size", default_config["patch_size"])
 
         self.config = config
 
@@ -76,7 +82,7 @@ class Transformer(Model):
         for key in default_config:
             if key in config:
                 new_config[key] = config[key]
-        
+
         return new_config
 
     def get_default_transformer_config(self):
@@ -119,10 +125,14 @@ class Transformer(Model):
         batch_size = self.config["batch_size"]
 
         # Print the shapes and types of train and test
-        logger.info(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        logger.info(
+            f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(
+            f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.info(
+            f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(
+            f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
         y_train = y_train[:, :, 0]
@@ -137,13 +147,18 @@ class Transformer(Model):
         patch_size = self.config["patch_size"]
 
         # Patch the data for the features
-        X_train = torch.reshape(X_train, (X_train.shape[0], X_train.shape[1] // patch_size, patch_size, X_train.shape[2]))
-        X_train = torch.reshape(X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2] * X_train.shape[3]))
-        X_test = torch.reshape(X_test, (X_test.shape[0], X_test.shape[1] // patch_size, patch_size, X_test.shape[2]))
-        X_test = torch.reshape(X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2] * X_test.shape[3]))
+        X_train = torch.reshape(
+            X_train, (X_train.shape[0], X_train.shape[1] // patch_size, patch_size, X_train.shape[2]))
+        X_train = torch.reshape(
+            X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2] * X_train.shape[3]))
+        X_test = torch.reshape(
+            X_test, (X_test.shape[0], X_test.shape[1] // patch_size, patch_size, X_test.shape[2]))
+        X_test = torch.reshape(
+            X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2] * X_test.shape[3]))
 
         # Patch the data for the labels
-        y_train = torch.reshape(y_train, (y_train.shape[0], y_train.shape[1] // patch_size, patch_size))
+        y_train = torch.reshape(
+            y_train, (y_train.shape[0], y_train.shape[1] // patch_size, patch_size))
         y_train = torch.transpose(y_train, 1, 2)
         y_train = torch.max(y_train, 1).values
 
@@ -159,7 +174,7 @@ class Transformer(Model):
 
         # Torch summary
         logger.info(torchinfo.summary(self.model))
-        trainer = Trainer(epochs=1)
+        trainer = Trainer(epochs=epochs)
         trainer.fit(train_dataloader, self.model, self.config["optimizer"])
         accuracy = trainer.evaluate(test_dataloader, self.model)
         print(f"Accuracy: {accuracy}")
@@ -217,7 +232,8 @@ class Transformer(Model):
         :param path: path to model checkpoint
         :return:
         """
-        self.model = TS(2, 10, 1, self.config)
+        self.model = TSTransformerEncoderClassiregressor(
+            **self.transformer_config)
         checkpoint = torch.load(path)
 
         self.model.load_state_dict(checkpoint['model_state_dict'])

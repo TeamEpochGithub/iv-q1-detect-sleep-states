@@ -17,7 +17,7 @@ from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 # Model imports
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..preprocessing.add_event_labels import AddEventLabels
+from ..preprocessing.add_regression_labels import AddRegressionLabels
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_state_labels import AddStateLabels
 # Preprocessing imports
@@ -66,9 +66,9 @@ class ConfigLoader:
                 case "truncate":
                     if training:
                         self.pp_steps.append(Truncate())
-                case "add_event_labels":
+                case "add_regression_labels":
                     if training:
-                        self.pp_steps.append(AddEventLabels())
+                        self.pp_steps.append(AddRegressionLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

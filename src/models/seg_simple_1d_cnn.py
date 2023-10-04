@@ -5,6 +5,7 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
+from torchsummary import summary
 
 
 class SegmentationSimple1DCNN(Model):
@@ -26,6 +27,9 @@ class SegmentationSimple1DCNN(Model):
         # Load model
         self.model = SegSimple1DCNN(window_length=data_shape[0], in_channels=data_shape[1], config=config)
         self.load_config(config)
+
+        # Print model summary
+        summary(self.model.cuda(), input_size=(data_shape[1], data_shape[0]))
 
     def load_config(self, config):
         """
@@ -76,6 +80,13 @@ class SegmentationSimple1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+
+
+        # Print the shapes and types of train and test
+        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)

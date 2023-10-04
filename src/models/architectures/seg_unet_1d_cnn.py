@@ -80,7 +80,7 @@ class seg_unet_id(nn.Module):
         self.upsample = nn.Upsample(scale_factor=5, mode='nearest')
         self.upsample1 = nn.Upsample(scale_factor=5, mode='nearest')
 
-        self.outcov = nn.Conv1d(self.layer_n, 11, kernel_size=self.kernel_size, stride=1, padding=3)
+        self.outcov = nn.Conv1d(self.layer_n, 1, kernel_size=self.kernel_size, stride=1, padding=3)
 
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
         block = []

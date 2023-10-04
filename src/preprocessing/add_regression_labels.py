@@ -5,7 +5,7 @@ from src.preprocessing.pp import PP, PPException
 from ..logger.logger import logger
 
 
-class AddEventLabels(PP):
+class AddRegressionLabels(PP):
     """Preprocessing step that adds the event labels to the data
 
     This will add the event labels to the data by using the event data.

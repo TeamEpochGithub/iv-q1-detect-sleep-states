@@ -2,13 +2,12 @@
 
 # Imports
 import wandb
-
 from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
-from src.logger.logger import logger
-from src.util.printing_utils import print_section_separator
-from src.pre_train.train_test_split import train_test_split
 from src.get_processed_data import get_processed_data
+from src.logger.logger import logger
+from src.pre_train.train_test_split import train_test_split
+from src.util.printing_utils import print_section_separator
 
 
 def main(config: ConfigLoader, series_path) -> None:
@@ -46,15 +45,20 @@ def main(config: ConfigLoader, series_path) -> None:
 
     print_section_separator("Pre-train", spacing=0)
 
+    logger.info("Get pretraining parameters from config...")
     pretrain = config.get_pretraining()
 
+    logger.info("Obtained pretrain parameters from config " + str(pretrain))
+    # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    X_train, X_test, y_test, y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
 
-    #Give data shape in terms of (window_length, features)
+    logger.info("Splitting data into train and test...")
+    X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
+
+    # Give data shape in terms of (window_length, features)
     data_shape = (X_train.shape[1], X_train.shape[2])
-
-    #TODO Cross validation should be part of each model
+    logger.info("Data shape: " + str(data_shape))
+    # TODO Cross validation should be part of each model
     cv = 0
     if "cv" in pretrain:
         cv = config.get_cv()
@@ -66,10 +70,11 @@ def main(config: ConfigLoader, series_path) -> None:
     print_section_separator("Training", spacing=0)
 
     # Initialize models
-    print("-------- TRAINING MODELS ----------")
+    logger.info("Initializing models...")
     models = config.get_models(data_shape)
     for model in models:
-        models[model].train(X_train, X_test, y_test, y_test)
+        logger.info("--- Training model: " + model)
+        models[model].train(X_train, X_test, y_train, y_test)
 
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
@@ -158,6 +163,7 @@ def main(config: ConfigLoader, series_path) -> None:
 
 if __name__ == "__main__":
     import coloredlogs
+
     coloredlogs.install()
 
     # Load config file

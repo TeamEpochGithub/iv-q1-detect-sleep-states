@@ -34,11 +34,13 @@ class AddEventLabels(PP):
 
         # This should never happen
         if len(sleep_onsets) >= 2 and len(sleep_awakes) >= 2:
-            logger.warn("--- Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
+            logger.warn(f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)}. More than 2 onsets and windows.. This should never happen...")
+            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
             # raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
 
         if abs(len(sleep_onsets) - len(sleep_awakes)) > 1:
-            logger.warn("--- Found more than 1 missing event in 1 window... This should never happen...")
+            logger.warn(f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)} in 1 window. This should never happen...")
+            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
             # raise PPException("Found more than 1 missing event in 1 window... This should never happen...")
 
         # If we have 1/2 sleep onsets, we pick first onset

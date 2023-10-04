@@ -75,12 +75,11 @@ def main(config: ConfigLoader, series_path) -> None:
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
-
     # Initialize models
     logger.info("Initializing models...")
     models = config.get_models(data_shape)
 
-     # TODO Add crossvalidation to models #107
+    # TODO Add crossvalidation to models #107
     for i, model in enumerate(models):
         logger.info("Training model " + str(i) + ": " + model)
         models[model].train(X_train, X_test, y_train, y_test)

@@ -75,7 +75,6 @@ class SegmentationSimple1DCNN(Model):
         :return:
         """
 
-
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]

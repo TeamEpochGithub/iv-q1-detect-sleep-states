@@ -36,4 +36,3 @@ class TestAddSegmentationLabels(TestCase):
         self.assertEqual("int8", df["hot-awake"].dtype)
         self.assertEqual("int8", df["hot-NaN"].dtype)
         self.assertEqual("int8", df["awake"].dtype)
-

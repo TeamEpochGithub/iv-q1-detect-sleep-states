@@ -5,6 +5,7 @@ class SegSimple1DCNN(nn.Module):
     """
     This contains a baseline 1D CNN architecture for segmenting the data. It takes currently a day as input, outputs 0 / 1 / 2 for every timestep.
     """
+
     def __init__(self, window_length, in_channels, config):
         super(SegSimple1DCNN, self).__init__()
         self.conv1 = nn.Conv1d(in_channels=in_channels, out_channels=4, kernel_size=3, padding=1)
@@ -44,5 +45,5 @@ class SegSimple1DCNN(nn.Module):
         x = self.maxpool5(x)
         x = self.flatten(x)
         x = self.fc1(x)
-        x= self.relu6(x)
+        x = self.relu6(x)
         return x

@@ -1,7 +1,8 @@
 import torch
 from torch import nn
 
-#TODO Make it work with our data
+
+# TODO Make it work with our data
 class conbr_block(nn.Module):
     def __init__(self, in_layer, out_layer, kernel_size, stride, dilation):
         super(conbr_block, self).__init__()
@@ -92,10 +93,8 @@ class seg_unet_id(nn.Module):
     def forward(self, x):
         pool_x1 = self.AvgPool1D1(x)
         pool_x2 = self.AvgPool1D2(x)
-        pool_x3 = self.AvgPool1D3(x)
 
-        #############Encoder#####################
-
+        # Encoder
         out_0 = self.layer1(x)
         out_1 = self.layer2(out_0)
 
@@ -105,7 +104,7 @@ class seg_unet_id(nn.Module):
         x = torch.cat([out_2, pool_x2], 1)
         x = self.layer4(x)
 
-        #############Decoder####################
+        # Decoder
 
         up = self.upsample1(x)
         up = torch.cat([up, out_2], 1)

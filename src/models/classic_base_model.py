@@ -1,4 +1,6 @@
-from ..logger.logger import logger
+import numpy as np
+import pandas as pd
+
 from ..models.model import Model
 from ..util.state_to_event import find_events
 
@@ -9,19 +11,19 @@ class ClassicBaseModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: dict) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         """
         super().__init__(config)
+        self.model_type = "classic-base-model"
         self.load_config(config)
 
-    def load_config(self, config):
+    def load_config(self, config: dict) -> None:
         """
         Load config function for the model.
         :param config: configuration to set up the model
-        :return:
         """
 
         # Get default_config
@@ -31,61 +33,26 @@ class ClassicBaseModel(Model):
         config["threshold"] = config.get("threshold", default_config["threshold"])
         self.config = config
 
-    def get_default_config(self):
+    def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
         return {"median_window": 100, "threshold": .1}
 
-    def train(self, X_train, X_test, Y_train, Y_test):
-        """
-        Train function for the model.
-        :param data: labelled data
-        :return:
-        """
-
-        # Get hyperparameters from config (epochs, lr, optimizer)
-        logger.info("--- Training of statistical model not necessary")
-
-    def pred(self, data):
+    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
         """
         Prediction function for the model.
-        :param data: unlabelled data for a single day window as pandas dataframe
+        :param X_pred: unlabeled data for a single day window as pandas dataframe
         :return: two timestamps, or NaN if no sleep was detected
         """
         # Get the data from the data tuple
-        state_pred = self.predict_state_labels(data)
+        state_pred = self.predict_state_labels(X_pred)
         onset, awake = find_events(state_pred)
         return onset, awake
 
-    def predict_state_labels(self, data):
+    def predict_state_labels(self, data: pd.DataFrame) -> np.ndarray:
         data['slope'] = abs(data['anglez'].diff()).clip(upper=10)
         data['movement'] = data['slope'].rolling(window=100).median()
         data['pred'] = (data['movement'] > .1).astype(float)
         return data['pred'].to_numpy()
-
-    def evaluate(self, pred, target):
-        """
-        Evaluation function for the model.
-        :param pred: predictions
-        :param target: targets
-        :return: avg loss of predictions
-        """
-        pass
-
-    def save(self, path):
-        """
-        Save function for the model.
-        :param path: path to save the model to
-        :return:
-        """
-        pass
-
-    def load(self, path):
-        """
-        Load function for the model.
-        :param path: path to model checkpoint
-        :return:
-        """
-        pass

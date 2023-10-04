@@ -6,7 +6,7 @@ from src.models.transformer.trainer import Trainer
 from ...loss.loss import Loss
 from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
-from .transformer_encoder import TSTransformerEncoder as TS, TSTransformerEncoderClassiregressor
+from .transformer_encoder import TSTransformerEncoderClassiregressor
 from torchsummary import summary
 import torchinfo
 

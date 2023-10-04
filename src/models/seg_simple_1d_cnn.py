@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torchsummary import summary
 
@@ -14,7 +15,7 @@ class SegmentationSimple1DCNN(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config, data_shape):
+    def __init__(self, config: dict, data_shape: tuple) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -32,7 +33,7 @@ class SegmentationSimple1DCNN(Model):
         logger.info("--- Model summary")
         summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
-    def load_config(self, config):
+    def load_config(self, config: dict) -> None:
         """
         Load config function for the model.
         :param config: configuration to set up the model
@@ -68,11 +69,10 @@ class SegmentationSimple1DCNN(Model):
         """
         return self.model_type
 
-    def train(self, X_train, X_test, y_train, y_test):
+    def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> None:
         """
         Train function for the model.
         :param data: labelled data
-        :return:
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
@@ -146,7 +146,7 @@ class SegmentationSimple1DCNN(Model):
             logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
                         f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
-    def pred(self, data):
+    def pred(self, data: np.ndarray) -> np.ndarray:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -164,7 +164,7 @@ class SegmentationSimple1DCNN(Model):
             prediction = self.model(data)
         return prediction
 
-    def evaluate(self, pred, target):
+    def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """
         Evaluation function for the model.
         :param pred: predictions
@@ -178,11 +178,10 @@ class SegmentationSimple1DCNN(Model):
         loss = criterion(pred, target)
         return loss
 
-    def save(self, path):
+    def save(self, path: str) -> None:
         """
         Save function for the model.
         :param path: path to save the model to
-        :return:
         """
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
@@ -191,11 +190,10 @@ class SegmentationSimple1DCNN(Model):
         torch.save(checkpoint, path)
         logger.info("--- Model saved to: " + path)
 
-    def load(self, path):
+    def load(self, path) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint
-        :return:
         """
         checkpoint = torch.load(path)
 

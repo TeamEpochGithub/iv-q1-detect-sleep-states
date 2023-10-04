@@ -23,8 +23,8 @@
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
             "optimizer": "rmsprop-torch",
-            "epochs": 5,
-            "batch_size": 64,
+            "epochs": 30,
+            "batch_size": 32,
             "lr": 0.01
         }
     },

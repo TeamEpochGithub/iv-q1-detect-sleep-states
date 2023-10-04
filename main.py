@@ -162,6 +162,9 @@ def main(config: ConfigLoader, series_path) -> None:
 
 
 if __name__ == "__main__":
+    import coloredlogs
+    coloredlogs.install()
+
     # Load config file
     config = ConfigLoader("config.json")
 

@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 
 
 def to_submission_format(df: pd.DataFrame) -> pd.DataFrame:
@@ -22,4 +23,10 @@ def to_submission_format(df: pd.DataFrame) -> pd.DataFrame:
     df.index.name = 'row_id'
 
     df['step'] = df['step'].astype(int)
+
+    with open('./series_id_encoding.json', 'r') as f:
+        encoding = json.load(f)
+    decoding = {v: k for k, v in encoding.items()}
+    df['series_id'] = df['series_id'].map(decoding)
+
     return df

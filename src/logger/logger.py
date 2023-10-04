@@ -1,6 +1,5 @@
 import os
 import logging
-import coloredlogs
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -27,5 +26,3 @@ file_handler.setFormatter(formatter)
 
 # Add the file handler to the logger
 logger.addHandler(file_handler)
-
-coloredlogs.install()

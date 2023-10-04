@@ -1,28 +1,30 @@
 import torch
 
-from architectures.simple_model import SimpleModel
+from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 
 
-class ExampleModel(Model):
+class SegmentationSimple1DCNN(Model):
     """
     This is a sample model file. You can use this as a template for your own models.
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, data_shape):
         """
         Init function of the example model
         :param config: configuration to set up the model
+        :param data_shape: shape of the data (input/output shape, features)
         """
         super().__init__(config)
 
-        self.model_type = "state-prediction"
+        self.model_type = "segmentation"
+        self.data_shape = data_shape
         # Load model
-        self.model = SimpleModel(2, 10, 1, config)
+        self.model = SegSimple1DCNN(window_length=data_shape[0], in_channels=data_shape[1], config=config)
         self.load_config(config)
 
     def load_config(self, config):
@@ -32,7 +34,7 @@ class ExampleModel(Model):
         :return:
         """
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "epochs", "optimizer"]
+        required = ["loss", "optimizer"]
         for req in required:
             if req not in config:
                 logger.critical("------ Config is missing required parameter: " + req)
@@ -40,11 +42,11 @@ class ExampleModel(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
+        config["epochs"] = config.get("epochs", default_config["epochs"])
         self.config = config
 
     def get_default_config(self):
@@ -52,7 +54,7 @@ class ExampleModel(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 1, "lr": 0.001}
+        return {"batch_size": 1, "lr": 0.001, "epochs": 10}
 
     def get_type(self):
         """
@@ -61,7 +63,7 @@ class ExampleModel(Model):
         """
         return self.model_type
 
-    def train(self, data):
+    def train(self, X_train, X_test, y_train, y_test):
         """
         Train function for the model.
         :param data: labelled data
@@ -74,23 +76,6 @@ class ExampleModel(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
-
-        # TODO Replace after pretrain
-
-        # For now only look at enmo and anglez feature of data
-        X = data[["enmo", "anglez"]].to_numpy()
-
-        # Create a y with random regression values
-        y = torch.rand(len(X), 1)
-
-        # Create a tensor from X
-        X = torch.from_numpy(X).float()
-
-        # For now we split 50-50 into validation and test
-        X_train = X[:len(X) // 2]
-        y_train = y[:len(y) // 2]
-        X_test = X[len(X) // 2:]
-        y_test = y[len(y) // 2:]
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)

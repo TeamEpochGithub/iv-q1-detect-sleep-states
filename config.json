@@ -15,21 +15,20 @@
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "pre_training": {
-        "cv": 0,
         "test_size": 0.2,
         "standardize": "standard"
     },
     "models": {
-        "ExampleModel": {
-            "type": "example-fc-model",
-            "loss": "mae-torch",
+        "1D-CNN": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "crossentropy-torch",
             "optimizer": "adam-torch",
-            "epochs": 20
+            "epochs": 10
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ExampleModel"],
+        "models": ["1D-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },

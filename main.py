@@ -49,8 +49,12 @@ def main(config: ConfigLoader, series_path) -> None:
     pretrain = config.get_pretraining()
 
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
+    X_train, X_test, y_test, y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
 
+    #Give data shape in terms of (window_length, features)
+    data_shape = (X_train.shape[1], X_train.shape[2])
+
+    #TODO Cross validation should be part of each model
     cv = 0
     if "cv" in pretrain:
         cv = config.get_cv()
@@ -63,9 +67,9 @@ def main(config: ConfigLoader, series_path) -> None:
 
     # Initialize models
     print("-------- TRAINING MODELS ----------")
-    models = config.get_models()
+    models = config.get_models(data_shape)
     for model in models:
-        models[model].train(X_train, X_test, Y_train, Y_test)
+        models[model].train(X_train, X_test, y_test, y_test)
 
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
@@ -160,7 +164,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config, "data/raw/test_series.parquet")
+    main(config, "data/raw/train_series.parquet")
 
     # Create submission
     submit_to_kaggle.submit(config, "data/raw/test_series.parquet", False)

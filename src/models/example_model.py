@@ -6,7 +6,7 @@ from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 
-
+# TODO This model is currently outdated...
 class ExampleModel(Model):
     """
     This is a sample model file. You can use this as a template for your own models.

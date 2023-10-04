@@ -36,13 +36,14 @@ class Model:
         Load config function for the model. This function should be overwritten by the user.
         :param config: configuration to set up the model
         """
-        pass
+        logger.info("--- Loading configuration of model not necessary or not implemented")
 
     def get_default_config(self) -> dict:
         """
         Get default config function for the model. This function should be overwritten by the user.
         :return: default config
         """
+        logger.info("--- No default configuration of model or not implemented")
         return {}
 
     def train(self, X_train: pd.DataFrame, X_test: pd.DataFrame, Y_train: pd.DataFrame, Y_test: pd.DataFrame) -> None:
@@ -71,7 +72,8 @@ class Model:
         :param X_pred: unlabeled data
         :return: the predictions
         """
-        return pd.DataFrame([1, 2])
+        logger.critical("--- Prediction of base class called. Did you forget to override it?")
+        raise ModelException("Prediction of base class called. Did you forget to override it?")
 
     def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
         """
@@ -80,21 +82,22 @@ class Model:
         :param target: actual labels
         """
         # Evaluate function
-        pass
+        logger.critical("--- Evaluation of base class called. Did you forget to override it?")
+        raise ModelException("Evaluation of base class called. Did you forget to override it?")
 
     def save(self, path: str) -> None:
         """
         Save function for the model. This function should be overwritten by the user.
         :param path: path to save the model to
         """
-        pass
+        logger.info("--- Nothing to save or not implemented")
 
     def load(self, path: str) -> None:
         """
         Load function for the model. This function should be overwritten by the user.
         :param path: path to load the model from
         """
-        pass
+        logger.info("--- Nothing to load or not implemented")
 
 
 class ModelException(Exception):

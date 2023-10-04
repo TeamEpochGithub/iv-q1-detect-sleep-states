@@ -15,6 +15,18 @@
 
 These steps are executed in the order placed in the dictionary
 
+List of options and what they do
+- "add-noise"
+    - Adds gaussian noise to the sensor data
+- "add_state_labels"
+    - Labels the data in a way that each timestep gets a label. 0: asleep, 1: awake, 2: NaN, not labeled
+- "mem_reduce"
+    - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
+    a datetime object
+- "split_windows"
+    - Splits the data in to 24 hour long windows
+
+Example:
 ```
 "preprocessing": ["pp1", "pp2"]
 ```
@@ -53,6 +65,8 @@ List of options and what they do
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled`
     - Removes all the data points where there is no labeled data
+- `add_events_labels`
+    - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
 - `truncate`
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end
@@ -60,16 +74,6 @@ List of options and what they do
 ### Feature engineering
 
 Features that should be included during training and submission
-
-``` 
-"feature_engineering": {
-    "fe1": {
-        "window_sizes": [5, 10],
-        "features": ["enmo", "anglez"]
-    },
-    "fe2": {}
-    }
-```
 
 List of options and their config options
 
@@ -82,6 +86,17 @@ List of options and their config options
 - "skewness"
     - "window_sizes": x > 3
     - "features": Any existing numerical features
+
+Example:
+``` 
+"feature_engineering": {
+    "fe1": {
+        "window_sizes": [5, 10],
+        "features": ["enmo", "anglez"]
+    },
+    "fe2": {}
+    }
+```
 
 ### Feature engineering data location
 
@@ -101,7 +116,7 @@ This step includes preparing the data for inputting in the model.
 List of options and their config options
 
 - "cv": > 0 (number of folds)
-- "train_test_split": > 0 (percentage of data to be used for training)
+- "test_size": > 0 (percentage of data to be used for testing)
 - "standardize": method used for standardization
     - "minmax"
     - "standard"
@@ -112,8 +127,8 @@ Example:
 
 ```
 "pre_training": {
-    "cv": 5,
-    "standardize": "standard_scaler"
+    "cv": 5, || "test_size": 0.2,
+    "standardize": "standard"
 }
 ```
 

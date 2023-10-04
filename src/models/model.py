@@ -23,13 +23,14 @@ class Model:
         self.device = torch.device("cuda")
 
     # TODO Make train have X_train and X_test as input which are already splitted!
-    def train(self, data):
+    def train(self, X_train, X_test, Y_train, Y_test):
         """
         Train function for the model. This function should be overwritten by the user.
         :param data: labelled data
         :return: None
         """
-        pass
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info("--- Training of model not necessary or not implemented")
 
     def pred(self, data):
         """

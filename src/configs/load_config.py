@@ -1,36 +1,30 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
+# CV imports
+from ..cv.cv import CV
+# Ensemble imports
+from ..ensemble.ensemble import Ensemble
+# Feature engineering imports
+from ..feature_engineering.kurtosis import Kurtosis
+from ..feature_engineering.mean import Mean
+from ..feature_engineering.skewness import Skewness
+# HPO imports
+from ..hpo.hpo import HPO
+from ..logger.logger import logger
+# Loss imports
+from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
+# Model imports
+from ..models.example_model import ExampleModel
+from ..preprocessing.add_event_labels import AddEventLabels
+from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_state_labels import AddStateLabels
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
-from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
-from ..preprocessing.add_state_labels import AddStateLabels
-
-# Feature engineering imports
-from ..feature_engineering.kurtosis import Kurtosis
-from ..feature_engineering.skewness import Skewness
-from ..feature_engineering.mean import Mean
-
-from ..logger.logger import logger
-
-# Model imports
-from ..models.example_model import ExampleModel
-
-# Ensemble imports
-from ..ensemble.ensemble import Ensemble
-
-# Loss imports
-from ..loss.loss import Loss
-
-# HPO imports
-from ..hpo.hpo import HPO
-
-# CV imports
-from ..cv.cv import CV
 
 
 class ConfigLoader:
@@ -44,11 +38,13 @@ class ConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+    # Get full configuration
     def get_config(self):
         return self.config
 
-    def get_model_store_loc(self):
-        return self.config["model_store_loc"]
+    # Get boolean for whether to use wandb
+    def get_log_to_wandb(self):
+        return self.config["log_to_wandb"]
 
     # Function to retrieve preprocessing steps
     def get_pp_steps(self, training=True):
@@ -70,6 +66,9 @@ class ConfigLoader:
                 case "truncate":
                     if training:
                         self.pp_steps.append(Truncate())
+                case "add_event_labels":
+                    if training:
+                        self.pp_steps.append(AddEventLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
@@ -90,7 +89,8 @@ class ConfigLoader:
         fe_s = []
         for fe_step in self.config["feature_engineering"]:
             if fe_step == "kurtosis":
-                fe_steps["kurtosis"] = Kurtosis(self.config["feature_engineering"]["kurtosis"])
+                fe_steps["kurtosis"] = Kurtosis(
+                    self.config["feature_engineering"]["kurtosis"])
                 window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -99,7 +99,8 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             elif fe_step == "skewness":
-                fe_steps["skewness"] = Skewness(self.config["feature_engineering"]["skewness"])
+                fe_steps["skewness"] = Skewness(
+                    self.config["feature_engineering"]["skewness"])
                 window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -108,7 +109,8 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             elif fe_step == "mean":
-                fe_steps["mean"] = Mean(self.config["feature_engineering"]["mean"])
+                fe_steps["mean"] = Mean(
+                    self.config["feature_engineering"]["mean"])
                 window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -131,8 +133,9 @@ class ConfigLoader:
     def get_fe_in(self):
         return self.config["fe_loc_in"]
 
-    def get_log_to_wandb(self):
-        return self.config["log_to_wandb"]
+    # Function to retrieve pretraining data
+    def get_pretraining(self):
+        return self.config["pre_training"]
 
     # Function to retrieve model data
     def get_models(self):
@@ -154,6 +157,10 @@ class ConfigLoader:
 
         return self.models
 
+    # Getter for model store location
+    def get_model_store_loc(self):
+        return self.config["model_store_loc"]
+
     # Function to retrieve ensemble data
     def get_ensemble(self, models):
 
@@ -174,7 +181,8 @@ class ConfigLoader:
             curr_models.append(models[model_name])
 
         # Create ensemble
-        ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
+        ensemble = Ensemble(
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
 

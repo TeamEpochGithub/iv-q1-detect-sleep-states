@@ -5,38 +5,31 @@
         "mem_reduce",
         "add_state_labels",
         "split_windows",
-        "remove_unlabeled"
+        "remove_unlabeled",
+        "add_event_labels"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
-        "kurtosis": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        },
-        "skewness": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        },
-        "mean": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        }
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "pre_training": {
-        "cv": 5,
-        "standardize": "standard_scaler"
+        "cv": 0,
+        "test_size": 0.2,
+        "standardize": "standard"
     },
     "models": {
-        "ClassicModel": {
-            "type": "classic-base-model"
+        "ExampleModel": {
+            "type": "example-fc-model",
+            "loss": "mae-torch",
+            "optimizer": "adam-torch",
+            "epochs": 20
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ClassicModel"],
+        "models": ["ExampleModel"],
         "weights": [1],
         "comb_method": "addition"
     },

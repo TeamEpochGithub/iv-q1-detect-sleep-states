@@ -16,19 +16,17 @@
 These steps are executed in the order placed in the dictionary
 
 List of options and what they do
-
 - "add-noise"
     - Adds gaussian noise to the sensor data
 - "add_state_labels"
     - Labels the data in a way that each timestep gets a label. 0: asleep, 1: awake, 2: NaN, not labeled
 - "mem_reduce"
     - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
-      a datetime object
+    a datetime object
 - "split_windows"
     - Splits the data in to 24 hour long windows
 
 Example:
-
 ```
 "preprocessing": ["pp1", "pp2"]
 ```
@@ -92,7 +90,6 @@ List of options and their config options
     - "features": Any existing numerical features
 
 Example:
-
 ``` 
 "feature_engineering": {
     "fe1": {
@@ -156,7 +153,7 @@ These models should either be a statistical, regression or state_prediction mode
 
 #### Implemented Models types and config options
 
-This contains all models with its configurable hyperparameters. The model type is specified in the config file.
+It should
 
 - example-fc-model
     - epochs (required)
@@ -164,13 +161,6 @@ This contains all models with its configurable hyperparameters. The model type i
     - optimizer (required)
     - lr
     - batch_size
-- seg-simple-1d-cnn
-    - loss (required)
-    - optimizer (required)
-    - epochs
-    - lr
-    - batch_size
--
 
 Example of an example-fc-model configuration:
 
@@ -181,15 +171,6 @@ Example of an example-fc-model configuration:
     "batch_size": 32,
     "loss": "mae-torch",
     "optimizer": "adam-torch"
-}
-
-"1D-CNN": {
-    "type": "seg-simple-1d-cnn",
-    "loss": "mse-torch",
-    "optimizer": "rmsprop-torch",
-    "epochs": 5,
-    "batch_size": 64,
-    "lr": 0.01
 }
 ```
 

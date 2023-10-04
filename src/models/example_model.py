@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 import torch.nn as nn
 
@@ -13,7 +14,7 @@ class ExampleModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: dict) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -25,11 +26,10 @@ class ExampleModel(Model):
         self.model = SimpleModel(2, 10, 1, config)
         self.load_config(config)
 
-    def load_config(self, config):
+    def load_config(self, config: dict) -> None:
         """
         Load config function for the model.
         :param config: configuration to set up the model
-        :return:
         """
         # Error checks. Check if all necessary parameters are in the config.
         required = ["loss", "epochs", "optimizer"]
@@ -47,25 +47,20 @@ class ExampleModel(Model):
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
         self.config = config
 
-    def get_default_config(self):
+    def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
         return {"batch_size": 1, "lr": 0.001}
 
-    def get_type(self):
-        """
-        Get type function for the model.
-        :return:
-        """
-        return self.model_type
-
-    def train(self, X_train, X_test, Y_train, Y_test):
+    def train(self, X_train: pd.DataFrame, X_test: pd.DataFrame, Y_train: pd.DataFrame, Y_test: pd.DataFrame) -> None:
         """
         Train function for the model.
-        :param data: labelled data
-        :return:
+        :param X_train: the training data
+        :param X_test: the test data
+        :param Y_train: the training labels
+        :param Y_test: the test labels
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
@@ -129,11 +124,11 @@ class ExampleModel(Model):
             logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
                         f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
-    def pred(self, data):
+    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
         """
         Prediction function for the model.
-        :param data: unlabelled data
-        :return:
+        :param X_pred: unlabeled data
+        :return: the predictions
         """
         # Prediction function
         logger.info("--- Predicting model")
@@ -144,10 +139,10 @@ class ExampleModel(Model):
 
         # Make a prediction
         with torch.no_grad():
-            prediction = self.model(data)
+            prediction = self.model(X_pred)
         return prediction
 
-    def evaluate(self, pred, target):
+    def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
         """
         Evaluation function for the model.
         :param pred: predictions
@@ -161,11 +156,10 @@ class ExampleModel(Model):
         loss = criterion(pred, target)
         return loss
 
-    def save(self, path):
+    def save(self, path: str) -> None:
         """
         Save function for the model.
         :param path: path to save the model to
-        :return:
         """
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
@@ -174,11 +168,10 @@ class ExampleModel(Model):
         torch.save(checkpoint, path)
         logger.info("--- Model saved to: " + path)
 
-    def load(self, path):
+    def load(self, path: str) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint
-        :return:
         """
         self.model = SimpleModel(2, 10, 1, self.config)
         checkpoint = torch.load(path)
@@ -194,7 +187,7 @@ class SimpleModel(nn.Module):
     Pytorch implementation of a really simple baseline model.
     """
 
-    def __init__(self, input_dim, hidden_dim, output_dim, config):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, config: dict) -> None:
         super(SimpleModel, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.relu1 = nn.ReLU()

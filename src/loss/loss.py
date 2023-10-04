@@ -6,17 +6,17 @@ class LossException(Exception):
     pass
 
 
-class Loss():
+class Loss:
     """
     This is a static class for loss functions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Init function
         pass
 
     @staticmethod
-    def get_loss(loss_name):
+    def get_loss(loss_name: str) -> nn.Module:
         """
         This function looks up the correct loss function and returns it.
         :param loss_name: name of the loss function

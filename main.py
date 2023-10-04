@@ -64,16 +64,13 @@ def main(config: ConfigLoader, series_path) -> None:
     # Initialize models
     print("-------- TRAINING MODELS ----------")
     models = config.get_models()
-    for model in models:
-        models[model].train(X_train, X_test, Y_train, Y_test)
-
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
     # TODO Add crossvalidation to models #107
     for i, model in enumerate(models):
         logger.info("Training model " + str(i) + ": " + model)
-        models[model].train(featured_data)
+        models[model].train(X_train, X_test, Y_train, Y_test)
         models[model].save(store_location + "/" + model + ".pt")
 
     # Get saved models directory from config

@@ -49,7 +49,9 @@ class ConfigLoader:
     # Function to retrieve preprocessing steps
     def get_pp_steps(self, training=True):
         self.pp_steps = []
+        pp_names = []
         for pp_step in self.config["preprocessing"]:
+            len_before = len(self.pp_steps)
             match pp_step:
                 case "mem_reduce":
                     self.pp_steps.append(MemReduce())
@@ -73,7 +75,10 @@ class ConfigLoader:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
 
-        return self.pp_steps, self.config["preprocessing"]
+            # if it added a step, also add the name
+            if len(self.pp_steps) > len_before:
+                pp_names.append(pp_step)
+        return self.pp_steps, pp_names
 
     # Function to retrieve preprocessing data location out path
     def get_pp_out(self):

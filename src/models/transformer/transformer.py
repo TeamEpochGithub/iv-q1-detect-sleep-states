@@ -53,6 +53,8 @@ class Transformer(Model):
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
+        config["patch_size"] = config.get("patch_size", default_config["patch_size"])
+
         self.config = config
 
     def get_default_config(self):
@@ -60,7 +62,7 @@ class Transformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 2, "lr": 0.001}
+        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
 
     def load_transformer_config(self, config):
         """
@@ -83,13 +85,13 @@ class Transformer(Model):
         :return: default config
         """
         return {
-            'feat_dim': 2,
-            'max_len': 17280,
-            'd_model': 2,
-            'n_heads': 1,
-            'num_layers': 1,
-            'dim_feedforward': 16,
-            'num_classes': 3,
+            'feat_dim': 72,
+            'max_len': 480,
+            'd_model': 192,
+            'n_heads': 6,
+            'num_layers': 5,
+            'dim_feedforward': 2048,
+            'num_classes': 480,
             'dropout': 0.1,
             'pos_encoding': "learnable",
             'activation': "relu",
@@ -122,10 +124,28 @@ class Transformer(Model):
         logger.info(f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
         logger.info(f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
+        # Remove labels
+        y_train = y_train[:, :, 0]
+        y_test = y_test[:, :, 0]
+
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
+
+        # Do patching
+        patch_size = self.config["patch_size"]
+
+        # Patch the data for the features
+        X_train = torch.reshape(X_train, (X_train.shape[0], X_train.shape[1] // patch_size, patch_size, X_train.shape[2]))
+        X_train = torch.reshape(X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2] * X_train.shape[3]))
+        X_test = torch.reshape(X_test, (X_test.shape[0], X_test.shape[1] // patch_size, patch_size, X_test.shape[2]))
+        X_test = torch.reshape(X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2] * X_test.shape[3]))
+
+        # Patch the data for the labels
+        y_train = torch.reshape(y_train, (y_train.shape[0], y_train.shape[1] // patch_size, patch_size))
+        y_train = torch.transpose(y_train, 1, 2)
+        y_train = torch.max(y_train, 1).values
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -138,7 +158,7 @@ class Transformer(Model):
             test_dataset, batch_size=batch_size)
 
         # Torch summary
-        torchinfo.summary(self.model)
+        logger.info(torchinfo.summary(self.model))
         trainer = Trainer(epochs=1)
         trainer.fit(train_dataloader, self.model, self.config["optimizer"])
         accuracy = trainer.evaluate(test_dataloader, self.model)

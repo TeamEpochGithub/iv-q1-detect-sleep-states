@@ -23,7 +23,7 @@
         "Transformer": {
             "type": "transformer",
             "epochs": 20,
-            "batch_size": 2,
+            "batch_size": 16,
             "optimizer": "adam-torch",
             "loss": "crossentropy-torch"
         }

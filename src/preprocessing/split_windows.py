@@ -68,7 +68,6 @@ class SplitWindows(PP):
         enmo = np.zeros(amount_of_padding_start)
         anglez = np.zeros(amount_of_padding_start)
 
-
         # Create a numpy array of step values
         step = (-np.arange(1, amount_of_padding_start + 1))[::-1]
 

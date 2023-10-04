@@ -81,8 +81,24 @@ def main(config: ConfigLoader, series_path) -> None:
     for i, model in enumerate(models):
         models[model].save(store_location + "/optimal_" + model + ".pt")
 
-    # Get saved models directory from config
-    store_location = config.get_model_store_loc()
+    # ------------------------------------------------------- #
+    #                    Train for submission                 #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Train for submission", spacing=0)
+
+    if config.get_train_for_submission():
+        logger.info("Retraining models for submission")
+
+        # Retrain all models with optimal parameters
+        for i, model in enumerate(models):
+            models[model].load(store_location + "/optimal_" + model + ".pt")
+            logger.info("Retraining model " + str(i) + ": " + model)
+
+            models[model].train_full(split_on_labels(featured_data))
+            models[model].save(store_location + "/submit_" + model + ".pt")
+    else:
+        logger.info("Not training best model for submission")
 
     # ------------------------- #
     #          Ensemble         #
@@ -116,26 +132,6 @@ def main(config: ConfigLoader, series_path) -> None:
     # Initialize CV
     cv = config.get_cv()
     cv.run()
-
-    # ------------------------------------------------------- #
-    #                    Train for submission                 #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Train for submission", spacing=0)
-
-    # TODO Mark best model from CV/HPO and train it on all data
-    if config.get_train_for_submission():
-        logger.info("Retraining models for submission")
-
-        # Retrain all models with optimal parameters
-        for i, model in enumerate(models):
-            models[model].load(store_location + "/optimal_" + model + ".pt")
-            logger.info("Retraining model " + str(i) + ": " + model)
-
-            models[model].train_full(split_on_labels(featured_data))
-            models[model].save(store_location + "/submit_" + model + ".pt")
-    else:
-        logger.info("Not training best model for submission")
 
     # ------------------------------------------------------- #
     #                    Scoring                              #

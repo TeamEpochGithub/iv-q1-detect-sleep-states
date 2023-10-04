@@ -30,5 +30,8 @@ def submit(config: ConfigLoader, test_series_path, submit=False):
 
 
 if __name__ == "__main__":
+    import coloredlogs
+    coloredlogs.install()
+
     config = ConfigLoader("config.json")
     submit(config, 'data/raw/test_series.parquet', submit=True)

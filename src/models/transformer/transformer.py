@@ -64,7 +64,7 @@ class Transformer(Model):
         """
         return {"batch_size": 1, "lr": 0.001}
 
-    def train(self, data):
+    def train(self, X_train, X_test, y_train, y_test):
         """
         Train function for the model.
         :param data: labelled data

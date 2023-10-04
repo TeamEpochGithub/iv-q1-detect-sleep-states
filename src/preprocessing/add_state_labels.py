@@ -4,6 +4,8 @@ from src.preprocessing.pp import PP
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import json
+import os
 
 
 class AddStateLabels(PP):
@@ -14,6 +16,13 @@ class AddStateLabels(PP):
         data['awake'] = 0
         # Read the events dataframe
         events = pd.read_csv('data/raw/train_events.csv')
+
+        # apply encoding to events
+        if os.path.exists('series_id_encoding.json'):
+            f = open('series_id_encoding.json')
+            id_encoding = json.load(f)
+        events['series_id'] = events['series_id'].map(id_encoding)
+
         events_copy = events.copy()
         events_copy.dropna(inplace=True)
         # This part does some needed pp for getting the NaN series
@@ -28,13 +37,19 @@ class AddStateLabels(PP):
         # The series that do not have Nans but have missing labels at the end
         weird_series = ["0cfc06c129cc", "31011ade7c0a",
                         "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
+        # apply encoding to weird series
+        weird_series_encoded = []
+        for id in weird_series:
+            if id in id_encoding:
+                weird_series_encoded.append(id_encoding[id])
 
         # Firstly we loop with the series without NaN
         for i, id in tqdm(enumerate(not_nan)):
-            # Get the current series
-            # Save the current series to the data
             current_series = self.get_train_series(data, events_copy, id)
-            # this is needed because pandas is stupid
+            # after getting the awake column apply shift and fill to
+            # set the event occurance properly
+            current_series['awake'] = current_series['awake'].shift(-1).ffill()
+            # if this is not done using a pandaas series to assign the value fills with nans
             awake_arr = current_series['awake'].to_numpy()
             # update the data awake column with the current series awake column
             data.loc[data['series_id'] == id, 'awake'] = awake_arr
@@ -42,7 +57,7 @@ class AddStateLabels(PP):
         logger.debug("------ Finished handling series without NaN")
         # After handling the series without NaN we handle the weird cases
         # and add 2s for the awake labels
-        for i, id in tqdm(enumerate(weird_series)):
+        for i, id in tqdm(enumerate(weird_series_encoded)):
             # get the events with the current series id
             current_events = events[events["series_id"] == id]
             # get the last item of the current events
@@ -62,19 +77,23 @@ class AddStateLabels(PP):
             'step'].bfill().ffill()
         nan_events = df_filled[pd.isnull(df_filled['timestamp'])].copy()
         nan_series = nan_events['series_id'].unique()
+
         # now loop with the series with NaN
         for i, id in tqdm(enumerate(nan_series)):
-            # Get the current series
             current_series = data[data['series_id'] == id]
             current_series = self.get_nan_train_series(
                 current_series, nan_events, id)
-
-            data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN']
+            # For some reason the array is longer than the series so only take a slice same size as the series
+            data.loc[data['series_id'] == id, 'NaN'] = current_series['NaN'].to_numpy()[:data.loc[data['series_id'] == id].shape[0]]
             current_series = self.get_train_series(current_series, events, id)
+            # after getting the awake column apply shift and fill to
+            # set the event occurance properly
+            current_series['awake'] = current_series['awake'].shift(-1).ffill()
             current_series.loc[current_series['NaN'] == 1, 'awake'] = 2
-
-            data.loc[data['series_id'] == id,
-                     'awake'] = current_series['awake']
+            # if this is not done using a pandaas series to assign the value fills with nans
+            awake_arr = current_series['awake'].to_numpy()
+            # For some reason the array is longer than the series so only take a slice same size as the series
+            data.loc[data['series_id'] == id, 'awake'] = awake_arr[:data.loc[data['series_id'] == id].shape[0]]
 
         logger.debug("------ Finished handling series with NaN")
 
@@ -112,9 +131,8 @@ class AddStateLabels(PP):
 
     # This is copied over from EDA-Hugo
     def get_train_series(self, train_series, train_events, series):
-        current_series = train_series[train_series["series_id"] == series]
         current_events = train_events[train_events["series_id"] == series]
-
+        current_series = train_series[train_series["series_id"] == series]
         # cleaning etc.
         current_events = current_events.dropna()
         current_events["step"] = current_events["step"].astype("int")

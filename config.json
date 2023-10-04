@@ -22,10 +22,10 @@
         "1D-CNN": {
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
-            "optimizer": "rmsprop-torch",
-            "epochs": 30,
+            "optimizer": "adam-torch",
+            "epochs": 50,
             "batch_size": 32,
-            "lr": 0.01
+            "lr": 0.1
         }
     },
     "model_store_loc": "tm",

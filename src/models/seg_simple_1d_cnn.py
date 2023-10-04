@@ -1,11 +1,11 @@
 import torch
+from torchsummary import summary
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-from torchsummary import summary
 
 
 class SegmentationSimple1DCNN(Model):
@@ -25,11 +25,12 @@ class SegmentationSimple1DCNN(Model):
         self.model_type = "segmentation"
         self.data_shape = data_shape
         # Load model
-        self.model = SegSimple1DCNN(window_length=data_shape[0], in_channels=data_shape[1], config=config)
+        self.model = SegSimple1DCNN(window_length=data_shape[1], in_channels=data_shape[0], config=config)
         self.load_config(config)
 
         # Print model summary
-        summary(self.model.cuda(), input_size=(data_shape[1], data_shape[0]))
+        logger.info("--- Model summary")
+        summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config):
         """
@@ -58,7 +59,7 @@ class SegmentationSimple1DCNN(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 1, "lr": 0.001, "epochs": 10}
+        return {"batch_size": 1, "lr": 0.1, "epochs": 20}
 
     def get_type(self):
         """
@@ -74,6 +75,7 @@ class SegmentationSimple1DCNN(Model):
         :return:
         """
 
+
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
@@ -81,12 +83,14 @@ class SegmentationSimple1DCNN(Model):
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
+        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
+        X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
-        # Print the shapes and types of train and test
-        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        # Flatten y_train and y_test so we only get the awake label
+        y_train = y_train[:, :, 0]
+        y_test = y_test[:, :, 0]
+        y_train = torch.from_numpy(y_train)
+        y_test = torch.from_numpy(y_test)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -103,15 +107,16 @@ class SegmentationSimple1DCNN(Model):
         test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
 
         # Add model and data to device cuda
-        self.model.to("cuda")
+        # self.model.half()
+        self.model.to(self.device)
 
         # Train the model
         for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(self.device)
-                y = y.to(self.device)
+                x = x.to(device=self.device)
+                y = y.to(device=self.device)
 
                 # Clear gradients
                 optimizer.zero_grad()
@@ -193,7 +198,6 @@ class SegmentationSimple1DCNN(Model):
         :param path: path to model checkpoint
         :return:
         """
-        self.model = SimpleModel(2, 10, 1, self.config)
         checkpoint = torch.load(path)
 
         self.model.load_state_dict(checkpoint['model_state_dict'])

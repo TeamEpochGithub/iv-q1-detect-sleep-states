@@ -28,12 +28,6 @@ class MemReduce(PP):
         data['series_id'] = data['series_id'].map(encoding)
         data['series_id'] = data['series_id'].astype('int16')
 
-        # putting this after the int16 conversion makes it reduce memory
-        # a lot more than if we put it before
-        if not self.use_pandas:
-            if isinstance(data, pd.DataFrame):
-                data = pl.from_pandas(data)
-                gc.colect()
         data = pl.from_pandas(data)
         gc.collect()
         data = data.with_columns(pl.col("timestamp").str.slice(0, 19))

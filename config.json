@@ -21,9 +21,11 @@
     "models": {
         "1D-CNN": {
             "type": "seg-simple-1d-cnn",
-            "loss": "crossentropy-torch",
-            "optimizer": "adam-torch",
-            "epochs": 10
+            "loss": "mse-torch",
+            "optimizer": "rmsprop-torch",
+            "epochs": 5,
+            "batch_size": 64,
+            "lr": 0.01
         }
     },
     "model_store_loc": "tm",

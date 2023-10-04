@@ -55,9 +55,12 @@ def main(config: ConfigLoader, series_path) -> None:
     logger.info("Splitting data into train and test...")
     X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
 
-    # Give data shape in terms of (window_length, features)
-    data_shape = (X_train.shape[1], X_train.shape[2])
-    logger.info("Data shape: " + str(data_shape))
+    # Give data shape in terms of (features (in_channels), window_size))
+    data_shape = (X_train.shape[2], X_train.shape[1])
+
+    logger.info("X Train data shape (size, window_size, features): " + str(X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
+    logger.info("X Test data shape (size, window_size, features): " + str(X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
+
     # TODO Cross validation should be part of each model
     cv = 0
     if "cv" in pretrain:
@@ -69,20 +72,18 @@ def main(config: ConfigLoader, series_path) -> None:
 
     print_section_separator("Training", spacing=0)
 
-    # Initialize models
-    logger.info("Initializing models...")
-    models = config.get_models(data_shape)
-    for model in models:
-        logger.info("--- Training model: " + model)
-        models[model].train(X_train, X_test, y_train, y_test)
-
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
-    # TODO Add crossvalidation to models #107
+
+    # Initialize models
+    logger.info("Initializing models...")
+    models = config.get_models(data_shape)
+
+     # TODO Add crossvalidation to models #107
     for i, model in enumerate(models):
         logger.info("Training model " + str(i) + ": " + model)
-        models[model].train(featured_data)
+        models[model].train(X_train, X_test, y_train, y_test)
         models[model].save(store_location + "/" + model + ".pt")
 
     # Get saved models directory from config

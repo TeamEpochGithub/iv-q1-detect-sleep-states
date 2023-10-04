@@ -1,6 +1,6 @@
 import torch
 
-from architectures.simple_model import SimpleModel
+from .architectures.simple_model import SimpleModel
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException

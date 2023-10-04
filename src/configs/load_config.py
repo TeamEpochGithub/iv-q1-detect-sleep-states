@@ -15,10 +15,12 @@ from ..logger.logger import logger
 # Loss imports
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
+from ..models.example_model import ExampleModel
 # Model imports
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..preprocessing.add_regression_labels import AddRegressionLabels
 from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_regression_labels import AddRegressionLabels
+from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
 from ..preprocessing.add_state_labels import AddStateLabels
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
@@ -69,6 +71,9 @@ class ConfigLoader:
                 case "add_regression_labels":
                     if training:
                         self.pp_steps.append(AddRegressionLabels())
+                case "add_segmentation_labels":
+                    if training:
+                        self.pp_steps.append(AddSegmentationLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

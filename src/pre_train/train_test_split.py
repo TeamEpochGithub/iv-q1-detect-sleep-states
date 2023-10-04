@@ -26,10 +26,8 @@ def train_test_split(df: pd.DataFrame, test_size: int = 0.2, standardize_method:
 
 
 def split_on_labels(df: pd.DataFrame) -> (np.array, np.array):
-
     # Only keep feature columns which start with f_
     x_data = df[['enmo', 'anglez']]
-
     keep_y_train_columns = []
     if 'awake' in df.columns:
         keep_y_train_columns.append('awake')
@@ -48,7 +46,6 @@ def split_on_labels(df: pd.DataFrame) -> (np.array, np.array):
     if 'hot-NaN' in df.columns:
         keep_y_train_columns.append('hot-NaN')
 
-    X_data = x_data.to_numpy().reshape(-1, 17280, len(x_data.columns))
-    Y_data = df[keep_y_train_columns].to_numpy(
-    ).reshape(-1, 17280, len(keep_y_train_columns))
+    X_data = x_data.to_numpy(dtype='float32').reshape(-1, 17280, len(x_data.columns))
+    Y_data = df[keep_y_train_columns].to_numpy(dtype='float32').reshape(-1, 17280, len(keep_y_train_columns))
     return X_data, Y_data

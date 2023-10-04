@@ -31,7 +31,9 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame):
         for i, feature_column in enumerate(current_series.columns[2:]):  # Start from the third column
             plt.subplot(num_features, 1, i + 1)
             # sns.lineplot(data=train, x="step", y="anglez", hue="awake", linewidth=0.5)
-            sns.lineplot(data=current_series[binary_mask], x='step', y=feature_column, hue='awake', linewidth=0.5)
+            plot_data = current_series# [binary_mask == 1]
+            print(plot_data)
+            sns.lineplot(data=plot_data, x='step', y=feature_column, hue='awake', linewidth=0.5, palette=['#ADD8F6', '#FFB580', '#90EE90'])
             plt.xlabel('awake')
             plt.ylabel(feature_column)
             plt.title(f'Series ID: {id} - {feature_column}')
@@ -45,3 +47,9 @@ if __name__ == "__main__":
     series_path = 'data/raw/train_series.parquet'
     featured_data = get_processed_data(config, series_path, save_output=True)
     plot_preds_on_series(preds, featured_data)
+
+
+for i in range(10):
+    print(i)
+else:
+    print("For loop ended without break")

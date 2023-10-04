@@ -1,14 +1,14 @@
-import torch
 from torch import nn, Tensor
 from torch.nn.modules import (
     MultiheadAttention,
     Linear,
     Dropout,
-    BatchNorm1d,
-    TransformerEncoderLayer,
+    BatchNorm1d
 )
 from .utils import get_activation_fn
 from typing import Optional
+import torchinfo
+
 
 class TransformerBatchNormEncoderLayer(nn.modules.Module):
     """Transformer encoder with BatchNorm instead of LayerNorm.

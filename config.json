@@ -23,7 +23,9 @@
         "Transformer": {
             "type": "transformer",
             "epochs": 20,
-            "batch_size": 32
+            "batch_size": 2,
+            "optimizer": "adam-torch",
+            "loss": "crossentropy-torch"
         }
     },
     "model_store_loc": "tm",

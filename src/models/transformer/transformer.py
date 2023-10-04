@@ -1,12 +1,15 @@
 import torch
-from torch import nn, Tensor
-from torch.nn import TransformerEncoder, TransformerEncoderLayer
-from torch.utils.data import dataset
+
+from src.logger.logger import logger
+from src.models.transformer.trainer import Trainer
 
 from ...loss.loss import Loss
 from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
-from .transformer_encoder import TSTransformerEncoder as TS
+from .transformer_encoder import TSTransformerEncoder as TS, TSTransformerEncoderClassiregressor
+from torchsummary import summary
+import torchinfo
+
 
 class Transformer(Model):
     """
@@ -19,14 +22,8 @@ class Transformer(Model):
         :param config: configuration to set up the model
         """
         super().__init__(config)
-        # Load model TS parameters
-        # feat_dim
-        # num_layers
-        # num_heads
-        # dropout
-        # d_model
-        # d_ff
-        self.model = TS(2, 10, 1, config)
+        # Init model
+        self.model = TSTransformerEncoderClassiregressor(**self.load_transformer_config(config))
         self.load_config(config)
 
         # Check if gpu is available, else return an exception
@@ -46,6 +43,7 @@ class Transformer(Model):
         required = ["loss", "epochs", "optimizer"]
         for req in required:
             if req not in config:
+                logger.critical("------ Config is missing required parameter: " + req)
                 raise ModelException("Config is missing required parameter: " + req)
 
         # Get default_config
@@ -62,7 +60,42 @@ class Transformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 1, "lr": 0.001}
+        return {"batch_size": 2, "lr": 0.001}
+
+    def load_transformer_config(self, config):
+        """
+        Load config function for the model.
+        :param config: configuration to set up the model
+        :return:
+        """
+        # Check if all necessary parameters are in the config.
+        default_config = self.get_default_transformer_config()
+        new_config = default_config.copy()
+        for key in default_config:
+            if key in config:
+                new_config[key] = config[key]
+        
+        return new_config
+
+    def get_default_transformer_config(self):
+        """
+        Get default config function for the model.
+        :return: default config
+        """
+        return {
+            'feat_dim': 2,
+            'max_len': 17280,
+            'd_model': 2,
+            'n_heads': 1,
+            'num_layers': 1,
+            'dim_feedforward': 16,
+            'num_classes': 3,
+            'dropout': 0.1,
+            'pos_encoding': "learnable",
+            'activation': "relu",
+            'norm': "BatchNorm",
+            'freeze': False,
+        }
 
     def train(self, X_train, X_test, y_train, y_test):
         """
@@ -78,80 +111,38 @@ class Transformer(Model):
         print("----------------")
 
         # Load hyperparameters
-        criterion = self.config["loss"]
-        optimizer = self.config["optimizer"]
+        # criterion = self.config["loss"]
+        # optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
-        # For now only look at enmo and anglez feature of data
-        print("-------------------")
-        print(data.head())
-        X = data[["enmo", "anglez"]].to_numpy()
+        # Print the shapes and types of train and test
+        logger.info(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.info(f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
-        # Create a y with random regression values
-        y = torch.rand(len(X), 1)
-
-        # Create a tensor from X
-        X = torch.from_numpy(X).float()
-
-        # For now we split 50-50 into validation and test
-        X_train = X[:len(X) // 2]
-        y_train = y[:len(y) // 2]
-        X_test = X[len(X) // 2:]
-        y_test = y[len(y) // 2:]
+        X_train = torch.from_numpy(X_train)
+        X_test = torch.from_numpy(X_test)
+        y_train = torch.from_numpy(y_train)
+        y_test = torch.from_numpy(y_test)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
         test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
 
-        # Print the shapes and types of train and test
-        print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        print(f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        print(f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
-
         # Create a dataloader from the dataset
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
-        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=batch_size)
 
-        # Add model and data to device cuda
-        self.model.to("cuda")
-
-        # Train the model
-        for epoch in range(epochs):
-            self.model.train(True)
-            avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(self.device)
-                y = y.to(self.device)
-
-                # Clear gradients
-                optimizer.zero_grad()
-
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs, y)
-
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
-
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
-
-            # Calculate the validation loss
-            self.model.train(False)
-            avg_val_loss = 0
-            with torch.no_grad():
-                for i, (vx, vy) in enumerate(test_dataloader):
-                    vx = vx.to(self.device)
-                    vy = vy.to(self.device)
-                    voutputs = self.model(vx)
-                    vloss = criterion(voutputs, vy)
-                    avg_val_loss += vloss.item() / len(test_dataloader)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            print(f'Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}')
+        # Torch summary
+        torchinfo.summary(self.model)
+        trainer = Trainer(epochs=1)
+        trainer.fit(train_dataloader, self.model, self.config["optimizer"])
+        accuracy = trainer.evaluate(test_dataloader, self.model)
+        print(f"Accuracy: {accuracy}")
 
     def pred(self, data):
         """
@@ -211,7 +202,3 @@ class Transformer(Model):
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.config = checkpoint['config']
-
-
-
-    

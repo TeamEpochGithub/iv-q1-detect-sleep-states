@@ -1,8 +1,11 @@
-import torch
+import math
 from torch import nn, Tensor
+
+from src.models.transformer.utils import get_activation_fn
 from .encoder import TransformerBatchNormEncoderLayer
 from .positional_encoding import get_pos_encoder
 from torch.nn.modules import TransformerEncoderLayer
+
 
 class TSTransformerEncoder(nn.Module):
     """Time series transformer encoder module.
@@ -63,7 +66,8 @@ class TSTransformerEncoder(nn.Module):
                 activation=activation,
             )
 
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers)
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer, num_layers)
 
         self.output_layer = nn.Linear(d_model, feat_dim)
 
@@ -98,7 +102,8 @@ class TSTransformerEncoder(nn.Module):
         output = output.permute(1, 0, 2)  # (batch_size, seq_length, d_model)
         output = self.dropout1(output)
         # Most probably defining a Linear(d_model,feat_dim) vectorizes the operation over (seq_length, batch_size).
-        output = self.output_layer(output)  # (batch_size, seq_length, feat_dim)
+        # (batch_size, seq_length, feat_dim)
+        output = self.output_layer(output)
 
         return output
 
@@ -166,7 +171,8 @@ class TSTransformerEncoderClassiregressor(nn.Module):
                 activation=activation,
             )
 
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers)
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer, num_layers)
 
         self.act = get_activation_fn(activation)
 
@@ -174,7 +180,8 @@ class TSTransformerEncoderClassiregressor(nn.Module):
 
         self.feat_dim = feat_dim
         self.num_classes = num_classes
-        self.output_layer = self.build_output_module(d_model, max_len, num_classes)
+        self.output_layer = self.build_output_module(
+            d_model, max_len, num_classes)
 
     def build_output_module(
         self, d_model: int, max_len: int, num_classes: int
@@ -222,7 +229,8 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         output = self.dropout1(output)
 
         # Output
-        output = output * padding_masks.unsqueeze(-1)  # zero-out padding embeddings
+        # zero-out padding embeddings
+        output = output * padding_masks.unsqueeze(-1)
         output = output.reshape(
             output.shape[0], -1
         )  # (batch_size, seq_length * d_model)

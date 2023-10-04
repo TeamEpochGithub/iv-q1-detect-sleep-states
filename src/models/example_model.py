@@ -26,13 +26,6 @@ class ExampleModel(Model):
         self.model = SimpleModel(2, 10, 1, config)
         self.load_config(config)
 
-    def get_type(self) -> str:
-        """
-        Get type function for the model.
-        :return: type of the model
-        """
-        return self.model_type
-
     def load_config(self, config: dict) -> None:
         """
         Load config function for the model.
@@ -131,10 +124,10 @@ class ExampleModel(Model):
             logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
                         f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
-    def pred(self, data: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
         """
         Prediction function for the model.
-        :param data: unlabelled data
+        :param X_pred: unlabeled data
         :return: the predictions
         """
         # Prediction function
@@ -146,7 +139,7 @@ class ExampleModel(Model):
 
         # Make a prediction
         with torch.no_grad():
-            prediction = self.model(data)
+            prediction = self.model(X_pred)
         return prediction
 
     def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:

@@ -65,10 +65,10 @@ class Model:
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, data: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
         """
         Prediction function for the model. This function should be overwritten by the user.
-        :param data: unlabelled data
+        :param X_pred: unlabeled data
         :return: the predictions
         """
         return pd.DataFrame([1, 2])

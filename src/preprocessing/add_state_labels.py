@@ -38,8 +38,10 @@ class AddStateLabels(PP):
         weird_series = ["0cfc06c129cc", "31011ade7c0a",
                         "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
         # apply encoding to weird series
-        for i in range(len(weird_series)):
-            weird_series[i] = id_encoding[weird_series[i]]
+        weird_series_encoded = []
+        for id in weird_series:
+            if id in id_encoding:
+                weird_series_encoded.append(id_encoding[id])
 
         # Firstly we loop with the series without NaN
         for i, id in tqdm(enumerate(not_nan)):
@@ -55,7 +57,7 @@ class AddStateLabels(PP):
         logger.debug("------ Finished handling series without NaN")
         # After handling the series without NaN we handle the weird cases
         # and add 2s for the awake labels
-        for i, id in tqdm(enumerate(weird_series)):
+        for i, id in tqdm(enumerate(weird_series_encoded)):
             # get the events with the current series id
             current_events = events[events["series_id"] == id]
             # get the last item of the current events
@@ -92,7 +94,6 @@ class AddStateLabels(PP):
             awake_arr = current_series['awake'].to_numpy()
             # For some reason the array is longer than the series so only take a slice same size as the series
             data.loc[data['series_id'] == id, 'awake'] = awake_arr[:data.loc[data['series_id'] == id].shape[0]]
-            print('a')
 
         logger.debug("------ Finished handling series with NaN")
 

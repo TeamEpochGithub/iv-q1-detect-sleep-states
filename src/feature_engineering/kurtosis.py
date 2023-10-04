@@ -1,5 +1,6 @@
 # Class for kurtosis feature
 from ..feature_engineering.rolling_window import RollingWindow
+from ..logger.logger import logger
 
 
 class Kurtosis(RollingWindow):
@@ -7,12 +8,15 @@ class Kurtosis(RollingWindow):
     def __init__(self, config):
         super().__init__(config)
 
-    def fe(self, data):
+    def feature_engineering(self, data):
         # Loop through window sizes
+        logger.debug("------ All features: " + str(self.features))
         for feature in self.features:
             for window_size in self.window_sizes:
                 # Create rolling window features for kurtosis
                 data = self.kurtosis(data, window_size, feature)
+            logger.debug("--------- Feature done: " + str(feature))
+        logger.debug("------ All features done")
         return data
 
     # Create rolling window features for kurtosis

@@ -1,53 +1,55 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
-
-# Preprocessing imports
-from ..preprocessing.mem_reduce import MemReduce
-from ..preprocessing.add_noise import AddNoise
-from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.convert_datetime import ConvertDatetime
+# CV imports
+from ..cv.cv import CV
+# Ensemble imports
+from ..ensemble.ensemble import Ensemble
 # Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
-from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.mean import Mean
-
+from ..feature_engineering.skewness import Skewness
+# HPO imports
+from ..hpo.hpo import HPO
+from ..logger.logger import logger
+# Loss imports
+from ..loss.loss import Loss
+from ..models.classic_base_model import ClassicBaseModel
 # Model imports
 from ..models.example_model import ExampleModel
 from ..models.transformer.transformer import Transformer
 
-# Ensemble imports
-from ..ensemble.ensemble import Ensemble
-
-# Loss imports
-from ..loss.loss import Loss
-
-# HPO imports
-from ..hpo.hpo import HPO
-
-
-# CV imports
-from ..cv.cv import CV
+from ..preprocessing.add_event_labels import AddEventLabels
+from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_state_labels import AddStateLabels
+# Preprocessing imports
+from ..preprocessing.mem_reduce import MemReduce
+from ..preprocessing.remove_unlabeled import RemoveUnlabeled
+from ..preprocessing.split_windows import SplitWindows
+from ..preprocessing.truncate import Truncate
 
 
 class ConfigLoader:
 
     # Initiate class using config path
     def __init__(self, config_path):
+        self.pp_steps = []
         self.config_path = config_path
 
         # Read JSON from file
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+    # Get full configuration
     def get_config(self):
         return self.config
 
-    def get_model_store_loc(self):
-        return self.config["model_store_loc"]
+    # Get boolean for whether to use wandb
+    def get_log_to_wandb(self):
+        return self.config["log_to_wandb"]
 
     # Function to retrieve preprocessing steps
-    def get_pp_steps(self):
+    def get_pp_steps(self, training=True):
         self.pp_steps = []
         for pp_step in self.config["preprocessing"]:
             match pp_step:
@@ -57,10 +59,22 @@ class ConfigLoader:
                     self.pp_steps.append(AddNoise())
                 case "split_windows":
                     self.pp_steps.append(SplitWindows())
-                case "convert_datetime":
-                    self.pp_steps.append(ConvertDatetime())
+                case "add_state_labels":
+                    if training:
+                        self.pp_steps.append(AddStateLabels())
+                case "remove_unlabeled":
+                    if training:
+                        self.pp_steps.append(RemoveUnlabeled())
+                case "truncate":
+                    if training:
+                        self.pp_steps.append(Truncate())
+                case "add_event_labels":
+                    if training:
+                        self.pp_steps.append(AddEventLabels())
                 case _:
+                    logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
+
         return self.pp_steps, self.config["preprocessing"]
 
     # Function to retrieve preprocessing data location out path
@@ -77,7 +91,8 @@ class ConfigLoader:
         fe_s = []
         for fe_step in self.config["feature_engineering"]:
             if fe_step == "kurtosis":
-                fe_steps["kurtosis"] = Kurtosis(self.config["feature_engineering"]["kurtosis"])
+                fe_steps["kurtosis"] = Kurtosis(
+                    self.config["feature_engineering"]["kurtosis"])
                 window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -86,7 +101,8 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             elif fe_step == "skewness":
-                fe_steps["skewness"] = Skewness(self.config["feature_engineering"]["skewness"])
+                fe_steps["skewness"] = Skewness(
+                    self.config["feature_engineering"]["skewness"])
                 window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -95,7 +111,8 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             elif fe_step == "mean":
-                fe_steps["mean"] = Mean(self.config["feature_engineering"]["mean"])
+                fe_steps["mean"] = Mean(
+                    self.config["feature_engineering"]["mean"])
                 window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
                 window_sizes.sort()
                 window_sizes = str(window_sizes).replace(" ", "")
@@ -104,6 +121,7 @@ class ConfigLoader:
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
             else:
+                logger.critical("Feature engineering step not found: " + fe_step)
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
@@ -117,27 +135,35 @@ class ConfigLoader:
     def get_fe_in(self):
         return self.config["fe_loc_in"]
 
-    def get_log_to_wandb(self):
-        return self.config["log_to_wandb"]
+    # Function to retrieve pretraining data
+    def get_pretraining(self):
+        return self.config["pre_training"]
 
     # Function to retrieve model data
     def get_models(self):
         # Loop through models
         self.models = {}
+        logger.info("Models: " + str(self.config.get("models")))
         for model in self.config["models"]:
             model_config = self.config["models"][model]
             curr_model = None
-            if model_config["type"] == "example-fc-model":
-                curr_model = ExampleModel(model_config)
-            elif model_config["type"] == "transformer":
-                curr_model = Transformer(model_config)
-            else:
-                raise ConfigException(
-                    "Model not found: " + model_config["type"])
-
+            match model_config["type"]:
+                case "example-fc-model":
+                    curr_model = ExampleModel(model_config)
+                case "classic-base-model":
+                    curr_model = ClassicBaseModel(model_config)
+                case "transformer":
+                    curr_model = Transformer(model_config)
+                case _:
+                    logger.critical("Model not found: " + model_config["type"])
+                    raise ConfigException("Model not found: " + model_config["type"])
             self.models[model] = curr_model
 
         return self.models
+
+    # Getter for model store location
+    def get_model_store_loc(self):
+        return self.config["model_store_loc"]
 
     # Function to retrieve ensemble data
     def get_ensemble(self, models):
@@ -145,30 +171,34 @@ class ConfigLoader:
         curr_models = []
         # If length of weights and models is not equal, raise exception
         if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
-            raise ConfigException(
-                "Length of weights and models is not equal")
+            logger.critical("Length of weights and models is not equal")
+            raise ConfigException("Length of weights and models is not equal")
 
         if len(models) < len(self.config["ensemble"]["models"]):
+            logger.critical("You cannot have more ensembles than models.")
             raise ConfigException("You cannot have more ensembles than models.")
 
         for model_name in self.config["ensemble"]["models"]:
             if model_name not in models:
+                logger.critical(f"Model {model_name} not found in models.")
                 raise ConfigException(f"Model {model_name} not found in models.")
             curr_models.append(models[model_name])
 
         # Create ensemble
-        ensemble = Ensemble(curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
+        ensemble = Ensemble(
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
 
         return ensemble
 
     # Function to retrieve loss function
+
     def get_ensemble_loss(self):
         loss_class = None
         if self.config["ensemble_loss"] == "example_loss":
             loss_class = Loss().get_loss("example_loss")
         else:
-            raise ConfigException("Loss function not found: " +
-                                  self.config["loss"])
+            logger.critical("Loss function not found: " + self.config["loss"])
+            raise ConfigException("Loss function not found: " + self.config["loss"])
 
         return loss_class
 
@@ -193,6 +223,10 @@ class ConfigLoader:
                                   self.config["cv"]["method"])
 
         return cv_class
+
+    # Function to retrieve train for submission
+    def get_train_for_submission(self):
+        return self.config["train_for_submission"]
 
     # Function to retrieve scoring
     def get_scoring(self):

@@ -2,35 +2,29 @@
     "name": "config",
     "log_to_wandb": false,
     "preprocessing": [
-        "split_windows"
+        "mem_reduce",
+        "add_state_labels",
+        "split_windows",
+        "remove_unlabeled",
+        "add_event_labels"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
-        "kurtosis": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        },
-        "skewness": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        },
-        "mean": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        }
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
+    "pre_training": {
+        "cv": 0,
+        "test_size": 0.2,
+        "standardize": "standard"
+    },
     "models": {
         "Transformer": {
             "type": "transformer",
             "epochs": 20,
-            "batch_size": 32,
-            "loss": "mae-torch",
-            "optimizer": "adam-torch"
+            "batch_size": 32
         }
-
     },
     "model_store_loc": "tm",
     "ensemble": {
@@ -47,5 +41,6 @@
         "apply": true,
         "method": "example_cv"
     },
+    "train_for_submission": false,
     "scoring": true
 }

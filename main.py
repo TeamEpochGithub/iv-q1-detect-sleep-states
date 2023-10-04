@@ -1,19 +1,24 @@
 # This file does the training of the model
 
 # Imports
-import pandas as pd
-from src.configs.load_config import ConfigLoader
-import submit_to_kaggle
-import random
 import wandb
 
-# Load config file
-config = None
+from src import submit_to_kaggle
+from src.configs.load_config import ConfigLoader
+from src.logger.logger import logger
+from src.util.printing_utils import print_section_separator
+from src.pre_train.train_test_split import train_test_split
+from src.get_processed_data import get_processed_data
 
 
-def main(config, wandb_on=True):
-    # Initialize the path used for checking
-    # If pp already exists
+def main(config: ConfigLoader, series_path) -> None:
+    """
+    Main function for training the model
+
+    :param config: loaded config
+    """
+    print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
+    logger.info("Start of main.py")
 
     # Initialize wandb
     if config.get_log_to_wandb():
@@ -23,97 +28,136 @@ def main(config, wandb_on=True):
 
             config=config.get_config()
         )
+        logger.info("Logging to wandb")
     else:
-        print("Not logging to wandb.")
-    # Do training here
+        logger.info("Not logging to wandb")
 
-    df = pd.read_parquet(config.get_pp_in() + "/test_series.parquet")
+    # ------------------------------------------- #
+    #    Preprocessing and feature Engineering    #
+    # ------------------------------------------- #
 
-    # Initialize preprocessing steps
-    print("---------- PREPROCESSING ----------")
-    pp_steps, pp_s = config.get_pp_steps()
-    processed = df
-    # Get the preprocessing steps as a list of str to make the paths
-    for i, step in enumerate(pp_steps):
-        # Passes the current list because its needed to write to if the path doesnt exist
-        processed = step.run(processed, pp_s[:i + 1])
-        
+    print_section_separator("Preprocessing and feature engineering", spacing=0)
 
-    # Initialize feature engineering steps
-    print("---------- FEATURE ENGINEERING ----------")
-    fe_steps, fe_s = config.get_features()
-    featured_data = processed
-    for i, fe_step in enumerate(fe_steps):
-        # Also pass the preprocessing steps to the feature engineering step
-        # to save fe for each possible pp combination
-        feature = fe_steps[fe_step].run(processed, fe_s[:i + 1], pp_s)
-        # Add feature to featured_data
-        featured_data = pd.concat([featured_data, feature], axis=1)
+    featured_data = get_processed_data(config, series_path, save_output=True)
 
-    # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
-    print("---------- PRE-TRAINING ----------")
+    # ------------------------- #
+    #         Pre-train         #
+    # ------------------------- #
+
+    print_section_separator("Pre-train", spacing=0)
+
+    pretrain = config.get_pretraining()
+
+    # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
+    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
+
+    cv = 0
+    if "cv" in pretrain:
+        cv = config.get_cv()
+
+    # ------------------------- #
+    #          Training         #
+    # ------------------------- #
+
+    print_section_separator("Training", spacing=0)
 
     # Initialize models
-    print("---------- TRAINING ----------")
+    print("-------- TRAINING MODELS ----------")
     models = config.get_models()
+    for model in models:
+        models[model].train(X_train, X_test, Y_train, Y_test)
+
+    store_location = config.get_model_store_loc()
+    logger.info("Model store location: " + store_location)
+
+    # TODO Add crossvalidation to models #107
+    for i, model in enumerate(models):
+        logger.info("Training model " + str(i) + ": " + model)
+        models[model].train(featured_data)
+        models[model].save(store_location + "/" + model + ".pt")
 
     # Get saved models directory from config
     store_location = config.get_model_store_loc()
 
-    # TODO Add crossvalidation to models #107
-    for model in models:
-        models[model].train(featured_data)
-        models[model].save(store_location + "/" + model + ".pt")
+    # ------------------------- #
+    #          Ensemble         #
+    # ------------------------- #
 
-    # Initialize ensemble
-    #    ensemble = config.get_ensemble(models)
+    print_section_separator("Ensemble", spacing=0)
+    # TODO Add crossvalidation to models #107
+    print("-------- ENSEMBLING ----------")
+    ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
-
-    # ensemble.pred(featured_data)
+    test_data = None
+    ensemble.pred(test_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
 
+    # ------------------------------------------------------- #
+    #          Hyperparameter optimization for ensemble       #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Hyperparameter optimization for ensemble", spacing=0)
     # TODO Hyperparameter optimization for ensembles #101
     hpo = config.get_hpo()
     hpo.optimize()
 
+    # ------------------------------------------------------- #
+    #          Cross validation optimization for ensemble     #
+    # ------------------------------------------------------- #
+    print_section_separator("Cross validation for ensemble", spacing=0)
     # Initialize CV
     cv = config.get_cv()
     cv.run()
 
-    # Get scoring
+    # ------------------------------------------------------- #
+    #                    Train for submission                 #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Train for submission", spacing=0)
+
+    # TODO Mark best model from CV/HPO and train it on all data
+    if config.get_train_for_submission():
+        logger.info("Training best model for submission")
+        best_model = None
+        best_model.train(featured_data)
+        # Add submit in name for saving
+        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
+    else:
+        logger.info("Not training best model for submission")
+
+    # ------------------------------------------------------- #
+    #                    Scoring                              #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Scoring", spacing=0)
+
     scoring = config.get_scoring()
     if scoring:
+        logger.info("Start scoring...")
         # Do scoring
         pass
+    else:
+        logger.info("Not scoring")
 
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
 
-    epochs = 10
-    offset = random.random() / 5
-    for epoch in range(2, epochs):
-        acc = 1 - 2 ** -epoch - random.random() / epoch - offset
-        loss = 2 ** -epoch + random.random() / epoch + offset
-
-        # log metrics to wandb
-        if config.get_log_to_wandb():
-            wandb.log({"acc": acc, "loss": loss})
-
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():
         wandb.finish()
+        logger.info("Finished logging to wandb")
 
 
 if __name__ == "__main__":
     # Load config file
     config = ConfigLoader("config.json")
 
-    # Train model
-    main(config, False)
+    # Run main
+    main(config, "data/raw/test_series.parquet")
 
     # Create submission
-    submit_to_kaggle.submit(config.get_pp_in() + "/test_series.parquet", False)
+    submit_to_kaggle.submit(config, "data/raw/test_series.parquet", False)

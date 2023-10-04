@@ -38,7 +38,7 @@ class ClassicBaseModel(Model):
         """
         return {"median_window": 100, "threshold": .1}
 
-    def train(self, data):
+    def train(self, X_train, X_test, Y_train, Y_test):
         """
         Train function for the model.
         :param data: labelled data

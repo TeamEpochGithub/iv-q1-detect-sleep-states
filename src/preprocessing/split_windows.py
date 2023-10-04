@@ -1,5 +1,8 @@
 import pandas as pd
 from src.preprocessing.pp import PP
+from tqdm import tqdm
+import numpy as np
+import gc
 
 
 class SplitWindows(PP):
@@ -7,106 +10,117 @@ class SplitWindows(PP):
     def __init__(self, start_hour: float = 15):
         super().__init__()
         self.start_hour = start_hour
+        self.window_size = 24 * 60 * 12
+        self.steps_before = (start_hour * 60 * 12)
 
-    def preprocess(self, df):
+    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
 
         # Pad the series with 0s
-        df = df.groupby('series_id').apply(
+        # Loop through the series_ids
+        tqdm.pandas()
+
+        df = df.groupby('series_id').progress_apply(
             self.pad_series).reset_index(drop=True)
 
         # Split the data into 24 hour windows per series_id
-        df = df.groupby('series_id').apply(
+        df = df.groupby('series_id').progress_apply(
             self.preprocess_series).reset_index(0, drop=True)
 
         return df
 
-    def preprocess_series(self, df):
-        # Find the timestamp of the first row
-        first_time = pd.to_datetime(df['timestamp'].iloc[0]).time()
+    def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:
+        series['window'] = series.reset_index(
+            0, drop=True).index // self.window_size
+        series.astype({'window': np.uint8})
+        return series
 
-        initial_seconds = first_time.hour * 3600 + \
-            first_time.minute * 60 + first_time.second
+    def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 
-        # Calculate the number of rows per 24-hour window
-        rows_per_window = int(24 * 60 * 60 / 5)
+        # Garbage collect
+        gc.collect()
 
-        # Find the index of the next row that has a timestamp of 15:00:00
-        index_start = int((self.start_hour * 60 * 60 - initial_seconds) / 5)
-        if index_start <= 0:
-            index_start = rows_per_window - index_start
+        # Pad types
+        pad_type = {'step': np.uint32, 'series_id': np.uint16, 'awake': np.uint8,
+                    'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
 
-        # Create an empty column
-        df['window'] = pd.Series(dtype='int')
-
-        # Split the DataFrame into 24-hour windows
-        df.iloc[:index_start, df.columns.get_loc(
-            'window')] = 0  # assign window 0
-        for w, row in enumerate(range(index_start, len(df), rows_per_window)):
-            # assign window 1 and further
-            df.iloc[row:row + rows_per_window,
-                    df.columns.get_loc('window')] = w + 1
-        return df
-
-    def pad_series(self, group):
+        # Get current series_id
+        curr_series_id = group['series_id'].iloc[0]
 
         # Find the timestamp of the first row for each series_id
         first_time = group['timestamp'].iloc[0]
 
         # Get initial seconds
-        initial_seconds = first_time.hour * 60 * 60 + \
-            first_time.minute * 60 + first_time.second
+        initial_steps = first_time.hour * 60 * 12 + \
+            first_time.minute * 12 + int(first_time.second / 5)
 
-        # Find the index of the first row that has a timestamp of 15:00:00
-        index_start = int((15 * 60 * 60 - initial_seconds) / 5)
+        # If index is 0, then the first row is at 15:00:00 so do nothing
+        # If index is negative, time is before 15:00:00 and after 00:00:00 so add initial seconds and 9 hours
+        amount_of_padding_start = 0
+        if initial_steps < self.steps_before:
+            amount_of_padding_start += (self.window_size -
+                                        self.steps_before) + initial_steps
+        else:
+            amount_of_padding_start += initial_steps - self.steps_before
 
-        # If the index is negative, pad the front with enmo = 0 and anglez = 0 and steps being relative to the first step
-        if index_start < 0:
-            index_start -= 1
-            pad_df = pd.DataFrame({'timestamp': [first_time - pd.Timedelta(seconds=i * 5) for i in range(1, -index_start)],
-                                   'enmo': [0] * (-index_start - 1),
-                                   'anglez': [0] * (-index_start - 1),
-                                   'step': [group['step'].iloc[0] - i for i in range(1, -index_start)],
-                                   'series_id': [group['series_id'].iloc[0]] * (-index_start - 1),
-                                   'awake': [2] * (-index_start - 1)
-                                   })
-            # Sort dataframe by step
-            pad_df = pad_df.sort_values('step')
-            group = pd.concat([pad_df, group], ignore_index=True)
+        # Create numpy arrays of zeros for enmo, anglez, and awake
+        enmo = np.zeros(amount_of_padding_start)
+        anglez = np.zeros(amount_of_padding_start)
+        awake = np.full(amount_of_padding_start, 2)
+
+        # Create a numpy array of step values
+        step = (-np.arange(1, amount_of_padding_start + 1))[::-1]
+
+        # Create a numpy array of timestamps using date range
+        timestamps = (first_time - np.arange(1, amount_of_padding_start + 1)
+                      * pd.Timedelta(seconds=5))[::-1]
+
+        # Create a numpy array of series ids
+        series_id = np.full(amount_of_padding_start, curr_series_id)
+
+        # Create the start padding dataframe
+        start_pad_df = pd.DataFrame({'timestamp': timestamps,
+                                    'enmo': enmo,
+                                     'anglez': anglez,
+                                     'step': step,
+                                     'series_id': series_id,
+                                     'awake': awake})
 
         # Find the timestamp of the last row for each series_id
         last_time = group['timestamp'].iloc[-1]
 
-        # Get last seconds
-        last_seconds = last_time.hour * 60 * 60 + \
-            last_time.minute * 60 + last_time.second
-
-        # Find the difference between the last row and 15:00:00
-        index_end = int((last_seconds - 15 * 60 * 60) / 5)
-
         # Pad the end with enmo = 0 and anglez = 0 and steps being relative to the last step until timestamp is 15:00:00
-        if index_end > 0:
-            # Time has to add next day as well
-            index_end -= (24 * 60 * 12)
-            pad_df = pd.DataFrame({'timestamp': [last_time + pd.Timedelta(seconds=i * 5) for i in range(1, -index_end)],
-                                   'enmo': [0] * (-index_end - 1),
-                                   'anglez': [0] * (-index_end - 1),
-                                   'step': [group['step'].iloc[-1] + i for i in range(1, -index_end)],
-                                   'series_id': [group['series_id'].iloc[-1]] * (-index_end - 1),
-                                   'awake': [2] * (-index_end - 1)
-                                   })
-            # Sort dataframe by step
-            pad_df = pad_df.sort_values('step')
-            group = pd.concat([group, pad_df], ignore_index=True)
-        elif index_end < 0:
-            # Time has to add up to 15:00:00
-            pad_df = pd.DataFrame({'timestamp': [last_time + pd.Timedelta(seconds=i * 5) for i in range(1, -index_end)],
-                                   'enmo': [0] * (-index_end - 1),
-                                   'anglez': [0] * (-index_end - 1),
-                                   'step': [group['step'].iloc[-1] + i for i in range(1, -index_end)],
-                                   'series_id': [group['series_id'].iloc[-1]] * (-index_end - 1),
-                                   'awake': [2] * (-index_end - 1)
-                                   })
-            # Sort dataframe by step
-            pad_df = pad_df.sort_values('step')
-            group = pd.concat([group, pad_df], ignore_index=True)
+        amount_of_padding_end = 0
+        amount_of_padding_end = 17280 - \
+            ((len(start_pad_df) + len(group)) % 17280)
+
+        last_step = group['step'].iloc[-1]
+
+        # Create numpy arrays of zeros for enmo, anglez, and awake
+        enmo = np.zeros(amount_of_padding_end)
+        anglez = np.zeros(amount_of_padding_end)
+        awake = np.full(amount_of_padding_end, 2)
+
+        # Create a numpy array of step values
+        step = np.arange(last_step + 1, last_step + amount_of_padding_end + 1)
+
+        # Create a numpy array of timestamps using date range
+        timestamps = last_time + \
+            np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
+
+        # Create a numpy array of series ids
+        series_id = np.full(amount_of_padding_end, curr_series_id)
+
+        # Create the end padding dataframe
+        end_pad_df = pd.DataFrame({'timestamp': timestamps,
+                                   'enmo': enmo,
+                                   'anglez': anglez,
+                                   'step': step,
+                                   'series_id': series_id,
+                                   'awake': awake})
+
+        # Concatenate the dfs
+        dfs_to_concat = [start_pad_df, group, end_pad_df]
+        group = pd.concat(dfs_to_concat, ignore_index=True)
+        group.astype(pad_type)
+
         return group

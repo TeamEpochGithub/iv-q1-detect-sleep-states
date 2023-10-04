@@ -7,6 +7,7 @@ from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
+from src.pre_train.train_test_split import train_test_split
 from src.get_processed_data import get_processed_data
 
 
@@ -39,13 +40,20 @@ def main(config: ConfigLoader, series_path) -> None:
 
     featured_data = get_processed_data(config, series_path, save_output=True)
 
-    # TODO Add pretrain processstep (splitting data into train and test, standardization, etc.) #103
-
     # ------------------------- #
     #         Pre-train         #
     # ------------------------- #
 
     print_section_separator("Pre-train", spacing=0)
+
+    pretrain = config.get_pretraining()
+
+    # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
+    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
+
+    cv = 0
+    if "cv" in pretrain:
+        cv = config.get_cv()
 
     # ------------------------- #
     #          Training         #
@@ -54,7 +62,10 @@ def main(config: ConfigLoader, series_path) -> None:
     print_section_separator("Training", spacing=0)
 
     # Initialize models
+    print("-------- TRAINING MODELS ----------")
     models = config.get_models()
+    for model in models:
+        models[model].train(X_train, X_test, Y_train, Y_test)
 
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
@@ -74,11 +85,12 @@ def main(config: ConfigLoader, series_path) -> None:
 
     print_section_separator("Ensemble", spacing=0)
     # TODO Add crossvalidation to models #107
+    print("-------- ENSEMBLING ----------")
     ensemble = config.get_ensemble(models)
 
     # TODO ADD preprocessing of data suitable for predictions #103
-
-    ensemble.pred(featured_data)
+    test_data = None
+    ensemble.pred(test_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
@@ -141,6 +153,9 @@ def main(config: ConfigLoader, series_path) -> None:
 
 
 if __name__ == "__main__":
+    import coloredlogs
+    coloredlogs.install()
+
     # Load config file
     config = ConfigLoader("config.json")
 

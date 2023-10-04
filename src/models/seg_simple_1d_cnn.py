@@ -72,9 +72,11 @@ class SegmentationSimple1DCNN(Model):
     def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> None:
         """
         Train function for the model.
-        :param data: labelled data
+        :param X_train: the training data
+        :param X_test: the test data
+        :param Y_train: the training labels
+        :param Y_test: the test labels
         """
-
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]

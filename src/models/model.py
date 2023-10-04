@@ -10,6 +10,7 @@ class Model:
     """
 
     def __init__(self, config: dict) -> None:
+        self.model_type = "base-model"
         # Init function
         if config is None:
             self.config = None
@@ -23,21 +24,63 @@ class Model:
         logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
         self.device = torch.device("cuda")
 
-    # TODO Make train have X_train and X_test as input which are already splitted!
-    def train(self, data: pd.DataFrame) -> None:
+    def get_type(self) -> str:
         """
-        Train function for the model. This function should be overwritten by the user.
-        :param data: labelled data
+        Get type function for the model.
+        :return: type of the model
+        """
+        return self.model_type
+
+    def load_config(self, config: dict) -> None:
+        """
+        Load config function for the model. This function should be overwritten by the user.
+        :param config: configuration to set up the model
         """
         pass
+
+    def get_default_config(self) -> dict:
+        """
+        Get default config function for the model. This function should be overwritten by the user.
+        :return: default config
+        """
+        return {}
+
+    def train(self, X_train: pd.DataFrame, X_test: pd.DataFrame, Y_train: pd.DataFrame, Y_test: pd.DataFrame) -> None:
+        """
+        Train function for the model. This function should be overwritten by the user.
+        :param X_train: the training data
+        :param X_test: the test data
+        :param Y_train: the training labels
+        :param Y_test: the test labels
+        """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info("--- Training of model not necessary or not implemented")
+
+    def train_full(self, X_train: pd.DataFrame, Y_train: pd.DataFrame) -> None:
+        """
+        Train the model on the full dataset. This function should be overwritten by the user.
+        :param X_train: the training data
+        :param Y_train: the training labels
+        """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info("--- Training of model not necessary or not implemented")
 
     def pred(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Prediction function for the model. This function should be overwritten by the user.
         :param data: unlabelled data
-        :return:
+        :return: the predictions
         """
         return pd.DataFrame([1, 2])
+
+    def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
+        """
+        Evaluation function for the model. This function should be overwritten by the user.
+        :param pred: predictions
+        :param target: actual labels
+        """
+        # Evaluate function
+        pass
 
     def save(self, path: str) -> None:
         """
@@ -46,25 +89,10 @@ class Model:
         """
         pass
 
-    def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> None:
-        """
-        Evaluation function for the model. This function should be overwritten by the user.
-        :param pred: predictions
-        :param target: targets
-        """
-        # Evaluate function
-        pass
-
     def load(self, path: str) -> None:
         """
         Load function for the model. This function should be overwritten by the user.
         :param path: path to load the model from
-        """
-        pass
-
-    def get_type(self) -> str:
-        """
-        Get type function for the model. This function should be overwritten by the user.
         """
         pass
 

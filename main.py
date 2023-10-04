@@ -79,13 +79,12 @@ def main(config: ConfigLoader, series_path) -> None:
     logger.info("Initializing models...")
     models = config.get_models(data_shape)
 
-    # TODO Add crossvalidation to models #107
+    # TODO Add crossvalidation to models and hyperparameter optimization #107, #101
     for i, model in enumerate(models):
         logger.info("Training model " + str(i) + ": " + model)
         models[model].train(X_train, X_test, y_train, y_test)
         models[model].save(store_location + "/" + model + ".pt")
 
-    # TODO Hyperparameter Optimization #101
     # Store optimal models
     for i, model in enumerate(models):
         models[model].save(store_location + "/optimal_" + model + ".pt")

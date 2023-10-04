@@ -153,7 +153,7 @@ These models should either be a statistical, regression or state_prediction mode
 
 #### Implemented Models types and config options
 
-It should
+This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters.
 
 - example-fc-model
     - epochs (required)
@@ -162,7 +162,14 @@ It should
     - lr
     - batch_size
 
-Example of an example-fc-model configuration:
+- seg-simple-1d-cnn
+    - loss (required)
+    - optimizer (required)
+    - epochs
+    - lr
+    - batch_size
+  
+Example of an example-fc-model configuration and a 1D-CNN configuration
 
 ```
 "ExampleModel": {
@@ -171,6 +178,14 @@ Example of an example-fc-model configuration:
     "batch_size": 32,
     "loss": "mae-torch",
     "optimizer": "adam-torch"
+}
+"1D-CNN": {
+    "type": "seg-simple-1d-cnn",
+    "loss": "mse-torch",
+    "optimizer": "rmsprop-torch",
+    "epochs": 5,
+    "batch_size": 64,
+    "lr": 0.01
 }
 ```
 

@@ -33,7 +33,6 @@ class ExampleModel(Model):
         self.model = SimpleModel(2, 10, 1, config)
         self.load_config(config)
 
-
     def load_config(self, config):
         """
         Load config function for the model.

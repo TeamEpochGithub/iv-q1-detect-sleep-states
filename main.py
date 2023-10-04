@@ -87,7 +87,8 @@ def main(config: ConfigLoader, series_path) -> None:
 
     # TODO ADD preprocessing of data suitable for predictions #103
     test_data = None
-    ensemble.pred(test_data)
+    if test_data:
+        ensemble.pred(test_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67

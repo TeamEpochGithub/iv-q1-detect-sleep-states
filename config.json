@@ -21,10 +21,7 @@
     },
     "models": {
         "ExampleModel": {
-            "type": "example-fc-model",
-            "loss": "mae-torch",
-            "optimizer": "adam-torch",
-            "epochs": 20
+            "type": "classic-base-model"
         }
     },
     "model_store_loc": "tm",

@@ -7,6 +7,7 @@ from ...loss.loss import Loss
 from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
 from .transformer_encoder import TSTransformerEncoderClassiregressor
+from ...util.patching import patch_x_data, patch_y_data, unpatch_data
 import torchinfo
 
 
@@ -97,7 +98,7 @@ class Transformer(Model):
             'n_heads': 6,
             'num_layers': 5,
             'dim_feedforward': 2048,
-            'num_classes': 480,
+            'num_classes': 5,
             'dropout': 0.1,
             'pos_encoding': "learnable",
             'activation': "relu",
@@ -113,14 +114,12 @@ class Transformer(Model):
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
-        print("----------------")
-        print(f"Training model: {type(self).__name__}")
-        print(f"Hyperparameters: {self.config}")
-        print("----------------")
+        logger.info(f"Training model: {type(self).__name__}")
+        logger.info(f"Hyperparameters: {self.config}")
 
         # Load hyperparameters
         # criterion = self.config["loss"]
-        # optimizer = self.config["optimizer"]
+        optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
@@ -135,8 +134,8 @@ class Transformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 0]
-        y_test = y_test[:, :, 0]
+        #y_train = y_train[:, :, 0]
+        #y_test = y_test[:, :, 0]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -147,20 +146,12 @@ class Transformer(Model):
         patch_size = self.config["patch_size"]
 
         # Patch the data for the features
-        X_train = torch.reshape(
-            X_train, (X_train.shape[0], X_train.shape[1] // patch_size, patch_size, X_train.shape[2]))
-        X_train = torch.reshape(
-            X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2] * X_train.shape[3]))
-        X_test = torch.reshape(
-            X_test, (X_test.shape[0], X_test.shape[1] // patch_size, patch_size, X_test.shape[2]))
-        X_test = torch.reshape(
-            X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2] * X_test.shape[3]))
+        X_train = patch_x_data(X_train, patch_size)
+        X_test = patch_x_data(X_test, patch_size)
 
         # Patch the data for the labels
-        y_train = torch.reshape(
-            y_train, (y_train.shape[0], y_train.shape[1] // patch_size, patch_size))
-        y_train = torch.transpose(y_train, 1, 2)
-        y_train = torch.max(y_train, 1).values
+        y_train = patch_y_data(y_train, patch_size)
+        y_test = patch_y_data(y_test, patch_size)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -175,7 +166,7 @@ class Transformer(Model):
         # Torch summary
         logger.info(torchinfo.summary(self.model))
         trainer = Trainer(epochs=epochs)
-        trainer.fit(train_dataloader, self.model, self.config["optimizer"])
+        trainer.fit(train_dataloader, self.model, optimizer)
         accuracy = trainer.evaluate(test_dataloader, self.model)
         print(f"Accuracy: {accuracy}")
 

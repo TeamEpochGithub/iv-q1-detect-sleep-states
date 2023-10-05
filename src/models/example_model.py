@@ -1,13 +1,14 @@
 import pandas as pd
 import torch
-import torch.nn as nn
 
+from .architectures.simple_model import SimpleModel
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 
 
+# TODO This model is currently outdated...
 class ExampleModel(Model):
     """
     This is a sample model file. You can use this as a template for your own models.
@@ -180,21 +181,3 @@ class ExampleModel(Model):
         self.config = checkpoint['config']
 
         logger.info("Model loaded from: " + path)
-
-
-class SimpleModel(nn.Module):
-    """
-    Pytorch implementation of a really simple baseline model.
-    """
-
-    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, config: dict) -> None:
-        super(SimpleModel, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_dim, output_dim)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu1(x)
-        x = self.fc2(x)
-        return x

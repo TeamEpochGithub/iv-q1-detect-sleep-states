@@ -15,17 +15,17 @@ def get_processed_data(config, series_path, save_output=True):
         path = config.get_pp_out() + '/' + '_'.join(step_names[:i]) + '.parquet'
         # check if the final result of the preprocessing exists
         if os.path.exists(path):
-            logger.info(f'--- Reading existing file at: {path}')
+            logger.info(f'Reading existing file at: {path}')
             processed = pd.read_parquet(path)
-            logger.info('--- Finished reading')
+            logger.info('Finished reading')
             break
         else:
-            logger.debug(f'--- File not found at: {path}')
+            logger.debug(f'File not found at: {path}')
 
     if i == 0:
-        logger.info(f'--- No files found, reading from: {series_path}')
+        logger.info(f'No files found, reading from: {series_path}')
         processed = pd.read_parquet(series_path)
-        logger.info(f'--- Data read from: {series_path}')
+        logger.info(f'Data read from: {series_path}')
 
     # now using i run the preprocessing steps that were not applied
     for j, step in enumerate(step_names[i:]):

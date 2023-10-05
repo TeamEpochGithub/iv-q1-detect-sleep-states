@@ -183,7 +183,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config, "data/raw/first_series.parquet")
+    main(config, "data/raw/train_series.parquet")
 
     # Create submission
-    submit_to_kaggle.submit(config, "data/raw/first_series.parquet", False)
+    submit_to_kaggle.submit(config, "data/raw/train_series.parquet", False)

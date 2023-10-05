@@ -16,18 +16,19 @@ def train_test_split(df: pd.DataFrame, test_size: int = 0.2, standardize_method:
     train_idx, test_idx = next(gss.split(df, groups=groups))
 
     # Standardize data
-    train_idx = standardize(df.iloc[train_idx], method=standardize_method)
-    test_idx = standardize(df.iloc[test_idx], method=standardize_method)
+    train_standard = standardize(df.iloc[train_idx], method=standardize_method)
+    test_standard = standardize(df.iloc[test_idx], method=standardize_method)
 
-    X_train, Y_train = split_on_labels(train_idx)
-    X_test, Y_test = split_on_labels(test_idx)
+    X_train, Y_train = split_on_labels(train_standard)
+    X_test, Y_test = split_on_labels(test_standard)
 
     return X_train, X_test, Y_train, Y_test
 
 
 def split_on_labels(df: pd.DataFrame) -> (np.array, np.array):
-    # Only keep feature columns which start with f_
-    x_data = df[['enmo', 'anglez']]
+    feature_cols = [col for col in df.columns if col.startswith('f_')]
+    x_data = df[['enmo', 'anglez'] + feature_cols]
+
     keep_y_train_columns = []
     if 'awake' in df.columns:
         keep_y_train_columns.append('awake')

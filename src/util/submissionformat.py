@@ -1,17 +1,23 @@
+import numpy as np
 import pandas as pd
 import json
 
 
-def to_submission_format(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    :param df: A dataframe with series_id, onset and wakeup columns (possibly NaN)
+def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> pd.DataFrame:
+    """ Combine predictions with window info to create a dataframe suitable for submission.csv or scoring
+    :param predictions 3D array with shape (window, 2), with onset and wakeup steps
     :return: A dataframe suitable for submission.csv or scoring, with row_id, series_id, step, event and score columns
     """
+
+    # add the predictions with window offsets
+    window_info['onset'] = predictions + window_info['step']
+    window_info['wakeup'] = predictions + window_info['step']
+    window_info.drop(['step'])
 
     # create a new dataframe, by converting every onset and wakeup column values to two rows,
     # one with event='onset' and the other with event='awake'
     # and then sort by series_id and onset (ascending)
-    df = (df.melt(id_vars='series_id', value_vars=['onset', 'wakeup'], var_name='event', value_name='step')
+    df = (window_info.melt(id_vars='series_id', value_vars=['onset', 'wakeup'], var_name='event', value_name='step')
           .dropna()
           .sort_values(['series_id', 'step']))
 

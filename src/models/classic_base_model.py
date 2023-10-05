@@ -51,8 +51,9 @@ class ClassicBaseModel(Model):
         onset, awake = find_events(state_pred)
         return onset, awake
 
-    def predict_state_labels(self, data: pd.DataFrame) -> np.ndarray:
-        data['slope'] = abs(data['anglez'].diff()).clip(upper=10)
-        data['movement'] = data['slope'].rolling(window=100).median()
-        data['pred'] = (data['movement'] > .1).astype(float)
-        return data['pred'].to_numpy()
+    def predict_state_labels(self, data: np.ndarray) -> np.ndarray:
+        anglez = data[:, 1]
+        slope = np.absolute(np.diff(anglez))
+        movement = pd.Series(slope).rolling(window=100).median()
+        pred = (movement > .1)
+        return pred.to_numpy(dtype='float32')

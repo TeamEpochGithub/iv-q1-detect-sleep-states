@@ -93,7 +93,7 @@ class Model:
         """
         logger.info("--- Nothing to save or not implemented")
 
-    def load(self, path: str, only_hyperparameters: bool) -> None:
+    def load(self, path: str, only_hyperparameters: bool = False) -> None:
         """
         Load function for the model. This function should be overwritten by the user.
         :param path: path to load the model from

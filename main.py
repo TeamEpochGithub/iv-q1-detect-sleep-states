@@ -164,22 +164,6 @@ def main(config: ConfigLoader, series_path) -> None:
     else:
         logger.info("Not scoring")
 
-    # ------------------------------------------------------- #
-    #                    Train for submission                 #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Train for submission", spacing=0)
-
-    # TODO Mark best model from CV/HPO and train it on all data
-    if config.get_train_for_submission():
-        logger.info("Training best model for submission")
-        best_model = None
-        best_model.train(featured_data)
-        # Add submit in name for saving
-        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
-    else:
-        logger.info("Not training best model for submission")
-
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
@@ -199,7 +183,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config, "data/raw/train_series.parquet")
+    main(config, "data/raw/first_series.parquet")
 
     # Create submission
-    submit_to_kaggle.submit(config, "data/raw/test_series.parquet", False)
+    submit_to_kaggle.submit(config, "data/raw/first_series.parquet", False)

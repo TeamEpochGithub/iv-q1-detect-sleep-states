@@ -50,14 +50,34 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
             # loop through the jump indices and increment the group number
             for i in jump_indices:
                 awake_0_df.loc[i:, 'group'] += 1
-            # current_series = current_series[binary_mask == 1]
-            fig = px.line()
+
+            awake_1_df['diff'] = awake_1_df['step'].diff()
+            jump_indices = awake_1_df[awake_1_df['diff'] > 1].index
+            awake_1_df['group'] = 0
+            for i in jump_indices:
+                awake_1_df.loc[i:, 'group'] += 1
+            
+            awake_2_df['diff'] = awake_2_df['step'].diff()
+            jump_indices = awake_2_df[awake_2_df['diff'] > 1].index
+            awake_2_df['group'] = 0
+            for i in jump_indices:
+                awake_2_df.loc[i:, 'group'] += 1
+
+            fig = go.Figure()
             for feature_to_plot in ['anglez', 'enmo']:
                 # Create the plots for the current feature
-                awake_0_df.groupby('group').apply(lambda x: fig.add_scatter(x=x['step'], y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0', line=dict(color='blue')))
-                # fig.add_scatter(x=awake_0_df['step'], y=awake_0_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0', line=dict(color='blue'))
-                fig.add_scatter(x=awake_1_df['step'], y=awake_1_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=1', line=dict(color='red'))
-                fig.add_scatter(x=awake_2_df['step'], y=awake_2_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2', line=dict(color='green'))
+                awake_0_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'], 
+                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0', 
+                                                                                     line=dict(color='blue'), legendgroup=feature_to_plot+'Awake=0',
+                                                                                     showlegend=True if x.name == 0 else False)))
+                awake_1_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
+                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=1',
+                                                                                     line=dict(color='red'), legendgroup=feature_to_plot+'Awake=1',
+                                                                                     showlegend=True if x.name == 0 else False)))
+                awake_2_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
+                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2',
+                                                                                     line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
+                                                                                     showlegend=True if x.name == 0 else False)))
                 fig.update_xaxes(title='Timestamp')
                 fig.update_yaxes(title='Feature values')
                 fig.update_layout(title=f'Anglez for Series ID: {id}')

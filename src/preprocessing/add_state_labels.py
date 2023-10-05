@@ -1,10 +1,11 @@
-from ..logger.logger import logger
-from ..preprocessing.pp import PP, PPException
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
 import json
-import os
+
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from ..logger.logger import logger
+from ..preprocessing.pp import PP
 
 
 class AddStateLabels(PP):
@@ -14,34 +15,35 @@ class AddStateLabels(PP):
     The values are 0 for asleep, 1 for awake, and 2 for unlabeled.
     """
 
-    def __init__(self, **kwargs) -> None:
-        """
-        Initialize the AddStateLabels class.
+    def __init__(self, events_path: str, **kwargs) -> None:
+        """Initialize the AddStateLabels class.
+
         :param events_path: the path to the events csv file
         :raises PPException: If no path to the events csv file is given
         """
-        super().__init__()
+        super().__init__(**kwargs)
 
-        if 'events_path' not in kwargs:
-            logger.critical("No path to labels given. Make sure to add the events_path argument.")
-            raise PPException("No path to labels given. Make sure to add the events_path argument.")
-
-        self.events_path: str = kwargs['events_path']
+        self.events_path: str = events_path
         self.events: pd.DataFrame = pd.DataFrame()
 
+        # TODO Don't hardcode the file name, add it as a parameter in the config.json #99
+        self.id_encoding_path: str = "series_id_encoding.json"
+        self.id_encoding: dict = {}
+
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Run the preprocessing step.
+        """Run the preprocessing step.
+
         :param data: the data to preprocess
         :return: the preprocessed data
-        :raises FileNotFoundError: If the events csv file is not found
+        :raises FileNotFoundError: If the events csv or id_encoding json file is not found
         """
-        self.events: pd.DataFrame = pd.read_csv(self.events_path)
+        self.events = pd.read_csv(self.events_path)
+        self.id_encoding = json.load(open(self.id_encoding_path))
         return self.preprocess(data)
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Preprocess the data by adding state labels to each row of the data.
+        """Preprocess the data by adding state labels to each row of the data.
+
         :param data: the data without state labels
         :return: the data with state labels added to the "awake" column
         """
@@ -50,10 +52,7 @@ class AddStateLabels(PP):
         data['awake'] = 0
 
         # apply encoding to events
-        if os.path.exists('series_id_encoding.json'):
-            f = open('series_id_encoding.json')
-            id_encoding = json.load(f)
-        self.events['series_id'] = self.events['series_id'].map(id_encoding)
+        self.events['series_id'] = self.events['series_id'].map(self.id_encoding)
 
         events_copy = self.events.copy()
         events_copy.dropna(inplace=True)
@@ -72,8 +71,8 @@ class AddStateLabels(PP):
         # apply encoding to weird series
         weird_series_encoded = []
         for id in weird_series:
-            if id in id_encoding:
-                weird_series_encoded.append(id_encoding[id])
+            if id in self.id_encoding:
+                weird_series_encoded.append(self.id_encoding[id])
 
         # Firstly we loop with the series without NaN
         for i, id in tqdm(enumerate(not_nan)):

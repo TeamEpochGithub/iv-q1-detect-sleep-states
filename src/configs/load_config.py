@@ -26,11 +26,11 @@ from ..preprocessing.truncate import Truncate
 
 
 class ConfigLoader:
-    """Class to load the configuration from a JSON file
-    """
+    """Class to load the configuration from a JSON file"""
 
     def __init__(self, config_path: str) -> None:
         """Initialize the ConfigLoader class
+
         :param config_path: the path to the config.json file
         """
         self.config_path = config_path
@@ -42,37 +42,42 @@ class ConfigLoader:
     # Get full configuration
     def get_config(self) -> dict:
         """Get the full configuration
+
         :return: the full configuration dict
         """
         return self.config
 
     def get_log_to_wandb(self) -> bool:
         """Get whether to log to Weights & Biases
+
         :return: whether to log to Weights & Biases
         """
         return self.config["log_to_wandb"]
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
+
         :return: the path to the train_series.parquet file
         """
         return self.config["train_series_path"]
 
     def get_train_events_path(self) -> str:
         """Get the path to the training labels data
+
         :return: the path to the train_events.csv file
         """
         return self.config["train_events_path"]
 
     def get_test_series_path(self) -> str:
         """Get the path to the test series data
+
         :return: the path to the test_series.parquet file
         """
         return self.config["test_series_path"]
 
-    # Function to retrieve preprocessing steps
     def get_pp_steps(self, training) -> (list[PP], list[str]):
         """Get the preprocessing steps classes
+
         :param training: whether the preprocessing is for training or testing
         :return: the preprocessing steps and their names
         """
@@ -109,18 +114,21 @@ class ConfigLoader:
 
     def get_pp_out(self) -> str:
         """Get the path to the preprocessing output folder
+
         :return: the path to the preprocessing output folder
         """
         return self.config["processed_loc_out"]
 
     def get_pp_in(self) -> str:
         """Get the path to the preprocessing input data folder
+
         :return: the path to the preprocessing input data folder
         """
         return self.config["processed_loc_in"]
 
     def get_features(self) -> (dict[FE], list[str]):
         """Get the feature engineering steps classes
+
         :return: the feature engineering steps and their names
         """
         fe_steps: dict = {}
@@ -165,17 +173,21 @@ class ConfigLoader:
 
     def get_fe_out(self) -> str:
         """Get the path to the feature engineering output folder
-        :return: the path to the feature engineering output folder"""
+
+        :return: the path to the feature engineering output folder
+        """
         return self.config["fe_loc_out"]
 
     def get_fe_in(self) -> str:
         """Get the path to the feature engineering input data folder
+
         :return: the path to the feature engineering input data folder
         """
         return self.config["fe_loc_in"]
 
     def get_pretraining(self) -> dict:
         """Get the pretraining parameters
+
         :return: the pretraining parameters
         """
         return self.config["pre_training"]
@@ -183,6 +195,7 @@ class ConfigLoader:
     # Function to retrieve model data
     def get_models(self, data_shape: tuple) -> dict:
         """Get the models from the config
+
         :param data_shape: the shape of the data
         :return: the models
         """
@@ -208,12 +221,14 @@ class ConfigLoader:
 
     def get_model_store_loc(self) -> str:
         """Get the path to the model store directory
+
         :return: the path to the model store directory
         """
         return self.config["model_store_loc"]
 
     def get_ensemble(self, models: list) -> Ensemble:
         """Get the ensemble from the config
+
         :param models: the models
         :return: the ensemble
         """
@@ -242,6 +257,7 @@ class ConfigLoader:
 
     def get_ensemble_loss(self) -> nn.Module:
         """Get the ensemble loss function from the config
+
         :return: the loss function
         """
         loss_class = None
@@ -255,6 +271,7 @@ class ConfigLoader:
 
     def get_hpo(self) -> HPO:
         """Get the hyperparameter tuning method from the config
+
         :return: the hyperparameter tuning method
         """
         hpo_class = None
@@ -268,6 +285,7 @@ class ConfigLoader:
 
     def get_cv(self) -> CV:
         """Get the cross validation method from the config
+
         :return: the cross validation method
         """
         cv_class = None
@@ -282,6 +300,7 @@ class ConfigLoader:
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:
         """Get whether to train for submission from the config
+
         :return: whether to train for submission
         """
         return self.config["train_for_submission"]
@@ -289,6 +308,7 @@ class ConfigLoader:
     # Function to retrieve scoring
     def get_scoring(self) -> bool:
         """Get whether to score from the config
+
         :return: whether to score
         """
         return self.config["scoring"]

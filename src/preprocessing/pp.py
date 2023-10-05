@@ -9,12 +9,12 @@ class PP:
     All child classes should implement the preprocess method.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, use_pandas=True, **kwargs) -> None:
         """
         Initialize the preprocessing step.
         :param use_pandas: whether to use Pandas or Polars dataframes. Default is True.
         """
-        self.use_pandas = kwargs['use_pandas'] if 'use_pandas' in kwargs else True
+        self.use_pandas = use_pandas
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """

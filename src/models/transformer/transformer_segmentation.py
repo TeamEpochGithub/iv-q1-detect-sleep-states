@@ -10,7 +10,7 @@ class SegmentTransformer(nn.module):
     Transformer for time series segmentation.
 
     """
-    
+
     def __init__(
         self,
         feat_dim: int,
@@ -57,11 +57,11 @@ class SegmentTransformer(nn.module):
                 dropout * (1.0 - freeze),
                 activation=activation,
             )
-        
+
         # Set the transformer encoder
         self.transformer_encoder = nn.TransformerEncoder(
             encoder_layer, num_layers)
-        
+
         # Set the activation function
         self.act = get_activation_fn(activation)
 
@@ -77,7 +77,7 @@ class SegmentTransformer(nn.module):
         # Build the output module
         self.output_layer = self.build_output_module(
             d_model, seq_len, num_classes)
-        
+
     def build_output_module(
             self, d_model: int, seq_len: int, num_classes: int) -> nn.Module:
         """
@@ -86,14 +86,14 @@ class SegmentTransformer(nn.module):
         output_layer = nn.Linear(d_model*seq_len, seq_len*num_classes)
 
         return output_layer
-    
+
     def forward(self, x: Tensor, padding_masks: Tensor) -> Tensor:
         """
         Args:
             x: input tensor of shape (batch_size, seq_len, feat_dim)
             padding_masks: padding masks of shape (batch_size, seq_len)
         Returns:
-            output: (batch_size, seq_len, num_classes)    
+            output: (batch_size, seq_len, num_classes)
         """
 
         # Permute beause the transformer expects the input to be of shape (seq_len, batch_size, feat_dim)
@@ -111,7 +111,7 @@ class SegmentTransformer(nn.module):
 
         # Final output
         output = output * padding_masks.unsqueeze(-1)
-        output = output.reshape(output.shape[0], -1) # (batch_size, seq_len * d_model)
-        output = self.output_layer(output) # (batch_size, seq_len * num_classes)
+        output = output.reshape(output.shape[0], -1)  # (batch_size, seq_len * d_model)
+        output = self.output_layer(output)  # (batch_size, seq_len * num_classes)
 
         return output

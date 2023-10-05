@@ -1,3 +1,4 @@
+import math
 from torch import nn, Tensor
 from .positional_encoding import get_pos_encoder
 from torch.nn.modules import TransformerEncoderLayer
@@ -80,3 +81,37 @@ class SegmentTransformer(nn.module):
     def build_output_module(
             self, d_model: int, seq_len: int, num_classes: int) -> nn.Module:
         """
+        Build linear layer that maps from d_model*seq_len to seq_len*num_classes.
+        """
+        output_layer = nn.Linear(d_model*seq_len, seq_len*num_classes)
+
+        return output_layer
+    
+    def forward(self, x: Tensor, padding_masks: Tensor) -> Tensor:
+        """
+        Args:
+            x: input tensor of shape (batch_size, seq_len, feat_dim)
+            padding_masks: padding masks of shape (batch_size, seq_len)
+        Returns:
+            output: (batch_size, seq_len, num_classes)    
+        """
+
+        # Permute beause the transformer expects the input to be of shape (seq_len, batch_size, feat_dim)
+        inp = x.permute(1, 0, 2)
+        inp = self.project_inp(inp) * math.sqrt(self.d_model)
+
+        # Add positional encoding
+        inp = self.pos_enc(inp)
+
+        # Get output
+        output = self.transformer_encoder(inp, src_key_padding_mask=~padding_masks)
+        output = self.act(output)
+        output = output.permute(1, 0, 2)
+        output = self.dropout1(output)
+
+        # Final output
+        output = output * padding_masks.unsqueeze(-1)
+        output = output.reshape(output.shape[0], -1) # (batch_size, seq_len * d_model)
+        output = self.output_layer(output) # (batch_size, seq_len * num_classes)
+
+        return output

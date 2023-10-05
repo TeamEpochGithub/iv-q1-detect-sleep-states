@@ -100,10 +100,9 @@ def main(config: ConfigLoader, series_path) -> None:
 
         # Retrain all models with optimal parameters
         for i, model in enumerate(models):
-            models[model].load(store_location + "/optimal_" + model + ".pt")
+            models[model].load(store_location + "/optimal_" + model + ".pt", only_hyperparameters=True)
             logger.info("Retraining model " + str(i) + ": " + model)
-
-            models[model].train_full(split_on_labels(featured_data))
+            models[model].train_full(*split_on_labels(featured_data))
             models[model].save(store_location + "/submit_" + model + ".pt")
     else:
         logger.info("Not training best model for submission")

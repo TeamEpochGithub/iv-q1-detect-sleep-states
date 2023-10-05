@@ -23,9 +23,9 @@
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 50,
+            "epochs": 2,
             "batch_size": 32,
-            "lr": 0.1
+            "lr": 0.001
         }
     },
     "model_store_loc": "tm",
@@ -43,6 +43,6 @@
         "apply": true,
         "method": "example_cv"
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true
 }

@@ -73,8 +73,8 @@ class SegmentationSimple1DCNN(Model):
         Train function for the model.
         :param X_train: the training data
         :param X_test: the test data
-        :param Y_train: the training labels
-        :param Y_test: the test labels
+        :param y_train: the training labels
+        :param y_test: the test labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
@@ -151,14 +151,13 @@ class SegmentationSimple1DCNN(Model):
         """
         Train the model on the full dataset.
         :param X_train: the training data
-        :param Y_train: the training labels
+        :param y_train: the training labels
         """
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
-        logger.info(self.config)
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Flatten y_train and y_test so we only get the awake label

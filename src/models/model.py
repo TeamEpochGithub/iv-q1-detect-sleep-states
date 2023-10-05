@@ -47,13 +47,13 @@ class Model:
         logger.info("--- No default configuration of model or not implemented")
         return {}
 
-    def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, Y_test: np.ndarray) -> None:
+    def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> None:
         """
         Train function for the model. This function should be overwritten by the user.
         :param X_train: the training data
         :param X_test: the test data
-        :param Y_train: the training labels
-        :param Y_test: the test labels
+        :param y_train: the training labels
+        :param y_test: the test labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
@@ -62,7 +62,7 @@ class Model:
         """
         Train the model on the full dataset. This function should be overwritten by the user.
         :param X_train: the training data
-        :param Y_train: the training labels
+        :param y_train: the training labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")

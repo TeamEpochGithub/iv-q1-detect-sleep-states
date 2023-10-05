@@ -6,7 +6,7 @@
         "add_state_labels",
         "split_windows",
         "remove_unlabeled",
-        "add_segmentation_labels"
+        "add_regression_labels"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -20,7 +20,7 @@
     },
     "models": {
         "Transformer": {
-            "type": "transformer",
+            "type": "regression-transformer",
             "epochs": 20,
             "batch_size": 16,
             "optimizer": "adam-torch",

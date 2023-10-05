@@ -35,3 +35,4 @@ def unpatch_data(d: np.array, patch_size: int) -> np.array:
     :param patch_size: patch size
     :return: unpatched data
     """
+    pass

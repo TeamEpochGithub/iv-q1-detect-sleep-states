@@ -17,7 +17,7 @@ from ..loss.loss import Loss
 
 # Model imports
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.transformer.transformer import Transformer
+from ..models.transformer.transformer import RegressionTransformer
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 
@@ -158,8 +158,8 @@ class ConfigLoader:
                     curr_model = ExampleModel(model_config)
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config)
-                case "transformer":
-                    curr_model = Transformer(model_config)
+                case "regression-transformer":
+                    curr_model = RegressionTransformer(model_config)
                 case "seg-simple-1d-cnn":
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape)
                 case _:

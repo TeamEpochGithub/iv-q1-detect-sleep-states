@@ -49,9 +49,9 @@ def main(config: ConfigLoader, series_path) -> None:
     pretrain = config.get_pretraining()
 
     logger.info("Obtained pretrain parameters from config " + str(pretrain))
+    
     # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-
     logger.info("Splitting data into train and test...")
     X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
 

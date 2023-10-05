@@ -7,11 +7,11 @@ from ...loss.loss import Loss
 from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
 from .transformer_encoder import TSTransformerEncoderClassiregressor
-from ...util.patching import patch_x_data, patch_y_data, unpatch_data
+from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 import torchinfo
 
 
-class Transformer(Model):
+class RegressionTransformer(Model):
     """
     This is the model file for the transformer model.
     """
@@ -98,7 +98,7 @@ class Transformer(Model):
             'n_heads': 6,
             'num_layers': 5,
             'dim_feedforward': 2048,
-            'num_classes': 5,
+            'num_classes': 4,
             'dropout': 0.1,
             'pos_encoding': "learnable",
             'activation': "relu",
@@ -134,8 +134,8 @@ class Transformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        # y_train = y_train[:, :, 0]
-        # y_test = y_test[:, :, 0]
+        y_train = y_train[:, :, 1:]
+        y_test = y_test[:, :, 1:]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)

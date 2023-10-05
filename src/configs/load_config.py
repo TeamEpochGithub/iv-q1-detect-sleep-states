@@ -1,28 +1,19 @@
-# In this file the correct classes are retrieved for the configuration
 import json
 
 from torch import nn
 
-# CV imports
 from ..cv.cv import CV
-# Ensemble imports
 from ..ensemble.ensemble import Ensemble
-# Feature engineering imports
 from ..feature_engineering.feature_engineering import FE
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.mean import Mean
 from ..feature_engineering.skewness import Skewness
-# HPO imports
 from ..hpo.hpo import HPO
-# Logger import
 from ..logger.logger import logger
-# Loss imports
 from ..loss.loss import Loss
-# Model imports
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-# Preprocessing imports
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels
 from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
@@ -90,8 +81,8 @@ class ConfigLoader:
             # Check if the step is only for training
             if not training and pp_step in ["add_state_labels", "remove_unlabeled", "truncate", "add_event_labels",
                                             "add_regression_labels", "add_segmentation_labels"]:
-                logger.critical("Preprocessing step " + pp_step + " should only be used for training")
-                raise ConfigException("Preprocessing step " + pp_step + " should only be used for training")
+                logger.info("Preprocessing step " + pp_step + " is only used for training. Continuing...")
+                continue
 
             match pp_step:
                 case "mem_reduce":

@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import json
 import plotly.express as px
@@ -49,15 +48,33 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, features_to_pl
                 fig.update_xaxes(tickvals=current_series['step'][::len(current_series) // 10], tickangle=45)
                 # Show the first plot
             # before showing the figure make vertical lines for the current_events and current_preds
-            for current_onset in current_events[current_events['event'] == 'onset']['step']:
-                fig.add_vline(x=current_onset, line_width=1, line_dash="dash", line_color="black", name="onset")
-            for current_wakeup in current_events[current_events['event'] == 'wakeup']['step']:
-                fig.add_vline(x=current_wakeup, line_width=1, line_dash="dash", line_color="green", name="wakeup")
+            for current_onset in current_events[current_events['event'] == 'onset']['step'].dropna():
+                fig.add_vline(x=current_onset, line_dash="dash", line_color="black", line_width=2,
+                              annotation_text=f'<span style="color:black">real_onset:<br> {current_onset}</span>',
+                              annotation_position="top", name=f'Vertical Line at x={current_onset}', annotation_textangle=315,
+                              )
+            for current_wakeup in current_events[current_events['event'] == 'wakeup']['step'].dropna():
+                fig.add_vline(x=current_wakeup, line_dash="dash", line_color="green", name="wakeup", line_width=2,
+                              annotation_text=f'<span style="color:green">real_wakeup:<br> {current_wakeup}</span>',
+                              annotation_position="top", annotation_textangle=315)
+
+            for current_pred_onset in current_preds[current_preds['event'] == 'onset']['step'].dropna():
+                fig.add_vline(x=current_pred_onset, line_dash="dash", line_color="red", line_width=2,
+                              annotation_text=f'<span style="color:red">pred_onset:<br> {current_pred_onset}</span>',
+                              annotation_position="top", name=f'Vertical Line at x={current_pred_onset}', annotation_textangle=315,
+                              )
+            for current_pred_wakeup in current_preds[current_preds['event'] == 'wakeup']['step'].dropna():
+                fig.add_vline(x=current_pred_wakeup, line_dash="dash", line_color="orange", name="wakeup", line_width=2,
+                              annotation_text=f'<span style="color:orange"> pred_wakeup:<br> {current_pred_wakeup}</span>',
+                              annotation_position="top", annotation_textangle=315,
+                              )
+            fig.update_layout(margin=dict(t=160))
             fig.show()
 
 
 if __name__ == "__main__":
-    preds = pd.read_csv('data/raw/train_events.csv')
+    # hard coded for now
+    preds = pd.read_csv("C:/Users/Tolga/Downloads/submission.csv")
     config = ConfigLoader("test/test_config.json")
     series_path = 'data/raw/train_series.parquet'
     featured_data = get_processed_data(config, series_path, save_output=True)

@@ -5,7 +5,7 @@ from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 
 
-def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, features_to_plot: list = None):
+def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv', features_to_plot: list = None):
     '''The data is the featured adat we use at the end of the pipeline'''
     # for now the train events is hard coded
     # events = pd.read_csv('data/raw/train_events.csv')
@@ -26,7 +26,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, features_to_pl
 
         if id is not None:
             current_series = data[data['series_id'] == id]
-            real_events = pd.read_csv('data/raw/train_events.csv')
+            real_events = pd.read_csv(events_path)
             # apply id encoding to events
             real_events['series_id'] = real_events['series_id'].map(id_encoding)
             current_events = real_events.loc[real_events['series_id'] == id]

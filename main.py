@@ -8,7 +8,7 @@ from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pre_train.train_test_split import train_test_split, split_on_labels
 from src.util.printing_utils import print_section_separator
-
+from src.util.hash_config import hash_config
 
 def main(config: ConfigLoader, series_path) -> None:
     """
@@ -19,15 +19,18 @@ def main(config: ConfigLoader, series_path) -> None:
     print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
     logger.info("Start of main.py")
 
+    config_hash = hash_config(config.get_config())
+    logger.info("Config hash encoding: " + config_hash)
+
     # Initialize wandb
     if config.get_log_to_wandb():
         # Initialize wandb
         wandb.init(
             project='detect-sleep-states',
-
+            name=config_hash,
             config=config.get_config()
         )
-        logger.info("Logging to wandb")
+        logger.info(f"Logging to wandb with run id: {wandb.run.id}")
     else:
         logger.info("Not logging to wandb")
 

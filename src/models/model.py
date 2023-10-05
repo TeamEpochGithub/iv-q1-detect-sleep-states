@@ -10,13 +10,14 @@ class Model:
     Model class with basic methods for training and evaluation. This class should be overwritten by the user.
     """
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         self.model_type = "base-model"
         # Init function
         if config is None:
             self.config = None
         else:
             self.config = config
+        self.name = name
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
             logger.critical("GPU not available")

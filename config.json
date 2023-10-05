@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "preprocessing": [
         "mem_reduce",
         "add_state_labels",
@@ -23,8 +23,16 @@
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 2,
-            "batch_size": 32,
+            "epochs": 10,
+            "batch_size": 64,
+            "lr": 0.001
+        },
+        "1D-CNN2": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "epochs": 15,
+            "batch_size": 64,
             "lr": 0.001
         }
     },

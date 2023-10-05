@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import plotly.express as px
+import plotly.graph_objects as go
 from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 
@@ -35,11 +36,26 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
             awake_0_df = current_series[current_series['awake'] == 0]
             awake_1_df = current_series[current_series['awake'] == 1]
             awake_2_df = current_series[current_series['awake'] == 2]
+
+            # the steps of the dataframes awake-0_df will have diff > 1 for when a jump occurs
+            # we need to find the indices of the jumps and use the indices to give them a group number
+            # then using .groupby('group') we can plot the groups separately
+
+            # get the diff of the steps
+            awake_0_df['diff'] = awake_0_df['step'].diff()
+            # get the indices of the jumps
+            jump_indices = awake_0_df[awake_0_df['diff'] > 1].index
+            # create a new column with the group number
+            awake_0_df['group'] = 0
+            # loop through the jump indices and increment the group number
+            for i in jump_indices:
+                awake_0_df.loc[i:, 'group'] += 1
             # current_series = current_series[binary_mask == 1]
             fig = px.line()
             for feature_to_plot in ['anglez', 'enmo']:
                 # Create the plots for the current feature
-                fig.add_scatter(x=awake_0_df['step'], y=awake_0_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0', line=dict(color='blue'))
+                awake_0_df.groupby('group').apply(lambda x: fig.add_scatter(x=x['step'], y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0', line=dict(color='blue')))
+                # fig.add_scatter(x=awake_0_df['step'], y=awake_0_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0', line=dict(color='blue'))
                 fig.add_scatter(x=awake_1_df['step'], y=awake_1_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=1', line=dict(color='red'))
                 fig.add_scatter(x=awake_2_df['step'], y=awake_2_df[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2', line=dict(color='green'))
                 fig.update_xaxes(title='Timestamp')
@@ -68,7 +84,8 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                               annotation_text=f'<span style="color:orange"> pred_wakeup:<br> {current_pred_wakeup}</span>',
                               annotation_position="top", annotation_textangle=315,
                               )
-            fig.update_layout(margin=dict(t=160))
+            fig.update_traces(connectgaps=False)
+            fig.update_layout(margin=dict(t=160), showlegend=True)
             fig.show()
 
 

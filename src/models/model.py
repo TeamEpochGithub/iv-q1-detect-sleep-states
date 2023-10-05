@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import torch
 
 from ..logger.logger import logger
 
@@ -16,6 +17,13 @@ class Model:
             self.config = None
         else:
             self.config = config
+        # Check if gpu is available, else return an exception
+        if not torch.cuda.is_available():
+            logger.critical("GPU not available")
+            raise ModelException("GPU not available")
+
+        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
+        self.device = torch.device("cuda")
 
     def get_type(self) -> str:
         """

@@ -74,7 +74,7 @@ class Trainer:
         n_incorrect = 0
         for idx, data in enumerate(dataloader):
             padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-
+            data[0] = data[0].double()
             output = model(data[0].to(self.device),
                            padding_mask.to(self.device))
             predictions = torch.argmax(output, dim=1)

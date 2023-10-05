@@ -134,8 +134,8 @@ class RegressionTransformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 1:]
-        y_test = y_test[:, :, 1:]
+        y_train = y_train[:, 0]
+        y_test = y_test[:, 0]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -150,8 +150,8 @@ class RegressionTransformer(Model):
         X_test = patch_x_data(X_test, patch_size)
 
         # Patch the data for the labels
-        y_train = patch_y_data(y_train, patch_size)
-        y_test = patch_y_data(y_test, patch_size)
+        # y_train = patch_y_data(y_train, patch_size)
+        # y_test = patch_y_data(y_test, patch_size)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -164,7 +164,7 @@ class RegressionTransformer(Model):
             test_dataset, batch_size=batch_size)
 
         # Torch summary
-        logger.info(torchinfo.summary(self.model))
+        print(torchinfo.summary(self.model))
         trainer = Trainer(epochs=epochs)
         trainer.fit(train_dataloader, self.model, optimizer)
         accuracy = trainer.evaluate(test_dataloader, self.model)

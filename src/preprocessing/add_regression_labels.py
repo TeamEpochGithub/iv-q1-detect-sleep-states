@@ -53,25 +53,21 @@ def fill_onset(group: pd.DataFrame, data: pd.DataFrame, is_onset: bool) -> None:
     window = group['window'].iloc[0]
     events = group['step'].tolist()
 
-    # This should never happen
-    if len(events) >= 2:
-        if is_onset:
-            logger.warn(f"--- Found {len(events)} onsets in 1 window. This should never happen...")
-            logger.debug(f"--- ERROR: {events} onsets")
-        else:
-            logger.warn(f"--- Found {len(events)} awakes in 1 window. This should never happen...")
-            logger.debug(f"--- ERROR: {events} awakes")
-    # raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
-
     if is_onset:
         if len(events) == 1 or len(events) == 2:
-            # Fill onset for all the rows in the window + series_id with the first onset event
-            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'onset'] = np.int16(events[0])
-            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'onset-NaN'] = np.int8(0)
+            idx = (data['series_id'] == series_id) & (data['window'] == window)
+            data.loc[idx, 'onset'] = np.int16(events[0])
+            data.loc[idx, 'onset-NaN'] = np.int8(0)
     else:
+        idx = (data['series_id'] == series_id) & (data['window'] == window)
         if len(events) == 1:
-            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup'] = np.int16(events[0])
-            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup-NaN'] = np.int8(0)
+            data.loc[idx, 'wakeup'] = np.int16(events[0])
+            data.loc[idx, 'wakeup-NaN'] = np.int8(0)
         elif len(events) == 2:
-            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup'] = np.int16(events[1])
-            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup-NaN'] = np.int8(0)
+            data.loc[idx, 'wakeup'] = np.int16(events[1])
+            data.loc[idx, 'wakeup-NaN'] = np.int8(0)
+
+    if len(events) >= 2:
+        message = f"--- Found {len(events)} onsets" if is_onset else f"--- Found {len(events)} awakes"
+        logger.warn(f"{message} in 1 window. This should never happen...")
+        logger.debug(f"--- ERROR: {events} {'onsets' if is_onset else 'awakes'}")

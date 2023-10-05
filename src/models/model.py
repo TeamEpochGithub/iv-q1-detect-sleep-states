@@ -109,7 +109,6 @@ class Model:
         raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
 
 
-
 class ModelException(Exception):
     """
     Exception class for the model.

@@ -7,7 +7,7 @@ from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.printing_utils import print_section_separator
-from src.pre_train.train_test_split import train_test_split
+from src.pre_train.train_test_split import train_test_split, split_on_labels
 from src.get_processed_data import get_processed_data
 
 
@@ -76,8 +76,29 @@ def main(config: ConfigLoader, series_path) -> None:
         models[model].train(featured_data)
         models[model].save(store_location + "/" + model + ".pt")
 
-    # Get saved models directory from config
-    store_location = config.get_model_store_loc()
+    # TODO Hyperparameter Optimization #101
+    # Store optimal models
+    for i, model in enumerate(models):
+        models[model].save(store_location + "/optimal_" + model + ".pt")
+
+    # ------------------------------------------------------- #
+    #                    Train for submission                 #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Train for submission", spacing=0)
+
+    if config.get_train_for_submission():
+        logger.info("Retraining models for submission")
+
+        # Retrain all models with optimal parameters
+        for i, model in enumerate(models):
+            models[model].load(store_location + "/optimal_" + model + ".pt")
+            logger.info("Retraining model " + str(i) + ": " + model)
+
+            models[model].train_full(split_on_labels(featured_data))
+            models[model].save(store_location + "/submit_" + model + ".pt")
+    else:
+        logger.info("Not training best model for submission")
 
     # ------------------------- #
     #          Ensemble         #
@@ -100,7 +121,7 @@ def main(config: ConfigLoader, series_path) -> None:
     # ------------------------------------------------------- #
 
     print_section_separator("Hyperparameter optimization for ensemble", spacing=0)
-    # TODO Hyperparameter optimization for ensembles #101
+    # TODO Hyperparameter optimization for ensembles
     hpo = config.get_hpo()
     hpo.optimize()
 
@@ -111,22 +132,6 @@ def main(config: ConfigLoader, series_path) -> None:
     # Initialize CV
     cv = config.get_cv()
     cv.run()
-
-    # ------------------------------------------------------- #
-    #                    Train for submission                 #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Train for submission", spacing=0)
-
-    # TODO Mark best model from CV/HPO and train it on all data
-    if config.get_train_for_submission():
-        logger.info("Training best model for submission")
-        best_model = None
-        best_model.train(featured_data)
-        # Add submit in name for saving
-        best_model.save(store_location + "/submit_" + best_model.name + ".pt")
-    else:
-        logger.info("Not training best model for submission")
 
     # ------------------------------------------------------- #
     #                    Scoring                              #
@@ -153,6 +158,9 @@ def main(config: ConfigLoader, series_path) -> None:
 
 
 if __name__ == "__main__":
+    import coloredlogs
+    coloredlogs.install()
+
     # Load config file
     config = ConfigLoader("config.json")
 

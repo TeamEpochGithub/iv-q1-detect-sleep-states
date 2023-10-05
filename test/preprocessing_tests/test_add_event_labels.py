@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from src.preprocessing.add_event_labels import AddEventLabels
+from src.preprocessing.add_regression_labels import AddRegressionLabels
 
 
 class TestAddEventLabels(TestCase):
@@ -22,7 +22,7 @@ class TestAddEventLabels(TestCase):
         df = pd.DataFrame(df_dict)
 
         # Run the preprocessing step
-        pp = AddEventLabels()
+        pp = AddRegressionLabels()
         df = pp.preprocess(df)
 
         # Check if the preprocessing step worked for onset (sleep onset occur should happen at step 3, so the onset column should be 3)
@@ -59,7 +59,7 @@ class TestAddEventLabels(TestCase):
         df = pd.DataFrame(df_dict)
 
         # Run the preprocessing step
-        pp = AddEventLabels()
+        pp = AddRegressionLabels()
         df = pp.preprocess(df)
 
         print(df.head())
@@ -98,7 +98,7 @@ class TestAddEventLabels(TestCase):
         df = pd.DataFrame(df_dict)
 
         # Run the preprocessing step
-        pp = AddEventLabels()
+        pp = AddRegressionLabels()
         df = pp.preprocess(df)
 
         print(df.head())

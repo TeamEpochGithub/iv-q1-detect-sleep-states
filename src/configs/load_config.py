@@ -14,19 +14,22 @@ from ..hpo.hpo import HPO
 from ..logger.logger import logger
 # Loss imports
 from ..loss.loss import Loss
-from ..models.classic_base_model import ClassicBaseModel
-# Model imports
-from ..models.example_model import ExampleModel
-from ..models.transformer.transformer import Transformer
 
-from ..preprocessing.add_event_labels import AddEventLabels
-from ..preprocessing.add_noise import AddNoise
-from ..preprocessing.add_state_labels import AddStateLabels
+# Model imports
+from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
+from ..models.transformer.transformer import Transformer
+from ..models.classic_base_model import ClassicBaseModel
+from ..models.example_model import ExampleModel
+
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
+from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_regression_labels import AddRegressionLabels
+from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
+from ..preprocessing.add_state_labels import AddStateLabels
 
 
 class ConfigLoader:
@@ -68,9 +71,12 @@ class ConfigLoader:
                 case "truncate":
                     if training:
                         self.pp_steps.append(Truncate())
-                case "add_event_labels":
+                case "add_regression_labels":
                     if training:
-                        self.pp_steps.append(AddEventLabels())
+                        self.pp_steps.append(AddRegressionLabels())
+                case "add_segmentation_labels":
+                    if training:
+                        self.pp_steps.append(AddSegmentationLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
@@ -140,7 +146,7 @@ class ConfigLoader:
         return self.config["pre_training"]
 
     # Function to retrieve model data
-    def get_models(self):
+    def get_models(self, data_shape):
         # Loop through models
         self.models = {}
         logger.info("Models: " + str(self.config.get("models")))
@@ -154,6 +160,8 @@ class ConfigLoader:
                     curr_model = ClassicBaseModel(model_config)
                 case "transformer":
                     curr_model = Transformer(model_config)
+                case "seg-simple-1d-cnn":
+                    curr_model = SegmentationSimple1DCNN(model_config, data_shape)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

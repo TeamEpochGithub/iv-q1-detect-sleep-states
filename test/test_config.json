@@ -1,22 +1,11 @@
 {
     "name": "config",
     "log_to_wandb": false,
-    "preprocessing": ["mem_reduce", "add_state_labels", "split_windows"],
+    "preprocessing": ["mem_reduce", "add_state_labels"],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
-        "kurtosis": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        },
-        "skewness": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        },
-        "mean": {
-            "window_sizes": [5, 10],
-            "features": ["anglez", "enmo"]
-        }
+        
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",

@@ -1,26 +1,21 @@
 # In this file the correct classes are retrieved for the configuration
 import json
 
-# CV imports
 from ..cv.cv import CV
-# Ensemble imports
 from ..ensemble.ensemble import Ensemble
-# Feature engineering imports
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.mean import Mean
 from ..feature_engineering.skewness import Skewness
-# HPO imports
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
-# Loss imports
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
-# Model imports
 from ..models.example_model import ExampleModel
-from ..preprocessing.add_event_labels import AddEventLabels
+from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_regression_labels import AddRegressionLabels
+from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
 from ..preprocessing.add_state_labels import AddStateLabels
-# Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
@@ -68,9 +63,12 @@ class ConfigLoader:
                 case "truncate":
                     if training:
                         self.pp_steps.append(Truncate())
-                case "add_event_labels":
+                case "add_regression_labels":
                     if training:
-                        self.pp_steps.append(AddEventLabels())
+                        self.pp_steps.append(AddRegressionLabels())
+                case "add_segmentation_labels":
+                    if training:
+                        self.pp_steps.append(AddSegmentationLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
@@ -143,7 +141,7 @@ class ConfigLoader:
         return self.config["pre_training"]
 
     # Function to retrieve model data
-    def get_models(self):
+    def get_models(self, data_shape):
         # Loop through models
         self.models = {}
         logger.info("Models: " + str(self.config.get("models")))
@@ -155,6 +153,8 @@ class ConfigLoader:
                     curr_model = ExampleModel(model_config)
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config)
+                case "seg-simple-1d-cnn":
+                    curr_model = SegmentationSimple1DCNN(model_config, data_shape)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

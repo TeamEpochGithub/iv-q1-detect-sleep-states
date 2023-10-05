@@ -6,7 +6,7 @@
         "add_state_labels",
         "split_windows",
         "remove_unlabeled",
-        "add_event_labels"
+        "add_segmentation_labels"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -15,18 +15,22 @@
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "pre_training": {
-        "cv": 0,
         "test_size": 0.2,
         "standardize": "standard"
     },
     "models": {
-        "ExampleModel": {
-            "type": "classic-base-model"
+        "1D-CNN": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "epochs": 2,
+            "batch_size": 32,
+            "lr": 0.001
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ExampleModel"],
+        "models": ["1D-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -39,6 +43,6 @@
         "apply": true,
         "method": "example_cv"
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true
 }

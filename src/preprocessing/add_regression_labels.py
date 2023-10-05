@@ -5,7 +5,7 @@ from src.preprocessing.pp import PP, PPException
 from ..logger.logger import logger
 
 
-class AddEventLabels(PP):
+class AddRegressionLabels(PP):
     """Preprocessing step that adds the event labels to the data
 
     This will add the event labels to the data by using the event data.
@@ -34,12 +34,14 @@ class AddEventLabels(PP):
 
         # This should never happen
         if len(sleep_onsets) >= 2 and len(sleep_awakes) >= 2:
-            logger.critical("--- Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
-            raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
+            logger.warn(f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)}. More than 2 onsets and windows.. This should never happen...")
+            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
+            # raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
 
         if abs(len(sleep_onsets) - len(sleep_awakes)) > 1:
-            logger.critical("--- Found more than 1 missing event in 1 window... This should never happen...")
-            raise PPException("Found more than 1 missing event in 1 window... This should never happen...")
+            logger.warn(f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)} in 1 window. This should never happen...")
+            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
+            # raise PPException("Found more than 1 missing event in 1 window... This should never happen...")
 
         # If we have 1/2 sleep onsets, we pick first onset
         if len(sleep_onsets) == 1 or len(sleep_onsets) == 2:

@@ -17,7 +17,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         max_len: maximum length of the input sequence
         d_model: the embed dim
         n_heads: the number of heads in the multihead attention models
-        num_layers: the number of sub-encoder-layers in the encoder
+        n_layers: the number of sub-encoder-layers in the encoder
         dim_feedforward: the dimension of the feedforward network model
         num_classes: the number of classes in the classification task
         dropout: the dropout value
@@ -33,7 +33,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         max_len: int,
         d_model: int,
         n_heads: int,
-        num_layers: int,
+        n_layers: int,
         dim_feedforward: int,
         num_classes: int,
         dropout: float = 0.1,
@@ -71,7 +71,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
             )
 
         self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer, num_layers)
+            encoder_layer, n_layers)
 
         self.act = get_activation_fn(activation)
 

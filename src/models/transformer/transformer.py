@@ -96,7 +96,7 @@ class RegressionTransformer(Model):
             'max_len': 480,
             'd_model': 192,
             'n_heads': 6,
-            'num_layers': 5,
+            'n_layers': 5,
             'dim_feedforward': 2048,
             'num_classes': 4,
             'dropout': 0.1,

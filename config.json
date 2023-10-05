@@ -5,11 +5,33 @@
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
     "preprocessing": [
-        "mem_reduce",
-        "add_state_labels",
-        "split_windows",
-        "remove_unlabeled",
-        "add_segmentation_labels"
+        {
+            "name": "mem_reduce",
+            "params": {
+                "encoding_path": "series_id_encoding.json"
+            }
+        },
+        {
+            "name": "add_state_labels",
+            "params": {
+                "encoding_path": "series_id_encoding.json",
+                "events_path": "data/raw/train_events.csv"
+            }
+        },
+        {
+            "name": "split_windows",
+            "params": {
+                "start_hour": 15
+            }
+        },
+        {
+            "name": "remove_unlabeled",
+            "params": {}
+        },
+        {
+            "name": "add_segmentation_labels",
+            "params": {}
+        }
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",

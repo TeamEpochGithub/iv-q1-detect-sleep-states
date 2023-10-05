@@ -15,23 +15,36 @@ class MemReduce(PP):
     It will reduce the memory usage of the data by changing the data types of the columns.
     """
 
-    def preprocess(self, data):
-        df = self.reduce_mem_usage(data)
-        return df
+    def __init__(self, encoding_path: str, **kwargs) -> None:
+        """Initialize the MemReduce class.
 
-    def reduce_mem_usage(self, data: pd.DataFrame, filename=None) -> pd.DataFrame:
-        # TODO Don't hardcode the file name, add it as a parameter in the config.json #99
-        if filename is None:
-            filename = 'series_id_encoding.json'
+        :param encoding_path: the path to the encoding file of the series id
+        """
+        super().__init__(**kwargs)
+        self.encoding_path: str = encoding_path
 
+    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Preprocess the data by reducing the memory usage of the data.
+
+        :param data: the dataframe to preprocess
+        :return: the preprocessed dataframe
+        """
+        return self.reduce_mem_usage(data)
+
+    def reduce_mem_usage(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Reduce the memory usage of the data.
+
+        :param data: the dataframe to reduce
+        :return: the reduced dataframe
+        """
         # we should make the series id in to an int16
         # and save an encoding (a dict) as a json file somewhere
         # so, we can decode it later
         encoding = dict(zip(data['series_id'].unique(), range(len(data['series_id'].unique()))))
-        # TODO Don't open the file here to make this method testable
-        with open(filename, 'w') as f:
+        # TODO Somehow don't open the file here to make this method testable
+        with open(self.encoding_path, 'w') as f:
             json.dump(encoding, f)
-        logger.debug(f"------ Done saving series encoding to {filename}")
+        logger.debug(f"------ Done saving series encoding to {self.encoding_path}")
         data['series_id'] = data['series_id'].map(encoding)
         data['series_id'] = data['series_id'].astype('int16')
 

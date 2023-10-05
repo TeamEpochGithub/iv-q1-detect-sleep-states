@@ -81,36 +81,39 @@ class ConfigLoader:
         :param training: whether the preprocessing is for training or testing
         :return: the preprocessing steps and their names
         """
+        pp_step_names: list[str] = []
         pp_steps: list[PP] = []
         for pp_step in self.config["preprocessing"]:
+            pp_step_names.append(pp_step["name"])
             # Check if the step is only for training
-            if not training and pp_step in ["add_state_labels", "remove_unlabeled", "truncate", "add_event_labels",
-                                            "add_regression_labels", "add_segmentation_labels"]:
-                logger.info("Preprocessing step " + pp_step + " is only used for training. Continuing...")
+            if not training and pp_step["name"] in ["add_state_labels", "remove_unlabeled", "truncate",
+                                                    "add_event_labels", "add_regression_labels",
+                                                    "add_segmentation_labels"]:
+                logger.info("Preprocessing step " + pp_step["name"] + " is only used for training. Continuing...")
                 continue
 
-            match pp_step:
+            match pp_step["name"]:
                 case "mem_reduce":
-                    pp_steps.append(MemReduce())
+                    pp_steps.append(MemReduce(*pp_step["params"]))
                 case "add_noise":
-                    pp_steps.append(AddNoise())
+                    pp_steps.append(AddNoise(*pp_step["params"]))
                 case "split_windows":
-                    pp_steps.append(SplitWindows())
+                    pp_steps.append(SplitWindows(*pp_step["params"]))
                 case "add_state_labels":
-                    pp_steps.append(AddStateLabels(events_path=self.get_train_events_path()))
+                    pp_steps.append(AddStateLabels(*pp_step["params"]))
                 case "remove_unlabeled":
-                    pp_steps.append(RemoveUnlabeled())
+                    pp_steps.append(RemoveUnlabeled(*pp_step["params"]))
                 case "truncate":
-                    pp_steps.append(Truncate())
+                    pp_steps.append(Truncate(*pp_step["params"]))
                 case "add_regression_labels":
-                    pp_steps.append(AddRegressionLabels())
+                    pp_steps.append(AddRegressionLabels(*pp_step["params"]))
                 case "add_segmentation_labels":
-                    pp_steps.append(AddSegmentationLabels())
+                    pp_steps.append(AddSegmentationLabels(*pp_step["params"]))
                 case _:
-                    logger.critical("Preprocessing step not found: " + pp_step)
-                    raise ConfigException("Preprocessing step not found: " + pp_step)
+                    logger.critical("Preprocessing step not found: " + pp_step["name"])
+                    raise ConfigException("Preprocessing step not found: " + pp_step["name"])
 
-        return pp_steps, self.config["preprocessing"]
+        return pp_steps, pp_step_names
 
     def get_pp_out(self) -> str:
         """Get the path to the preprocessing output folder

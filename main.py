@@ -1,14 +1,16 @@
 # This file does the training of the model
 
-# Imports
+import pandas as pd
 import wandb
 
 from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
-from src.logger.logger import logger
-from src.util.printing_utils import print_section_separator
-from src.pre_train.train_test_split import train_test_split
 from src.get_processed_data import get_processed_data
+from src.logger.logger import logger
+from src.pre_train.train_test_split import train_test_split
+from src.score.doscoring import compute_scores
+from src.util.printing_utils import print_section_separator
+from src.util.submissionformat import to_submission_format
 
 
 def main(config: ConfigLoader, series_path) -> None:
@@ -49,7 +51,8 @@ def main(config: ConfigLoader, series_path) -> None:
     pretrain = config.get_pretraining()
 
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
+    X_train, X_test, Y_train, Y_test = train_test_split(featured_data, test_size=pretrain["test_size"],
+                                                        standardize_method=pretrain["standardize"])
 
     cv = 0
     if "cv" in pretrain:
@@ -85,11 +88,6 @@ def main(config: ConfigLoader, series_path) -> None:
     print("-------- ENSEMBLING ----------")
     ensemble = config.get_ensemble(models)
 
-    # TODO ADD preprocessing of data suitable for predictions #103
-    test_data = None
-    if test_data:
-        ensemble.pred(test_data)
-
     # Initialize loss
     # TODO assert that every model has a loss function #67
 
@@ -111,6 +109,27 @@ def main(config: ConfigLoader, series_path) -> None:
     cv.run()
 
     # ------------------------------------------------------- #
+    #                    Scoring                              #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Scoring", spacing=0)
+
+    # TODO ADD preprocessing of data suitable for predictions #103
+    test_data = None
+    ensemble_predictions = None
+    if test_data:
+        ensemble_predictions = ensemble.pred(test_data)
+
+    scoring = config.get_scoring()
+    if scoring and ensemble_predictions:
+        logger.info("Start scoring...")
+        submission = to_submission_format(ensemble_predictions)
+        solution = pd.read_csv('./data/raw/train_events.csv')
+        compute_scores(submission, solution)  # TODO Add scoring to WANDB #103
+    else:
+        logger.info("Not scoring")
+
+    # ------------------------------------------------------- #
     #                    Train for submission                 #
     # ------------------------------------------------------- #
 
@@ -126,20 +145,6 @@ def main(config: ConfigLoader, series_path) -> None:
     else:
         logger.info("Not training best model for submission")
 
-    # ------------------------------------------------------- #
-    #                    Scoring                              #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Scoring", spacing=0)
-
-    scoring = config.get_scoring()
-    if scoring:
-        logger.info("Start scoring...")
-        # Do scoring
-        pass
-    else:
-        logger.info("Not scoring")
-
     # TODO Add Weights and biases to model training and record loss and acc #106
 
     # TODO ADD scoring to WANDB #108
@@ -152,6 +157,7 @@ def main(config: ConfigLoader, series_path) -> None:
 
 if __name__ == "__main__":
     import coloredlogs
+
     coloredlogs.install()
 
     # Load config file

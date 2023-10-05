@@ -34,4 +34,4 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     config = ConfigLoader("config.json")
-    submit(config, 'data/raw/test_series.parquet', submit=True)
+    submit(config, 'data/raw/train_series.parquet', submit=True)

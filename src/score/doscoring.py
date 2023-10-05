@@ -1,0 +1,64 @@
+import numpy as np
+import pandas as pd
+
+from src.score.scoring import score
+from src.logger.logger import logger
+
+tolerances = {
+    'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
+    'wakeup': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
+}
+
+column_names = {
+    'series_id_column_name': 'series_id',
+    'time_column_name': 'step',
+    'event_column_name': 'event',
+    'score_column_name': 'score',
+}
+
+
+class ScoringError(Exception):
+    pass
+
+
+def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
+    same_event = submission['event'] == submission['event'].shift(1)
+    same_series = submission['series_id'] == submission['series_id'].shift(1)
+    same = submission[same_event & same_series]
+
+    if len(same) > 0:
+        logger.critical(f'Submission contains {len(same)} consecutive equal events')
+        logger.critical(same)
+        raise ScoringError('Submission contains consecutive equal events')
+
+    submission_sids = submission['series_id'].unique()
+    solution_not_all_nan = (solution
+                            .groupby('series_id')
+                            .filter(lambda x: not np.isnan(x['step']).all()))
+    solution_ids = solution_not_all_nan['series_id'].unique()
+
+    logger.debug(f'Submission contains predictions for {len(submission_sids)} series')
+    logger.debug(f'solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
+
+    result = score(solution, submission, tolerances, **column_names)
+    logger.info(f'Score for entire dataset: {result}')
+
+    solution_no_nan = (solution
+                       .groupby('series_id')
+                       .filter(lambda x: not np.isnan(x['step']).any()))
+    solution_no_nan_ids = solution_no_nan['series_id'].unique()
+
+    submission_filtered_no_nan = (submission
+                                  .groupby('series_id')
+                                  .filter(lambda x: x['series_id'].iloc[0] in solution_no_nan_ids))
+
+    result = score(solution_no_nan, submission_filtered_no_nan, tolerances, **column_names)
+    logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {result}')
+
+
+if __name__ == '__main__':
+    import coloredlogs
+    coloredlogs.install()
+    submission = pd.read_csv('./submission.csv')
+    solution = pd.read_csv('./data/raw/train_events.csv')
+    compute_scores(submission, solution)

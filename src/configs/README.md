@@ -43,7 +43,7 @@ List of options:
 ### Preprocessing data location
 
 <p>
-Location out: Data created by preproccesing is stored in this location <br>
+Location out: Data created by preprocessing is stored in this location <br>
 Location in: Data needed by preprocessing is stored in this location
 </p>
 
@@ -65,8 +65,10 @@ List of options and what they do
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled`
     - Removes all the data points where there is no labeled data
-- `add_events_labels`
+- `add_regression_labels`
     - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
+- `add_segmentation_labels`
+    - Adds 3 columns, hot encoded, for the segmentation labels: 0: hot-asleep, 1: hot-awake, 2: hot-NaN (not labeled)
 - `truncate`
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end
@@ -151,7 +153,7 @@ These models should either be a statistical, regression or state_prediction mode
 
 #### Implemented Models types and config options
 
-It should
+This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters.
 
 - example-fc-model
     - epochs (required)
@@ -160,7 +162,14 @@ It should
     - lr
     - batch_size
 
-Example of an example-fc-model configuration:
+- seg-simple-1d-cnn
+    - loss (required)
+    - optimizer (required)
+    - epochs
+    - lr
+    - batch_size
+  
+Example of an example-fc-model configuration and a 1D-CNN configuration
 
 ```
 "ExampleModel": {
@@ -169,6 +178,14 @@ Example of an example-fc-model configuration:
     "batch_size": 32,
     "loss": "mae-torch",
     "optimizer": "adam-torch"
+}
+"1D-CNN": {
+    "type": "seg-simple-1d-cnn",
+    "loss": "mse-torch",
+    "optimizer": "rmsprop-torch",
+    "epochs": 5,
+    "batch_size": 64,
+    "lr": 0.01
 }
 ```
 

@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import torch
 
@@ -46,22 +47,22 @@ class Model:
         logger.info("--- No default configuration of model or not implemented")
         return {}
 
-    def train(self, X_train: pd.DataFrame, X_test: pd.DataFrame, Y_train: pd.DataFrame, Y_test: pd.DataFrame) -> None:
+    def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> None:
         """
         Train function for the model. This function should be overwritten by the user.
         :param X_train: the training data
         :param X_test: the test data
-        :param Y_train: the training labels
-        :param Y_test: the test labels
+        :param y_train: the training labels
+        :param y_test: the test labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
 
-    def train_full(self, X_train: pd.DataFrame, Y_train: pd.DataFrame) -> None:
+    def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
         Train the model on the full dataset. This function should be overwritten by the user.
         :param X_train: the training data
-        :param Y_train: the training labels
+        :param y_train: the training labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
@@ -92,12 +93,20 @@ class Model:
         """
         logger.info("--- Nothing to save or not implemented")
 
-    def load(self, path: str) -> None:
+    def load(self, path: str, only_hyperparameters: bool) -> None:
         """
         Load function for the model. This function should be overwritten by the user.
         :param path: path to load the model from
+        :param only_hyperparameters: whether to only load the hyperparameters
         """
         logger.info("--- Nothing to load or not implemented")
+
+    def reset_optimizer(self) -> None:
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model. This function should be overwritten by the user.
+        """
+        logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
+        raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
 
 
 class ModelException(Exception):

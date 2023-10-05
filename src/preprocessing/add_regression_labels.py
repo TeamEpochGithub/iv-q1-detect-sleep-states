@@ -26,43 +26,52 @@ class AddRegressionLabels(PP):
             logger.critical("No awake column. Did you run AddStateLabels before?")
             raise PPException("No awake column. Did you run AddStateLabels before?")
 
+        # Set onset and wakeup to -1
+        data["onset"] = np.int16(-1)
+        data["wakeup"] = np.int16(-1)
+        data["onset-NaN"] = np.int8(1)
+        data["wakeup-NaN"] = np.int8(1)
+
         # Find transitions from 1 to 0 (excluding 2-1 and 1-2 transitions)
-        sleep_onsets = data[(data['awake'].diff() == -1) & (data['awake'].shift() == 1)]["step"].tolist()
+        onsets = data[(data['awake'].diff() == -1) & (data['awake'].shift() == 1)]
+        awakes = data[(data['awake'].diff() == 1) & (data['awake'].shift() == 0)]
 
-        # Find transitions from 0 to 1 (excluding 1-2 and 2-1 transitions)
-        sleep_awakes = data[(data['awake'].diff() == 1) & (data['awake'].shift() == 0)]["step"].tolist()
-
-        # This should never happen
-        if len(sleep_onsets) >= 2 and len(sleep_awakes) >= 2:
-            logger.warn(f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)}. More than 2 onsets and windows.. This should never happen...")
-            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
-            # raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
-
-        if abs(len(sleep_onsets) - len(sleep_awakes)) > 1:
-            logger.warn(f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)} in 1 window. This should never happen...")
-            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
-            # raise PPException("Found more than 1 missing event in 1 window... This should never happen...")
-
-        # If we have 1/2 sleep onsets, we pick first onset
-        if len(sleep_onsets) == 1 or len(sleep_onsets) == 2:
-            data["onset"] = np.int16(sleep_onsets[0])
-            data["onset-NaN"] = np.int8(0)
-
-        if len(sleep_awakes) == 1:
-            data["wakeup"] = np.int16(sleep_awakes[0])
-            data["wakeup-NaN"] = np.int8(0)
-        elif len(sleep_awakes) == 2:
-            data["wakeup"] = np.int16(sleep_awakes[1])
-            data["wakeup-NaN"] = np.int8(0)
-
-        # If we have 0 sleep onsets, we set onset to -1 and onset-NaN to 1
-        if len(sleep_onsets) == 0:
-            data["onset"] = np.int16(-1)
-            data["onset-NaN"] = np.int8(1)
-        # If we have 0 sleep awakes, we set wakeup to -1 and wakeup-NaN to 1
-        if len(sleep_awakes) == 0:
-            data["wakeup"] = np.int16(-1)
-            data["wakeup-NaN"] = np.int8(1)
-            return data
+        onsets.groupby([data['series_id'], data['window']]).apply(fill_onset, data, True)
+        awakes.groupby([data['series_id'], data['window']]).apply(fill_onset, data, False)
 
         return data
+
+
+def fill_onset(group: pd.DataFrame, data: pd.DataFrame, is_onset: bool) -> None:
+    """
+    Fill the onset/wakeup column for the group
+    :param group: a series_id and window group
+    :param data: the complete dataframe
+    :param is_onset: boolean for if it is an onset event
+    """
+    series_id = group['series_id'].iloc[0]
+    window = group['window'].iloc[0]
+    events = group['step'].tolist()
+
+    # This should never happen
+    if len(events) >= 2:
+        if is_onset:
+            logger.warn(f"--- Found {len(events)} onsets in 1 window. This should never happen...")
+            logger.debug(f"--- ERROR: {events} onsets")
+        else:
+            logger.warn(f"--- Found {len(events)} awakes in 1 window. This should never happen...")
+            logger.debug(f"--- ERROR: {events} awakes")
+    # raise PPException("Found 2 onsets and 2 awake transitions in 1 window... This should never happen...")
+
+    if is_onset:
+        if len(events) == 1 or len(events) == 2:
+            # Fill onset for all the rows in the window + series_id with the first onset event
+            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'onset'] = np.int16(events[0])
+            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'onset-NaN'] = np.int8(0)
+    else:
+        if len(events) == 1:
+            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup'] = np.int16(events[0])
+            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup-NaN'] = np.int8(0)
+        elif len(events) == 2:
+            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup'] = np.int16(events[1])
+            data.loc[(data['series_id'] == series_id) & (data['window'] == window), 'wakeup-NaN'] = np.int8(0)

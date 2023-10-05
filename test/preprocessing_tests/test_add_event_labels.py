@@ -120,3 +120,81 @@ class TestAddEventLabels(TestCase):
         # Check if the onset and wakeup are of type int16
         self.assertEqual("int16", df["onset"].dtype)
         self.assertEqual("int16", df["wakeup"].dtype)
+
+    def test_preprocess_event_labels_2_windows(self):
+        """
+        This test should test a case where there is no valid onset / wakeup.
+        """
+        df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),
+                   "enmo": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                   "anglez": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                   "step": [1, 2, 3, 4, 5, 1, 2, 3, 4, 5],
+                   "series_id": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                   "awake": [0, 1, 1, 1, 0, 0, 0, 1, 0, 0],
+                   "window": [1, 1, 1, 1, 1, 2, 2, 2, 2, 2]}
+
+        # Create a dataframe from the dict
+        df = pd.DataFrame(df_dict)
+
+        # Run the preprocessing step
+        pp = AddRegressionLabels()
+        df = pp.preprocess(df)
+
+        print(df.head())
+
+        # Check if the preprocessing step worked for onset (sleep onset occur should happen at step 3, so the onset column should be 3)
+        self.assertEqual([5, 5, 5, 5, 5, 4, 4, 4, 4, 4], df["onset"].to_list())
+
+        # Check if the preprocessing step worked for wakeup (sleep awake occur should happen at step 8, so the onset column should be 8)
+        self.assertEqual(df["wakeup"].to_list(), [2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
+
+        self.assertEqual(df["onset-NaN"].to_list(), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.assertEqual(df["wakeup-NaN"].to_list(), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        print(df["onset-NaN"].dtype)
+        # Check if the NaN columns are of type int8
+        self.assertEqual("int8", df["onset-NaN"].dtype)
+        self.assertEqual("int8", df["wakeup-NaN"].dtype)
+
+        # Check if the onset and wakeup are of type int16
+        self.assertEqual("int16", df["onset"].dtype)
+        self.assertEqual("int16", df["wakeup"].dtype)
+
+    def test_preprocess_event_labels_3_windows(self):
+        """
+        This test should test a case where there is no valid onset / wakeup.
+        """
+        df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),
+                   "enmo": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                   "anglez": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                   "step": [1, 2, 3, 4, 5, 1, 2, 3, 4, 5],
+                   "series_id": [1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
+                   "awake": [2, 1, 1, 1, 0, 0, 0, 1, 0, 0],
+                   "window": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
+
+        # Create a dataframe from the dict
+        df = pd.DataFrame(df_dict)
+
+        # Run the preprocessing step
+        pp = AddRegressionLabels()
+        df = pp.preprocess(df)
+
+        print(df.head())
+
+        # Check if the preprocessing step worked for onset (sleep onset occur should happen at step 3, so the onset column should be 3)
+        self.assertEqual([5, 5, 5, 5, 5, 4, 4, 4, 4, 4], df["onset"].to_list())
+
+        # Check if the preprocessing step worked for wakeup (sleep awake occur should happen at step 8, so the onset column should be 8)
+        self.assertEqual(df["wakeup"].to_list(), [-1, -1, -1, -1, -1, 3, 3, 3, 3, 3])
+
+        self.assertEqual(df["onset-NaN"].to_list(), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.assertEqual(df["wakeup-NaN"].to_list(), [1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
+
+        print(df["onset-NaN"].dtype)
+        # Check if the NaN columns are of type int8
+        self.assertEqual("int8", df["onset-NaN"].dtype)
+        self.assertEqual("int8", df["wakeup-NaN"].dtype)
+
+        # Check if the onset and wakeup are of type int16
+        self.assertEqual("int16", df["onset"].dtype)
+        self.assertEqual("int16", df["wakeup"].dtype)

@@ -3,6 +3,7 @@ import pandas as pd
 
 from src.preprocessing.pp import PP, PPException
 from ..logger.logger import logger
+from tqdm import tqdm
 
 
 class AddRegressionLabels(PP):
@@ -18,6 +19,7 @@ class AddRegressionLabels(PP):
         :param data: The dataframe to add the event labels to
         :return: The dataframe with the event labels
         """
+        tqdm.pandas()
 
         if "window" not in data.columns:
             logger.critical("No window column. Did you run SplitWindows before?")
@@ -36,8 +38,8 @@ class AddRegressionLabels(PP):
         onsets = data[(data['awake'].diff() == -1) & (data['awake'].shift() == 1)]
         awakes = data[(data['awake'].diff() == 1) & (data['awake'].shift() == 0)]
 
-        onsets.groupby([data['series_id'], data['window']]).apply(fill_onset, data, True)
-        awakes.groupby([data['series_id'], data['window']]).apply(fill_onset, data, False)
+        onsets.groupby([data['series_id'], data['window']]).progress_apply(fill_onset, data=data, is_onset=True)
+        awakes.groupby([data['series_id'], data['window']]).progress_apply(fill_onset, data=data, is_onset=False)
 
         return data
 

@@ -61,8 +61,13 @@ class Trainer:
         data[0] = data[0].double()
         padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
         output = model(data[0].to(self.device), padding_mask.to(self.device))
+
+        mask = torch.ones_like(data[1]).to(self.device)
+        mask[:, 0] = (17280 - data[1][:, 2]) / 17280
+        mask[:, 1] = (17280 - data[1][:, 3]) / 17280
+
         loss = self.criterion(output, data[1].type(
-            torch.DoubleTensor).to(self.device))
+            torch.DoubleTensor).to(self.device), mask)
         loss.backward()
         optimiser.step()
         losses.append(loss.detach())

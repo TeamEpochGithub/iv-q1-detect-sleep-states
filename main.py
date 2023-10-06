@@ -31,7 +31,7 @@ def main(config: ConfigLoader) -> None:
             name=config_hash,
             config=config.get_config()
         )
-        logger.info(f"Logging to wandb with run id: {wandb.run.id}")
+        logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
 

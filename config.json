@@ -26,7 +26,7 @@
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 2,
+            "epochs": 3,
             "batch_size": 64,
             "lr": 0.001
         },
@@ -34,7 +34,7 @@
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 15,
+            "epochs": 3,
             "batch_size": 64,
             "lr": 0.001
         }

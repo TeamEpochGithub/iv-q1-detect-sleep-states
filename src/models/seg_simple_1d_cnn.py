@@ -165,171 +165,162 @@ class SegmentationSimple1DCNN(Model):
             wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
         # Log full train and test plot
+        self.log_train_test(avg_losses, avg_val_losses, epochs)
+        logger.info("--- Training of model complete!")
 
+    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int) -> None:
+        """
+        Log the train and test loss to wandb.
+        :param avg_losses: list of average train losses
+        :param avg_val_losses: list of average test losses
+        :param epochs: number of epochs
+        """
         log_dict = {
             'epoch': list(range(epochs)),
-            f"Train {str(criterion)}": avg_losses,
-            f"Validation {str(criterion)}": avg_val_losses,
+            'train_loss': avg_losses,
+            'val_loss': avg_val_losses
         }
         log_df = pd.DataFrame(log_dict)
         # Convert to a long format
         long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
 
-        print(long_df.head())
-        table = wandb.Table(data=long_df, columns=["epoch", "loss", "loss_type"])
-        fields = {"epoch": "step", "loss": "lineVal", "loss_type": "lineKey"}
+        table = wandb.Table(dataframe=long_df)
+        # Field to column
+        fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
         custom_plot = wandb.plot_table(
-            vega_spec_name="wandb/trainval",
+            vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
-            fields=fields)
+            fields=fields,
+            string_fields={"title": "Train and validation loss of model " + self.name}
+        )
         wandb.log({f"{self.name}": custom_plot})
 
-        # wandb.log({f"{self.name}": wandb.plot.line_series(
-        #     vega_spec_name="wandb/trainval",
-        #     xs=np.arange(epochs),
-        #     ys=[avg_losses, avg_val_losses],
-        #     keys=[f"Train {str(criterion)}", f"Validation {str(criterion)}"],
-        #     title=f"Train / test of model {self.name}",
-        #     xname="Epoch")})
+    def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
+        """
+        Train the model on the full dataset.
+        :param X_train: the training data
+        :param y_train: the training labels
+        """
+        criterion = self.config["loss"]
+        optimizer = self.config["optimizer"]
+        epochs = self.config["epochs"]
+        batch_size = self.config["batch_size"]
 
+        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
-    """
-    Train the model on the full dataset.
-    :param X_train: the training data
-    :param y_train: the training labels
-    """
-    criterion = self.config["loss"]
-    optimizer = self.config["optimizer"]
-    epochs = self.config["epochs"]
-    batch_size = self.config["batch_size"]
+        # Flatten y_train and y_test so we only get the awake label
+        y_train = y_train[:, :, 0]
+        y_train = torch.from_numpy(y_train)
+        # Create a dataset from X and y
+        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 
-    X_train = torch.from_numpy(X_train).permute(0, 2, 1)
+        # Print the shapes and types of train and test
+        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
-    # Flatten y_train and y_test so we only get the awake label
-    y_train = y_train[:, :, 0]
-    y_train = torch.from_numpy(y_train)
-    # Create a dataset from X and y
-    train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+        # Create a dataloader from the dataset
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
 
-    # Print the shapes and types of train and test
-    logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-    logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        # Add model and data to device cuda
+        # self.model.half()
+        self.model.to(self.device)
 
-    # Create a dataloader from the dataset
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
+        # Define wandb metrics
+        wandb.define_metric("epoch")
+        wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
-    # Add model and data to device cuda
-    # self.model.half()
-    self.model.to(self.device)
+        for epoch in range(epochs):
+            self.model.train(True)
+            avg_loss = 0
+            for i, (x, y) in enumerate(train_dataloader):
+                x = x.to(device=self.device)
+                y = y.to(device=self.device)
 
-    # Define wandb metrics
-    wandb.define_metric("epoch")
-    wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+                # Clear gradients
+                optimizer.zero_grad()
 
-    for epoch in range(epochs):
-        self.model.train(True)
-        avg_loss = 0
-        for i, (x, y) in enumerate(train_dataloader):
-            x = x.to(device=self.device)
-            y = y.to(device=self.device)
+                # Forward pass
+                outputs = self.model(x)
+                loss = criterion(outputs, y)
 
-            # Clear gradients
-            optimizer.zero_grad()
+                # Backward and optimize
+                loss.backward()
+                optimizer.step()
 
-            # Forward pass
-            outputs = self.model(x)
-            loss = criterion(outputs, y)
+                # Calculate the avg loss for 1 epoch
+                avg_loss += loss.item() / len(train_dataloader)
 
-            # Backward and optimize
-            loss.backward()
-            optimizer.step()
+            # Print the avg training and validation loss of 1 epoch in a clean way.
+            logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}")
 
-            # Calculate the avg loss for 1 epoch
-            avg_loss += loss.item() / len(train_dataloader)
+            # Log train full
+            wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+            logger.info("--- Full train complete!")
 
-        # Print the avg training and validation loss of 1 epoch in a clean way.
-        logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}")
-        # Log train full
+    def pred(self, data: np.ndarray) -> np.ndarray:
+        """
+        Prediction function for the model.
+        :param data: unlabelled data
+        :return: the predictions
+        """
+        # Prediction function
+        logger.info("--- Predicting model")
+        # Run the model on the data and return the predictions
 
-        wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+        # Push to device
+        self.model.to(self.device)
 
-        # wandb.log({f"Train full of {self.name}": wandb.plot_table("wandb/line/v0", table, {"x": "step", "y": "value", "groupKeys": "metric"},
-        #                                                           {"title": f"Train full of {self.name}"})})
-        # log_dict = {f"{self.name}": {f"train-all-{str(criterion)}": avg_loss, "epoch": epoch}}
-        # wandb.log(log_dict)
-        # Get hyperparameters from config (epochs, lr, optimizer)
-        logger.info("--- Full train complete!")
+        # Make a prediction
+        with torch.no_grad():
+            prediction = self.model(data)
+        return prediction
 
+    def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
+        """
+        Evaluation function for the model.
+        :param pred: predictions
+        :param target: targets
+        :return: avg loss of predictions
+        """
+        # Evaluate function
+        logger.info("--- Evaluating model")
+        # Calculate the loss of the predictions
+        criterion = self.config["loss"]
+        loss = criterion(pred, target)
+        return loss
 
-def pred(self, data: np.ndarray) -> np.ndarray:
-    """
-    Prediction function for the model.
-    :param data: unlabelled data
-    :return: the predictions
-    """
-    # Prediction function
-    logger.info("--- Predicting model")
-    # Run the model on the data and return the predictions
+    def save(self, path: str) -> None:
+        """
+        Save function for the model.
+        :param path: path to save the model to
+        """
+        checkpoint = {
+            'model_state_dict': self.model.state_dict(),
+            'config': self.config
+        }
+        torch.save(checkpoint, path)
+        logger.info("--- Model saved to: " + path)
 
-    # Push to device
-    self.model.to(self.device)
+    def load(self, path: str, only_hyperparameters: False) -> None:
+        """
+        Load function for the model.
+        :param path: path to model checkpoint
+        :param only_hyperparameters: whether to only load the hyperparameters
+        """
+        checkpoint = torch.load(path)
+        self.config = checkpoint['config']
+        if only_hyperparameters:
+            self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
+            self.reset_optimizer()
+            logger.info("Loading hyperparameters and instantiate new model from: " + path)
+            return
 
-    # Make a prediction
-    with torch.no_grad():
-        prediction = self.model(data)
-    return prediction
-
-
-def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
-    """
-    Evaluation function for the model.
-    :param pred: predictions
-    :param target: targets
-    :return: avg loss of predictions
-    """
-    # Evaluate function
-    logger.info("--- Evaluating model")
-    # Calculate the loss of the predictions
-    criterion = self.config["loss"]
-    loss = criterion(pred, target)
-    return loss
-
-
-def save(self, path: str) -> None:
-    """
-    Save function for the model.
-    :param path: path to save the model to
-    """
-    checkpoint = {
-        'model_state_dict': self.model.state_dict(),
-        'config': self.config
-    }
-    torch.save(checkpoint, path)
-    logger.info("--- Model saved to: " + path)
-
-
-def load(self, path: str, only_hyperparameters: False) -> None:
-    """
-    Load function for the model.
-    :param path: path to model checkpoint
-    :param only_hyperparameters: whether to only load the hyperparameters
-    """
-    checkpoint = torch.load(path)
-    self.config = checkpoint['config']
-    if only_hyperparameters:
-        self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
-        self.reset_optimizer()
-        logger.info("Loading hyperparameters and instantiate new model from: " + path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        logger.info("Model fully loaded from: " + path)
         return
 
-    self.model.load_state_dict(checkpoint['model_state_dict'])
-    logger.info("Model fully loaded from: " + path)
-    return
-
-
-def reset_optimizer(self) -> None:
-    """
-    Reset the optimizer to the initial state. Useful for retraining the model.
-    """
-    self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+    def reset_optimizer(self) -> None:
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model.
+        """
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])

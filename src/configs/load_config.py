@@ -82,13 +82,9 @@ class ConfigLoader:
         :return: the preprocessing steps and their names
         """
         pp_steps: list[PP] = []
+        pp_names: list[str] = []
         for pp_step in self.config["preprocessing"]:
-            # Check if the step is only for training
-            if not training and pp_step in ["add_state_labels", "remove_unlabeled", "truncate", "add_event_labels",
-                                            "add_regression_labels", "add_segmentation_labels"]:
-                logger.info("Preprocessing step " + pp_step + " is only used for training. Continuing...")
-                continue
-
+            len_before = len(pp_steps)
             match pp_step:
                 case "mem_reduce":
                     pp_steps.append(MemReduce())
@@ -97,20 +93,30 @@ class ConfigLoader:
                 case "split_windows":
                     pp_steps.append(SplitWindows())
                 case "add_state_labels":
-                    pp_steps.append(AddStateLabels(events_path=self.get_train_events_path()))
+                    if training:
+                        pp_steps.append(AddStateLabels(events_path=self.get_train_events_path()))
                 case "remove_unlabeled":
-                    pp_steps.append(RemoveUnlabeled())
+                    if training:
+                        pp_steps.append(RemoveUnlabeled())
                 case "truncate":
-                    pp_steps.append(Truncate())
+                    if training:
+                        pp_steps.append(Truncate())
                 case "add_regression_labels":
-                    pp_steps.append(AddRegressionLabels())
+                    if training:
+                        pp_steps.append(AddRegressionLabels())
                 case "add_segmentation_labels":
-                    pp_steps.append(AddSegmentationLabels())
+                    if training:
+                        pp_steps.append(AddSegmentationLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
 
-        return pp_steps, self.config["preprocessing"]
+            # if it added a step, also add the name
+            if len(pp_steps) > len_before:
+                pp_names.append(pp_step)
+            else:
+                logger.info("Preprocessing step " + pp_step + " is only used for training. Continuing...")
+        return pp_steps, pp_names
 
     def get_pp_out(self) -> str:
         """Get the path to the preprocessing output folder
@@ -226,7 +232,7 @@ class ConfigLoader:
         """
         return self.config["model_store_loc"]
 
-    def get_ensemble(self, models: list) -> Ensemble:
+    def get_ensemble(self, models: dict) -> Ensemble:
         """Get the ensemble from the config
 
         :param models: the models

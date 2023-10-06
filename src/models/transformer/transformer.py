@@ -174,7 +174,7 @@ class RegressionTransformer(Model):
         # Torch summary
         print(torchinfo.summary(self.model))
         trainer = Trainer(epochs=epochs, criterion=criterion)
-        trainer.fit(train_dataloader, self.model, optimizer)
+        trainer.fit(train_dataloader, test_dataloader, self.model, optimizer)
         accuracy = trainer.evaluate(test_dataloader, self.model)
         print(f"Accuracy: {accuracy}")
 
@@ -193,7 +193,8 @@ class RegressionTransformer(Model):
 
         # Make a prediction
         with torch.no_grad():
-            prediction = self.model(data)
+            padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
+            prediction = self.model(data, padding_mask)
         return prediction
 
     def evaluate(self, pred, target):
@@ -209,6 +210,7 @@ class RegressionTransformer(Model):
         print("Evaluating model")
         # Calculate the loss of the predictions
         criterion = self.config["loss"]
+
         loss = criterion(pred, target)
         return loss
 

@@ -10,7 +10,7 @@ from src.pre_train.train_test_split import train_test_split, split_on_labels
 from src.util.printing_utils import print_section_separator
 
 
-def main(config: ConfigLoader, series_path) -> None:
+def main(config: ConfigLoader) -> None:
     """
     Main function for training the model
 
@@ -37,7 +37,7 @@ def main(config: ConfigLoader, series_path) -> None:
 
     print_section_separator("Preprocessing and feature engineering", spacing=0)
 
-    featured_data = get_processed_data(config, series_path, save_output=True)
+    featured_data = get_processed_data(config, training=True, save_output=True)
 
     # ------------------------- #
     #         Pre-train         #
@@ -53,13 +53,16 @@ def main(config: ConfigLoader, series_path) -> None:
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
 
     logger.info("Splitting data into train and test...")
-    X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"], standardize_method=pretrain["standardize"])
+    X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"],
+                                                        standardize_method=pretrain["standardize"])
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
 
-    logger.info("X Train data shape (size, window_size, features): " + str(X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
-    logger.info("X Test data shape (size, window_size, features): " + str(X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
+    logger.info("X Train data shape (size, window_size, features): " + str(
+        X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
+    logger.info("X Test data shape (size, window_size, features): " + str(
+        X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
 
     # TODO Cross validation should be part of each model
     cv = 0
@@ -173,7 +176,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config, "data/raw/train_series.parquet")
+    main(config)
 
     # Create submission
-    submit_to_kaggle.submit(config, "data/raw/test_series.parquet", False)
+    submit_to_kaggle.submit(config, False)

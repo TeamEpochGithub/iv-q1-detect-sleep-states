@@ -1,6 +1,7 @@
 import pandas as pd
-from src.preprocessing.pp import PP, PPException
+
 from ..logger.logger import logger
+from ..preprocessing.pp import PP, PPException
 
 
 class Truncate(PP):

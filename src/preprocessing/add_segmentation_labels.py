@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from src.preprocessing.pp import PP
+from ..preprocessing.pp import PP
 
 
 class AddSegmentationLabels(PP):
@@ -9,7 +9,10 @@ class AddSegmentationLabels(PP):
     """
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Adds the segmentation labels to the data. It will add 3 columns which is a result from the one-hot encoding of the 'awake' column.
+        """Adds the segmentation labels to the data.
+
+        It will add 3 columns which is a result from the one-hot encoding of the 'awake' column.
+
         :param data: The dataframe to add the segmentation labels to
         :return: The dataframe with the segmentation labels
         """

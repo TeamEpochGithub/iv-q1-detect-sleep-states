@@ -10,9 +10,9 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     """
 
     # add the predictions with window offsets
-    window_info['onset'] = predictions + window_info['step']
-    window_info['wakeup'] = predictions + window_info['step']
-    window_info.drop(['step'])
+    window_info['onset'] = predictions[:, 0] + window_info['step']
+    window_info['wakeup'] = predictions[:, 1] + window_info['step']
+    window_info = window_info.drop('step', axis=1)
 
     # create a new dataframe, by converting every onset and wakeup column values to two rows,
     # one with event='onset' and the other with event='awake'

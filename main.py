@@ -1,14 +1,18 @@
 # This file does the training of the model
+import json
 
-# Imports
+import pandas as pd
+
 import wandb
 from src import submit_to_kaggle
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pre_train.train_test_split import train_test_split, split_on_labels
+from src.score.doscoring import compute_scores
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
+from src.util.submissionformat import to_submission_format
 
 
 def main(config: ConfigLoader) -> None:
@@ -57,8 +61,9 @@ def main(config: ConfigLoader) -> None:
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
 
     logger.info("Splitting data into train and test...")
-    X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"],
-                                                        standardize_method=pretrain["standardize"])
+    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data,
+                                                                             test_size=pretrain["test_size"],
+                                                                             standardize_method=pretrain["standardize"])
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
@@ -79,6 +84,7 @@ def main(config: ConfigLoader) -> None:
 
     print_section_separator("Training", spacing=0)
 
+    # Initialize models
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
@@ -120,12 +126,7 @@ def main(config: ConfigLoader) -> None:
 
     print_section_separator("Ensemble", spacing=0)
     # TODO Add crossvalidation to models #107
-    print("-------- ENSEMBLING ----------")
     ensemble = config.get_ensemble(models)
-
-    # TODO ADD preprocessing of data suitable for predictions #103
-    test_data = None
-    ensemble.pred(test_data)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
@@ -155,9 +156,30 @@ def main(config: ConfigLoader) -> None:
 
     scoring = config.get_scoring()
     if scoring:
-        logger.info("Start scoring...")
-        # Do scoring
-        pass
+        logger.info("Making predictions with ensemble on test data")
+        predictions = ensemble.pred(X_test)
+
+        logger.info("Formatting predictions...")
+
+        # for each window get the series id and step offset
+        window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
+                       .groupby(['series_id', 'window'])
+                       .apply(lambda x: x.iloc[0]))
+        submission = to_submission_format(predictions, window_info)
+
+        # get only the test series data from the solution
+        test_series_ids = window_info['series_id'].unique()
+        with open('./series_id_encoding.json', 'r') as f:
+            encoding = json.load(f)
+        decoding = {v: k for k, v in encoding.items()}
+        test_series_ids = [decoding[sid] for sid in test_series_ids]
+
+        solution = (pd.read_csv(config.get_train_events_path())
+                    .groupby('series_id')
+                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
+
+        logger.info("Start scoring test predictions...")
+        compute_scores(submission, solution)  # TODO Add scoring to WANDB #103
     else:
         logger.info("Not scoring")
 

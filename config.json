@@ -19,7 +19,7 @@
     "fe_loc_in": "data/processed",
     "pre_training": {
         "test_size": 0.2,
-        "standardize": "standard"
+        "standardize": "none"
     },
     "models": {
         "1D-CNN": {
@@ -41,7 +41,7 @@
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-CNN"],
+        "models": ["ClassicBaseline"],
         "weights": [1],
         "comb_method": "addition"
     },

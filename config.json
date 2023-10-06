@@ -19,7 +19,7 @@
     "fe_loc_in": "data/processed",
     "pre_training": {
         "test_size": 0.2,
-        "standardize": "standard"
+        "standardize": "none"
     },
     "models": {
         "Transformer": {

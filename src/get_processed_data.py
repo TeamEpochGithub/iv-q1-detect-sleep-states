@@ -7,6 +7,7 @@ import gc
 
 def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
     pp_steps, pp_step_names = config.get_pp_steps(training=training)
+
     fe_steps, fe_step_names = config.get_features()
     fe_steps = [fe_steps[key] for key in fe_steps]
     step_names = pp_step_names + fe_step_names

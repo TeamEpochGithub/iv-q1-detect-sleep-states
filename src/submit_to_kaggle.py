@@ -37,7 +37,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
     for i, model in enumerate(models):
         path = store_location + "/submit_" + model + ".pt"
         logger.info(f"Loading model {i}: {model} from {path}")
-        config.models[model].load(path)
+        models[model].load(path)
 
     # make predictions
     ensemble = config.get_ensemble(models)
@@ -58,4 +58,3 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     submit(config, submit=True)
-

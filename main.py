@@ -81,8 +81,6 @@ def main(config: ConfigLoader) -> None:
     print_section_separator("Training", spacing=0)
 
     # Initialize models
-    print("-------- TRAINING MODELS ----------")
-
     store_location = config.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
@@ -124,7 +122,6 @@ def main(config: ConfigLoader) -> None:
 
     print_section_separator("Ensemble", spacing=0)
     # TODO Add crossvalidation to models #107
-    print("-------- ENSEMBLING ----------")
     ensemble = config.get_ensemble(models)
 
     # Initialize loss
@@ -155,7 +152,7 @@ def main(config: ConfigLoader) -> None:
 
     scoring = config.get_scoring()
     if scoring:
-        logger.info("Making predictions with ensemble")
+        logger.info("Making predictions with ensemble on test data")
         predictions = ensemble.pred(X_test)
 
         logger.info("Formatting predictions...")
@@ -173,11 +170,11 @@ def main(config: ConfigLoader) -> None:
         decoding = {v: k for k, v in encoding.items()}
         test_series_ids = [decoding[sid] for sid in test_series_ids]
 
-        solution = (pd.read_csv(config['train_events_path'])
+        solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
 
-        logger.info("Start scoring...")
+        logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)  # TODO Add scoring to WANDB #103
     else:
         logger.info("Not scoring")
@@ -204,4 +201,4 @@ if __name__ == "__main__":
     main(config)
 
     # Create submission
-    submit_to_kaggle.submit(config, "data/raw/first_10_series.parquet", False)
+    submit_to_kaggle.submit(config, False)

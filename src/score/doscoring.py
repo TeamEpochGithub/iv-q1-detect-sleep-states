@@ -43,7 +43,7 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
 
     # compute the score for the entire dataset
     result = score(solution, submission, tolerances, **column_names)
-    logger.info(f'Score for entire dataset: {result}')
+    logger.info(f'Score for all {len(solution["series_id"].unique())} series: {result}')
 
     # filter on clean series (series with no nans in the solution)
     solution_no_nan = (solution

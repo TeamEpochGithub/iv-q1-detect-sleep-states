@@ -227,7 +227,7 @@ class ConfigLoader:
         """
         return self.config["model_store_loc"]
 
-    def get_ensemble(self, models: list) -> Ensemble:
+    def get_ensemble(self, models: dict) -> Ensemble:
         """Get the ensemble from the config
 
         :param models: the models

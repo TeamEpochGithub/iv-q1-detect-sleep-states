@@ -1,4 +1,5 @@
 # This file does the training of the model
+import json
 
 import pandas as pd
 import wandb
@@ -56,7 +57,7 @@ def main(config: ConfigLoader, series_path) -> None:
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
 
     logger.info("Splitting data into train and test...")
-    X_train, X_test, y_train, y_test = train_test_split(featured_data, test_size=pretrain["test_size"],
+    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data, test_size=pretrain["test_size"],
                                                         standardize_method=pretrain["standardize"])
 
     # Give data shape in terms of (features (in_channels), window_size))
@@ -149,17 +150,31 @@ def main(config: ConfigLoader, series_path) -> None:
 
     print_section_separator("Scoring", spacing=0)
 
-    # TODO ADD preprocessing of data suitable for predictions #103
-    test_data = None
-    ensemble_predictions = None
-    if test_data:
-        ensemble_predictions = ensemble.pred(test_data)
-
     scoring = config.get_scoring()
-    if scoring and ensemble_predictions:
+    if scoring:
+        logger.info("Making predictions with ensemble")
+        predictions = ensemble.pred(X_test)
+
+        logger.info("Formatting predictions...")
+
+        # for each window get the series id and step offset
+        window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
+                       .groupby(['series_id', 'window'])
+                       .apply(lambda x: x.iloc[0]))
+        submission = to_submission_format(predictions, window_info)
+
+        # get only the test series data from the solution
+        test_series_ids = window_info['series_id'].unique()
+        with open('./series_id_encoding.json', 'r') as f:
+            encoding = json.load(f)
+        decoding = {v: k for k, v in encoding.items()}
+        test_series_ids = [decoding[sid] for sid in test_series_ids]
+
+        solution = (pd.read_csv('data/raw/first_10_events.csv')
+                    .groupby('series_id')
+                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
+
         logger.info("Start scoring...")
-        submission = to_submission_format(ensemble_predictions)
-        solution = pd.read_csv('./data/raw/train_events.csv')
         compute_scores(submission, solution)  # TODO Add scoring to WANDB #103
     else:
         logger.info("Not scoring")
@@ -183,7 +198,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config, "data/raw/train_series.parquet")
+    main(config, "data/raw/first_10_series.parquet")
 
     # Create submission
-    submit_to_kaggle.submit(config, "data/raw/train_series.parquet", False)
+    submit_to_kaggle.submit(config, "data/raw/first_10_series.parquet", False)

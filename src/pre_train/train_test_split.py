@@ -4,25 +4,23 @@ from sklearn.model_selection import GroupShuffleSplit
 from .standardization import standardize
 
 
-def train_test_split(df: pd.DataFrame, test_size: int = 0.2, standardize_method: str = "standard") -> (np.array, np.array, np.array, np.array):
-    X_train = None
-    X_test = None
-    Y_train = None
-    Y_test = None
+def train_test_split(df: pd.DataFrame, test_size: int = 0.2, standardize_method: str = "standard") \
+        -> (np.array, np.array, np.array, np.array, np.array, np.array):
 
     # Split data into train and test on series id using gss
     groups = df["series_id"]
     gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=42)
     train_idx, test_idx = next(gss.split(df, groups=groups))
+    train_data = df.iloc[train_idx]
+    test_data = df.iloc[test_idx]
 
     # Standardize data
-    train_standard = standardize(df.iloc[train_idx], method=standardize_method)
-    test_standard = standardize(df.iloc[test_idx], method=standardize_method)
+    train_data = standardize(train_data, method=standardize_method)
+    test_data = standardize(test_data, method=standardize_method)
 
-    X_train, Y_train = split_on_labels(train_standard)
-    X_test, Y_test = split_on_labels(test_standard)
-
-    return X_train, X_test, Y_train, Y_test
+    X_train, y_train = split_on_labels(train_data)
+    X_test, y_test = split_on_labels(test_data)
+    return X_train, X_test, y_train, y_test, train_idx, test_idx
 
 
 def split_on_labels(df: pd.DataFrame) -> (np.array, np.array):

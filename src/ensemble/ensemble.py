@@ -2,7 +2,6 @@
 
 # Imports
 import numpy as np
-import pandas as pd
 
 from ..logger.logger import logger
 

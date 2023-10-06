@@ -57,8 +57,9 @@ def main(config: ConfigLoader, series_path) -> None:
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
 
     logger.info("Splitting data into train and test...")
-    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data, test_size=pretrain["test_size"],
-                                                        standardize_method=pretrain["standardize"])
+    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data,
+                                                                             test_size=pretrain["test_size"],
+                                                                             standardize_method=pretrain["standardize"])
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])

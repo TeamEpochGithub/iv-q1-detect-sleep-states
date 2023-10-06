@@ -19,5 +19,6 @@ def extract_first_n_series(n):
     train_events.to_csv(f'data/raw/first_{n}_events.csv')
     print('Saved')
 
+
 if __name__ == "__main__":
     extract_first_n_series(10)

@@ -66,42 +66,50 @@ class AddStateLabels(PP):
                 weird_series_encoded.append(self.id_encoding[id])
 
         # iterate over the series and set the awake column
-        awake_col = data.columns.get_loc('awake')
-        for id, series in tqdm(data.groupby('series_id')):
-            current_events = self.events[self.events["series_id"] == id]
-            if len(current_events) == 0:
-                series['awake'] = 2
-
-            # iterate over event labels and fill in the awake column segment by segment
-            prev_step = 0
-            prev_was_nan = False
-            for _, row in current_events.iterrows():
-                step = row['step']
-                if np.isnan(step):
-                    prev_was_nan = True
-                    continue
-
-                step = int(step)
-                if prev_was_nan:
-                    series.iloc[prev_step:step, awake_col] = 2
-                elif row['event'] == 'onset':
-                    series.iloc[prev_step:step, awake_col] = 1
-                elif row['event'] == 'wakeup':
-                    series.iloc[prev_step:step, awake_col] = 0
-                else:
-                    raise Exception(f"Unknown event type: {row['event']}")
-
-                prev_step = step
-                prev_was_nan = False
-
-            # set the tail based on the last event, unless it's a weird series, which has a NaN tail
-            if id in weird_series_encoded:
-                series.iloc[prev_step:, awake_col] = 2
-            if current_events['event'].iloc[-1] == 'wakeup':
-                series.iloc[prev_step:, awake_col] = 1
-            elif current_events['event'].iloc[-1] == 'onset':
-                series.iloc[prev_step:, awake_col] = 0
-
-            # TODO: shift?
+        data = (data
+                .groupby('series_id')
+                .apply(lambda x: self.fill_series_labels(x, weird_series_encoded)))
 
         return data
+
+    def fill_series_labels(self, series, weird_series_encoded):
+        awake_col = series.columns.get_loc('awake')
+        series_id = series['series_id'].iloc[0]
+        current_events = self.events[self.events["series_id"] == series_id]
+        if len(current_events) == 0:
+            series['awake'] = 2
+            return series
+
+        # iterate over event labels and fill in the awake column segment by segment
+        prev_step = 0
+        prev_was_nan = False
+        for _, row in current_events.iterrows():
+            step = row['step']
+            if np.isnan(step):
+                prev_was_nan = True
+                continue
+
+            step = int(step)
+            if prev_was_nan:
+                series.iloc[prev_step:step, awake_col] = 2
+            elif row['event'] == 'onset':
+                series.iloc[prev_step:step, awake_col] = 1
+            elif row['event'] == 'wakeup':
+                series.iloc[prev_step:step, awake_col] = 0
+            else:
+                raise Exception(f"Unknown event type: {row['event']}")
+
+            prev_step = step
+            prev_was_nan = False
+
+        # set the tail based on the last event, unless it's a weird series, which has a NaN tail
+        last_event = current_events['event'].tail(1).values[0]
+        if series_id in weird_series_encoded:
+            series.iloc[prev_step:, awake_col] = 2
+        if last_event == 'wakeup':
+            series.iloc[prev_step:, awake_col] = 1
+        elif last_event == 'onset':
+            series.iloc[prev_step:, awake_col] = 0
+
+        # TODO: shift?
+        return series

@@ -81,6 +81,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         self.num_classes = num_classes
         self.output_layer = self.build_output_module(
             d_model, max_len, num_classes)
+        self.act_out = nn.ReLU()
 
     def build_output_module(
         self, d_model: int, max_len: int, num_classes: int
@@ -134,5 +135,6 @@ class TSTransformerEncoderClassiregressor(nn.Module):
             output.shape[0], -1
         )  # (batch_size, seq_length * d_model)
         output = self.output_layer(output)  # (batch_size, num_classes)
+        output = self.act_out(output)
 
         return output

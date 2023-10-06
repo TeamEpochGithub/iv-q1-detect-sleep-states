@@ -19,8 +19,9 @@ class Trainer:
     def __init__(
         self,
         epochs: int = 10,
+        criterion: nn.Module = nn.CrossEntropyLoss()
     ):
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = criterion
 
         self.dataset = None
         self.train_data = None

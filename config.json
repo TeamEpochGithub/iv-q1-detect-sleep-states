@@ -28,7 +28,7 @@
             "loss": "mae-torch",
             "optimizer": "adam-torch",
             "lr": 0.001,
-            "batch_size": 32,
+            "batch_size": 16,
             "patch_size": 36,
             "feat_dim": 72,
             "max_len": 480,

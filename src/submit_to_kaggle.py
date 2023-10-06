@@ -8,9 +8,8 @@ from src.pre_train.standardization import standardize
 from src.util.submissionformat import to_submission_format
 
 
-def submit(config: ConfigLoader, test_series_path, submit=False):
-    featured_data = get_processed_data(config, test_series_path,
-                                       save_output=False, training=False)
+def submit(config: ConfigLoader, submit=False) -> None:
+    featured_data = get_processed_data(config, save_output=False, training=False)
 
     # format the data
     feature_cols = [col for col in featured_data.columns if col.startswith('f_')]
@@ -57,4 +56,6 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     config = ConfigLoader("config.json")
-    submit(config, 'data/raw/first_series.parquet', submit=True)
+
+    submit(config, submit=True)
+

@@ -1,20 +1,22 @@
-# a new class with the same structure as mem reduce
-#
-# Path: src/preprocessing/add_noise.py
+import numpy as np
+import pandas as pd
 
 from ..preprocessing.pp import PP
-import numpy as np
 
 
 class AddNoise(PP):
-    def __init__(self):
-        pass
+    """Adds noise to the data
 
-    def preprocess(self, data):
-        # Add noise to the data
-        # Create a new column with the cumulative sum of the anglez column
-        # Create a new column with the cumulative sum of the anglez column
-        print(data.shape)
+    Adds random Gaussian distributed noise to the "anglez" column.
+    """
+
+    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Preprocess the data by adding noise to the data.
+
+        It creates a new column with the cumulative sum of the anglez column
+
+        :param data: the data without noise
+        :return: the data with noise added to the "anglez" column
+        """
         data['anglez'] = data['anglez'] + np.random.normal(0, 0.1, len(data['anglez']))
-        print(data.shape)
         return data

@@ -14,7 +14,7 @@ from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
 
 
-def main(config: ConfigLoader, series_path) -> None:
+def main(config: ConfigLoader) -> None:
     """
     Main function for training the model
 
@@ -41,7 +41,7 @@ def main(config: ConfigLoader, series_path) -> None:
 
     print_section_separator("Preprocessing and feature engineering", spacing=0)
 
-    featured_data = get_processed_data(config, series_path, save_output=True)
+    featured_data = get_processed_data(config, training=True, save_output=True)
 
     # ------------------------- #
     #         Pre-train         #
@@ -64,8 +64,10 @@ def main(config: ConfigLoader, series_path) -> None:
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
 
-    logger.info("X Train data shape (size, window_size, features): " + str(X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
-    logger.info("X Test data shape (size, window_size, features): " + str(X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
+    logger.info("X Train data shape (size, window_size, features): " + str(
+        X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
+    logger.info("X Test data shape (size, window_size, features): " + str(
+        X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
 
     # TODO Cross validation should be part of each model
     cv = 0
@@ -171,7 +173,7 @@ def main(config: ConfigLoader, series_path) -> None:
         decoding = {v: k for k, v in encoding.items()}
         test_series_ids = [decoding[sid] for sid in test_series_ids]
 
-        solution = (pd.read_csv('data/raw/first_10_events.csv')
+        solution = (pd.read_csv(config['train_events_path'])
                     .groupby('series_id')
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
 
@@ -199,7 +201,7 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
 
     # Run main
-    main(config, "data/raw/first_10_series.parquet")
+    main(config)
 
     # Create submission
     submit_to_kaggle.submit(config, "data/raw/first_10_series.parquet", False)

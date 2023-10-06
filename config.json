@@ -33,7 +33,7 @@
             "n_heads": 6,
             "num_layers": 5,
             "dim_feedforward": 16,
-            "num_classes": 1,
+            "num_classes": 4,
             "dropout": 0.1,
             "pos_encoding": "learnable",
             "activation": "relu",

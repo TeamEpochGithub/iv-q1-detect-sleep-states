@@ -134,8 +134,8 @@ class RegressionTransformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        y_train = y_train[:, 0]
-        y_test = y_test[:, 0]
+        y_train = y_train[:, 1:]
+        y_test = y_test[:, 1:]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)

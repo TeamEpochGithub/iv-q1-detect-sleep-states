@@ -42,18 +42,18 @@
     "model_store_loc": "tm",
     "ensemble": {
         "models": [],
-        "weights": [1],
+        "weights": [],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
     "hpo": {
-        "apply": true,
+        "apply": false,
         "method": "example_hpo"
     },
     "cv": {
-        "apply": true,
+        "apply": false,
         "method": "example_cv"
     },
     "train_for_submission": true,
-    "scoring": true
+    "scoring": false
 }

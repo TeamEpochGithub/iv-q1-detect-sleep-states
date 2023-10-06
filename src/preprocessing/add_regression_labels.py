@@ -42,7 +42,7 @@ class AddRegressionLabels(PP):
         # Create a hashmap to map (window, series_id) to the first index
 
         # Group the DataFrame by 'window' and 'series_id' and get the first index of each group
-        first_indices = data.groupby(['window', 'series_id']).apply(lambda group: group.index[0])
+        first_indices = data.groupby(['series_id', 'window']).apply(lambda group: group.index[0])
         # Convert the resulting Series to a dictionary
         window_series_map = first_indices.to_dict()
 
@@ -65,18 +65,29 @@ def fill_onset(group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool)
     Fill the onset/wakeup column for the group
     :param group: a series_id and window group
     :param data: the complete dataframe
-    :param map: a hashmap to map (window, series_id) to the first index
+    :param map: a hashmap to map (series_id, window) to the first index
     :param is_onset: boolean for if it is an onset event
     """
+    # TODO this is hardcoded, but should be changed to a variable #99
+    window_size = 17280
     series_id = group['series_id'].iloc[0]
     window = group['window'].iloc[0]
     events = group['step'].tolist()
 
     # Get the start
-    id_start = d[(window, series_id)]
+    id_start = d[(series_id, window)]
 
-    # TODO this is hardcoded, but should be changed to a variable #99
-    id_end = id_start + 17280
+    # Get step of start
+    step_start = data.iloc[id_start]['step']
+
+    if id_start + window_size > len(data):
+        logger.warn(f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
+        return
+    
+    events = (events - step_start).tolist()
+    logger.debug(events)
+    # Get the end
+    id_end = id_start + window_size
 
     if is_onset:
         if len(events) == 1 or len(events) == 2:

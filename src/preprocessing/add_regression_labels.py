@@ -87,12 +87,11 @@ def fill_onset(group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool)
     id_start = d[(series_id, window)]
 
     # Get step of start
-    step_start = data.iloc[id_start]['step']
+    step_start = data.iloc[id_start]['step'] - 1
 
     if id_start + window_size > len(data):
         logger.warn(
             f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
-        return
 
     events = (events - step_start).tolist()
     logger.debug(events)

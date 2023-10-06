@@ -225,7 +225,7 @@ class RegressionTransformer(Model):
         torch.save(checkpoint, path)
         print("Model saved to: " + path)
 
-    def load(self, path):
+    def load(self, path: str, only_hyperparameters: False) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint

@@ -71,7 +71,6 @@ def fill_onset(group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool)
     series_id = group['series_id'].iloc[0]
     window = group['window'].iloc[0]
     events = group['step'].tolist()
-
     # Get the start
     id_start = d[(window, series_id)]
 

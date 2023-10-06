@@ -7,8 +7,9 @@ from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pre_train.train_test_split import train_test_split, split_on_labels
-from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
+from src.util.printing_utils import print_section_separator
+
 
 def main(config: ConfigLoader) -> None:
     """

@@ -216,7 +216,7 @@ class ConfigLoader:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])
 
-            self.models[model_name] = curr_model
+            models[model_name] = curr_model
 
         return models
 

@@ -1,5 +1,6 @@
 # This is the base class for loss
 from torch import nn
+from .regression_loss import RegressionLoss
 
 
 class LossException(Exception):
@@ -31,5 +32,7 @@ class Loss:
                 return nn.CrossEntropyLoss()
             case "binarycrossentropy-torch":
                 return nn.BCELoss()
+            case "regression":
+                return RegressionLoss()
             case _:
                 raise LossException("Loss function not found: " + loss_name)

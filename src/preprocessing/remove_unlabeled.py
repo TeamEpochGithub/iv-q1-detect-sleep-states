@@ -25,7 +25,7 @@ class RemoveUnlabeled(PP):
 
         if "window" in data.columns:
             logger.info("------ Removing unlabeled data with windowing")
-            return data.groupby(["window"]).filter(lambda x: (x['awake'] != 2).any())
+            return data.groupby(["window"]).filter(lambda x: (x['awake'] != 2).any()).reset_index(drop=True)
 
         logger.info("------ Removing unlabeled data without windowing")
-        return data[(data["awake"] != 2)]
+        return data[(data["awake"] != 2)].reset_index(drop=True)

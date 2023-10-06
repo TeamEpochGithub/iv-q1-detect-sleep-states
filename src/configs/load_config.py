@@ -93,15 +93,20 @@ class ConfigLoader:
                 case "split_windows":
                     pp_steps.append(SplitWindows())
                 case "add_state_labels":
-                    pp_steps.append(AddStateLabels(events_path=self.get_train_events_path()))
+                    if training:
+                        pp_steps.append(AddStateLabels(events_path=self.get_train_events_path()))
                 case "remove_unlabeled":
-                    pp_steps.append(RemoveUnlabeled())
+                    if training:
+                        pp_steps.append(RemoveUnlabeled())
                 case "truncate":
-                    pp_steps.append(Truncate())
+                    if training:
+                        pp_steps.append(Truncate())
                 case "add_regression_labels":
-                    pp_steps.append(AddRegressionLabels())
+                    if training:
+                        pp_steps.append(AddRegressionLabels())
                 case "add_segmentation_labels":
-                    pp_steps.append(AddSegmentationLabels())
+                    if training:
+                        pp_steps.append(AddSegmentationLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)

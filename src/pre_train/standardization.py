@@ -17,6 +17,8 @@ def standardize(df: pd.DataFrame, method: str) -> pd.DataFrame:
         scaler = MinMaxScaler()
     elif method == "robust":
         scaler = RobustScaler()
+    elif method == "none":
+        return df
     else:
         logger.critical("Standardization method not found: " + method)
         raise ConfigException("Standardization method not found: " + method)

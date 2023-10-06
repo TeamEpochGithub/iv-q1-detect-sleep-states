@@ -185,7 +185,7 @@ class SegmentationSimple1DCNN(Model):
         long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
 
         table = wandb.Table(dataframe=long_df)
-        # Field to column
+        # Field to column in df
         fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
         custom_plot = wandb.plot_table(
             vega_spec_name="team-epoch-iv/trainval",

@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from torchsummary import summary
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
@@ -30,8 +29,9 @@ class SegmentationSimple1DCNN(Model):
         self.load_config(config)
 
         # Print model summary
-        logger.info("--- Model summary")
-        summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+        # TODO: have a way of using non-kaggle packages #151
+        # logger.info("--- Model summary")
+        # summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:
         """

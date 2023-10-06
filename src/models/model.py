@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import torch
 
 from ..logger.logger import logger
 
@@ -17,13 +16,6 @@ class Model:
             self.config = None
         else:
             self.config = config
-        # Check if gpu is available, else return an exception
-        if not torch.cuda.is_available():
-            logger.critical("GPU not available")
-            raise ModelException("GPU not available")
-
-        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
-        self.device = torch.device("cuda")
 
     def get_type(self) -> str:
         """
@@ -93,7 +85,7 @@ class Model:
         """
         logger.info("--- Nothing to save or not implemented")
 
-    def load(self, path: str, only_hyperparameters: bool) -> None:
+    def load(self, path: str, only_hyperparameters: bool = False) -> None:
         """
         Load function for the model. This function should be overwritten by the user.
         :param path: path to load the model from

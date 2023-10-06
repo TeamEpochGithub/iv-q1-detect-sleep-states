@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from torchsummary import summary
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
@@ -23,6 +22,14 @@ class SegmentationSimple1DCNN(Model):
         """
         super().__init__(config)
 
+        # Check if gpu is available, else return an exception
+        if not torch.cuda.is_available():
+            logger.critical("GPU not available")
+            raise ModelException("GPU not available")
+
+        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
+        self.device = torch.device("cuda")
+
         self.model_type = "segmentation"
         self.data_shape = data_shape
         # Load model
@@ -30,8 +37,9 @@ class SegmentationSimple1DCNN(Model):
         self.load_config(config)
 
         # Print model summary
-        logger.info("--- Model summary")
-        summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+        # TODO: have a way of using non-kaggle packages #151
+        # logger.info("--- Model summary")
+        # summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:
         """

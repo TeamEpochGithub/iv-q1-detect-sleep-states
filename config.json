@@ -19,21 +19,16 @@
     "fe_loc_in": "data/processed",
     "pre_training": {
         "test_size": 0.2,
-        "standardize": "standard"
+        "standardize": "none"
     },
     "models": {
-        "1D-CNN": {
-            "type": "seg-simple-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 2,
-            "batch_size": 32,
-            "lr": 0.001
+        "ClassicBaseline": {
+            "type": "classic-base-model"
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-CNN"],
+        "models": ["ClassicBaseline"],
         "weights": [1],
         "comb_method": "addition"
     },

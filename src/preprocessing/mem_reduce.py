@@ -7,7 +7,6 @@ import polars as pl
 
 from ..logger.logger import logger
 from ..preprocessing.pp import PP
-from line_profiler_pycharm import profile
 
 
 class MemReduce(PP):
@@ -17,10 +16,8 @@ class MemReduce(PP):
     """
 
     def preprocess(self, data):
-        df = self.reduce_mem_usage(data)
-        return df
+        return self.reduce_mem_usage(data)
 
-    @profile
     def reduce_mem_usage(self, data: pd.DataFrame, filename=None) -> pd.DataFrame:
         # TODO Don't hardcode the file name, add it as a parameter in the config.json #99
         if filename is None:

@@ -41,7 +41,7 @@
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ClassicBaseline"],
+        "models": [],
         "weights": [1],
         "comb_method": "addition"
     },

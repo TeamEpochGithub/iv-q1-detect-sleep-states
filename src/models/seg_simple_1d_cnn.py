@@ -30,7 +30,7 @@ class SegmentationSimple1DCNN(Model):
             logger.critical("GPU not available")
             raise ModelException("GPU not available")
 
-        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
+        logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
         self.device = torch.device("cuda")
 
         self.model_type = "segmentation"
@@ -262,8 +262,8 @@ class SegmentationSimple1DCNN(Model):
             logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}")
 
             # Log train full
-            wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
-            logger.info("--- Full train complete!")
+        wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+        logger.info("--- Full train complete!")
 
     def pred(self, data: np.ndarray) -> np.ndarray:
         """

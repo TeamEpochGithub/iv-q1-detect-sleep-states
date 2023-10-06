@@ -30,13 +30,11 @@ class SegmentationSimple1DCNN(Model):
         logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
         self.device = torch.device("cuda")
 
-
         self.model_type = "segmentation"
         self.data_shape = data_shape
         # Load model
         self.model = SegSimple1DCNN(window_length=data_shape[1], in_channels=data_shape[0], config=config)
         self.load_config(config)
-
 
         # Print model summary
         # TODO: have a way of using non-kaggle packages #151

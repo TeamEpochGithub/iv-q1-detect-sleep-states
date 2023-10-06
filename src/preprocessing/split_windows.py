@@ -1,19 +1,35 @@
-import pandas as pd
-from src.preprocessing.pp import PP
-from tqdm import tqdm
-import numpy as np
 import gc
+
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from ..preprocessing.pp import PP
 
 
 class SplitWindows(PP):
+    """Splits the data into 24h windows
 
-    def __init__(self, start_hour: float = 15):
-        super().__init__()
+    A new column named window will be added that contains the window number for each row.
+    """
+
+    def __init__(self, start_hour: float = 15, **kwargs) -> None:
+        """Initialize the SplitWindows class.
+
+        :param start_hour: the hour of the day to start the window at. Default is 15.
+        """
+        super().__init__(**kwargs)
+
         self.start_hour = start_hour
         self.window_size = 24 * 60 * 12
         self.steps_before = (start_hour * 60 * 12)
 
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Preprocess the data by splitting it into 24h windows.
+
+        :param df: the data without windows
+        :return: the preprocessed data with window numbers
+        """
 
         # Pad the series with 0s
         # Loop through the series_ids

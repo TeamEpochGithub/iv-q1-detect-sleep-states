@@ -1,18 +1,15 @@
-# In this file the correct classes are retrieved for the configuration
 import json
 
-# CV imports
+from torch import nn
+
 from ..cv.cv import CV
-# Ensemble imports
 from ..ensemble.ensemble import Ensemble
-# Feature engineering imports
+from ..feature_engineering.feature_engineering import FE
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.mean import Mean
 from ..feature_engineering.skewness import Skewness
-# HPO imports
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
-# Loss imports
 from ..loss.loss import Loss
 
 # Model imports
@@ -23,6 +20,7 @@ from ..models.example_model import ExampleModel
 
 # Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
+from ..preprocessing.pp import PP
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
@@ -33,10 +31,13 @@ from ..preprocessing.add_state_labels import AddStateLabels
 
 
 class ConfigLoader:
+    """Class to load the configuration from a JSON file"""
 
-    # Initiate class using config path
-    def __init__(self, config_path):
-        self.pp_steps = []
+    def __init__(self, config_path: str) -> None:
+        """Initialize the ConfigLoader class
+
+        :param config_path: the path to the config.json file
+        """
         self.config_path = config_path
 
         # Read JSON from file
@@ -44,57 +45,99 @@ class ConfigLoader:
             self.config = json.load(f)
 
     # Get full configuration
-    def get_config(self):
+    def get_config(self) -> dict:
+        """Get the full configuration
+
+        :return: the full configuration dict
+        """
         return self.config
 
-    # Get boolean for whether to use wandb
-    def get_log_to_wandb(self):
+    def get_log_to_wandb(self) -> bool:
+        """Get whether to log to Weights & Biases
+
+        :return: whether to log to Weights & Biases
+        """
         return self.config["log_to_wandb"]
 
-    # Function to retrieve preprocessing steps
-    def get_pp_steps(self, training=True):
-        self.pp_steps = []
+    def get_train_series_path(self) -> str:
+        """Get the path to the training series data
+
+        :return: the path to the train_series.parquet file
+        """
+        return self.config["train_series_path"]
+
+    def get_train_events_path(self) -> str:
+        """Get the path to the training labels data
+
+        :return: the path to the train_events.csv file
+        """
+        return self.config["train_events_path"]
+
+    def get_test_series_path(self) -> str:
+        """Get the path to the test series data
+
+        :return: the path to the test_series.parquet file
+        """
+        return self.config["test_series_path"]
+
+    def get_pp_steps(self, training) -> (list[PP], list[str]):
+        """Get the preprocessing steps classes
+
+        :param training: whether the preprocessing is for training or testing
+        :return: the preprocessing steps and their names
+        """
+        pp_steps: list[PP] = []
         for pp_step in self.config["preprocessing"]:
+            # Check if the step is only for training
+            if not training and pp_step in ["add_state_labels", "remove_unlabeled", "truncate", "add_event_labels",
+                                            "add_regression_labels", "add_segmentation_labels"]:
+                logger.info("Preprocessing step " + pp_step + " is only used for training. Continuing...")
+                continue
+
             match pp_step:
                 case "mem_reduce":
-                    self.pp_steps.append(MemReduce())
+                    pp_steps.append(MemReduce())
                 case "add_noise":
-                    self.pp_steps.append(AddNoise())
+                    pp_steps.append(AddNoise())
                 case "split_windows":
-                    self.pp_steps.append(SplitWindows())
+                    pp_steps.append(SplitWindows())
                 case "add_state_labels":
-                    if training:
-                        self.pp_steps.append(AddStateLabels())
+                    pp_steps.append(AddStateLabels(events_path=self.get_train_events_path()))
                 case "remove_unlabeled":
-                    if training:
-                        self.pp_steps.append(RemoveUnlabeled())
+                    pp_steps.append(RemoveUnlabeled())
                 case "truncate":
-                    if training:
-                        self.pp_steps.append(Truncate())
+                    pp_steps.append(Truncate())
                 case "add_regression_labels":
-                    if training:
-                        self.pp_steps.append(AddRegressionLabels())
+                    pp_steps.append(AddRegressionLabels())
                 case "add_segmentation_labels":
-                    if training:
-                        self.pp_steps.append(AddSegmentationLabels())
+                    pp_steps.append(AddSegmentationLabels())
                 case _:
                     logger.critical("Preprocessing step not found: " + pp_step)
                     raise ConfigException("Preprocessing step not found: " + pp_step)
 
-        return self.pp_steps, self.config["preprocessing"]
+        return pp_steps, self.config["preprocessing"]
 
-    # Function to retrieve preprocessing data location out path
-    def get_pp_out(self):
+    def get_pp_out(self) -> str:
+        """Get the path to the preprocessing output folder
+
+        :return: the path to the preprocessing output folder
+        """
         return self.config["processed_loc_out"]
 
-    # Function to retrieve preprocessing data location in path
-    def get_pp_in(self):
+    def get_pp_in(self) -> str:
+        """Get the path to the preprocessing input data folder
+
+        :return: the path to the preprocessing input data folder
+        """
         return self.config["processed_loc_in"]
 
-    # Function to retrieve feature engineering classes from feature engineering folder
-    def get_features(self):
-        fe_steps = {}
-        fe_s = []
+    def get_features(self) -> (dict[FE], list[str]):
+        """Get the feature engineering steps classes
+
+        :return: the feature engineering steps and their names
+        """
+        fe_steps: dict = {}
+        fe_s: list = []
         for fe_step in self.config["feature_engineering"]:
             if fe_step == "kurtosis":
                 fe_steps["kurtosis"] = Kurtosis(
@@ -133,22 +176,36 @@ class ConfigLoader:
 
         return fe_steps, fe_s
 
-    # Function to retrieve feature engineering data location out path
-    def get_fe_out(self):
+    def get_fe_out(self) -> str:
+        """Get the path to the feature engineering output folder
+
+        :return: the path to the feature engineering output folder
+        """
         return self.config["fe_loc_out"]
 
-    # Function to retrieve feature engineering data location in path
-    def get_fe_in(self):
+    def get_fe_in(self) -> str:
+        """Get the path to the feature engineering input data folder
+
+        :return: the path to the feature engineering input data folder
+        """
         return self.config["fe_loc_in"]
 
-    # Function to retrieve pretraining data
-    def get_pretraining(self):
+    def get_pretraining(self) -> dict:
+        """Get the pretraining parameters
+
+        :return: the pretraining parameters
+        """
         return self.config["pre_training"]
 
     # Function to retrieve model data
-    def get_models(self, data_shape):
+    def get_models(self, data_shape: tuple) -> dict:
+        """Get the models from the config
+
+        :param data_shape: the shape of the data
+        :return: the models
+        """
+        models: dict = {}
         # Loop through models
-        self.models = {}
         logger.info("Models: " + str(self.config.get("models")))
         for model in self.config["models"]:
             model_config = self.config["models"][model]
@@ -165,18 +222,25 @@ class ConfigLoader:
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])
-            self.models[model] = curr_model
+            models[model] = curr_model
 
-        return self.models
+        return models
 
-    # Getter for model store location
-    def get_model_store_loc(self):
+    def get_model_store_loc(self) -> str:
+        """Get the path to the model store directory
+
+        :return: the path to the model store directory
+        """
         return self.config["model_store_loc"]
 
-    # Function to retrieve ensemble data
-    def get_ensemble(self, models):
+    def get_ensemble(self, models: list) -> Ensemble:
+        """Get the ensemble from the config
 
-        curr_models = []
+        :param models: the models
+        :return: the ensemble
+        """
+
+        curr_models: list = []
         # If length of weights and models is not equal, raise exception
         if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
             logger.critical("Length of weights and models is not equal")
@@ -198,9 +262,11 @@ class ConfigLoader:
 
         return ensemble
 
-    # Function to retrieve loss function
+    def get_ensemble_loss(self) -> nn.Module:
+        """Get the ensemble loss function from the config
 
-    def get_ensemble_loss(self):
+        :return: the loss function
+        """
         loss_class = None
         if self.config["ensemble_loss"] == "example_loss":
             loss_class = Loss().get_loss("example_loss")
@@ -210,8 +276,11 @@ class ConfigLoader:
 
         return loss_class
 
-    # Function to retrieve hyperparameter tuning method
-    def get_hpo(self):
+    def get_hpo(self) -> HPO:
+        """Get the hyperparameter tuning method from the config
+
+        :return: the hyperparameter tuning method
+        """
         hpo_class = None
         if self.config["hpo"]["method"] == "example_hpo":
             hpo_class = HPO(None, None, None)
@@ -221,8 +290,11 @@ class ConfigLoader:
 
         return hpo_class
 
-    # Function to retrieve cross validation method
-    def get_cv(self):
+    def get_cv(self) -> CV:
+        """Get the cross validation method from the config
+
+        :return: the cross validation method
+        """
         cv_class = None
         if self.config["cv"]["method"] == "example_cv":
             cv_class = CV()
@@ -233,14 +305,26 @@ class ConfigLoader:
         return cv_class
 
     # Function to retrieve train for submission
-    def get_train_for_submission(self):
+    def get_train_for_submission(self) -> bool:
+        """Get whether to train for submission from the config
+
+        :return: whether to train for submission
+        """
         return self.config["train_for_submission"]
 
     # Function to retrieve scoring
-    def get_scoring(self):
+    def get_scoring(self) -> bool:
+        """Get whether to score from the config
+
+        :return: whether to score
+        """
         return self.config["scoring"]
 
 
 # ConfigException class
 class ConfigException(Exception):
+    """
+    Exception class for configuration.
+    Raises an exception when the config.json is not correct.
+    """
     pass

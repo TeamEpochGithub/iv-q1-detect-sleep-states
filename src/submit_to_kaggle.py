@@ -5,9 +5,9 @@ from src.configs.load_config import ConfigLoader
 from src.util.submissionformat import to_submission_format
 
 
-def submit(config: ConfigLoader, test_series_path, submit=False):
+def submit(config: ConfigLoader, submit=False) -> None:
 
-    featured_data = get_processed_data(config, test_series_path, save_output=False)
+    featured_data = get_processed_data(config, training=False, save_output=False)
     # Initialize models
     models = config.get_models()
 
@@ -34,4 +34,4 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     config = ConfigLoader("config.json")
-    submit(config, 'data/raw/test_series.parquet', submit=True)
+    submit(config, submit=True)

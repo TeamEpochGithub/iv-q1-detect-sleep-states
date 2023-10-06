@@ -1,6 +1,9 @@
 {
     "name": "config",
     "log_to_wandb": false,
+    "train_series_path": "data/raw/train_series.parquet",
+    "train_events_path": "data/raw/train_events.csv",
+    "test_series_path": "data/raw/test_series.parquet",
     "preprocessing": [
         "mem_reduce",
         "add_state_labels",

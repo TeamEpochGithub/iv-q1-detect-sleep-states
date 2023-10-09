@@ -208,4 +208,4 @@ if __name__ == "__main__":
     main(config)
 
     # Create submission
-    submit_to_kaggle.submit(config, False)
+    submit_to_kaggle.submit(config, True)

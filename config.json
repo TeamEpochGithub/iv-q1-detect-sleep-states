@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -22,25 +22,38 @@
         "standardize": "none"
     },
     "models": {
-        "ClassicBaseline": {
-            "type": "classic-base-model"
+        "1D-CNN": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "epochs": 3,
+            "batch_size": 64,
+            "lr": 0.001
+        },
+        "1D-CNN2": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "epochs": 3,
+            "batch_size": 64,
+            "lr": 0.001
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ClassicBaseline"],
-        "weights": [1],
+        "models": ["1D-CNN", "1D-CNN2"],
+        "weights": [0.5, 0.5],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
     "hpo": {
-        "apply": true,
+        "apply": false,
         "method": "example_hpo"
     },
     "cv": {
-        "apply": true,
+        "apply": false,
         "method": "example_cv"
     },
     "train_for_submission": true,
-    "scoring": true
+    "scoring": false
 }

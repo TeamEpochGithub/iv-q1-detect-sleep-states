@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 from src.logger.logger import logger
@@ -106,7 +107,7 @@ class RegressionTransformer(Model):
             'freeze': False,
         }
 
-    def train(self, X_train, X_test, y_train, y_test):
+    def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array):
         """
         Train function for the model.
         :param data: labelled data
@@ -178,24 +179,41 @@ class RegressionTransformer(Model):
         accuracy = trainer.evaluate(test_dataloader, self.model)
         print(f"Accuracy: {accuracy}")
 
-    def pred(self, data):
+    def pred(self, data: np.array):
         """
         Prediction function for the model.
         :param data: unlabelled data
         :return:
         """
         # Prediction function
-        print("Predicting model")
         # Run the model on the data and return the predictions
 
         # Push to device
         self.model.to(self.device)
 
+        # Get window size
+        window_size = data.shape[0]
+
+        # Turn data from (window_size, features) to (1, window_size, features)
+        data = torch.from_numpy(data).unsqueeze(0)
+
+        # Patch data
+        patch_size = self.config["patch_size"]
+        data = patch_x_data(data, patch_size)
+
         # Make a prediction
         with torch.no_grad():
             padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
-            prediction = self.model(data, padding_mask)
-        return prediction
+            prediction = self.model(data.to(self.device), padding_mask.to(self.device))
+        
+        # Get first and only prediction
+        prediction = prediction[0]
+        prediction = prediction.cpu().numpy()  # Move array to numpy
+        threshold = 0.5
+        prediction[0] = prediction[0] if (prediction[2] / window_size) < threshold else np.NAN
+        prediction[1] = prediction[1] if (prediction[3] / window_size) < threshold else np.NAN
+
+        return prediction[0], prediction[1]
 
     def evaluate(self, pred, target):
         """

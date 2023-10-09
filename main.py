@@ -172,7 +172,8 @@ def main(config: ConfigLoader) -> None:
 
         solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
-                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
+                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
+                    .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)  # TODO Add scoring to WANDB #103

@@ -68,7 +68,8 @@ class AddStateLabels(PP):
         # iterate over the series and set the awake column
         data = (data
                 .groupby('series_id')
-                .apply(lambda x: self.fill_series_labels(x, weird_series_encoded)))
+                .apply(lambda x: self.fill_series_labels(x, weird_series_encoded))
+                .reset_index(drop=True))
 
         return data
 
@@ -104,9 +105,11 @@ class AddStateLabels(PP):
 
         # set the tail based on the last event, unless it's a weird series, which has a NaN tail
         last_event = current_events['event'].tail(1).values[0]
-        if series_id in weird_series_encoded:
+        if prev_was_nan:
             series.iloc[prev_step:, awake_col] = 2
-        if last_event == 'wakeup':
+        elif series_id in weird_series_encoded:
+            series.iloc[prev_step:, awake_col] = 2
+        elif last_event == 'wakeup':
             series.iloc[prev_step:, awake_col] = 1
         elif last_event == 'onset':
             series.iloc[prev_step:, awake_col] = 0

@@ -8,10 +8,6 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
-        "kurtosis": {
-            "window_sizes": [5, 10],
-            "features": ["enmo", "anglez"]
-        }
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",

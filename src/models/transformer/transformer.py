@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import torch
 
@@ -54,7 +55,7 @@ class RegressionTransformer(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-
+        config = copy.deepcopy(config)
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
@@ -213,10 +214,9 @@ class RegressionTransformer(Model):
         prediction = prediction[0]
         prediction = prediction.cpu().numpy()  # Move array to numpy
         threshold = 0.5
-        if (prediction[2] / window_size) < threshold:
-            prediction[0, 1] = np.NAN
-        if (prediction[3] / window_size) < threshold:
-            prediction[0, 1] = np.NAN
+        if (prediction[2] / window_size) > threshold or (prediction[3] / window_size) > threshold:
+            prediction[0] = np.NAN
+            prediction[1] = np.NAN
 
         return prediction[0], prediction[1]
 

@@ -24,7 +24,7 @@
     "models": {
         "Transformer": {
             "type": "regression-transformer",
-            "epochs": 3,
+            "epochs": 1,
             "loss": "regression",
             "optimizer": "adam-torch",
             "lr": 0.001,
@@ -32,10 +32,10 @@
             "patch_size": 36,
             "feat_dim": 72,
             "max_len": 480,
-            "d_model": 96,
+            "d_model": 12,
             "n_heads": 6,
             "num_layers": 5,
-            "dim_feedforward": 1024,
+            "dim_feedforward": 16,
             "num_classes": 4,
             "dropout": 0.1,
             "pos_encoding": "learnable",

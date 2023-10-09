@@ -213,10 +213,10 @@ class RegressionTransformer(Model):
         prediction = prediction[0]
         prediction = prediction.cpu().numpy()  # Move array to numpy
         threshold = 0.5
-        prediction[0] = prediction[0] if (
-            prediction[2] / window_size) < threshold else np.NAN
-        prediction[1] = prediction[1] if (
-            prediction[3] / window_size) < threshold else np.NAN
+        if (prediction[2] / window_size) < threshold:
+            prediction[0, 1] = np.NAN
+        if (prediction[3] / window_size) < threshold:
+            prediction[0, 1] = np.NAN
 
         return prediction[0], prediction[1]
 

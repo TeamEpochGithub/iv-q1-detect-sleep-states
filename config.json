@@ -24,7 +24,7 @@
     "models": {
         "Transformer": {
             "type": "regression-transformer",
-            "epochs": 1,
+            "epochs": 3,
             "loss": "regression",
             "optimizer": "adam-torch",
             "lr": 0.001,
@@ -32,10 +32,10 @@
             "patch_size": 36,
             "feat_dim": 72,
             "max_len": 480,
-            "d_model": 12,
+            "d_model": 96,
             "n_heads": 6,
             "num_layers": 5,
-            "dim_feedforward": 16,
+            "dim_feedforward": 1024,
             "num_classes": 4,
             "dropout": 0.1,
             "pos_encoding": "learnable",
@@ -60,5 +60,5 @@
         "method": "example_cv"
     },
     "train_for_submission": true,
-    "scoring": false
+    "scoring": true
 }

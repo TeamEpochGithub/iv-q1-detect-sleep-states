@@ -57,7 +57,7 @@ def main(config: ConfigLoader) -> None:
     pretrain = config.get_pretraining()
 
     logger.info("Obtained pretrain parameters from config " + str(pretrain))
-    
+
     # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
@@ -113,7 +113,8 @@ def main(config: ConfigLoader) -> None:
 
         # Retrain all models with optimal parameters
         for i, model in enumerate(models):
-            models[model].load(store_location + "/optimal_" + model + ".pt", only_hyperparameters=True)
+            models[model].load(store_location + "/optimal_" +
+                               model + ".pt", only_hyperparameters=True)
             logger.info("Retraining model " + str(i) + ": " + model)
             models[model].train_full(*split_on_labels(featured_data))
             models[model].save(store_location + "/submit_" + model + ".pt")
@@ -135,7 +136,8 @@ def main(config: ConfigLoader) -> None:
     #          Hyperparameter optimization for ensemble       #
     # ------------------------------------------------------- #
 
-    print_section_separator("Hyperparameter optimization for ensemble", spacing=0)
+    print_section_separator(
+        "Hyperparameter optimization for ensemble", spacing=0)
     # TODO Hyperparameter optimization for ensembles
     hpo = config.get_hpo()
     hpo.optimize()
@@ -206,4 +208,4 @@ if __name__ == "__main__":
     main(config)
 
     # Create submission
-    #submit_to_kaggle.submit(config, False)
+    submit_to_kaggle.submit(config, False)

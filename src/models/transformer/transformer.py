@@ -176,7 +176,8 @@ class RegressionTransformer(Model):
         # Torch summary
         torchinfo.summary(self.model)
         trainer = Trainer(epochs=epochs, criterion=criterion)
-        avg_train_loss, avg_val_loss = trainer.fit(train_dataloader, test_dataloader, self.model, optimizer, self.name)
+        avg_train_loss, avg_val_loss = trainer.fit(
+            train_dataloader, test_dataloader, self.model, optimizer, self.name)
 
         self.log_train_test(avg_train_loss, avg_val_loss, epochs)
 
@@ -205,14 +206,17 @@ class RegressionTransformer(Model):
         # Make a prediction
         with torch.no_grad():
             padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
-            prediction = self.model(data.to(self.device), padding_mask.to(self.device))
-        
+            prediction = self.model(
+                data.to(self.device), padding_mask.to(self.device))
+
         # Get first and only prediction
         prediction = prediction[0]
         prediction = prediction.cpu().numpy()  # Move array to numpy
         threshold = 0.5
-        prediction[0] = prediction[0] if (prediction[2] / window_size) < threshold else np.NAN
-        prediction[1] = prediction[1] if (prediction[3] / window_size) < threshold else np.NAN
+        prediction[0] = prediction[0] if (
+            prediction[2] / window_size) < threshold else np.NAN
+        prediction[1] = prediction[1] if (
+            prediction[3] / window_size) < threshold else np.NAN
 
         return prediction[0], prediction[1]
 

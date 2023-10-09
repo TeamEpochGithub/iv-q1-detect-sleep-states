@@ -13,10 +13,11 @@ class ClassicBaseModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
+        :param name: name of the model
         """
         super().__init__(config)
         self.model_type = "classic-base-model"

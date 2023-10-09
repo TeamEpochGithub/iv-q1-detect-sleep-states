@@ -5,6 +5,7 @@ from torch.nn.modules import TransformerEncoderLayer
 from .encoder import TransformerBatchNormEncoderLayer
 from .utils import get_activation_fn
 
+
 class SegmentTransformer(nn.module):
     """
     Transformer for time series segmentation.
@@ -104,14 +105,17 @@ class SegmentTransformer(nn.module):
         inp = self.pos_enc(inp)
 
         # Get output
-        output = self.transformer_encoder(inp, src_key_padding_mask=~padding_masks)
+        output = self.transformer_encoder(
+            inp, src_key_padding_mask=~padding_masks)
         output = self.act(output)
         output = output.permute(1, 0, 2)
         output = self.dropout1(output)
 
         # Final output
         output = output * padding_masks.unsqueeze(-1)
-        output = output.reshape(output.shape[0], -1)  # (batch_size, seq_len * d_model)
-        output = self.output_layer(output)  # (batch_size, seq_len * num_classes)
+        # (batch_size, seq_len * d_model)
+        output = output.reshape(output.shape[0], -1)
+        # (batch_size, seq_len * num_classes)
+        output = self.output_layer(output)
 
         return output

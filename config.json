@@ -24,7 +24,7 @@
     "models": {
         "Transformer": {
             "type": "regression-transformer",
-            "epochs": 10,
+            "epochs": 1,
             "loss": "regression",
             "optimizer": "adam-torch",
             "lr": 0.001,

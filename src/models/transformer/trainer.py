@@ -39,9 +39,13 @@ class Trainer:
 
         # Wandb logging
         wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(self.criterion)} of {name}", step_metric="epoch")
-        wandb.define_metric(f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+        wandb.define_metric(
+            f"Train {str(self.criterion)} of {name}", step_metric="epoch")
+        wandb.define_metric(
+            f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
+        avg_train_losses = []
+        avg_val_losses = []
         for epoch in range(self.n_epochs):
             val_losses = []
             train_losses = self.train_one_epoch(
@@ -49,7 +53,12 @@ class Trainer:
             val_losses = self.val_loss(testloader, epoch, model)
             train_loss = sum(train_losses) / len(train_losses)
             val_loss = sum(val_losses) / len(val_losses)
-            wandb.log({f"Train {str(self.criterion)} of {name}": train_loss, f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+            avg_train_losses.append(train_loss.cpu())
+            avg_val_losses.append(val_loss.cpu())
+            wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
+                      f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+
+        return avg_train_losses, avg_val_losses
 
     def train_one_epoch(self, dataloader, epoch_no, optimiser, model, disable_tqdm=False):
         losses = []
@@ -84,7 +93,7 @@ class Trainer:
         optimiser.step()
         losses.append(loss.detach())
         return loss.detach(), losses
-    
+
     def val_loss(self, dataloader: torch.utils.data.DataLoader, epoch_no, model: nn.Module, disable_tqdm=False):
         """Run the model on the test set and return validation loss"""
         losses = []
@@ -100,7 +109,8 @@ class Trainer:
         with torch.no_grad():
             data[0] = data[0].double()
             padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-            output = model(data[0].to(self.device), padding_mask.to(self.device))
+            output = model(data[0].to(self.device),
+                           padding_mask.to(self.device))
 
             mask = torch.ones_like(data[1]).to(self.device)
             mask[:, 0] = (17280 - data[1][:, 2]) / 17280

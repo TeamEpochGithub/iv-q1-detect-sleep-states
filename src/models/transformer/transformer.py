@@ -174,9 +174,11 @@ class RegressionTransformer(Model):
             test_dataset, batch_size=batch_size)
 
         # Torch summary
-        print(torchinfo.summary(self.model))
+        torchinfo.summary(self.model)
         trainer = Trainer(epochs=epochs, criterion=criterion)
-        trainer.fit(train_dataloader, test_dataloader, self.model, optimizer, self.name)
+        avg_train_loss, avg_val_loss = trainer.fit(train_dataloader, test_dataloader, self.model, optimizer, self.name)
+
+        self.log_train_test(avg_train_loss, avg_val_loss, epochs)
 
     def pred(self, data: np.array):
         """

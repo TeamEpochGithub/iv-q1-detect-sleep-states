@@ -50,7 +50,7 @@ class ClassicBaseModel(Model):
         :return: two timestamps, or NaN if no sleep was detected
         """
 
-        logger.info(f"--- Predicting results with model ")
+        logger.info(f"--- Predicting results with model {self.name}")
         predictions = []
         # Get the data from the data tuple
         for window in tqdm(X_pred, desc="Converting predictions to events", unit="window"):

@@ -33,7 +33,6 @@ class Trainer:
         self.device = torch.device("cuda:" + cuda_dev if use_cuda else "cpu")
 
     def fit(self, dataloader: torch.utils.data.DataLoader, testloader, model: nn.Module, optimiser: torch.optim.Optimizer, name: str):
-        losses = []
         model = model.to(self.device)
         model.train()
         model.double()
@@ -44,13 +43,16 @@ class Trainer:
         wandb.define_metric(f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         for epoch in range(self.n_epochs):
-            losses = self.train_one_epoch(
-                dataloader=dataloader, epoch_no=epoch, losses=losses, optimiser=optimiser, model=model)
-            accuracy = self.evaluate(testloader, model)
-            wandb.log({f"Train {str(self.criterion)} of {name}": sum(losses) / len(losses), f"Validation {str(self.criterion)} of {name}": accuracy, "epoch": epoch})
-            print(f"Accuracy: {accuracy}")
+            val_losses = []
+            train_losses = self.train_one_epoch(
+                dataloader=dataloader, epoch_no=epoch, optimiser=optimiser, model=model)
+            val_losses = self.val_loss(testloader, epoch, model)
+            train_loss = sum(train_losses) / len(train_losses)
+            val_loss = sum(val_losses) / len(val_losses)
+            wandb.log({f"Train {str(self.criterion)} of {name}": train_loss, f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
-    def train_one_epoch(self, dataloader, epoch_no, losses, optimiser, model, disable_tqdm=False):
+    def train_one_epoch(self, dataloader, epoch_no, optimiser, model, disable_tqdm=False):
+        losses = []
         epoch_loss = 0
         i = 0
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
@@ -82,21 +84,29 @@ class Trainer:
         optimiser.step()
         losses.append(loss.detach())
         return loss.detach(), losses
+    
+    def val_loss(self, dataloader: torch.utils.data.DataLoader, epoch_no, model: nn.Module, disable_tqdm=False):
+        """Run the model on the test set and return validation loss"""
+        losses = []
+        with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
+            for idx, data in enumerate(tepoch):
+                losses = self._val_one_loop(
+                    data=data, losses=losses, model=model)
+                tepoch.set_description(f"Epoch {epoch_no}")
+                tepoch.set_postfix(loss=sum(losses) / len(losses))
+        return losses
 
-    def evaluate(self, dataloader: torch.utils.data.DataLoader, model: nn.Module):
-        """Run the model on the test set and return the accuracy."""
-        model.eval()
-        n_correct = 0
-        n_incorrect = 0
-        for idx, data in enumerate(dataloader):
-            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
+    def _val_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module):
+        with torch.no_grad():
             data[0] = data[0].double()
-            output = model(data[0].to(self.device),
-                           padding_mask.to(self.device))
-            predictions = torch.argmax(output, dim=1)
-            target = torch.argmax(data[1], dim=1).to(self.device)
-            incorrect = torch.count_nonzero(predictions - target)
-            n_incorrect += incorrect.detach()
-            n_correct += (len(target) - incorrect).detach()
-        accuracy = n_correct / (n_correct + n_incorrect)
-        return accuracy
+            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
+            output = model(data[0].to(self.device), padding_mask.to(self.device))
+
+            mask = torch.ones_like(data[1]).to(self.device)
+            mask[:, 0] = (17280 - data[1][:, 2]) / 17280
+            mask[:, 1] = (17280 - data[1][:, 3]) / 17280
+
+            loss = self.criterion(output, data[1].type(
+                torch.DoubleTensor).to(self.device), mask)
+            losses.append(loss.detach())
+        return losses

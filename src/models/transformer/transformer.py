@@ -177,8 +177,6 @@ class RegressionTransformer(Model):
         print(torchinfo.summary(self.model))
         trainer = Trainer(epochs=epochs, criterion=criterion)
         trainer.fit(train_dataloader, test_dataloader, self.model, optimizer, self.name)
-        accuracy = trainer.evaluate(test_dataloader, self.model)
-        print(f"Accuracy: {accuracy}")
 
     def pred(self, data: np.array):
         """

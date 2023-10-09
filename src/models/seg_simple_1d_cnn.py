@@ -1,5 +1,9 @@
+import copy
+
 import numpy as np
 import torch
+import wandb
+from tqdm import tqdm
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
@@ -14,20 +18,21 @@ class SegmentationSimple1DCNN(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the data (input/output shape, features)
+        :param name: name of the model
         """
-        super().__init__(config)
+        super().__init__(config, name)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
             logger.critical("GPU not available")
             raise ModelException("GPU not available")
 
-        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
+        logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
         self.device = torch.device("cuda")
 
         self.model_type = "segmentation"
@@ -46,6 +51,8 @@ class SegmentationSimple1DCNN(Model):
         Load config function for the model.
         :param config: configuration to set up the model
         """
+        config = copy.deepcopy(config)
+
         # Error checks. Check if all necessary parameters are in the config.
         required = ["loss", "optimizer"]
         for req in required:
@@ -118,8 +125,17 @@ class SegmentationSimple1DCNN(Model):
         # self.model.half()
         self.model.to(self.device)
 
+        # Define wandb metrics
+        wandb.define_metric("epoch")
+        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+
+        avg_losses = []
+        avg_val_losses = []
         # Train the model
-        for epoch in range(epochs):
+
+        pbar = tqdm(range(epochs))
+        for epoch in pbar:
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
@@ -152,8 +168,20 @@ class SegmentationSimple1DCNN(Model):
                     avg_val_loss += vloss.item() / len(test_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
-                        f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
+            logger.debug(descr)
+            pbar.set_description(descr)
+
+            # Add average losses to list
+            avg_losses.append(avg_loss)
+            avg_val_losses.append(avg_val_loss)
+
+            # Log train test loss to wandb
+            wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+
+        # Log full train and test plot
+        self.log_train_test(avg_losses, avg_val_losses, epochs)
+        logger.info("--- Training of model complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -184,8 +212,13 @@ class SegmentationSimple1DCNN(Model):
         # Add model and data to device cuda
         # self.model.half()
         self.model.to(self.device)
-        # Train the model
-        for epoch in range(epochs):
+
+        # Define wandb metrics
+        wandb.define_metric("epoch")
+        wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+
+        pbar = tqdm(range(epochs))
+        for epoch in pbar:
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
@@ -207,8 +240,12 @@ class SegmentationSimple1DCNN(Model):
                 avg_loss += loss.item() / len(train_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}")
-        # Get hyperparameters from config (epochs, lr, optimizer)
+            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
+            logger.debug(descr)
+            pbar.set_description(descr)
+
+            # Log train full
+        wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
     def pred(self, data: np.ndarray) -> np.ndarray:
@@ -255,7 +292,7 @@ class SegmentationSimple1DCNN(Model):
         torch.save(checkpoint, path)
         logger.info("--- Model saved to: " + path)
 
-    def load(self, path: str, only_hyperparameters: False) -> None:
+    def load(self, path: str, only_hyperparameters=False) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint

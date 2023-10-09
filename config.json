@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -52,13 +52,13 @@
     },
     "ensemble_loss": "mse-torch",
     "hpo": {
-        "apply": true,
+        "apply": false,
         "method": "example_hpo"
     },
     "cv": {
-        "apply": true,
+        "apply": false,
         "method": "example_cv"
     },
     "train_for_submission": true,
-    "scoring": true
+    "scoring": false
 }

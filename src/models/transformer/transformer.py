@@ -17,7 +17,7 @@ class RegressionTransformer(Model):
     This is the model file for the transformer model.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, name):
         """
         Init function of the example model
         :param config: configuration to set up the model

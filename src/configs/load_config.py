@@ -213,22 +213,23 @@ class ConfigLoader:
         models: dict = {}
         # Loop through models
         logger.info("Models: " + str(self.config.get("models")))
-        for model in self.config["models"]:
-            model_config = self.config["models"][model]
+        for model_name in self.config["models"]:
+            model_config = self.config["models"][model_name]
             curr_model = None
             match model_config["type"]:
                 case "example-fc-model":
-                    curr_model = ExampleModel(model_config)
+                    curr_model = ExampleModel(model_config, model_name)
                 case "classic-base-model":
-                    curr_model = ClassicBaseModel(model_config)
-                case "regression-transformer":
-                    curr_model = RegressionTransformer(model_config)
+                    curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, data_shape)
+                    curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
+                case "regression-transformer":
+                    curr_model = RegressionTransformer(model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])
-            models[model] = curr_model
+
+            models[model_name] = curr_model
 
         return models
 

@@ -59,7 +59,7 @@ class Model:
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, X_pred: np.ndarray) -> list[float, float]:
         """
         Prediction function for the model. This function should be overwritten by the user.
         :param X_pred: unlabeled data

@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
+from ..logger import logger
 from ..models.model import Model
 from ..util.state_to_event import find_events
 
@@ -40,16 +42,22 @@ class ClassicBaseModel(Model):
         """
         return {"median_window": 100, "threshold": .1}
 
-    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, X_pred: np.ndarray) -> list[float, float]:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data for a single day window as pandas dataframe
         :return: two timestamps, or NaN if no sleep was detected
         """
+
+        logger.info(f"--- Predicting results with model ")
+        predictions = []
         # Get the data from the data tuple
-        state_pred = self.predict_state_labels(X_pred)
-        onset, awake = find_events(state_pred)
-        return onset, awake
+        for window in tqdm(X_pred, desc="Converting predictions to events", unit="window"):
+            state_pred = self.predict_state_labels(window)
+            events = find_events(state_pred)
+            predictions.append(events)
+
+        return np.array(predictions)
 
     def predict_state_labels(self, data: np.ndarray) -> np.ndarray:
         anglez = pd.Series(data[:, 1])

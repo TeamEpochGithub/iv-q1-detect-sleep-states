@@ -2,9 +2,8 @@
 import json
 
 import pandas as pd
-import wandb
 
-from src import submit_to_kaggle
+import wandb
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
@@ -201,4 +200,4 @@ if __name__ == "__main__":
     main(config)
 
     # Create submission
-    submit_to_kaggle.submit(config, False)
+    # submit_to_kaggle.submit(config, False)

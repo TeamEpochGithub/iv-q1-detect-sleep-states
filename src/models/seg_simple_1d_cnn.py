@@ -1,11 +1,16 @@
+from typing import Any
+
 import numpy as np
 import torch
+from numpy import ndarray, dtype
+from tqdm import tqdm
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
+from ..util.state_to_event import find_events
 
 
 class SegmentationSimple1DCNN(Model):
@@ -211,23 +216,43 @@ class SegmentationSimple1DCNN(Model):
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray) -> np.ndarray:
+    def pred(self, data: np.ndarray) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
         :return: the predictions
         """
         # Prediction function
-        logger.info("--- Predicting model")
+        logger.info("--- Predicting results with model ")
         # Run the model on the data and return the predictions
 
         # Push to device
         self.model.to(self.device)
 
+        # Convert data to tensor
+        data = torch.from_numpy(data).permute(0, 2, 1).to(self.device)
+
+        # Print data shape
+        logger.info(f"--- Data shape of predictions: {data.shape}")
+
         # Make a prediction
         with torch.no_grad():
             prediction = self.model(data)
-        return prediction
+
+        # Push back to cpu
+        prediction = prediction.cpu().numpy()
+
+        logger.info(f"--- Done making predictions with model")
+        # All predictions
+        all_predictions = []
+
+        for pred in tqdm(prediction, desc="Converting predictions to events", unit="window"):
+            # Convert to relative window event timestamps
+            events = find_events(pred, median_filter_size=15)
+            all_predictions.append(events)
+
+        # Return numpy array
+        return np.array(all_predictions)
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """
@@ -255,7 +280,7 @@ class SegmentationSimple1DCNN(Model):
         torch.save(checkpoint, path)
         logger.info("--- Model saved to: " + path)
 
-    def load(self, path: str, only_hyperparameters: False) -> None:
+    def load(self, path: str, only_hyperparameters: bool = False) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint

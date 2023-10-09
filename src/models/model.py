@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import wandb
 
 from ..logger.logger import logger
 
@@ -101,6 +102,33 @@ class Model:
         """
         logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
         raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
+
+    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int) -> None:
+        """
+        Log the train and test loss to wandb.
+        :param avg_losses: list of average train losses
+        :param avg_val_losses: list of average test losses
+        :param epochs: number of epochs
+        """
+        log_dict = {
+            'epoch': list(range(epochs)),
+            'train_loss': avg_losses,
+            'val_loss': avg_val_losses
+        }
+        log_df = pd.DataFrame(log_dict)
+        # Convert to a long format
+        long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
+
+        table = wandb.Table(dataframe=long_df)
+        # Field to column in df
+        fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
+        custom_plot = wandb.plot_table(
+            vega_spec_name="team-epoch-iv/trainval",
+            data_table=table,
+            fields=fields,
+            string_fields={"title": "Train and validation loss of model " + self.name}
+        )
+        wandb.log({f"{self.name}": custom_plot})
 
 
 class ModelException(Exception):

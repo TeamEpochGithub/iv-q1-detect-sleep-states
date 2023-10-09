@@ -1,7 +1,10 @@
+import copy
+
 import numpy as np
 import pandas as pd
 import torch
 import wandb
+from tqdm import tqdm
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
@@ -49,6 +52,8 @@ class SegmentationSimple1DCNN(Model):
         Load config function for the model.
         :param config: configuration to set up the model
         """
+        config = copy.deepcopy(config)
+
         # Error checks. Check if all necessary parameters are in the config.
         required = ["loss", "optimizer"]
         for req in required:
@@ -129,7 +134,9 @@ class SegmentationSimple1DCNN(Model):
         avg_losses = []
         avg_val_losses = []
         # Train the model
-        for epoch in range(epochs):
+
+        pbar = tqdm(range(epochs))
+        for epoch in pbar:
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
@@ -162,8 +169,9 @@ class SegmentationSimple1DCNN(Model):
                     avg_val_loss += vloss.item() / len(test_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
-                        f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
+            logger.debug(descr)
+            pbar.set_description(descr)
 
             # Add average losses to list
             avg_losses.append(avg_loss)
@@ -175,33 +183,6 @@ class SegmentationSimple1DCNN(Model):
         # Log full train and test plot
         self.log_train_test(avg_losses, avg_val_losses, epochs)
         logger.info("--- Training of model complete!")
-
-    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int) -> None:
-        """
-        Log the train and test loss to wandb.
-        :param avg_losses: list of average train losses
-        :param avg_val_losses: list of average test losses
-        :param epochs: number of epochs
-        """
-        log_dict = {
-            'epoch': list(range(epochs)),
-            'train_loss': avg_losses,
-            'val_loss': avg_val_losses
-        }
-        log_df = pd.DataFrame(log_dict)
-        # Convert to a long format
-        long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
-
-        table = wandb.Table(dataframe=long_df)
-        # Field to column in df
-        fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
-        custom_plot = wandb.plot_table(
-            vega_spec_name="team-epoch-iv/trainval",
-            data_table=table,
-            fields=fields,
-            string_fields={"title": "Train and validation loss of model " + self.name}
-        )
-        wandb.log({f"{self.name}": custom_plot})
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -237,7 +218,8 @@ class SegmentationSimple1DCNN(Model):
         wandb.define_metric("epoch")
         wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
-        for epoch in range(epochs):
+        pbar = tqdm(range(epochs))
+        for epoch in pbar:
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
@@ -259,7 +241,9 @@ class SegmentationSimple1DCNN(Model):
                 avg_loss += loss.item() / len(train_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}")
+            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
+            logger.debug(descr)
+            pbar.set_description(descr)
 
             # Log train full
         wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
@@ -309,7 +293,7 @@ class SegmentationSimple1DCNN(Model):
         torch.save(checkpoint, path)
         logger.info("--- Model saved to: " + path)
 
-    def load(self, path: str, only_hyperparameters: False) -> None:
+    def load(self, path: str, only_hyperparameters=False) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint

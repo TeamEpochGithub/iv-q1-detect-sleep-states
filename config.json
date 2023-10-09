@@ -41,8 +41,8 @@
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": [],
-        "weights": [],
+        "models": ["1D-CNN", "1D-CNN2"],
+        "weights": [0.5, 0.5],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",

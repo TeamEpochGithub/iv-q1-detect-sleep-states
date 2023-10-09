@@ -17,13 +17,14 @@ class RegressionTransformer(Model):
     This is the model file for the transformer model.
     """
 
-    def __init__(self, config, name):
+    def __init__(self, config: dict, name: str):
         """
         Init function of the example model
         :param config: configuration to set up the model
         """
-        super().__init__(config)
+        super().__init__(config, name)
         # Init model
+        self.name = name
         self.transformer_config = self.load_transformer_config(config)
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
@@ -175,7 +176,7 @@ class RegressionTransformer(Model):
         # Torch summary
         print(torchinfo.summary(self.model))
         trainer = Trainer(epochs=epochs, criterion=criterion)
-        trainer.fit(train_dataloader, test_dataloader, self.model, optimizer)
+        trainer.fit(train_dataloader, test_dataloader, self.model, optimizer, self.name)
         accuracy = trainer.evaluate(test_dataloader, self.model)
         print(f"Accuracy: {accuracy}")
 

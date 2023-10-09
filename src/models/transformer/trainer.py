@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from tqdm import tqdm
 from typing import List, Tuple
+import wandb
 
 
 class Trainer:
@@ -31,15 +32,22 @@ class Trainer:
         use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda:" + cuda_dev if use_cuda else "cpu")
 
-    def fit(self, dataloader: torch.utils.data.DataLoader, testloader, model: nn.Module, optimiser: torch.optim.Optimizer):
+    def fit(self, dataloader: torch.utils.data.DataLoader, testloader, model: nn.Module, optimiser: torch.optim.Optimizer, name: str):
         losses = []
         model = model.to(self.device)
         model.train()
         model.double()
+
+        # Wandb logging
+        wandb.define_metric("epoch")
+        wandb.define_metric(f"Train {str(self.criterion)} of {name}", step_metric="epoch")
+        wandb.define_metric(f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+
         for epoch in range(self.n_epochs):
             losses = self.train_one_epoch(
                 dataloader=dataloader, epoch_no=epoch, losses=losses, optimiser=optimiser, model=model)
             accuracy = self.evaluate(testloader, model)
+            wandb.log({f"Train {str(self.criterion)} of {name}": sum(losses) / len(losses), f"Validation {str(self.criterion)} of {name}": accuracy, "epoch": epoch})
             print(f"Accuracy: {accuracy}")
 
     def train_one_epoch(self, dataloader, epoch_no, losses, optimiser, model, disable_tqdm=False):

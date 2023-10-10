@@ -178,13 +178,10 @@ def main(config: ConfigLoader) -> None:
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
 
         logger.info("Start scoring test predictions...")
-        compute_scores(submission, solution)  # TODO Add scoring to WANDB #103
+        compute_scores(submission, solution)
     else:
         logger.info("Not scoring")
 
-    # TODO Add Weights and biases to model training and record loss and acc #106
-
-    # TODO ADD scoring to WANDB #108
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():

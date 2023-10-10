@@ -330,6 +330,7 @@ class SegmentationSimple1DCNN(Model):
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
         return
 

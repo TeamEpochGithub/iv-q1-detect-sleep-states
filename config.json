@@ -22,31 +22,18 @@
         "standardize": "none"
     },
     "models": {
-        "Transformer": {
-            "type": "regression-transformer",
-            "epochs": 5,
-            "loss": "regression",
+        "1D-CNN": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "lr": 0.001,
-            "batch_size": 16,
-            "patch_size": 36,
-            "feat_dim": 72,
-            "max_len": 480,
-            "d_model": 192,
-            "n_heads": 6,
-            "num_layers": 5,
-            "dim_feedforward": 2048,
-            "num_classes": 4,
-            "dropout": 0.1,
-            "pos_encoding": "learnable",
-            "activation": "relu",
-            "norm": "BatchNorm",
-            "freeze": false
+            "epochs": 3,
+            "batch_size": 32,
+            "lr": 0.001
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["Transformer"],
+        "models": ["1D-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },

@@ -1,5 +1,6 @@
 # This file does the training of the model
 import json
+import os
 
 import pandas as pd
 
@@ -23,7 +24,7 @@ def main(config: ConfigLoader) -> None:
     print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
     logger.info("Start of main.py")
 
-    config_hash = hash_config(config.get_config())
+    config_hash = hash_config(config.get_config(), length=16)
     logger.info("Config hash encoding: " + config_hash)
 
     # Initialize wandb
@@ -91,15 +92,27 @@ def main(config: ConfigLoader) -> None:
     logger.info("Initializing models...")
     models = config.get_models(data_shape)
 
+    # Hash of concatenated string of preprocessing, feature engineering and pretraining
+    initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
+
     # TODO Add crossvalidation to models and hyperparameter optimization #107, #101
     for i, model in enumerate(models):
-        logger.info("Training model " + str(i) + ": " + model)
-        models[model].train(X_train, X_test, y_train, y_test)
-        models[model].save(store_location + "/" + model + ".pt")
+        # Get filename of model
+        model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
+        # If this file exists, load instead of start training
+        if os.path.isfile(model_filename):
+            logger.info("Found existing trained model " + str(i) + ": " + model + " with location " + model_filename)
+            models[model].load(model_filename, only_hyperparameters=False)
+        else:
+            logger.info("Training model " + str(i) + ": " + model)
+            models[model].train(X_train, X_test, y_train, y_test)
+            models[model].save(model_filename)
+            logger.info("Training model " + str(i) + ": " + model)
 
     # Store optimal models
     for i, model in enumerate(models):
-        models[model].save(store_location + "/optimal_" + model + ".pt")
+        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+        models[model].save(model_filename_opt)
 
     # ------------------------------------------------------- #
     #                    Train for submission                 #
@@ -109,14 +122,17 @@ def main(config: ConfigLoader) -> None:
 
     if config.get_train_for_submission():
         logger.info("Retraining models for submission")
-
         # Retrain all models with optimal parameters
         for i, model in enumerate(models):
-            models[model].load(store_location + "/optimal_" +
-                               model + ".pt", only_hyperparameters=True)
-            logger.info("Retraining model " + str(i) + ": " + model)
-            models[model].train_full(*split_on_labels(featured_data))
-            models[model].save(store_location + "/submit_" + model + ".pt")
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            if os.path.isfile(model_filename_submit):
+                logger.info("Found existing fully trained optimal model " + str(i) + ": " + model + " with location " + model_filename)
+            else:
+                models[model].load(model_filename_opt, only_hyperparameters=True)
+                logger.info("Retraining model " + str(i) + ": " + model)
+                models[model].train_full(*split_on_labels(featured_data))
+                models[model].save(model_filename_submit)
     else:
         logger.info("Not training best model for submission")
 
@@ -181,13 +197,9 @@ def main(config: ConfigLoader) -> None:
                     .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
-        compute_scores(submission, solution)  # TODO Add scoring to WANDB #103
+        compute_scores(submission, solution)
     else:
         logger.info("Not scoring")
-
-    # TODO Add Weights and biases to model training and record loss and acc #106
-
-    # TODO ADD scoring to WANDB #108
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():

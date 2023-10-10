@@ -3,6 +3,7 @@ import pandas as pd
 import wandb
 
 from ..logger.logger import logger
+from ..util.hash_config import hash_config
 
 
 class Model:
@@ -17,6 +18,7 @@ class Model:
             self.config = None
         else:
             self.config = config
+            self.hash = hash_config(config, length=5)
 
         self.name = name
 
@@ -128,7 +130,8 @@ class Model:
             fields=fields,
             string_fields={"title": "Train and validation loss of model " + self.name}
         )
-        wandb.log({f"{self.name}": custom_plot})
+        if wandb.run is not None:
+            wandb.log({f"{self.name}": custom_plot})
 
 
 class ModelException(Exception):

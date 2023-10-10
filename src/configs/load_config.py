@@ -11,24 +11,21 @@ from ..feature_engineering.skewness import Skewness
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
-
-# Model imports
+from ..models.classic_base_model import ClassicBaseModel
+from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.transformer_base import RegressionTransformer
 from ..models.transformers.transformer_stacked import StackedRegressionTransformer
-from ..models.classic_base_model import ClassicBaseModel
-from ..models.example_model import ExampleModel
 
-# Preprocessing imports
+from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_regression_labels import AddRegressionLabels
+from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
+from ..preprocessing.add_state_labels import AddStateLabels
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.pp import PP
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
-from ..preprocessing.add_noise import AddNoise
-from ..preprocessing.add_regression_labels import AddRegressionLabels
-from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
-from ..preprocessing.add_state_labels import AddStateLabels
 
 
 class ConfigLoader:
@@ -182,6 +179,12 @@ class ConfigLoader:
                     "Feature engineering step not found: " + fe_step)
 
         return fe_steps, fe_s
+
+    def get_pp_fe_pretrain(self) -> str:
+        """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.
+        :return: the config of preprocessing, feature engineering and pretraining as a string
+        """
+        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(self.config["pre_training"])
 
     def get_fe_out(self) -> str:
         """Get the path to the feature engineering output folder

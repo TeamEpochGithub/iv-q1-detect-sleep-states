@@ -10,7 +10,6 @@ from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
 from .transformer_encoder import TSTransformerEncoderClassiregressor
 from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
-import torchinfo
 
 
 class RegressionTransformer(Model):
@@ -175,7 +174,6 @@ class RegressionTransformer(Model):
             test_dataset, batch_size=batch_size)
 
         # Torch summary
-        torchinfo.summary(self.model)
         trainer = Trainer(epochs=epochs, criterion=criterion)
         avg_train_loss, avg_val_loss = trainer.fit(
             train_dataloader, test_dataloader, self.model, optimizer, self.name)

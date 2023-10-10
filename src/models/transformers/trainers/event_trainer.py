@@ -87,7 +87,6 @@ class EventTrainer:
         mask = torch.ones_like(data[1]).to(self.device)
         mask[:, 0] = (17280 - data[1][:, 2]) / 17280
         mask[:, 1] = (17280 - data[1][:, 3]) / 17280
-        mask = mask[:, :2]
 
         loss = self.criterion(output, data[1].type(
             torch.DoubleTensor).to(self.device), mask)

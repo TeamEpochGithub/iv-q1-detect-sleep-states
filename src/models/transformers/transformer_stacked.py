@@ -25,13 +25,13 @@ class StackedRegressionTransformer(Model):
         super().__init__(config, name)
         # Init model
         self.name = name
-        self.event_transformer_config = self.load_transformer_config(config).copy()
-        self.nan_transformer_config = self.load_transformer_config(config).copy()
-        self.nan_transformer_config["act_out"] = "sigmoid"
-        self.model_event = TSTransformerEncoderClassiregressor(
-            **self.event_transformer_config)
-        self.model_nan = TSTransformerEncoderClassiregressor(
-            **self.nan_transformer_config)
+        self.events_transformer_config = self.load_transformer_config(config).copy()
+        self.nans_transformer_config = self.load_transformer_config(config).copy()
+        self.nans_transformer_config["act_out"] = "sigmoid"
+        self.model_events = TSTransformerEncoderClassiregressor(
+            **self.events_transformer_config)
+        self.model_nans = TSTransformerEncoderClassiregressor(
+            **self.nans_transformer_config)
         self.load_config(config)
 
         # Check if gpu is available, else return an exception
@@ -48,7 +48,7 @@ class StackedRegressionTransformer(Model):
         :return:
         """
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss_events", "loss_nans", "epochs_events", "epochs_nans", "optimizer"]
+        required = ["loss_events", "loss_nans", "epochs_events", "epochs_nans", "optimizer_events", "optimizer_nans"]
         for req in required:
             if req not in config:
                 logger.critical(
@@ -63,9 +63,12 @@ class StackedRegressionTransformer(Model):
         config["loss_nans"] = Loss.get_loss(config["loss_nans"])
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
-        config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(
-            config["optimizer"], config["lr"], self.model)
+        config["lr_events"] = config.get("lr_events", default_config["lr_events"])
+        config["lr_nans"] = config.get("lr_nans", default_config["lr_nans"])
+        config["optimizer_events"] = Optimizer.get_optimizer(
+            config["optimizer_events"], config["lr_events"], self.model_events)
+        config["optimizer_nans"] = Optimizer.get_optimizer(
+            config["optimizer_nans"], config["lr_nans"], self.model_nans)
         config["patch_size"] = config.get(
             "patch_size", default_config["patch_size"])
 
@@ -76,7 +79,7 @@ class StackedRegressionTransformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
+        return {"batch_size": 32, "lr_events": 0.001, "lr_nans": 0.001, 'patch_size': 36}
 
     def load_transformer_config(self, config):
         """
@@ -105,7 +108,7 @@ class StackedRegressionTransformer(Model):
             'n_heads': 6,
             'n_layers': 5,
             'dim_feedforward': 2048,
-            'num_classes': 4,
+            'num_classes': 2,
             'dropout': 0.1,
             'pos_encoding': "learnable",
             'act_int': "relu",

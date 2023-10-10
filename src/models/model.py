@@ -128,7 +128,8 @@ class Model:
             fields=fields,
             string_fields={"title": "Train and validation loss of model " + self.name}
         )
-        wandb.log({f"{self.name}": custom_plot})
+        if wandb.run is not None:
+            wandb.log({f"{self.name}": custom_plot})
 
 
 class ModelException(Exception):

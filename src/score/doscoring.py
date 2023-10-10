@@ -55,7 +55,8 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
                                   .filter(lambda x: x['series_id'].iloc[0] in solution_no_nan_ids))
 
     # Log the scores to WandB
-    wandb.log({'score': result})
+    if wandb.run is not None:
+        wandb.log({'score': result})
 
     # Compute the score for the clean series
     if len(solution_no_nan_ids) == 0 or len(submission_filtered_no_nan) == 0:
@@ -63,7 +64,8 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
                     f' submission has none of the {len(solution_no_nan_ids)} clean series')
     else:
         result = score(solution_no_nan, submission_filtered_no_nan, tolerances, **column_names)
-        wandb.log({'score_clean': result})
+        if wandb.run is not None:
+            wandb.log({'score_clean': result})
         logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {result}')
 
 

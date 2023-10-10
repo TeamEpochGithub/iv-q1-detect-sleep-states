@@ -1,9 +1,10 @@
 import copy
 import numpy as np
 import torch
+import wandb
 
 from src.logger.logger import logger
-from src.models.transformers.trainers.base_trainer import Trainer
+from src.models.transformers.trainers.stacked_trainer import StackedTrainer
 
 from ...loss.loss import Loss
 from ..model import Model, ModelException
@@ -129,8 +130,10 @@ class StackedRegressionTransformer(Model):
         logger.info(f"Hyperparameters: {self.config}")
 
         # Load hyperparameters
-        criterion = self.config["loss"]
-        optimizer = self.config["optimizer"]
+        criterion_events = self.config["loss_events"]
+        criterion_nans = self.config["loss_nans"]   
+        optimizer_events = self.config["optimizer_events"]
+        optimizer_nans = self.config["optimizer_nans"]
         epochs_events = self.config["epochs_events"]
         epochs_nans = self.config["epochs_nans"]
         batch_size = self.config["batch_size"]
@@ -170,8 +173,8 @@ class StackedRegressionTransformer(Model):
         y_test = y_test[:, 0]
 
         # TODO: Window size should be a parameter
-        y_train[:, 2:] = y_train[:, 2:] * 17280
-        y_test[:, 2:] = y_test[:, 2:] * 17280
+        y_train[:, 2:] = y_train[:, 2:]
+        y_test[:, 2:] = y_test[:, 2:]
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -184,18 +187,20 @@ class StackedRegressionTransformer(Model):
             test_dataset, batch_size=batch_size)
 
         # Train events
-        trainer = Trainer(epochs=epochs_events, criterion=criterion)
+        logger.info("Training events model")
+        trainer = StackedTrainer(epochs=epochs_events, criterion=criterion_events)
         avg_train_loss_event, avg_val_loss_event = trainer.fit(
-            train_dataloader, test_dataloader, self.model, optimizer, self.name)
-        self.log_train_test(avg_train_loss_event, avg_val_loss_event, epochs_events)
+            train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
+        if wandb.run is not None:
+            self.log_train_test(avg_train_loss_event, avg_val_loss_event, epochs_events)
         
         # Train nans
-        trainer = Trainer(epochs=epochs_nans, criterion=criterion)
+        logger.info("Training nans model")
+        trainer = StackedTrainer(epochs=epochs_nans, criterion=criterion_nans)
         avg_train_loss_nan, avg_val_loss_nan = trainer.fit(
-            train_dataloader, test_dataloader, self.model, optimizer, self.name)
-        self.log_train_test(avg_train_loss_nan, avg_val_loss_nan, epochs_nans)
-
-        
+            train_dataloader, test_dataloader, self.model_nans, optimizer_nans, self.name)
+        if wandb.run is not None:
+            self.log_train_test(avg_train_loss_nan, avg_val_loss_nan, epochs_nans)
 
 
     def pred(self, data: np.array):
@@ -223,18 +228,22 @@ class StackedRegressionTransformer(Model):
         # Make a prediction
         with torch.no_grad():
             padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
-            prediction = self.model(
+            prediction_events = self.model(
+                data.to(self.device), padding_mask.to(self.device))
+            prediction_nans = self.model(
                 data.to(self.device), padding_mask.to(self.device))
 
         # Get first and only prediction
-        prediction = prediction[0]
-        prediction = prediction.cpu().numpy()  # Move array to numpy
+        prediction_events = prediction_events[0]
+        prediction_nans = prediction_nans[0]
+        prediction_events = prediction_events.cpu().numpy()  # Move array to numpy
+        prediction_nans = prediction_nans.cpu().numpy()  # Move array to numpy
         threshold = 0.5
-        if (prediction[2] / window_size) > threshold or (prediction[3] / window_size) > threshold:
-            prediction[0] = np.NAN
-            prediction[1] = np.NAN
+        if prediction_nans[0] > threshold or prediction_nans[1] > threshold:
+            prediction_events[0] = np.NAN
+            prediction_events[1] = np.NAN
 
-        return prediction[0], prediction[1]
+        return prediction_events[0], prediction_events[1]
 
     def evaluate(self, pred, target):
         """
@@ -259,11 +268,16 @@ class StackedRegressionTransformer(Model):
         :param path: path to save the model to
         :return:
         """
-        checkpoint = {
-            'model_state_dict': self.model.state_dict(),
+        checkpoint_events = {
+            'model_state_dict': self.model_events.state_dict(),
             'config': self.config
         }
-        torch.save(checkpoint, path)
+        checkpoint_nans = {
+            'model_state_dict': self.model_events.state_dict(),
+            'config': self.config
+        }
+        torch.save(checkpoint_events, path[:-3] + "_events.pt")
+        torch.save(checkpoint_nans, path[:-3] + "_nans.pt")
         print("Model saved to: " + path)
 
     def load(self, path: str, only_hyperparameters: bool = False) -> None:
@@ -272,9 +286,12 @@ class StackedRegressionTransformer(Model):
         :param path: path to model checkpoint
         :return:
         """
-        self.model = TSTransformerEncoderClassiregressor(
-            **self.transformer_config)
-        checkpoint = torch.load(path)
-
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.config = checkpoint['config']
+        self.model_events = TSTransformerEncoderClassiregressor(
+            **self.events_transformer_config)
+        self.model_nans = TSTransformerEncoderClassiregressor(
+            **self.nans_transformer_config)
+        checkpoint_events = torch.load(path[:-3] + "_events.pt")
+        checkpoint_nans = torch.load(path[:-3] + "_nans.pt")
+        self.model_events.load_state_dict(checkpoint_events['model_state_dict'])
+        self.model_nans.load_state_dict(checkpoint_nans['model_state_dict'])
+        self.config = checkpoint_events['config']

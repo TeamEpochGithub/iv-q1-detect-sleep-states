@@ -5,8 +5,8 @@ from typing import List, Tuple
 import wandb
 
 
-class EventTrainer:
-    """Trainer class for the transformer model specific to events
+class StackedTrainer:
+    """Trainer class for the transformer model.
 
     Args:
         model: The model to train.
@@ -41,9 +41,9 @@ class EventTrainer:
         if wandb.run is not None:
             wandb.define_metric("epoch")
             wandb.define_metric(
-                f"Train {str(self.criterion)} of {name} for events", step_metric="epoch")
+                f"Train {str(self.criterion)} of {name}", step_metric="epoch")
             wandb.define_metric(
-                f"Validation {str(self.criterion)} of {name} for events", step_metric="epoch")
+                f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         avg_train_losses = []
         avg_val_losses = []
@@ -56,8 +56,9 @@ class EventTrainer:
             val_loss = sum(val_losses) / len(val_losses)
             avg_train_losses.append(train_loss.cpu())
             avg_val_losses.append(val_loss.cpu())
-            wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
-                      f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+            if wandb.run is not None:
+                wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
+                           f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
         return avg_train_losses, avg_val_losses
 
@@ -85,8 +86,8 @@ class EventTrainer:
         output = model(data[0].to(self.device), padding_mask.to(self.device))
 
         mask = torch.ones_like(data[1]).to(self.device)
-        mask[:, 0] = (17280 - data[1][:, 2]) / 17280
-        mask[:, 1] = (17280 - data[1][:, 3]) / 17280
+        mask[:, 0] = (1 - data[1][:, 2])
+        mask[:, 1] = (1 - data[1][:, 3])
 
         loss = self.criterion(output, data[1].type(
             torch.DoubleTensor).to(self.device), mask)
@@ -114,8 +115,8 @@ class EventTrainer:
                            padding_mask.to(self.device))
 
             mask = torch.ones_like(data[1]).to(self.device)
-            mask[:, 0] = (17280 - data[1][:, 2]) / 17280
-            mask[:, 1] = (17280 - data[1][:, 3]) / 17280
+            mask[:, 0] = (1 - data[1][:, 2])
+            mask[:, 1] = (1 - data[1][:, 3])
 
             loss = self.criterion(output, data[1].type(
                 torch.DoubleTensor).to(self.device), mask)

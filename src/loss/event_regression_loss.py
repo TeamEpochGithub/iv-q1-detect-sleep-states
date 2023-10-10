@@ -18,7 +18,11 @@ class EventRegressionLoss(nn.Module):
         # Calculate loss as mean squared error
         loss = (y_true[:, :2] - y_pred) ** 2
 
-        # Apply mask
-        loss = loss * mask[:, :2]
+        # Use mask to turn into nans
+        mask = mask[:, :2]
+        mask[mask == 0] = float('nan')
 
-        return loss.mean()
+        # Apply mask
+        loss = loss * mask
+
+        return loss.nanmean()

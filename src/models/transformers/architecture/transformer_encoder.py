@@ -22,7 +22,8 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         num_classes: the number of classes in the classification task
         dropout: the dropout value
         pos_encoding: positional encoding method
-        activation: the activation function of intermediate layer, relu or gelu
+        act_int: the activation function of intermediate layer, relu or gelu
+        act_out: the activation function of output layer, relu, gelu, sigmoid or none
         norm: the normalization layer
         freeze: whether to freeze the positional encoding layer
     """
@@ -38,7 +39,8 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         num_classes: int,
         dropout: float = 0.1,
         pos_encoding: str = "fixed",
-        activation: str = "gelu",
+        act_int: str = "gelu",
+        act_out: str = "relu",
         norm: str = "BatchNorm",
         freeze: bool = False,
     ):
@@ -59,7 +61,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
                 self.n_heads,
                 dim_feedforward,
                 dropout * (1.0 - freeze),
-                activation=activation,
+                activation=act_int,
             )
         else:
             encoder_layer = TransformerBatchNormEncoderLayer(
@@ -67,13 +69,13 @@ class TSTransformerEncoderClassiregressor(nn.Module):
                 self.n_heads,
                 dim_feedforward,
                 dropout * (1.0 - freeze),
-                activation=activation,
+                activation=act_int,
             )
 
         self.transformer_encoder = nn.TransformerEncoder(
             encoder_layer, n_layers)
 
-        self.act = get_activation_fn(activation)
+        self.act_int = get_activation_fn(act_int)
 
         self.dropout1 = nn.Dropout(dropout)
 
@@ -81,7 +83,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         self.num_classes = num_classes
         self.output_layer = self.build_output_module(
             d_model, max_len, num_classes)
-        self.act_out = nn.ReLU()
+        self.act_out = get_activation_fn(act_out)
 
     def build_output_module(
         self, d_model: int, max_len: int, num_classes: int

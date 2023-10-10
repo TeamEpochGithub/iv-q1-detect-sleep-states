@@ -224,7 +224,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
             "num_classes": 4,
             "dropout": 0.1,
             "pos_encoding": "learnable",
-            "activation": "relu",
+            "act_int": "relu",
+            "act_out": "relu",
             "norm": "BatchNorm",
             "freeze": false
         }

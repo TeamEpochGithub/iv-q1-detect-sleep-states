@@ -103,8 +103,7 @@ class RegressionTransformer(Model):
             'num_classes': 4,
             'dropout': 0.1,
             'pos_encoding': "learnable",
-            'act_int': "relu",
-            'act_out': "relu",
+            'activation': "relu",
             'norm': "BatchNorm",
             'freeze': False,
         }

@@ -56,9 +56,9 @@ def main(config: ConfigLoader) -> None:
     pretrain = config.get_pretraining()
 
     logger.info("Obtained pretrain parameters from config " + str(pretrain))
+
     # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-
     logger.info("Splitting data into train and test...")
     X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data,
                                                                              test_size=pretrain["test_size"],
@@ -112,7 +112,8 @@ def main(config: ConfigLoader) -> None:
 
         # Retrain all models with optimal parameters
         for i, model in enumerate(models):
-            models[model].load(store_location + "/optimal_" + model + ".pt", only_hyperparameters=True)
+            models[model].load(store_location + "/optimal_" +
+                               model + ".pt", only_hyperparameters=True)
             logger.info("Retraining model " + str(i) + ": " + model)
             models[model].train_full(*split_on_labels(featured_data))
             models[model].save(store_location + "/submit_" + model + ".pt")
@@ -134,7 +135,8 @@ def main(config: ConfigLoader) -> None:
     #          Hyperparameter optimization for ensemble       #
     # ------------------------------------------------------- #
 
-    print_section_separator("Hyperparameter optimization for ensemble", spacing=0)
+    print_section_separator(
+        "Hyperparameter optimization for ensemble", spacing=0)
     # TODO Hyperparameter optimization for ensembles
     hpo = config.get_hpo()
     hpo.optimize()
@@ -175,7 +177,8 @@ def main(config: ConfigLoader) -> None:
 
         solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
-                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids))
+                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
+                    .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)  # TODO Add scoring to WANDB #103

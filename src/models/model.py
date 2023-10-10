@@ -65,7 +65,7 @@ class Model:
     def pred(self, X_pred: np.ndarray) -> list[float, float]:
         """
         Prediction function for the model. This function should be overwritten by the user.
-        :param X_pred: unlabeled data
+        :param X_pred: unlabeled data (step, features)
         :return: the predictions
         """
         logger.critical("--- Prediction of base class called. Did you forget to override it?")

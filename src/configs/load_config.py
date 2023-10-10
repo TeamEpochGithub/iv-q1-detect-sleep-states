@@ -11,18 +11,23 @@ from ..feature_engineering.skewness import Skewness
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
+
+# Model imports
+from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
+from ..models.transformer.transformer import RegressionTransformer
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
-from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..preprocessing.add_noise import AddNoise
-from ..preprocessing.add_regression_labels import AddRegressionLabels
-from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
-from ..preprocessing.add_state_labels import AddStateLabels
+
+# Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.pp import PP
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
+from ..preprocessing.add_noise import AddNoise
+from ..preprocessing.add_regression_labels import AddRegressionLabels
+from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
+from ..preprocessing.add_state_labels import AddStateLabels
 
 
 class ConfigLoader:
@@ -218,6 +223,8 @@ class ConfigLoader:
                     curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
+                case "regression-transformer":
+                    curr_model = RegressionTransformer(model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

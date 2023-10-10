@@ -180,7 +180,8 @@ class SegmentationSimple1DCNN(Model):
             avg_val_losses.append(avg_val_loss)
 
             # Log train test loss to wandb
-            wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+            if wandb.run is not None:
+                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
         # Log full train and test plot
         self.log_train_test(avg_losses, avg_val_losses, epochs)
@@ -248,7 +249,8 @@ class SegmentationSimple1DCNN(Model):
             pbar.set_description(descr)
 
             # Log train full
-        wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+        if wandb.run is not None:
+            wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
     def pred(self, data: np.ndarray) -> ndarray[Any, dtype[Any]]:

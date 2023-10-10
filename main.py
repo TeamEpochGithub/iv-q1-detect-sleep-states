@@ -182,7 +182,6 @@ def main(config: ConfigLoader) -> None:
     else:
         logger.info("Not scoring")
 
-
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():
         wandb.finish()

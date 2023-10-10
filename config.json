@@ -8,8 +8,7 @@
         "mem_reduce",
         "add_state_labels",
         "split_windows",
-        "remove_unlabeled",
-        "add_regression_labels"
+        "remove_unlabeled"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -18,7 +17,7 @@
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "pre_training": {
-        "test_size": 0.2,
+        "test_size": 0.3,
         "standardize": "none"
     },
     "models": {

@@ -30,12 +30,13 @@ class Ensemble:
         :return: 3D array with shape (window, 2), with onset and wakeup steps (nan if no detection)
         """
         logger.info("Predicting with ensemble")
+        logger.info("Data shape: " + str(data.shape))
         # Run each model
         predictions = []
         for model in self.models:
-            # group data by series_id, apply model.pred to each group, and get the output pairs
-            # get the step at the index of the prediction
-            model_pred = np.array([model.pred(window) for window in data])
+
+            # Returns a list of (onset, wakeup) tuples for each window
+            model_pred = model.pred(data)
 
             # split the series of tuples into two column
             predictions.append(model_pred)

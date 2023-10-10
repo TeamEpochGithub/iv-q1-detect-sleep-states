@@ -14,7 +14,7 @@ from ..loss.loss import Loss
 
 # Model imports
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.transformer.transformer import RegressionTransformer
+from ..models.transformers.transformer_base import RegressionTransformer
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 

@@ -1,8 +1,8 @@
 import math
 from torch import nn, Tensor
-from .positional_encoding import get_pos_encoder
+from .architecture.positional_encoding import get_pos_encoder
 from torch.nn.modules import TransformerEncoderLayer
-from .encoder import TransformerBatchNormEncoderLayer
+from .architecture.encoder import TransformerBatchNormEncoderLayer
 from .utils import get_activation_fn
 
 

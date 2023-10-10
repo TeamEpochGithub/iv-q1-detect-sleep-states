@@ -3,12 +3,12 @@ import numpy as np
 import torch
 
 from src.logger.logger import logger
-from src.models.transformer.trainer import Trainer
+from src.models.transformers.trainers.base_trainer import Trainer
 
 from ...loss.loss import Loss
 from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
-from .transformer_encoder import TSTransformerEncoderClassiregressor
+from .architecture.transformer_encoder import TSTransformerEncoderClassiregressor
 from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 
 

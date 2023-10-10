@@ -5,7 +5,7 @@ from torch.nn.modules import (
     Dropout,
     BatchNorm1d
 )
-from .utils import get_activation_fn
+from ..utils import get_activation_fn
 from typing import Optional
 import torch.nn.functional as F
 

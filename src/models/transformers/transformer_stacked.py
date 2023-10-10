@@ -11,7 +11,9 @@ from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
 from .architecture.transformer_encoder import TSTransformerEncoderClassiregressor
 from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
-
+from typing import List, Tuple
+from torch import nn
+from tqdm import tqdm
 
 class StackedRegressionTransformer(Model):
     """
@@ -213,38 +215,53 @@ class StackedRegressionTransformer(Model):
         # Run the model on the data and return the predictions
 
         # Push to device
-        self.model_events.to(self.device)
-        self.model_nans.to(self.device)
-
-        # Get window size
-        window_size = data.shape[0]
+        self.model_events.to(self.device).double()
+        self.model_nans.to(self.device).double()
 
         # Turn data from (window_size, features) to (1, window_size, features)
-        data = torch.from_numpy(data).unsqueeze(0)
+        data = torch.from_numpy(data) # .unsqueeze(0)
+
 
         # Patch data
         patch_size = self.config["patch_size"]
         data = patch_x_data(data, patch_size)
 
-        # Make a prediction
-        with torch.no_grad():
-            padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
-            prediction_events = self.model_events(
-                data.to(self.device), padding_mask.to(self.device))
-            prediction_nans = self.model_nans(
-                data.to(self.device), padding_mask.to(self.device))
+        test_dataset = torch.utils.data.TensorDataset(data, torch.zeros((data.shape[0], data.shape[1])))
+
+        # Create a dataloader from the dataset
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=16)
+
+        # Make predictions
+        prediction_events = np.empty((0, 2))
+        prediction_nans = np.empty((0, 2))
+        with tqdm(test_dataloader, unit="batch", disable=False) as tepoch:
+            for idx, data in enumerate(tepoch):
+                prediction_events = self._pred_one_batch(data, prediction_events, self.model_events)
+                prediction_nans = self._pred_one_batch(data, prediction_nans, self.model_nans)
 
         # Get first and only prediction
-        prediction_events = prediction_events[0]
-        prediction_nans = prediction_nans[0]
-        prediction_events = prediction_events.cpu().numpy()  # Move array to numpy
-        prediction_nans = prediction_nans.cpu().numpy()  # Move array to numpy
-        threshold = 0.5
-        if prediction_nans[0] > threshold or prediction_nans[1] > threshold:
-            prediction_events[0] = np.NAN
-            prediction_events[1] = np.NAN
 
-        return prediction_events[0], prediction_events[1]
+        prediction_events = prediction_events
+        prediction_nans = prediction_nans
+        threshold = 0.5
+
+        # Create mask where if prediction_nans is above threshold, prediction_events is nans
+        for i in range(len(prediction_events)):
+            if prediction_nans[i, 0] > threshold or prediction_nans[i, 1] > threshold:
+                prediction_events[i, 0] = np.NAN
+                prediction_events[i, 1] = np.NAN
+
+        return prediction_events
+
+    def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module):
+        with torch.no_grad():
+            data[0] = data[0].double()
+            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
+            output = model(data[0].to(self.device),
+                           padding_mask.to(self.device))
+            preds = np.concatenate((preds, output.cpu().numpy()), axis=0)
+        return preds
 
     def evaluate(self, pred, target):
         """

@@ -15,6 +15,7 @@ from ..loss.loss import Loss
 # Model imports
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.transformer_base import RegressionTransformer
+from ..models.transformers.transformer_stacked import StackedRegressionTransformer
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 
@@ -225,6 +226,8 @@ class ConfigLoader:
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
                 case "regression-transformer":
                     curr_model = RegressionTransformer(model_config, model_name)
+                case "stacked-regression-transformer":
+                    curr_model = StackedRegressionTransformer(model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

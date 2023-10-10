@@ -5,8 +5,8 @@ from typing import List, Tuple
 import wandb
 
 
-class Trainer:
-    """Trainer class for the transformer model.
+class EventTrainer:
+    """Trainer class for the transformer model specific to events
 
     Args:
         model: The model to train.
@@ -41,9 +41,9 @@ class Trainer:
         if wandb.run is not None:
             wandb.define_metric("epoch")
             wandb.define_metric(
-                f"Train {str(self.criterion)} of {name}", step_metric="epoch")
+                f"Train {str(self.criterion)} of {name} for events", step_metric="epoch")
             wandb.define_metric(
-                f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+                f"Validation {str(self.criterion)} of {name} for events", step_metric="epoch")
 
         avg_train_losses = []
         avg_val_losses = []
@@ -87,6 +87,7 @@ class Trainer:
         mask = torch.ones_like(data[1]).to(self.device)
         mask[:, 0] = (17280 - data[1][:, 2]) / 17280
         mask[:, 1] = (17280 - data[1][:, 3]) / 17280
+        mask = mask[:, :2]
 
         loss = self.criterion(output, data[1].type(
             torch.DoubleTensor).to(self.device), mask)

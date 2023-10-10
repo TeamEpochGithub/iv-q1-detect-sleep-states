@@ -229,6 +229,30 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
             "norm": "BatchNorm",
             "freeze": false
         }
+"StackedRegressionTransformer": {
+            "type": "stacked-regression-transformer",
+            "epochs_events": 5,
+            "epochs_nans": 5,
+            "loss_events": "mse-torch",
+            "loss_nans": "mse-torch",
+            "optimizer": "adam-torch",
+            "lr": 0.001,
+            "batch_size": 32,
+            "patch_size": 36,
+            "feat_dim": 72,
+            "max_len": 480,
+            "d_model": 192,
+            "n_heads": 6,
+            "num_layers": 5,
+            "dim_feedforward": 2048,
+            "num_classes": 2,
+            "dropout": 0.1,
+            "pos_encoding": "learnable",
+            "act_int": "relu",
+            "act_out": "relu",
+            "norm": "BatchNorm",
+            "freeze": false
+        }
 ```
 
 ### Model store location

@@ -124,7 +124,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         output = self.transformer_encoder(
             inp, src_key_padding_mask=~padding_masks
         )  # (seq_length, batch_size, d_model)
-        output = self.act(
+        output = self.act_int(
             output
         )  # the output transformer encoder/decoder embeddings don't include non-linearity
         output = output.permute(1, 0, 2)  # (batch_size, seq_length, d_model)

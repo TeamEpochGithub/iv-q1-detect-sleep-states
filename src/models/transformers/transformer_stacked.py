@@ -12,7 +12,7 @@ from .architecture.transformer_encoder import TSTransformerEncoderClassiregresso
 from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 
 
-class RegressionTransformer(Model):
+class StackedRegressionTransformer(Model):
     """
     This is the model file for the transformer model.
     """
@@ -25,9 +25,13 @@ class RegressionTransformer(Model):
         super().__init__(config, name)
         # Init model
         self.name = name
-        self.transformer_config = self.load_transformer_config(config)
-        self.model = TSTransformerEncoderClassiregressor(
-            **self.transformer_config)
+        self.event_transformer_config = self.load_transformer_config(config).copy()
+        self.nan_transformer_config = self.load_transformer_config(config).copy()
+        self.nan_transformer_config["act_out"] = "sigmoid"
+        self.model_event = TSTransformerEncoderClassiregressor(
+            **self.event_transformer_config)
+        self.model_nan = TSTransformerEncoderClassiregressor(
+            **self.nan_transformer_config)
         self.load_config(config)
 
         # Check if gpu is available, else return an exception
@@ -44,7 +48,7 @@ class RegressionTransformer(Model):
         :return:
         """
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "epochs", "optimizer"]
+        required = ["loss_events", "loss_nans", "epochs_events", "epochs_nans", "optimizer"]
         for req in required:
             if req not in config:
                 logger.critical(
@@ -55,7 +59,8 @@ class RegressionTransformer(Model):
         # Get default_config
         default_config = self.get_default_config()
         config = copy.deepcopy(config)
-        config["loss"] = Loss.get_loss(config["loss"])
+        config["loss_events"] = Loss.get_loss(config["loss_events"])
+        config["loss_nans"] = Loss.get_loss(config["loss_nans"])
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
@@ -103,7 +108,8 @@ class RegressionTransformer(Model):
             'num_classes': 4,
             'dropout': 0.1,
             'pos_encoding': "learnable",
-            'activation': "relu",
+            'act_int': "relu",
+            'act_out': "relu",
             'norm': "BatchNorm",
             'freeze': False,
         }
@@ -122,7 +128,8 @@ class RegressionTransformer(Model):
         # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.config["epochs"]
+        epochs_events = self.config["epochs_events"]
+        epochs_nans = self.config["epochs_nans"]
         batch_size = self.config["batch_size"]
 
         # Print the shapes and types of train and test
@@ -173,12 +180,20 @@ class RegressionTransformer(Model):
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset, batch_size=batch_size)
 
-        # Torch summary
-        trainer = Trainer(epochs=epochs, criterion=criterion)
-        avg_train_loss, avg_val_loss = trainer.fit(
+        # Train events
+        trainer = Trainer(epochs=epochs_events, criterion=criterion)
+        avg_train_loss_event, avg_val_loss_event = trainer.fit(
             train_dataloader, test_dataloader, self.model, optimizer, self.name)
+        self.log_train_test(avg_train_loss_event, avg_val_loss_event, epochs_events)
+        
+        # Train nans
+        trainer = Trainer(epochs=epochs_nans, criterion=criterion)
+        avg_train_loss_nan, avg_val_loss_nan = trainer.fit(
+            train_dataloader, test_dataloader, self.model, optimizer, self.name)
+        self.log_train_test(avg_train_loss_nan, avg_val_loss_nan, epochs_nans)
 
-        self.log_train_test(avg_train_loss, avg_val_loss, epochs)
+        
+
 
     def pred(self, data: np.array):
         """

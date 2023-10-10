@@ -3,6 +3,7 @@ import pandas as pd
 import wandb
 
 from ..logger.logger import logger
+from ..util.hash_config import hash_config
 
 
 class Model:
@@ -17,6 +18,7 @@ class Model:
             self.config = None
         else:
             self.config = config
+            self.hash = hash_config(config, length=5)
 
         self.name = name
 

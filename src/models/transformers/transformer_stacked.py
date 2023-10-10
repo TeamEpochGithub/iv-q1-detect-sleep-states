@@ -213,7 +213,8 @@ class StackedRegressionTransformer(Model):
         # Run the model on the data and return the predictions
 
         # Push to device
-        self.model.to(self.device)
+        self.model_events.to(self.device)
+        self.model_nans.to(self.device)
 
         # Get window size
         window_size = data.shape[0]
@@ -228,9 +229,9 @@ class StackedRegressionTransformer(Model):
         # Make a prediction
         with torch.no_grad():
             padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
-            prediction_events = self.model(
+            prediction_events = self.model_events(
                 data.to(self.device), padding_mask.to(self.device))
-            prediction_nans = self.model(
+            prediction_nans = self.model_nans(
                 data.to(self.device), padding_mask.to(self.device))
 
         # Get first and only prediction
@@ -268,16 +269,12 @@ class StackedRegressionTransformer(Model):
         :param path: path to save the model to
         :return:
         """
-        checkpoint_events = {
-            'model_state_dict': self.model_events.state_dict(),
+        checkpoint = {
+            'model_state_dict_events': self.model_events.state_dict(),
+            'model_state_dict_nans': self.model_nans.state_dict(),
             'config': self.config
         }
-        checkpoint_nans = {
-            'model_state_dict': self.model_events.state_dict(),
-            'config': self.config
-        }
-        torch.save(checkpoint_events, path[:-3] + "_events.pt")
-        torch.save(checkpoint_nans, path[:-3] + "_nans.pt")
+        torch.save(checkpoint, path)
         print("Model saved to: " + path)
 
     def load(self, path: str, only_hyperparameters: bool = False) -> None:
@@ -290,8 +287,7 @@ class StackedRegressionTransformer(Model):
             **self.events_transformer_config)
         self.model_nans = TSTransformerEncoderClassiregressor(
             **self.nans_transformer_config)
-        checkpoint_events = torch.load(path[:-3] + "_events.pt")
-        checkpoint_nans = torch.load(path[:-3] + "_nans.pt")
-        self.model_events.load_state_dict(checkpoint_events['model_state_dict'])
-        self.model_nans.load_state_dict(checkpoint_nans['model_state_dict'])
-        self.config = checkpoint_events['config']
+        checkpoint = torch.load(path)
+        self.model_events.load_state_dict(checkpoint['model_state_dict_events'])
+        self.model_nans.load_state_dict(checkpoint['model_state_dict_nans'])
+        self.config = checkpoint['config']

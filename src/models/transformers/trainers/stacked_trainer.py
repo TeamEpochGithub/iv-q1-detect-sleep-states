@@ -1,3 +1,4 @@
+import numpy as np
 from torch import nn
 import torch
 from tqdm import tqdm
@@ -68,12 +69,13 @@ class StackedTrainer:
         i = 0
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
             for idx, data in enumerate(tepoch):
-                i += 1
                 loss, losses = self._train_one_loop(
                     data=data, losses=losses, model=model, optimiser=optimiser)
                 epoch_loss += loss.detach()
+                if loss.detach() > 0:
+                    i += 1
                 tepoch.set_description(f"Epoch {epoch_no}")
-                tepoch.set_postfix(loss=epoch_loss.item() / i)
+                tepoch.set_postfix(loss=sum(losses).item() / i)
         return losses
 
     def _train_one_loop(
@@ -91,9 +93,10 @@ class StackedTrainer:
 
         loss = self.criterion(output, data[1].type(
             torch.DoubleTensor).to(self.device), mask)
-        loss.backward()
-        optimiser.step()
-        losses.append(loss.detach())
+        if not np.isnan(loss.item()):
+            loss.backward()
+            optimiser.step()
+            losses.append(loss.detach())
         return loss.detach(), losses
 
     def val_loss(self, dataloader: torch.utils.data.DataLoader, epoch_no, model: nn.Module, disable_tqdm=False):

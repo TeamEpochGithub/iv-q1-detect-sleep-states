@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 
 class EventRegressionLoss(nn.Module):
@@ -20,9 +21,8 @@ class EventRegressionLoss(nn.Module):
 
         # Use mask to turn into nans
         mask = mask[:, :2]
-        mask[mask == 0] = float('nan')
 
         # Apply mask
         loss = loss * mask
-
-        return loss.nanmean()
+        loss = torch.sum(loss) / torch.sum(mask)
+        return loss

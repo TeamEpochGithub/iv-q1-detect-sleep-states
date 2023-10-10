@@ -1,12 +1,14 @@
 '''THIS IS NOT MEANT TO BE A UNITTEST'''
-from src.configs.load_config import ConfigLoader
-import pandas as pd
-import time
-import os
 
+import os
+import time
+
+import pandas as pd
+
+from src.configs.load_config import ConfigLoader
 
 if __name__ == "__main__":
-    # load the config
+
     config = ConfigLoader("test/test_config.json")
     # remove the preprocessing steps from the config
     # start the timer
@@ -29,7 +31,7 @@ if __name__ == "__main__":
     print(featured_data.shape)
     for i, fe_step in enumerate(fe_steps):
         # Passes the current fe list and the pp list
-        feature = fe_steps[fe_step].run(df, fe_s[:i+1], config.config["preprocessing"])
+        feature = fe_steps[fe_step].run(df, fe_s[:i + 1], config.config["preprocessing"])
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
     # end the timer

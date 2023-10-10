@@ -8,8 +8,7 @@
         "mem_reduce",
         "add_state_labels",
         "split_windows",
-        "remove_unlabeled",
-        "add_regression_labels"
+        "remove_unlabeled"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -18,7 +17,7 @@
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "pre_training": {
-        "test_size": 0.2,
+        "test_size": 0.3,
         "standardize": "none"
     },
     "models": {
@@ -26,23 +25,15 @@
             "type": "seg-simple-1d-cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 3,
-            "batch_size": 64,
-            "lr": 0.001
-        },
-        "1D-CNN2": {
-            "type": "seg-simple-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 3,
-            "batch_size": 64,
+            "epochs": 10,
+            "batch_size": 32,
             "lr": 0.001
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-CNN", "1D-CNN2"],
-        "weights": [0.5, 0.5],
+        "models": ["1D-CNN"],
+        "weights": [1],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
@@ -55,5 +46,5 @@
         "method": "example_cv"
     },
     "train_for_submission": true,
-    "scoring": false
+    "scoring": true
 }

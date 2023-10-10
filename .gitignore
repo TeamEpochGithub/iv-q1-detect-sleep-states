@@ -188,3 +188,6 @@ submission_zip/
 
 #Ignore trained models
 tm
+
+#Ignore configs
+configs

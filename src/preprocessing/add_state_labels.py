@@ -4,10 +4,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ..logger.logger import logger
 from ..preprocessing.pp import PP
-
-from line_profiler_pycharm import profile
 
 class AddStateLabels(PP):
     """Adds state labels to each row of the data
@@ -40,9 +37,10 @@ class AddStateLabels(PP):
         """
         self.events = pd.read_csv(self.events_path)
         self.id_encoding = json.load(open(self.id_encoding_path))
-        return self.preprocess(data)
+        res = self.preprocess(data)
+        del self.events
+        return res
 
-    @profile
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by adding state labels to each row of the data.
 

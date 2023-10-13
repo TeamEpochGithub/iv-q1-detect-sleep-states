@@ -35,10 +35,17 @@ def main(config: ConfigLoader) -> None:
             name=config_hash,
             config=config.get_config()
         )
+        wandb.run.summary.update(config.get_config())
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
 
+    # Predict with CPU
+    pred_cpu = config.get_pred_with_cpu()
+    if pred_cpu:
+        logger.info("Predicting with CPU")
+    else:
+        logger.info("Predicting with GPU")
     # ------------------------------------------- #
     #    Preprocessing and feature Engineering    #
     # ------------------------------------------- #
@@ -174,7 +181,7 @@ def main(config: ConfigLoader) -> None:
     scoring = config.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
-        predictions = ensemble.pred(X_test)
+        predictions = ensemble.pred(X_test, pred_cpu)
 
         logger.info("Formatting predictions...")
 

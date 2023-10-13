@@ -64,10 +64,11 @@ class Model:
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, X_pred: np.ndarray) -> list[float, float]:
+    def pred(self, X_pred: np.ndarray, with_cpu: bool) -> list[float, float]:
         """
-        Prediction function for the model. This function should be overwritten by the user.
+        Prediction function for mainly pytorch models. This function should be overwritten by the user.
         :param X_pred: unlabeled data (step, features)
+        :param with_cpu: whether to use cpu
         :return: the predictions
         """
         logger.critical("--- Prediction of base class called. Did you forget to override it?")

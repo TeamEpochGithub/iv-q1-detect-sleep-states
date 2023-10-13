@@ -15,8 +15,6 @@ def submit(config: ConfigLoader, submit=False) -> None:
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
-
-
     # format the data
     feature_cols = [col for col in featured_data.columns if col.startswith('f_')]
     x_data = featured_data[['enmo', 'anglez'] + feature_cols]

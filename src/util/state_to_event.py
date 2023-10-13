@@ -18,7 +18,7 @@ def find_events(pred: np.ndarray):
     # iterate through every (valid) combination of onset and awake
     scores = np.zeros([len(onsets), len(awakes)], dtype=float)
     for o_idx, onset in enumerate(onsets):
-        for a_idx, awake in enumerate(onsets):
+        for a_idx, awake in enumerate(awakes):
             scores[o_idx, a_idx] = score_event_combo(pred, onset, awake)
 
     # return the best combination with argmax

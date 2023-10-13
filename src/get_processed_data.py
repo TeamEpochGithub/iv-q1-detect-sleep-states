@@ -34,6 +34,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
 
     # now using i run the preprocessing steps that were not applied
     for j, step in enumerate(step_names[i:]):
+        logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
         path = config.get_pp_out() + '/' + '_'.join(step_names[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
@@ -46,4 +47,5 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
             logger.info(f'--- Saving to: {path}')
             processed.to_parquet(path)
             logger.info('--- Finished saving')
+    logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
     return processed

@@ -66,9 +66,10 @@ class AddStateLabels(PP):
                 weird_series_encoded.append(self.id_encoding[id])
 
         # iterate over the series and set the awake column
+        tqdm.pandas()
         data = (data
                 .groupby('series_id')
-                .apply(lambda x: self.fill_series_labels(x, weird_series_encoded))
+                .progress_apply(lambda x: self.fill_series_labels(x, weird_series_encoded))
                 .reset_index(drop=True))
 
         return data

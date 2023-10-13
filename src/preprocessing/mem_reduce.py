@@ -44,4 +44,9 @@ class MemReduce(PP):
         del timestamp_pl
         gc.collect()
 
+        pad_type = {'step': np.uint32, 'series_id': np.uint16, 'enmo': np.float32,
+                    'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
+        data = data.astype(pad_type)
+        gc.collect()
+
         return data

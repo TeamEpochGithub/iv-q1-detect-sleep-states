@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import wandb
 
 from ..logger.logger import logger
+from ..util.hash_config import hash_config
 
 
 class Model:
@@ -9,13 +11,16 @@ class Model:
     Model class with basic methods for training and evaluation. This class should be overwritten by the user.
     """
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         self.model_type = "base-model"
         # Init function
         if config is None:
             self.config = None
         else:
             self.config = config
+            self.hash = hash_config(config, length=5)
+
+        self.name = name
 
     def get_type(self) -> str:
         """
@@ -59,10 +64,11 @@ class Model:
         # Get hyperparameters from config (epochs, lr, optimizer)
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, X_pred: np.ndarray, with_cpu: bool) -> list[float, float]:
         """
-        Prediction function for the model. This function should be overwritten by the user.
-        :param X_pred: unlabeled data
+        Prediction function for mainly pytorch models. This function should be overwritten by the user.
+        :param X_pred: unlabeled data (step, features)
+        :param with_cpu: whether to use cpu
         :return: the predictions
         """
         logger.critical("--- Prediction of base class called. Did you forget to override it?")
@@ -99,6 +105,34 @@ class Model:
         """
         logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
         raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
+
+    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int) -> None:
+        """
+        Log the train and test loss to wandb.
+        :param avg_losses: list of average train losses
+        :param avg_val_losses: list of average test losses
+        :param epochs: number of epochs
+        """
+        log_dict = {
+            'epoch': list(range(epochs)),
+            'train_loss': avg_losses,
+            'val_loss': avg_val_losses
+        }
+        log_df = pd.DataFrame(log_dict)
+        # Convert to a long format
+        long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
+
+        table = wandb.Table(dataframe=long_df)
+        # Field to column in df
+        fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
+        custom_plot = wandb.plot_table(
+            vega_spec_name="team-epoch-iv/trainval",
+            data_table=table,
+            fields=fields,
+            string_fields={"title": "Train and validation loss of model " + self.name}
+        )
+        if wandb.run is not None:
+            wandb.log({f"{self.name}": custom_plot})
 
 
 class ModelException(Exception):

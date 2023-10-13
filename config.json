@@ -1,15 +1,14 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
+    "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
     "preprocessing": [
         "mem_reduce",
         "add_state_labels",
-        "split_windows",
-        "remove_unlabeled",
-        "add_regression_labels"
+        "split_windows"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -22,23 +21,28 @@
         "standardize": "none"
     },
     "models": {
-        "ClassicBaseline": {
-            "type": "classic-base-model"
+        "1D-CNN": {
+            "type": "seg-simple-1d-cnn",
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "epochs": 2,
+            "batch_size": 64,
+            "lr": 0.0008
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["ClassicBaseline"],
+        "models": ["1D-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
     "hpo": {
-        "apply": true,
+        "apply": false,
         "method": "example_hpo"
     },
     "cv": {
-        "apply": true,
+        "apply": false,
         "method": "example_cv"
     },
     "train_for_submission": true,

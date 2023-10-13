@@ -5,11 +5,18 @@ from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pre_train.standardization import standardize
+from src.util.hash_config import hash_config
 from src.util.submissionformat import to_submission_format
 
 
 def submit(config: ConfigLoader, submit=False) -> None:
     featured_data = get_processed_data(config, save_output=False, training=False)
+
+    # Get predict with cpu
+    pred_cpu = config.get_pred_with_cpu()
+
+    # Hash of concatenated string of preprocessing, feature engineering and pretraining
+    initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
     # format the data
     feature_cols = [col for col in featured_data.columns if col.startswith('f_')]
@@ -35,13 +42,13 @@ def submit(config: ConfigLoader, submit=False) -> None:
     data_shape = (x_data.shape[2], x_data.shape[1])
     models = config.get_models(data_shape)
     for i, model in enumerate(models):
-        path = store_location + "/submit_" + model + ".pt"
-        logger.info(f"Loading model {i}: {model} from {path}")
-        models[model].load(path)
+        model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
+        logger.info(f"Loading model {i}: {model} from {model_filename_submit}")
+        models[model].load(model_filename_submit)
 
     # make predictions
     ensemble = config.get_ensemble(models)
-    predictions = ensemble.pred(x_data)
+    predictions = ensemble.pred(x_data, pred_cpu=pred_cpu)
 
     formatted = to_submission_format(predictions, window_info)
 

@@ -123,5 +123,6 @@ class StackedTrainer:
 
             loss = self.criterion(output, data[1].type(
                 torch.DoubleTensor).to(self.device), mask)
-            losses.append(loss.detach())
+            if not np.isnan(loss.item()):
+                losses.append(loss.detach())
         return losses

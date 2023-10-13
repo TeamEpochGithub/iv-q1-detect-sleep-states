@@ -14,11 +14,13 @@ from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 from typing import List
 from torch import nn
 from tqdm import tqdm
+from numpy import ndarray, dtype
+from typing import Any
 
 
 class StackedRegressionTransformer(Model):
     """
-    This is the model file for the transformer model.
+    This is the model file for the stacked transformer model.
     """
 
     def __init__(self, config: dict, name: str):
@@ -146,13 +148,13 @@ class StackedRegressionTransformer(Model):
         batch_size = self.config["batch_size"]
 
         # Print the shapes and types of train and test
-        logger.info(
+        logger.debug(
             f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(
+        logger.debug(
             f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(
+        logger.debug(
             f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(
+        logger.debug(
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
@@ -178,10 +180,6 @@ class StackedRegressionTransformer(Model):
         # Regression
         y_train = y_train[:, 0]
         y_test = y_test[:, 0]
-
-        # TODO: Window size should be a parameter
-        y_train[:, 2:] = y_train[:, 2:]
-        y_test[:, 2:] = y_test[:, 2:]
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -212,14 +210,12 @@ class StackedRegressionTransformer(Model):
             self.log_train_test(avg_train_loss_nan,
                                 avg_val_loss_nan, epochs_nans)
 
-    def pred(self, data: np.array):
+    def pred(self, data: np.ndarray[Any, dtype[Any]]) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
         :return:
         """
-        # Prediction function
-        # Run the model on the data and return the predictions
 
         # Push to device
         self.model_events.to(self.device).double()
@@ -237,7 +233,7 @@ class StackedRegressionTransformer(Model):
 
         # Create a dataloader from the dataset
         test_dataloader = torch.utils.data.DataLoader(
-            test_dataset, batch_size=16)
+            test_dataset, batch_size=self.config["batch_size"])
 
         # Make predictions
         prediction_events = np.empty((0, 2))
@@ -249,10 +245,7 @@ class StackedRegressionTransformer(Model):
                 prediction_nans = self._pred_one_batch(
                     data, prediction_nans, self.model_nans)
 
-        # Get first and only prediction
-
-        prediction_events = prediction_events
-        prediction_nans = prediction_nans
+        # Set the threshold for the nans
         threshold = 0.5
 
         # Create mask where if prediction_nans is above threshold, prediction_events is nans
@@ -263,7 +256,16 @@ class StackedRegressionTransformer(Model):
 
         return prediction_events
 
-    def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module):
+    def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
+        """
+        Predict one batch and return the predictions.
+        :param data: data to predict on
+        :param preds: predictions to append to
+        :param model: model to predict with
+        :return: predictions
+        """
+
+        # Make predictions without gradient
         with torch.no_grad():
             data[0] = data[0].double()
             padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
@@ -272,24 +274,7 @@ class StackedRegressionTransformer(Model):
             preds = np.concatenate((preds, output.cpu().numpy()), axis=0)
         return preds
 
-    def evaluate(self, pred, target):
-        """
-        Evaluation function for the model.
-        :param pred: predictions
-        :param target: targets
-        :return: avg loss of predictions
-        """
-        self.model.eval()
-
-        # Evaluate function
-        print("Evaluating model")
-        # Calculate the loss of the predictions
-        criterion = self.config["loss"]
-
-        loss = criterion(pred, target)
-        return loss
-
-    def save(self, path):
+    def save(self, path: str) -> None:
         """
         Save function for the model.
         :param path: path to save the model to
@@ -301,7 +286,7 @@ class StackedRegressionTransformer(Model):
             'config': self.config
         }
         torch.save(checkpoint, path)
-        print("Model saved to: " + path)
+        logger.info("Model saved to: " + path)
 
     def load(self, path: str, only_hyperparameters: bool = False) -> None:
         """

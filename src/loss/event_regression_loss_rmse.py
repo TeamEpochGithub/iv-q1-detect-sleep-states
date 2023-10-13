@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch
 
 
-class EventRegressionLossMAE(nn.Module):
+class EventRegressionLossRMSE(nn.Module):
     def __init__(self):
-        super(EventRegressionLossMAE, self).__init__()
+        super(EventRegressionLossRMSE, self).__init__()
 
     def forward(self, y_pred, y_true, mask):
         """
@@ -17,7 +17,7 @@ class EventRegressionLossMAE(nn.Module):
         # Always calculate loss for y_pred nan predictions
 
         # Calculate loss as mean absolute error
-        loss = torch.abs(y_true[:, :2] - y_pred)
+        loss = torch.sqrt((y_true[:, :2] - y_pred) ** 2)
 
         # Use mask to get proper loss
         mask = mask[:, :2]

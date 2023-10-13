@@ -135,4 +135,4 @@ if __name__ == "__main__":
     series_path = 'data/raw/train_series.parquet'
     featured_data = get_processed_data(config, series_path, save_output=True)
     # plot the predictions on the series data
-    plot_preds_on_series(preds, featured_data)
+    plot_preds_on_series(preds, featured_data, number_of_series_to_plot=3, features_to_plot=['anglez', 'enmo'])

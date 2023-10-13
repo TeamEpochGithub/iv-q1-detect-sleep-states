@@ -34,7 +34,6 @@ class SegmentationSimple1DCNN(Model):
         if not torch.cuda.is_available():
             logger.warning("GPU not available - using CPU")
             self.device = torch.device("cpu")
-            # Raise ModelException("GPU not available")
         else:
             self.device = torch.device("cuda")
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
@@ -281,10 +280,10 @@ class SegmentationSimple1DCNN(Model):
         with torch.no_grad():
             prediction = self.model(data)
 
-        if not with_cpu:
-            prediction = prediction.cpu().numpy()
-        else:
+        if with_cpu:
             prediction = prediction.numpy()
+        else:
+            prediction = prediction.cpu().numpy()
 
         logger.info(f"--- Done making predictions with model {self.name}")
         # All predictions

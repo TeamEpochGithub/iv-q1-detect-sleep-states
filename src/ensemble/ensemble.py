@@ -34,13 +34,15 @@ class Ensemble:
         logger.info("Data shape: " + str(data.shape))
         # Run each model
         predictions = []
+        # model_pred is (onset, wakeup) tuples for each window
         for model in self.models:
-            # Returns a list of (onset, wakeup) tuples for each window
+            # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
             if hasattr(model, 'device'):
                 model_pred = model.pred(data, pred_cpu)
             else:
                 model_pred = model.pred(data)
 
+            # Model_pred is (onset, wakeup) tuples for each window
             # Split the series of tuples into two column
             predictions.append(model_pred)
 

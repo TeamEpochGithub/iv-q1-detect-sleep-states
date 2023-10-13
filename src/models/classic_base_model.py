@@ -43,10 +43,11 @@ class ClassicBaseModel(Model):
         """
         return {"median_window": 100, "threshold": .1}
 
-    def pred(self, X_pred: np.ndarray) -> list[float, float]:
+    def pred(self, X_pred: np.ndarray, with_cpu: bool = False) -> list[float, float]:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data for a single day window as pandas dataframe
+
         :return: two timestamps, or NaN if no sleep was detected
         """
 

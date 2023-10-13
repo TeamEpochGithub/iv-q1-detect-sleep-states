@@ -35,9 +35,11 @@ def main(config: ConfigLoader) -> None:
             name=config_hash,
             config=config.get_config()
         )
+        wandb.log(config.get_config())
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
+
 
     # Predict with CPU
     pred_cpu = config.get_pred_with_cpu()

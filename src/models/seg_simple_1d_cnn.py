@@ -330,7 +330,10 @@ class SegmentationSimple1DCNN(Model):
         :param path: path to model checkpoint
         :param only_hyperparameters: whether to only load the hyperparameters
         """
-        checkpoint = torch.load(path)
+        if self.device == torch.device("cpu"):
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
+        else:
+            checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)

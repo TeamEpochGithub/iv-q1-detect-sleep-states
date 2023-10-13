@@ -252,7 +252,7 @@ class EventNaNRegressionTransformer(Model):
                     data, prediction_nans, self.model_nans)
 
         # Set the threshold for the nans
-        threshold = 0.5
+        threshold = 1.0
 
         # Create mask where if prediction_nans is above threshold, prediction_events is nans
         for i in range(len(prediction_events)):

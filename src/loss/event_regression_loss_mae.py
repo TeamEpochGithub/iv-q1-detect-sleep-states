@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch
 
 
-
 class EventRegressionLossMae(nn.Module):
     def __init__(self):
         super(EventRegressionLossMae, self).__init__()
@@ -17,7 +16,7 @@ class EventRegressionLossMae(nn.Module):
         # If y_true is 0, it is a valid value so calculate loss for y_pred
         # Always calculate loss for y_pred nan predictions
 
-        # Calculate loss as mean squared error
+        # Calculate loss as mean absolute error
         loss = torch.abs(y_true[:, :2] - y_pred)
 
         # Use mask to get proper loss

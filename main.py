@@ -220,7 +220,7 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config = ConfigLoader("config.json")
+    config = ConfigLoader("configs/164_stacked_transformer_config.json")
 
     # Run main
     main(config)

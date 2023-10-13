@@ -1,6 +1,11 @@
 # This is the base class for loss
 from torch import nn
+
+from src.loss.event_regression_loss_rmse import EventRegressionLossRMSE
 from .regression_loss import RegressionLoss
+from .event_regression_loss import EventRegressionLoss
+from .nan_regression_loss import NanRegressionLoss
+from .event_regression_loss_mae import EventRegressionLossMAE
 
 
 class LossException(Exception):
@@ -34,5 +39,13 @@ class Loss:
                 return nn.BCELoss()
             case "regression":
                 return RegressionLoss()
+            case "event-regression":
+                return EventRegressionLoss()
+            case "event-regression-mae":
+                return EventRegressionLossMAE()
+            case "event-regression-rmse":
+                return EventRegressionLossRMSE()
+            case "nan-regression":
+                return NanRegressionLoss()
             case _:
                 raise LossException("Loss function not found: " + loss_name)

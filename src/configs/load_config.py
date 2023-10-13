@@ -13,14 +13,14 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
-# Model imports
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.transformer.transformer import RegressionTransformer
+from ..models.transformers.transformer_base import RegressionTransformer
+from ..models.transformers.transformer_stacked import StackedRegressionTransformer
+
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels
 from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
 from ..preprocessing.add_state_labels import AddStateLabels
-# Preprocessing imports
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.pp import PP
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
@@ -236,6 +236,8 @@ class ConfigLoader:
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
                 case "regression-transformer":
                     curr_model = RegressionTransformer(model_config, model_name)
+                case "stacked-regression-transformer":
+                    curr_model = StackedRegressionTransformer(model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

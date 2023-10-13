@@ -38,11 +38,12 @@ class Trainer:
         model.double()
 
         # Wandb logging
-        wandb.define_metric("epoch")
-        wandb.define_metric(
-            f"Train {str(self.criterion)} of {name}", step_metric="epoch")
-        wandb.define_metric(
-            f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(
+                f"Train {str(self.criterion)} of {name}", step_metric="epoch")
+            wandb.define_metric(
+                f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         avg_train_losses = []
         avg_val_losses = []

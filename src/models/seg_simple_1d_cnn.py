@@ -249,8 +249,8 @@ class SegmentationSimple1DCNN(Model):
             pbar.set_description(descr)
 
             # Log train full
-        if wandb.run is not None:
-            wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+            if wandb.run is not None:
+                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
     def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:

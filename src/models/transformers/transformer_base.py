@@ -1,4 +1,5 @@
 import copy
+
 import numpy as np
 import torch
 
@@ -181,17 +182,22 @@ class RegressionTransformer(Model):
 
         self.log_train_test(avg_train_loss, avg_val_loss, epochs)
 
-    def pred(self, data: np.array):
+    def pred(self, data: np.array, with_cpu: bool = False):
         """
         Prediction function for the model.
         :param data: unlabelled data
+        :param with_cpu: whether to use cpu
         :return:
         """
         # Prediction function
         # Run the model on the data and return the predictions
 
+        if with_cpu:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda")
         # Push to device
-        self.model.to(self.device)
+        self.model.to(device)
 
         # Get window size
         window_size = data.shape[0]
@@ -207,7 +213,7 @@ class RegressionTransformer(Model):
         with torch.no_grad():
             padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
             prediction = self.model(
-                data.to(self.device), padding_mask.to(self.device))
+                data.to(device), padding_mask.to(device))
 
         # Get first and only prediction
         prediction = prediction[0]

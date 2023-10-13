@@ -32,11 +32,11 @@ class SegmentationSimple1DCNN(Model):
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
-            logger.critical("GPU not available")
-            raise ModelException("GPU not available")
-
-        logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
-        self.device = torch.device("cuda")
+            logger.warning("GPU not available - using CPU")
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device("cuda")
+            logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "segmentation"
         self.data_shape = data_shape
@@ -249,25 +249,29 @@ class SegmentationSimple1DCNN(Model):
             pbar.set_description(descr)
 
             # Log train full
-        if wandb.run is not None:
-            wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+            if wandb.run is not None:
+                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
+        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        # Push to device
-        self.model.to(self.device)
+        if with_cpu:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda")
 
+        self.model.to(device)
         # Convert data to tensor
-        data = torch.from_numpy(data).permute(0, 2, 1).to(self.device)
+        data = torch.from_numpy(data).permute(0, 2, 1).to(device)
 
         # Print data shape
         logger.info(f"--- Data shape of predictions: {data.shape}")
@@ -276,8 +280,10 @@ class SegmentationSimple1DCNN(Model):
         with torch.no_grad():
             prediction = self.model(data)
 
-        # Push back to cpu
-        prediction = prediction.cpu().numpy()
+        if with_cpu:
+            prediction = prediction.numpy()
+        else:
+            prediction = prediction.cpu().numpy()
 
         logger.info(f"--- Done making predictions with model {self.name}")
         # All predictions
@@ -323,7 +329,10 @@ class SegmentationSimple1DCNN(Model):
         :param path: path to model checkpoint
         :param only_hyperparameters: whether to only load the hyperparameters
         """
-        checkpoint = torch.load(path)
+        if self.device == torch.device("cpu"):
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
+        else:
+            checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)

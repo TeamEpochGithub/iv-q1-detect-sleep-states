@@ -128,6 +128,13 @@ class ConfigLoader:
         """
         return self.config["processed_loc_out"]
 
+    def get_pred_with_cpu(self) -> bool:
+        """Get whether to use CPU for prediction
+
+        :return: whether to use CPU for prediction
+        """
+        return self.config["pred_with_cpu"]
+
     def get_pp_in(self) -> str:
         """Get the path to the preprocessing input data folder
 

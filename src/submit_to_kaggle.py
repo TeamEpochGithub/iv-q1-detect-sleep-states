@@ -12,6 +12,9 @@ from src.util.submissionformat import to_submission_format
 def submit(config: ConfigLoader, submit=False) -> None:
     featured_data = get_processed_data(config, save_output=False, training=False)
 
+    # Get predict with cpu
+    pred_cpu = config.get_pred_with_cpu()
+
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
@@ -45,7 +48,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
 
     # make predictions
     ensemble = config.get_ensemble(models)
-    predictions = ensemble.pred(x_data)
+    predictions = ensemble.pred(x_data, pred_cpu=pred_cpu)
 
     formatted = to_submission_format(predictions, window_info)
 

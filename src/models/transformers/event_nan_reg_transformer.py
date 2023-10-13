@@ -4,7 +4,7 @@ import torch
 import wandb
 
 from src.logger.logger import logger
-from src.models.transformers.trainers.stacked_trainer import StackedTrainer
+from src.models.transformers.trainers.base_trainer import Trainer
 
 from ...loss.loss import Loss
 from ..model import Model, ModelException
@@ -18,7 +18,7 @@ from numpy import ndarray, dtype
 from typing import Any
 
 
-class StackedRegressionTransformer(Model):
+class EventNaNRegressionTransformer(Model):
     """
     This is the model file for the stacked transformer model.
     """
@@ -193,7 +193,7 @@ class StackedRegressionTransformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = StackedTrainer(epochs=epochs_events,
+        trainer = Trainer(epochs=epochs_events,
                                  criterion=criterion_events)
         avg_train_loss_event, avg_val_loss_event = trainer.fit(
             train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
@@ -203,7 +203,7 @@ class StackedRegressionTransformer(Model):
 
         # Train nans
         logger.info("Training nans model")
-        trainer = StackedTrainer(epochs=epochs_nans, criterion=criterion_nans)
+        trainer = Trainer(epochs=epochs_nans, criterion=criterion_nans)
         avg_train_loss_nan, avg_val_loss_nan = trainer.fit(
             train_dataloader, test_dataloader, self.model_nans, optimizer_nans, self.name)
         if wandb.run is not None:

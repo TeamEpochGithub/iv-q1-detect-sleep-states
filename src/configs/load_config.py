@@ -15,7 +15,7 @@ from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.transformer_base import RegressionTransformer
-from ..models.transformers.transformer_stacked import StackedRegressionTransformer
+from ..models.transformers.event_nan_reg_transformer import EventNaNRegressionTransformer
 
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels

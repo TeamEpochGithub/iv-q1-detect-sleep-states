@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from ..preprocessing.pp import PP
 
+
 class AddStateLabels(PP):
     """Adds state labels to each row of the data
 

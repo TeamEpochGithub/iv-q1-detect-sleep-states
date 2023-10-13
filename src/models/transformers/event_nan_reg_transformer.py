@@ -210,16 +210,22 @@ class EventNaNRegressionTransformer(Model):
             self.log_train_test(avg_train_loss_nan,
                                 avg_val_loss_nan, epochs_nans)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]]) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
         :return:
         """
 
+        # Check which device to use
+        if with_cpu:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda")
+
         # Push to device
-        self.model_events.to(self.device).double()
-        self.model_nans.to(self.device).double()
+        self.model_events.to(device).double()
+        self.model_nans.to(device).double()
 
         # Turn data from (window_size, features) to (1, window_size, features)
         data = torch.from_numpy(data)  # .unsqueeze(0)

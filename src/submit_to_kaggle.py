@@ -12,7 +12,7 @@ from src.util.submissionformat import to_submission_format
 def submit(config: ConfigLoader, submit=False) -> None:
     featured_data = get_processed_data(config, save_output=False, training=False)
 
-    #Get predict with cpu
+    # Get predict with cpu
     pred_cpu = config.get_pred_with_cpu()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining

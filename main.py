@@ -40,7 +40,6 @@ def main(config: ConfigLoader) -> None:
     else:
         logger.info("Not logging to wandb")
 
-
     # Predict with CPU
     pred_cpu = config.get_pred_with_cpu()
     if pred_cpu:

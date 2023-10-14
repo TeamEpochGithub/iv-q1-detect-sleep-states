@@ -64,6 +64,6 @@ class ClassicBaseModel(Model):
     def predict_state_labels(self, data: np.ndarray) -> np.ndarray:
         anglez = pd.Series(data[:, 1])
         slope = abs(anglez.diff()).clip(upper=10)
-        movement = pd.Series(slope).rolling(window=100).median()
+        movement = pd.Series(slope).rolling(window=100, center=True).median()
         pred = (movement > .1)
         return pred.to_numpy(dtype='float32')

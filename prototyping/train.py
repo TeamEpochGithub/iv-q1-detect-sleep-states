@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-
+import numpy as np
 from prototyping.data import get_data_loader
 from prototyping.model import TimeSeriesSegmentationModel
 
@@ -33,6 +33,10 @@ if __name__ == '__main__':
     num_epochs = 10
     for epoch in range(num_epochs):
         pbar = tqdm(dataloader)
+
+        seg_losses = []
+        event_losses = []
+
         for batch in pbar:  # Replace dataloader with your data loading logic
             optimizer.zero_grad()
             data = batch['data'].to(device)
@@ -51,5 +55,12 @@ if __name__ == '__main__':
             total_loss.backward()
             optimizer.step()
 
+            seg_losses.append(segmentation_loss.item())
+            event_losses.append(event_classification_loss.item())
+
             pbar.set_description(
-                f'Epoch {epoch + 1}, Segmentation Loss: {segmentation_loss.item():.3E}, Event Classification Loss: {event_classification_loss.item():.3E}')
+                f'Epoch {epoch + 1}, Segmentation Loss: {np.mean(seg_losses):.3E}, '
+                f'Event Classification Loss: {np.mean(event_classification_loss.item()):.3E}')
+
+        # save the model
+        torch.save(model.state_dict(), f'./tm/model_{epoch}.pt')

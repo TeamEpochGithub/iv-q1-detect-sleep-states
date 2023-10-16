@@ -200,6 +200,10 @@ This contains all the models and their hyperparameters that are implemented. The
     - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
     - freeze=False
 
+- classic-base-model
+  - median_window=100
+  - threshold=.1
+
 - event-nan-regression-transformer
     - epochs_events (required)
     - epochs_nans (required)
@@ -269,6 +273,11 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
             "norm": "BatchNorm",
             "freeze": false
         }
+"Classic-baseline": {
+    "type": "classic-base-model",
+    "median_window": 100,
+    "threshold": .1
+}
 ```
 
 ### Model store location

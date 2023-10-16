@@ -16,8 +16,7 @@ class MemReduce(PP):
     """
 
     def preprocess(self, data):
-        df = self.reduce_mem_usage(data)
-        return df
+        return self.reduce_mem_usage(data)
 
     def reduce_mem_usage(self, data: pd.DataFrame, filename=None) -> pd.DataFrame:
         # TODO Don't hardcode the file name, add it as a parameter in the config.json #99
@@ -27,22 +26,27 @@ class MemReduce(PP):
         # we should make the series id in to an int16
         # and save an encoding (a dict) as a json file somewhere
         # so, we can decode it later
-        encoding = dict(zip(data['series_id'].unique(), range(len(data['series_id'].unique()))))
+        sids = data['series_id'].unique()
+        encoding = dict(zip(sids, range(len(sids))))
         # TODO Don't open the file here to make this method testable
         with open(filename, 'w') as f:
             json.dump(encoding, f)
-        logger.debug(f"------ Done saving series encoding to {filename}")
-        data['series_id'] = data['series_id'].map(encoding)
-        data['series_id'] = data['series_id'].astype('int16')
 
-        data = pl.from_pandas(data)
-        gc.collect()
-        data = data.with_columns(pl.col("timestamp").str.slice(0, 19))
-        data = data.with_columns(pl.col("timestamp").str.to_datetime(format="%Y-%m-%dT%H:%M:%S").cast(pl.Datetime))
+        logger.debug(f"------ Done saving series encoding to {filename}")
+        data['series_id'] = data['series_id'].map(encoding).astype('int16')
+
+        timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))
+        timestamp_pl = timestamp_pl.str.slice(0, 19)
+        timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S", time_unit='ms')
         logger.debug("------ Done converting timestamp to datetime")
-        data = data.to_pandas()
+        data['timestamp'] = timestamp_pl
+
+        del timestamp_pl
         gc.collect()
+
         pad_type = {'step': np.uint32, 'series_id': np.uint16, 'enmo': np.float32,
                     'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
         data = data.astype(pad_type)
+        gc.collect()
+
         return data

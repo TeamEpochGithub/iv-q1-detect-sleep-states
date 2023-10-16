@@ -93,7 +93,6 @@ def fill_onset(group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool)
             f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
 
     events = (events - step_start).tolist()
-    logger.debug(events)
     # Get the end
     id_end = id_start + window_size
 

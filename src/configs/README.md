@@ -88,6 +88,12 @@ List of options and their config options
 - "skewness"
     - "window_sizes": x > 3
     - "features": Any existing numerical features
+- "time"
+    - "day": true | false (opt)
+    - "hour": true | false (opt)
+    - "minute": true | false (opt)
+    - "second": true | false (opt)
+
 
 Example:
 ``` 
@@ -96,8 +102,13 @@ Example:
         "window_sizes": [5, 10],
         "features": ["enmo", "anglez"]
     },
-    "fe2": {}
+    "time": {
+        "day": true,
+        "hour": true,
+        "minute": false,
+        "second": false
     }
+}
 ```
 
 ### Feature engineering data location

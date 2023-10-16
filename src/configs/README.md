@@ -272,6 +272,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
         }
 "Classic-baseline": {
     "type": "classic-base-model"
+    "median_window": 100,
+    "threshold": .1
 }
 ```
 

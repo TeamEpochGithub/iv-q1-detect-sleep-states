@@ -21,18 +21,13 @@
         "standardize": "none"
     },
     "models": {
-        "1D-CNN": {
-            "type": "seg-simple-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 2,
-            "batch_size": 64,
-            "lr": 0.0008
+        "Classic-baseline": {
+            "type": "classic-base-model"
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-CNN"],
+        "models": ["Classic-baseline"],
         "weights": [1],
         "comb_method": "addition"
     },

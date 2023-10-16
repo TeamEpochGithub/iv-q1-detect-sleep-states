@@ -34,6 +34,7 @@ Example:
 List of options:
 
 - `mem_reduce`
+- `similarity_nan`
 - `add_noise`
 - `add_state_labels`
 - `split_windows` (currently 24h hardcoded)

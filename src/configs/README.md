@@ -199,7 +199,11 @@ This contains all the models and their hyperparameters that are implemented. The
     - activation="relu" ["relu", "gelu"]
     - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
     - freeze=False
-  
+
+- classic-base-model
+  - median_window=100
+  - threshold=.1
+
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
 ```
@@ -266,6 +270,9 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
             "norm": "BatchNorm",
             "freeze": false
         }
+"Classic-baseline": {
+    "type": "classic-base-model"
+}
 ```
 
 ### Model store location

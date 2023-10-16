@@ -44,7 +44,7 @@ class Trainer:
             optimiser: The optimiser to use.
             name: The name of the model.
         """
-        
+
         # Setup model for training
         model = model.to(self.device)
         model.train()

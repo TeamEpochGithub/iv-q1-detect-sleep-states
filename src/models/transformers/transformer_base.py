@@ -232,7 +232,7 @@ class RegressionTransformer(Model):
                 predictions[i, 1] = np.NAN
 
         return predictions
-    
+
     def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
         """
         Predict one batch and return the predictions.

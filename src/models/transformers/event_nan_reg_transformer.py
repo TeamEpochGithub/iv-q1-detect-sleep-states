@@ -194,7 +194,7 @@ class EventNaNRegressionTransformer(Model):
         # Train events
         logger.info("Training events model")
         trainer = Trainer(epochs=epochs_events,
-                                 criterion=criterion_events)
+                          criterion=criterion_events)
         avg_train_loss_event, avg_val_loss_event = trainer.fit(
             train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
         if wandb.run is not None:

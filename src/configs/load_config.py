@@ -8,6 +8,7 @@ from ..feature_engineering.feature_engineering import FE
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.mean import Mean
 from ..feature_engineering.skewness import Skewness
+from ..feature_engineering.time import Time
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
@@ -180,6 +181,10 @@ class ConfigLoader:
                 features.sort()
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
+            elif fe_step == "time":
+                fe_steps["time"] = Time(
+                    self.config["feature_engineering"]["time"])
+                fe_s.append(fe_step)
             else:
                 logger.critical("Feature engineering step not found: " + fe_step)
                 raise ConfigException(

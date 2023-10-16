@@ -139,7 +139,7 @@ class Trainer:
 
         # Calculate loss
         loss = self.criterion(output, data[1].type(
-            torch.DoubleTensor).to(self.device), mask)
+            torch.FloatTensor).to(self.device), mask)
 
         # Backpropagate loss if not nan
         if not np.isnan(loss.item()):
@@ -193,7 +193,7 @@ class Trainer:
             mask[:, 1] = (1 - data[1][:, 3])
 
             loss = self.criterion(output, data[1].type(
-                torch.DoubleTensor).to(self.device), mask)
+                torch.FloatTensor).to(self.device), mask)
             if not np.isnan(loss.item()):
                 losses.append(loss.detach())
         return losses

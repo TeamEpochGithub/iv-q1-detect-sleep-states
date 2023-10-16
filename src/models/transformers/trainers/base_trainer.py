@@ -77,7 +77,7 @@ class Trainer:
 
             wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
                       f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
-            
+
             # Save model if validation loss is lower than previous lowest validation loss
             if val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss

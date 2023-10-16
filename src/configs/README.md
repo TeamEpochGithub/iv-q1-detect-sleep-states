@@ -230,7 +230,6 @@ This contains all the models and their hyperparameters that are implemented. The
     - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
     - freeze=False
   
-
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
 ```

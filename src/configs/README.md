@@ -199,6 +199,31 @@ This contains all the models and their hyperparameters that are implemented. The
     - activation="relu" ["relu", "gelu"]
     - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
     - freeze=False
+
+- event-nan-regression-transformer
+    - epochs_events (required)
+    - epochs_nans (required)
+    - loss_events (required)
+    - loss_nans (required)
+    - optimizer_events (required)
+    - optimizer_nans (required)
+    - lr_events=0.000035
+    - lr_nans=0.000035
+    - batch_size=16
+    - patch_size=36
+    - feat_dim=patch_size*num_features
+    - max_len=window_size
+    - d_model=x (x * n_heads)
+    - n_heads=6
+    - num_layers=5
+    - dim_feedforward=2048
+    - num_classes=2 (Points to regress to)
+    - dropout=0.1
+    - pos_encoding='learnable' ["learnable", "fixed"]
+    - act_int="relu" ["relu", "gelu"]
+    - act_out="relu" ["relu", "gelu", "sigmoid"]
+    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
+    - freeze=False
   
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
@@ -218,30 +243,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "batch_size": 64,
     "lr": 0.01
 }
-"RegressionTransformer": {
-            "type": "regression-transformer",
-            "epochs": 20,
-            "loss": "crossentropy-torch",
-            "optimizer": "adam-torch",
-            "lr": 0.001,
-            "batch_size": 32,
-            "patch_size": 36,
-            "feat_dim": 72,
-            "max_len": 480,
-            "d_model": 192,
-            "n_heads": 6,
-            "num_layers": 5,
-            "dim_feedforward": 2048,
-            "num_classes": 4,
-            "dropout": 0.1,
-            "pos_encoding": "learnable",
-            "act_int": "relu",
-            "act_out": "relu",
-            "norm": "BatchNorm",
-            "freeze": false
-        }
-"StackedRegressionTransformer": {
-            "type": "stacked-regression-transformer",
+"EventNanRegressionTransformer": {
+            "type": "event-nan-regression-transformer",
             "epochs_events": 20,
             "epochs_nans": 20,
             "loss_events": "event-regression-mae",

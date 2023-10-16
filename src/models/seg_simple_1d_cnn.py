@@ -5,9 +5,6 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
-
-if wandb.run is not None:
-    from torchsummary import summary
 from tqdm import tqdm
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
@@ -49,6 +46,7 @@ class SegmentationSimple1DCNN(Model):
 
         # If we log the run to weights and biases, we can
         if wandb.run is not None:
+            from torchsummary import summary
             summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:

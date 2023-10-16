@@ -43,15 +43,15 @@ class SegmentationUnet1DCNN(Model):
 
         # Load config and model
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=1, config=self.config)
+        self.model = SegUnet1D(in_channels=data_shape[0], config=self.config)
 
         # Load optimizer
         self.load_optimizer()
 
         # Print model summary
-        if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model.cuda(), input_size=(1, data_shape[1]))
+        # if wandb.run is not None:
+        #     from torchsummary import summary
+        #     summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:
         """

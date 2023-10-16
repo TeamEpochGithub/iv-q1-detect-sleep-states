@@ -224,8 +224,8 @@ class EventNaNRegressionTransformer(Model):
             device = torch.device("cuda")
 
         # Push to device
-        self.model_events.to(device).double()
-        self.model_nans.to(device).double()
+        self.model_events.to(device).float()
+        self.model_nans.to(device).float()
 
         # Turn data from (window_size, features) to (1, window_size, features)
         data = torch.from_numpy(data)  # .unsqueeze(0)
@@ -273,7 +273,7 @@ class EventNaNRegressionTransformer(Model):
 
         # Make predictions without gradient
         with torch.no_grad():
-            data[0] = data[0].double()
+            data[0] = data[0].float()
             padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
             output = model(data[0].to(self.device),
                            padding_mask.to(self.device))

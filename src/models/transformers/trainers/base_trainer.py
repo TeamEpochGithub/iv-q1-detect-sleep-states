@@ -48,7 +48,7 @@ class Trainer:
         # Setup model for training
         model = model.to(self.device)
         model.train()
-        model.double()
+        model.float()
 
         # Wandb logging
         if wandb.run is not None:
@@ -112,7 +112,7 @@ class Trainer:
 
         # Retrieve target and output
         optimiser.zero_grad()
-        data[0] = data[0].double()
+        data[0] = data[0].float()
         padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
         output = model(data[0].to(self.device), padding_mask.to(self.device))
 
@@ -166,7 +166,7 @@ class Trainer:
 
         # Use torch.no_grad() to disable gradient calculation and calculate loss
         with torch.no_grad():
-            data[0] = data[0].double()
+            data[0] = data[0].float()
             padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
             output = model(data[0].to(self.device),
                            padding_mask.to(self.device))

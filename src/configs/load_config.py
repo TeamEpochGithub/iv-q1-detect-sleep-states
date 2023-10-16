@@ -24,6 +24,7 @@ from ..preprocessing.add_state_labels import AddStateLabels
 from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.pp import PP
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
+from ..preprocessing.similarity_nan import SimilarityNan
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
 
@@ -91,6 +92,8 @@ class ConfigLoader:
             match pp_step:
                 case "mem_reduce":
                     pp_steps.append(MemReduce())
+                case "similarity_nan":
+                    pp_steps.append(SimilarityNan())
                 case "add_noise":
                     pp_steps.append(AddNoise())
                 case "split_windows":

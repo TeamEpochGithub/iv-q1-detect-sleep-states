@@ -180,6 +180,16 @@ This contains all the models and their hyperparameters that are implemented. The
     - lr
     - batch_size
 
+- seg-unet-1d-cnn
+    - loss (required)
+    - optimizer (required)
+    - epochs=10
+    - hidden_layers=128
+    - lr=0.001
+    - batch_size=32
+    - kernel_size=7
+    - depth=3
+
 - regression-transformer
     - epochs (required)
     - loss (required)
@@ -277,6 +287,12 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "type": "classic-base-model",
     "median_window": 100,
     "threshold": .1
+}
+
+"1D-Unet-CNN": {
+    "type": "seg-unet-1d-cnn",
+    "loss": "bce-logits-torch",
+    "optimizer": "adam-torch"
 }
 ```
 

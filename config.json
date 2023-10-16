@@ -8,7 +8,8 @@
     "preprocessing": [
         "mem_reduce",
         "add_state_labels",
-        "split_windows"
+        "split_windows",
+        "add_segmentation_labels"
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
@@ -21,13 +22,15 @@
         "standardize": "none"
     },
     "models": {
-        "Classic-baseline": {
-            "type": "classic-base-model"
+        "1D-Unet-CNN": {
+            "type": "seg-unet-1d-cnn",
+            "loss": "bce-logits-torch",
+            "optimizer": "adam-torch"
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["Classic-baseline"],
+        "models": ["1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -40,6 +43,6 @@
         "apply": false,
         "method": "example_cv"
     },
-    "scoring": true,
-    "train_for_submission": true
+    "train_for_submission": true,
+    "scoring": true
 }

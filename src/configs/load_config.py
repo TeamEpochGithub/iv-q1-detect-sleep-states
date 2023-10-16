@@ -342,6 +342,13 @@ class ConfigLoader:
         """
         return self.config["scoring"]
 
+    def get_visualize_preds(self) -> bool:
+        """Get whether to visualize from the config
+
+        :return: whether to visualize
+        """
+        return self.config["visualize_preds"]
+
 
 # ConfigException class
 class ConfigException(Exception):

@@ -13,6 +13,7 @@ from src.score.doscoring import compute_scores
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
+from src.score.visualize_preds import plot_preds_on_series
 
 
 def main(config: ConfigLoader) -> None:
@@ -169,9 +170,9 @@ def main(config: ConfigLoader) -> None:
                        .groupby(['series_id', 'window'])
                        .apply(lambda x: x.iloc[0]))
         submission = to_submission_format(predictions, window_info)
-
         # get only the test series data from the solution
         test_series_ids = window_info['series_id'].unique()
+        # if visualize is true plot all test series
         with open('./series_id_encoding.json', 'r') as f:
             encoding = json.load(f)
         decoding = {v: k for k, v in encoding.items()}
@@ -184,6 +185,12 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)
+        if config.get_visualize_preds():
+            # the plot function applies encoding to the submission
+            # we do not want to change the ids on the original submission
+            plot_submission = submission.copy()
+            plot_preds_on_series(plot_submission, featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
+                                 number_of_series_to_plot=len(test_series_ids))
     else:
         logger.info("Not scoring")
 

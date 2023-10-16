@@ -9,29 +9,27 @@ import warnings
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
                          features_to_plot: list = None, number_of_series_to_plot: int = 1):
     """ This function plots the predictions on the series data. It also plots the real events on the series data."""
-    # get the unique series ids from the preds
-    # the predictions have the series ids as strings
-    # so we encode them to ints later
-    series_ids = preds['series_id'].unique()
 
     # Load the encoding JSON
     with open('series_id_encoding.json', 'r') as f:
         id_encoding = json.load(f)
-
+    # make a decoding for the title
+    id_decoding = {v: k for k, v in id_encoding.items()}
+    real_events = pd.read_csv(events_path)
+    # apply id encoding to events
+    real_events['series_id'] = real_events['series_id'].map(id_encoding)
+    # apply id encoding to preds
+    preds['series_id'] = preds['series_id'].map(id_encoding)
+    # get the unique ids after encoding
+    series_ids = preds['series_id'].unique()
     # loop through the series ids
     for id in series_ids[:number_of_series_to_plot]:
         # Encode the series ID
-        id = id_encoding.get(str(id))
 
         if id is not None:
             current_series = data[data['series_id'] == id]
-            real_events = pd.read_csv(events_path)
-            # apply id encoding to events
-            real_events['series_id'] = real_events['series_id'].map(id_encoding)
             # take the events for the current series
             current_events = real_events.loc[real_events['series_id'] == id]
-            # apply id encoding to preds
-            preds['series_id'] = preds['series_id'].map(id_encoding)
             # take the preds for the current series
             current_preds = preds.loc[preds['series_id'] == id]
             # separate the series by awake values to plot with different colors
@@ -95,7 +93,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                                                                                          showlegend=True if x.name == 0 else False)))
                     fig.update_xaxes(title='Timestamp')
                     fig.update_yaxes(title='Feature values')
-                    fig.update_layout(title=f'Anglez for Series ID: {id}')
+                    fig.update_layout(title=f'Anglez for Series ID: {id_decoding[id]} ({id})')
                     fig.update_xaxes(tickvals=current_series['step'][::len(current_series) // 10], tickangle=45)
 
             # before showing the figure make vertical lines for the current_events and current_preds
@@ -131,7 +129,7 @@ if __name__ == "__main__":
     # for testing you need a submission.csv file in the main folder
     # and it read the processed data
     preds = pd.read_csv("submission.csv")
-    config = ConfigLoader("configs/164_stacked_transformer_config.json")
+    config = ConfigLoader("config.json")
     series_path = 'data/raw/train_series.parquet'
     featured_data = get_processed_data(config, series_path, save_output=True)
     # plot the predictions on the series data

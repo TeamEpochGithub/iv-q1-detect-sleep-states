@@ -121,33 +121,12 @@ def main(config: ConfigLoader) -> None:
         model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
         models[model].save(model_filename_opt)
 
-    # ------------------------------------------------------- #
-    #                    Train for submission                 #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Train for submission", spacing=0)
-
-    if config.get_train_for_submission():
-        logger.info("Retraining models for submission")
-        # Retrain all models with optimal parameters
-        for i, model in enumerate(models):
-            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
-            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
-            if os.path.isfile(model_filename_submit):
-                logger.info("Found existing fully trained optimal model " + str(i) + ": " + model + " with location " + model_filename)
-            else:
-                models[model].load(model_filename_opt, only_hyperparameters=True)
-                logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(*split_on_labels(featured_data))
-                models[model].save(model_filename_submit)
-    else:
-        logger.info("Not training best model for submission")
-
     # ------------------------- #
     #          Ensemble         #
     # ------------------------- #
 
     print_section_separator("Ensemble", spacing=0)
+
     # TODO Add crossvalidation to models #107
     ensemble = config.get_ensemble(models)
 
@@ -207,6 +186,28 @@ def main(config: ConfigLoader) -> None:
         compute_scores(submission, solution)
     else:
         logger.info("Not scoring")
+
+    # ------------------------------------------------------- #
+    #                    Train for submission                 #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Train for submission", spacing=0)
+
+    if config.get_train_for_submission():
+        logger.info("Retraining models for submission")
+        # Retrain all models with optimal parameters
+        for i, model in enumerate(models):
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            if os.path.isfile(model_filename_submit):
+                logger.info("Found existing fully trained optimal model " + str(i) + ": " + model + " with location " + model_filename)
+            else:
+                models[model].load(model_filename_opt, only_hyperparameters=True)
+                logger.info("Retraining model " + str(i) + ": " + model)
+                models[model].train_full(*split_on_labels(featured_data))
+                models[model].save(model_filename_submit)
+    else:
+        logger.info("Not training best model for submission")
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():

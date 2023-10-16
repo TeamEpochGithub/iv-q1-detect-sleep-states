@@ -4,7 +4,7 @@ import torch
 import wandb
 
 from src.logger.logger import logger
-from src.models.transformers.trainers.stacked_trainer import StackedTrainer
+from src.models.transformers.trainers.base_trainer import Trainer
 
 from ...loss.loss import Loss
 from ..model import Model, ModelException
@@ -18,7 +18,7 @@ from numpy import ndarray, dtype
 from typing import Any
 
 
-class StackedRegressionTransformer(Model):
+class EventNaNRegressionTransformer(Model):
     """
     This is the model file for the stacked transformer model.
     """
@@ -193,8 +193,8 @@ class StackedRegressionTransformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = StackedTrainer(epochs=epochs_events,
-                                 criterion=criterion_events)
+        trainer = Trainer(epochs=epochs_events,
+                          criterion=criterion_events)
         avg_train_loss_event, avg_val_loss_event = trainer.fit(
             train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
         if wandb.run is not None:
@@ -203,23 +203,29 @@ class StackedRegressionTransformer(Model):
 
         # Train nans
         logger.info("Training nans model")
-        trainer = StackedTrainer(epochs=epochs_nans, criterion=criterion_nans)
+        trainer = Trainer(epochs=epochs_nans, criterion=criterion_nans)
         avg_train_loss_nan, avg_val_loss_nan = trainer.fit(
             train_dataloader, test_dataloader, self.model_nans, optimizer_nans, self.name)
         if wandb.run is not None:
             self.log_train_test(avg_train_loss_nan,
                                 avg_val_loss_nan, epochs_nans)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]]) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
         :return:
         """
 
+        # Check which device to use
+        if with_cpu:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda")
+
         # Push to device
-        self.model_events.to(self.device).double()
-        self.model_nans.to(self.device).double()
+        self.model_events.to(device).float()
+        self.model_nans.to(device).float()
 
         # Turn data from (window_size, features) to (1, window_size, features)
         data = torch.from_numpy(data)  # .unsqueeze(0)
@@ -246,7 +252,7 @@ class StackedRegressionTransformer(Model):
                     data, prediction_nans, self.model_nans)
 
         # Set the threshold for the nans
-        threshold = 0.5
+        threshold = 1.0
 
         # Create mask where if prediction_nans is above threshold, prediction_events is nans
         for i in range(len(prediction_events)):
@@ -267,7 +273,7 @@ class StackedRegressionTransformer(Model):
 
         # Make predictions without gradient
         with torch.no_grad():
-            data[0] = data[0].double()
+            data[0] = data[0].float()
             padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
             output = model(data[0].to(self.device),
                            padding_mask.to(self.device))

@@ -1,7 +1,9 @@
 import copy
+from typing import List
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from src.logger.logger import logger
 from src.models.transformers.trainers.base_trainer import Trainer
@@ -11,6 +13,7 @@ from ..model import Model, ModelException
 from ...optimizer.optimizer import Optimizer
 from .architecture.transformer_encoder import TSTransformerEncoderClassiregressor
 from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
+from torch import nn
 
 
 class RegressionTransformer(Model):
@@ -186,44 +189,67 @@ class RegressionTransformer(Model):
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu
         :return:
         """
-        # Prediction function
-        # Run the model on the data and return the predictions
 
+        # Check which device to use
         if with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
+
         # Push to device
         self.model.to(device)
 
-        # Get window size
-        window_size = data.shape[0]
-
         # Turn data from (window_size, features) to (1, window_size, features)
-        data = torch.from_numpy(data).unsqueeze(0)
+        data = torch.from_numpy(data)  # .unsqueeze(0)
 
         # Patch data
         patch_size = self.config["patch_size"]
         data = patch_x_data(data, patch_size)
 
-        # Make a prediction
+        test_dataset = torch.utils.data.TensorDataset(
+            data, torch.zeros((data.shape[0], data.shape[1])))
+
+        # Create a dataloader from the dataset
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=self.config["batch_size"])
+
+        # Make predictions
+        predictions = np.empty((0, 4))
+        with tqdm(test_dataloader, unit="batch", disable=False) as tepoch:
+            for idx, data in enumerate(tepoch):
+                predictions = self._pred_one_batch(
+                    data, predictions, self.model)
+
+        # Set the threshold for the nans
+        threshold = 1.0
+
+        # Create mask where if prediction_nans is above threshold, prediction_events is nans
+        for i in range(len(predictions)):
+            if predictions[i, 2] > threshold or predictions[i, 3] > threshold:
+                predictions[i, 0] = np.NAN
+                predictions[i, 1] = np.NAN
+
+        return predictions
+    
+    def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
+        """
+        Predict one batch and return the predictions.
+        :param data: data to predict on
+        :param preds: predictions to append to
+        :param model: model to predict with
+        :return: predictions
+        """
+
+        # Make predictions without gradient
         with torch.no_grad():
-            padding_mask = torch.ones((data.shape[0], data.shape[1])) > 0
-            prediction = self.model(
-                data.to(device), padding_mask.to(device))
-
-        # Get first and only prediction
-        prediction = prediction[0]
-        prediction = prediction.cpu().numpy()  # Move array to numpy
-        threshold = 0.5
-        if (prediction[2] / window_size) > threshold or (prediction[3] / window_size) > threshold:
-            prediction[0] = np.NAN
-            prediction[1] = np.NAN
-
-        return prediction[0], prediction[1]
+            data[0] = data[0].double()
+            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
+            output = model(data[0].to(self.device),
+                           padding_mask.to(self.device))
+            preds = np.concatenate((preds, output.cpu().numpy()), axis=0)
+        return preds
 
     def evaluate(self, pred, target):
         """

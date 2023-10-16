@@ -93,7 +93,8 @@ List of options and their config options
     - "hour": true | false (opt)
     - "minute": true | false (opt)
     - "second": true | false (opt)
-
+- "rotation"
+  - window_sizes: a list of sizes for rolling median smoothing, classic baseline uses 100
 
 Example:
 ``` 

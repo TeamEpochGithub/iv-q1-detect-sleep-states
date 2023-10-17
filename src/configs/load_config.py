@@ -354,6 +354,13 @@ class ConfigLoader:
         """
         return self.config["visualize_preds"]
 
+    def get_number_of_plots(self) -> int:
+        """Get the number of plots from the config
+
+        :return: the number of plots
+        """
+        return self.config["number_of_plots"]
+
 
 # ConfigException class
 class ConfigException(Exception):

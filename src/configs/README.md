@@ -352,12 +352,18 @@ Choose whether to do the scoring and show plots
 ```
 
 ### Visualize preds
-Choose whether to display the plots for the submission
+Choose whether to display the plots for the submission. If true the plotly plot is generated. If false the figure is saved as a jpeg
 
 ```
 "visualize_preds": True | False
 ```
 
+### Number of plots
+Choose how many plots you want to generate for testing
+
+```
+"number_of_plots": 10
+```
 
 ### Train for submission
 

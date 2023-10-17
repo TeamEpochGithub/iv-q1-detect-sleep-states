@@ -195,12 +195,20 @@ class EventNaNRegressionTransformer(Model):
         logger.info("Training events model")
         trainer = Trainer(epochs=epochs_events,
                           criterion=criterion_events)
-        trainer.fit(train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
+        avg_train_loss_event, avg_val_loss_event = trainer.fit(
+            train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
+        if wandb.run is not None:
+            self.log_train_test(avg_train_loss_event,
+                                avg_val_loss_event, len(avg_train_loss_event))
 
         # Train nans
         logger.info("Training nans model")
         trainer = Trainer(epochs=epochs_nans, criterion=criterion_nans)
-        trainer.fit(train_dataloader, test_dataloader, self.model_nans, optimizer_nans, self.name)
+        avg_train_loss_nan, avg_val_loss_nan = trainer.fit(
+            train_dataloader, test_dataloader, self.model_nans, optimizer_nans, self.name)
+        if wandb.run is not None:
+            self.log_train_test(avg_train_loss_nan,
+                                avg_val_loss_nan, len(avg_train_loss_nan))
 
     def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """

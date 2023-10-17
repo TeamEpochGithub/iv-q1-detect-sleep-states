@@ -193,7 +193,8 @@ def main(config: ConfigLoader) -> None:
             plot_preds_on_series(plot_submission,
                                  featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
                                  number_of_series_to_plot=config.get_number_of_plots(),
-                                 folder_path='prediction_plots/' + config_hash)
+                                 folder_path='prediction_plots/' + hash_config(config.get_ensemble(models).config),
+                                 show_plot=config.get_visualize_preds())
     else:
         logger.info("Not scoring")
 

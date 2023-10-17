@@ -4,12 +4,29 @@ import plotly.graph_objects as go
 from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 import warnings
+from plotly_resampler import FigureResampler
+import os
 
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
-                         features_to_plot: list = None, number_of_series_to_plot: int = 1):
-    """ This function plots the predictions on the series data. It also plots the real events on the series data."""
+                         features_to_plot: list = None, number_of_series_to_plot: int = 1, show_plot: bool = False,
+                         ids_to_plot: list = None, folder_path: str = ''):
+    """ This function plots the predictions on the series data. It also plots the real events on the series data.
+        The predictions and the events are vertical lines on the plot. The vertical lines have annotations that show
+        the real and predicted values and the timestamps. The annotations are colored according to the event type.
 
+    Args:
+        preds (pd.DataFrame): The predictions dataframe. It must have the columns series_id, step, event.
+        data (pd.DataFrame): The series data. It must have the columns series_id, step, anglez, enmo, awake, timestamp.
+        events_path (str, optional): The path to the events csv file. Defaults to 'data/raw/train_events.csv'.
+        features_to_plot (list, optional): The features to plot. Defaults to None.
+        number_of_series_to_plot (int, optional): The number of series to plot. Defaults to 1.
+        show_plot (bool, optional): Whether to show the plot or not. Defaults to False.
+        ids_to_plot (list, optional): The encoded ids of the series to plot. Defaults to None.
+        """
+    # make a plrediction_plots folder if it doesnt exist
+    if not os.path.exists('src/score/prediction_plots'):
+        os.mkdir('src/score/prediction_plots')
     # Load the encoding JSON
     with open('series_id_encoding.json', 'r') as f:
         id_encoding = json.load(f)
@@ -22,10 +39,12 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
     preds['series_id'] = preds['series_id'].map(id_encoding)
     # get the unique ids after encoding
     series_ids = preds['series_id'].unique()
-    # loop through the series ids
+    # if ids_to_plot is not None, plot only the ids in the list
+    if ids_to_plot is not None:
+        series_ids = ids_to_plot
+        number_of_series_to_plot = len(ids_to_plot)
+        # loop through the series ids
     for id in series_ids[:number_of_series_to_plot]:
-        # Encode the series ID
-
         if id is not None:
             current_series = data[data['series_id'] == id]
             # take the events for the current series
@@ -93,7 +112,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                                                                                          showlegend=True if x.name == 0 else False)))
                     fig.update_xaxes(title='Timestamp')
                     fig.update_yaxes(title='Feature values')
-                    fig.update_layout(title=f'Anglez for Series ID: {id_decoding[id]} ({id})')
+                    fig.update_layout(title=f'Anglez for Series ID: {id_decoding[id]}-{id}')
                     fig.update_xaxes(tickvals=current_series['step'][::len(current_series) // 10], tickangle=45)
 
             # before showing the figure make vertical lines for the current_events and current_preds
@@ -121,8 +140,16 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                               )
             # the normal margin doesnt work for the annotations
             fig.update_layout(margin=dict(t=160))
-            # show the figure
-            fig.show()
+            if show_plot:
+                fig.show()
+            else:
+                # this downsamples the plotly figure
+                # it is not necessary but it makes the saving 8x faster
+                fig = FigureResampler(fig)
+                # if the hash config dir doesnt exist make it
+                if not os.path.exists(folder_path):
+                    os.mkdir(folder_path)
+                fig.write_image(folder_path + '/' + 'series_id--' + f'{id_decoding[id]}-({id}).jpeg', width=2000, height=600)
 
 
 if __name__ == "__main__":
@@ -132,5 +159,5 @@ if __name__ == "__main__":
     config = ConfigLoader("config.json")
     series_path = 'data/raw/train_series.parquet'
     featured_data = get_processed_data(config, series_path, save_output=True)
-    # plot the predictions on the series data
-    plot_preds_on_series(preds, featured_data, number_of_series_to_plot=3, features_to_plot=['anglez', 'enmo'])
+    # plot the predictions on the series data for the chosen series_ids
+    plot_preds_on_series(preds, featured_data, ids_to_plot=[15], show_plot=True)

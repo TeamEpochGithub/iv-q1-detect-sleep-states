@@ -351,6 +351,14 @@ Choose whether to do the scoring and show plots
 "scoring": True | False
 ```
 
+### Visualize preds
+Choose whether to display the plots for the submission
+
+```
+"visualize_preds": True | False
+```
+
+
 ### Train for submission
 
 Once we have a model that we want to use for submission, we can train it on all the data we have available. This is done

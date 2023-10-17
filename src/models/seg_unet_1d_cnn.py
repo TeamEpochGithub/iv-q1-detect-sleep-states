@@ -43,15 +43,15 @@ class SegmentationUnet1DCNN(Model):
 
         # Load config and model
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=data_shape[0], config=self.config)
+        self.model = SegUnet1D(in_channels=data_shape[0], out_channels=3, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
 
         # Print model summary
-        # if wandb.run is not None:
-        #     from torchsummary import summary
-        #     summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+        if wandb.run is not None:
+            from torchsummary import summary
+            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:
         """
@@ -90,7 +90,7 @@ class SegmentationUnet1DCNN(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 64, "kernel_size": 7, "depth": 3}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2}
 
     def get_type(self) -> str:
         """
@@ -114,14 +114,13 @@ class SegmentationUnet1DCNN(Model):
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
+        # TODO Change
+        X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
+        X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
 
-        #TODO Change
-        X_train = torch.from_numpy(X_train[:, : ,1]).permute(0, 2, 1)
-        X_test = torch.from_numpy(X_test[:, : ,1]).permute(0, 2, 1)
-
-        # Get only the 1st -4th feature from the labels
-        y_train = y_train[:, :, 1:5]
-        y_test = y_test[:, :, 1:5]
+        # Get only the one hot encoded features
+        y_train = y_train[:, :, -3:]
+        y_test = y_test[:, :, -3:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -152,27 +151,32 @@ class SegmentationUnet1DCNN(Model):
         avg_val_losses = []
         # Train the model
 
-        pbar = tqdm(range(epochs))
-        for epoch in pbar:
+        # pbar = tqdm(range(epochs))
+        for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(device=self.device)
-                y = y.to(device=self.device)
+            with tqdm(train_dataloader, unit="batch") as tepoch:
+                for i, (x, y) in enumerate(tepoch):
+                    x = x.to(device=self.device)
+                    y = y.to(device=self.device)
 
-                # Clear gradients
-                optimizer.zero_grad()
+                    # Clear gradients
+                    optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs, y)
+                    # Forward pass
+                    outputs = self.model(x)
+                    loss = criterion(outputs, y)
 
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
+                    # Backward and optimize
+                    loss.backward()
+                    optimizer.step()
 
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
+                    # Calculate the avg loss for 1 epoch
+                    avg_loss += loss.item() / len(train_dataloader)
+
+                    # Log to console
+                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_postfix(loss=avg_loss)
 
             # Calculate the validation loss
             self.model.train(False)
@@ -188,7 +192,7 @@ class SegmentationUnet1DCNN(Model):
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
             logger.debug(descr)
-            pbar.set_description(descr)
+            #pbar.set_description(descr)
 
             # Add average losses to list
             avg_losses.append(avg_loss)
@@ -236,32 +240,38 @@ class SegmentationUnet1DCNN(Model):
         wandb.define_metric("epoch")
         wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
-        pbar = tqdm(range(epochs))
-        for epoch in pbar:
+        #pbar = tqdm(range(epochs))
+        for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(device=self.device)
-                y = y.to(device=self.device)
+            with tqdm(train_dataloader, unit="batch") as tepoch:
+                for i, (x, y) in enumerate(tepoch):
+                    x = x.to(device=self.device)
+                    y = y.to(device=self.device)
 
-                # Clear gradients
-                optimizer.zero_grad()
+                    # Clear gradients
+                    optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs, y)
+                    # Forward pass
+                    outputs = self.model(x)
+                    loss = criterion(outputs, y)
 
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
+                    # Backward and optimize
+                    loss.backward()
+                    optimizer.step()
 
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
+                    # Calculate the avg loss for 1 epoch
+                    avg_loss += loss.item() / len(train_dataloader)
+
+                    # Log to console
+                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_postfix(loss=avg_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
             logger.debug(descr)
-            pbar.set_description(descr)
+
+            #pbar.set_description(descr)
 
             # Log train full
             if wandb.run is not None:

@@ -73,30 +73,31 @@ class SegUnet1D(nn.Module):
     SegUnetId model. Contains the architecture of the SegUnetId model.
     """
 
-    def __init__(self, in_channels: int, config : dict):
+    def __init__(self, in_channels: int, out_channels: int, config : dict):
         super(SegUnet1D, self).__init__()
         self.in_channels = in_channels
+        self.out_channels = out_channels
         self.hidden_layers = config["hidden_layers"]
         self.kernel_size = config["kernel_size"]
         self.depth = config["depth"]
 
-        self.AvgPool1D1 = nn.AvgPool1d(in_channels, stride=5)
-        self.AvgPool1D2 = nn.AvgPool1d(in_channels, stride=25)
-        self.AvgPool1D3 = nn.AvgPool1d(in_channels, stride=125)
+        self.AvgPool1D1 = nn.AvgPool1d(in_channels, stride=4)
+        self.AvgPool1D2 = nn.AvgPool1d(in_channels, stride=16)
+        self.AvgPool1D3 = nn.AvgPool1d(in_channels, stride=64)
 
-        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth)
-        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, 5, self.depth)
-        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, 5, self.depth)
-        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, 5, self.depth)
-        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, 4, self.depth)
+        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, 2)
+        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, 4, 2)
+        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, 4, 2)
+        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, 4, 2)
+        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, 4, 2)
 
         self.cbr_up1 = ConBrBlock(int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
         self.cbr_up2 = ConBrBlock(int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
         self.cbr_up3 = ConBrBlock(int(self.hidden_layers * 3), self.hidden_layers, self.kernel_size, 1, 1)
-        self.upsample = nn.Upsample(scale_factor=5, mode='nearest')
-        self.upsample1 = nn.Upsample(scale_factor=5, mode='nearest')
-
-        self.outcov = nn.Conv1d(self.hidden_layers, 1, kernel_size=self.kernel_size, stride=1, padding=3)
+        self.upsample = nn.Upsample(scale_factor=4, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=4, mode='nearest')
+        self.softmax = nn.Softmax(dim=1)
+        self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
 
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
         block = []
@@ -134,6 +135,7 @@ class SegUnet1D(nn.Module):
         up = self.cbr_up3(up)
 
         out = self.outcov(up)
+        out = self.softmax(out)
 
         # out = nn.functional.softmax(out,dim=2)
 

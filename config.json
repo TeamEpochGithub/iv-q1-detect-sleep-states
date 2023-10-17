@@ -19,13 +19,19 @@
     "fe_loc_in": "data/processed",
     "pre_training": {
         "test_size": 0.2,
-        "standardize": "none"
+        "standardize": "standard"
     },
     "models": {
         "1D-Unet-CNN": {
             "type": "seg-unet-1d-cnn",
-            "loss": "bce-logits-torch",
-            "optimizer": "adam-torch"
+            "loss": "ce-torch",
+            "optimizer": "adam-torch",
+            "epochs": 10,
+            "batch_size": 32,
+            "lr": 0.0003,
+            "hidden_layers": 32,
+            "kernel_size": 7,
+            "depth": 2
         }
     },
     "model_store_loc": "tm",

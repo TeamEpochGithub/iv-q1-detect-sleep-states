@@ -25,8 +25,8 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         ids_to_plot (list, optional): The encoded ids of the series to plot. Defaults to None.
         """
     # make a plrediction_plots folder if it doesnt exist
-    if not os.path.exists('src/score/prediction_plots'):
-        os.mkdir('src/score/prediction_plots')
+    if not os.path.exists('prediction_plots'):
+        os.mkdir('prediction_plots')
     # Load the encoding JSON
     with open('series_id_encoding.json', 'r') as f:
         id_encoding = json.load(f)

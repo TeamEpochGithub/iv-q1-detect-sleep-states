@@ -75,8 +75,9 @@ class Trainer:
             avg_train_losses.append(train_loss.cpu())
             avg_val_losses.append(val_loss.cpu())
 
-            wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
-                      f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+            if wandb.run is not None:
+                wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
+                           f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
             # Save model if validation loss is lower than previous lowest validation loss
             if val_loss < lowest_val_loss:
@@ -88,6 +89,8 @@ class Trainer:
                 if counter >= max_counter:
                     model.load_state_dict(best_model)
                     break
+
+        model.load_state_dict(best_model)
 
         return avg_train_losses, avg_val_losses
 

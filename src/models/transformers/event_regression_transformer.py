@@ -180,13 +180,13 @@ class EventRegressionTransformer(Model):
         logger.info("Training events model")
         trainer = Trainer(epochs=epochs,
                           criterion=criterion)
-        avg_train_loss_event, avg_val_loss_event = trainer.fit(
-            train_dataloader, test_dataloader, self.model_events, optimizer, self.name)
+        avg_train_loss, avg_val_loss = trainer.fit(
+            train_dataloader, test_dataloader, self.model, optimizer, self.name)
         if wandb.run is not None:
-            self.log_train_test(avg_train_loss_event,
-                                avg_val_loss_event, len(avg_train_loss_event))
+            self.log_train_test(avg_train_loss,
+                                avg_val_loss, len(avg_train_loss))
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -200,8 +200,7 @@ class EventRegressionTransformer(Model):
             device = torch.device("cuda")
 
         # Push to device
-        self.model_events.to(device).float()
-        self.model_nans.to(device).float()
+        self.model.to(device).float()
 
         # Turn data from (window_size, features) to (1, window_size, features)
         data = torch.from_numpy(data)  # .unsqueeze(0)

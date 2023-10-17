@@ -351,6 +351,15 @@ Choose whether to do the scoring and show plots
 "scoring": True | False
 ```
 
+### Train for submission
+
+Once we have a model that we want to use for submission, we can train it on all the data we have available. This is done
+by setting the following to true:
+
+```
+"train_for_submission": True
+```
+
 ### Visualize preds
 Choose whether to display the plots for the submission. If true the plotly plot is generated. If false the figure is saved as a jpeg
 
@@ -363,13 +372,4 @@ Choose how many plots you want to generate for testing
 
 ```
 "number_of_plots": 10
-```
-
-### Train for submission
-
-Once we have a model that we want to use for submission, we can train it on all the data we have available. This is done
-by setting the following to true:
-
-```
-"train_for_submission": True
 ```

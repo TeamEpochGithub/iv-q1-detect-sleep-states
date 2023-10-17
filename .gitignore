@@ -192,3 +192,4 @@ tm.zip
 
 #Ignore configs
 configs/
+src/score/prediction_plots

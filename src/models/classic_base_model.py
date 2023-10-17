@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ..logger import logger
+from ..logger.logger import logger
 from ..models.model import Model
 from ..util.state_to_event import find_events
 
@@ -19,7 +19,7 @@ class ClassicBaseModel(Model):
         :param config: configuration to set up the model
         :param name: name of the model
         """
-        super().__init__(config)
+        super().__init__(config, name)
         self.model_type = "classic-base-model"
         self.load_config(config)
 

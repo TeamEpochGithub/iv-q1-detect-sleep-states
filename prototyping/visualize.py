@@ -27,16 +27,26 @@ def plot_data(series, segment_pred, event_pred, title_id, feature, subsample=1, 
 
     # segment pred has shape (windows,1,1440)
     # concatenate and upsample by 12x to (windows*12780)
-    segment_pred = np.concatenate(segment_pred, axis=1)
-    segment_pred = np.repeat(segment_pred, 12, axis=1).flatten()
+    segment_pred = np.concatenate(segment_pred, axis=1)[0]
+    segment_pred = np.repeat(segment_pred, 12, axis=0)
 
-    event_pred = np.concatenate(event_pred, axis=1)
-    event_pred = np.repeat(event_pred, 12, axis=1)
+    event_pred = np.transpose(event_pred, (1, 0, 2))
+    onset_pred = np.concatenate(event_pred[0], axis=0)
+    onset_pred = np.repeat(onset_pred, 12, axis=0)
+    awake_pred = np.concatenate(event_pred[1], axis=0)
+    awake_pred = np.repeat(awake_pred, 12, axis=0)
+
+    segment_pred = segment_pred[:plot_limit:subsample]
+    onset_pred = onset_pred[:plot_limit:subsample]
+    awake_pred = awake_pred[:plot_limit:subsample]
 
     awake_0_x = masked_x(series.index, series['awake'] == 0)
     awake_1_x = masked_x(series.index, series['awake'] == 1)
     awake_2_x = masked_x(series.index, series['awake'] == 2)
     awake_3_x = masked_x(series.index, series['awake'] == 3)
+
+    # normalize the feature
+    series[feature] = (series[feature] - series[feature].mean()) / series[feature].std()
 
     fig_anglez = px.line()
     fig_anglez.add_scatter(x=awake_0_x, y=series[feature], mode='lines', name='0 (Sleep)', line=dict(color='blue'))
@@ -45,8 +55,8 @@ def plot_data(series, segment_pred, event_pred, title_id, feature, subsample=1, 
     fig_anglez.add_scatter(x=awake_3_x, y=series[feature], mode='lines', name='3 (Unlabeled)', line=dict(color='grey'))
 
     fig_anglez.add_scatter(x=series.index, y=segment_pred, mode='lines', name='segmentation', line=dict(color='light grey'))
-    fig_anglez.add_scatter(x=series.index, y=event_pred[0], mode='lines', name='onset', line=dict(color='white'))
-    fig_anglez.add_scatter(x=series.index, y=event_pred[0], mode='lines', name='awake', line=dict(color='black'))
+    fig_anglez.add_scatter(x=series.index, y=onset_pred, mode='lines', name='onset', line=dict(color='orange'))
+    fig_anglez.add_scatter(x=series.index, y=awake_pred, mode='lines', name='awake', line=dict(color='black'))
     fig_anglez.update_xaxes(title='Timestamp')
     fig_anglez.update_yaxes(title=feature)
     fig_anglez.update_layout(title=f'Series {title_id} - {feature} - Subsampled {subsample}x')
@@ -106,8 +116,8 @@ if __name__ == '__main__':
     # make predictions
     for series_id in series_ids[:10]:
         df = series[series_id]
-        df_window_1 = df[df['window'] == 1]
-        model_input = series_to_model_input(df_window_1)
+        df = df.groupby('window').filter(lambda x: len(x) == window_length)
+        model_input = series_to_model_input(df)
         model_input = torch.from_numpy(model_input).to(device)
 
         if model_input.shape[0] == 0:
@@ -120,5 +130,5 @@ if __name__ == '__main__':
 
         print(f'Plotting series {series_id}')
         # plot the predictions
-        plot_data(df_window_1, segment_pred, event_pred, series_id, 'anglez', subsample=50,
+        plot_data(df, segment_pred, event_pred, series_id, 'anglez', subsample=1,
                   save='html')

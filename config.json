@@ -19,9 +19,12 @@
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
-    "pre_training": {
+    "pretraining": {
         "test_size": 0.2,
-        "standardize": "none"
+        "scaler": {
+            "kind": "standard",
+            "copy": true
+        }
     },
     "models": {
         "Classic-baseline": {

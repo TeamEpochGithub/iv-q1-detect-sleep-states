@@ -8,7 +8,7 @@ import wandb
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
-from src.pre_train.train_test_split import train_test_split, split_on_labels
+from src.pretrain.pretrain import Pretrain
 from src.score.doscoring import compute_scores
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
@@ -60,17 +60,20 @@ def main(config: ConfigLoader) -> None:
 
     print_section_separator("Pre-train", spacing=0)
 
-    logger.info("Get pretraining parameters from config...")
-    pretrain = config.get_pretraining()
+    logger.info("Get pretraining parameters from config and initialize pretrain")
+    pretrain: Pretrain = config.get_pretraining()
 
-    logger.info("Obtained pretrain parameters from config " + str(pretrain))
+    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
 
     # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
-    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data,
-                                                                             test_size=pretrain["test_size"],
-                                                                             standardize_method=pretrain["standardize"])
+
+    X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain(featured_data)
+
+    # Save scaler
+    scaler_filename: str = config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl"
+    pretrain.scaler.save(scaler_filename)
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
@@ -81,9 +84,7 @@ def main(config: ConfigLoader) -> None:
         X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
 
     # TODO Cross validation should be part of each model
-    cv = 0
-    if "cv" in pretrain:
-        cv = config.get_cv()
+    cv = config.get_cv()
 
     # ------------------------- #
     #          Training         #
@@ -164,6 +165,7 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Formatting predictions...")
 
+        # TODO simplify this
         # for each window get the series id and step offset
         window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
                        .groupby(['series_id', 'window'])
@@ -204,7 +206,7 @@ def main(config: ConfigLoader) -> None:
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(*split_on_labels(featured_data))
+                models[model].train_full(*Pretrain.split_on_labels(featured_data))
                 models[model].save(model_filename_submit)
     else:
         logger.info("Not training best model for submission")

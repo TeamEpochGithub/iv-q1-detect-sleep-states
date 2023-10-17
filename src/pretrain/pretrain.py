@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import GroupShuffleSplit
+
+from ..scaler.scaler import Scaler
+
+
+class Pretrain:
+    """This class is used to prepare the data for training
+
+    It's main functionality is to split the data into train and test sets,
+    standardize the data according to the train set, split the data into features and labels,
+    and convert the data to a numpy array.
+    """
+
+    def __init__(self, scaler: Scaler, test_size: float):
+        """Initialize the pretrain object
+
+        :param scaler: the scaler to use
+        :param test_size: the size of the test set
+        """
+        self.scaler = scaler
+        self.test_size = test_size
+
+    @staticmethod
+    def from_config(config: dict) -> Pretrain:
+        """Create a pretrain object from the config
+
+        :param config: the config to create the pretrain object from
+        :return: the pretrain object
+        """
+
+        scaler = Scaler(**config['scaler'])
+        test_size = config["test_size"]
+
+        return Pretrain(scaler, test_size)
+
+    def pretrain(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array):
+        """Prepare the data for training
+
+        It splits the data into train and test sets, standardizes the data according to the train set,
+        splits the data into features and labels, and converts the data to a numpy array.
+
+        :param df: the dataframe to pretrain on
+        :return: the train data, test data, train labels, test labels, train indices and test indices
+        """
+
+        train_data, test_data, train_idx, test_idx = self.train_test_split(df, test_size=self.test_size)
+
+        self.scaler.fit_transform(train_data)
+        self.scaler.transform(test_data)
+
+        X_train, y_train = self.split_on_labels(train_data)
+        X_test, y_test = self.split_on_labels(test_data)
+
+        X_train = self.to_window_numpy(X_train)
+        X_test = self.to_window_numpy(X_test)
+        y_train = self.to_window_numpy(y_train)
+        y_test = self.to_window_numpy(y_test)
+
+        return X_train, X_test, y_train, y_test, train_idx, test_idx
+
+    def preprocess(self, x_data: pd.DataFrame) -> np.array:
+        """Prepare the data for submission
+
+        The data is supposed to be processed the same way as for the training and testing data.
+
+        :param x_data: the dataframe to pretrain on
+        :return: the processed data
+        """
+        x_data = self.get_features(x_data)
+        self.scaler.transform(x_data)
+        return self.to_window_numpy(x_data)
+
+    @staticmethod
+    def train_test_split(df: pd.DataFrame, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
+        """Split data into train and test on series id using gss
+
+        :param df: the dataframe to split
+        :param test_size: the size of the test set
+        :return: the train data, test data, train indices and test indices
+        """
+        groups = df["series_id"]
+        gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=42)
+        train_idx, test_idx = next(gss.split(df, groups=groups))
+        train_data = df.iloc[train_idx]
+        test_data = df.iloc[test_idx]
+
+        return train_data, test_data, train_idx, test_idx
+
+    @staticmethod
+    def get_features(df: pd.DataFrame) -> pd.DataFrame:
+        """Split the labels from the features
+
+        :param df: the dataframe to split
+        :return: the data and features
+        """
+        feature_cols = [col for col in df.columns if col.startswith('f_')]
+
+        return df[['enmo', 'anglez'] + feature_cols]
+
+    @staticmethod
+    def split_on_labels(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        """Split the data from the labels
+
+        :param df: the dataframe to split
+        :return: the data + features (1) and labels (2)
+        """
+        feature_cols = [col for col in df.columns if col.startswith('f_')]
+
+        keep_columns: list[str] = ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN",
+                                   "hot-asleep", "hot-awake", "hot-NaN"]
+        keep_y_train_columns: np.array = np.intersect1d(keep_columns, df.columns)
+
+        return df[['enmo', 'anglez'] + feature_cols], df[keep_y_train_columns]
+
+    @staticmethod
+    def to_window_numpy(df: pd.DataFrame) -> np.array:
+        """Convert a dataframe to a numpy array
+
+        It's really just a simple reshape, but it's here for clarity.
+        17280 is the number of steps in a window
+
+        :param df: the dataframe to convert
+        :return: the numpy array
+        """
+        return df.to_numpy(dtype='float32').reshape(-1, 17280, len(df.columns))

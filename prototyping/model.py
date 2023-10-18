@@ -19,11 +19,11 @@ class TimeSeriesSegmentationModel(nn.Module):
         self.bgru = nn.GRU(32, hidden_size=16, num_layers=2, bidirectional=True, batch_first=True)
 
         # Auxiliary State Segmentation Head
-        self.segmentation_conv1d = nn.Conv1d(32 + 32, 1, kernel_size=1)
+        self.segmentation_conv1d = nn.Conv1d(32+32, 1, kernel_size=1)
         self.sigmoid = nn.Sigmoid()
 
         # Final Event Classification Head
-        self.final_conv1d = nn.Conv1d(32 + 32 + 1, 2, kernel_size=1)
+        self.final_conv1d = nn.Conv1d(32 + 32+1, 2, kernel_size=1)
         self.final_softmax = nn.Softmax(dim=2)
         torchsummary.summary(self, (7, 17280), device='cpu')
 
@@ -49,7 +49,7 @@ class TimeSeriesSegmentationModel(nn.Module):
         state_segmentation = self.sigmoid(state_segmentation)
 
         # Concatenate state with conv and gru output
-        x = torch.cat((x, state_segmentation), dim=1)
+        x = torch.cat((x, state_segmentation.detach()), dim=1)
 
         # Final Event Classification Head
         event_classification = self.final_conv1d(x)

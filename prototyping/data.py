@@ -5,13 +5,14 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-
+import joblib
 from prototyping.features import add_features
 
 # Constants
 window_length = 17280
 reduce_factor = 12
 
+split = 0.7
 
 class TimeSeriesDataset(Dataset):
     def __init__(self, data, segmentation_labels, event_classification_labels):
@@ -48,8 +49,14 @@ def get_data_loader() -> DataLoader:
 if __name__ == '__main__':
 
     first_timestamps = json.load(open(f'./data/processed/train/first_timestamps.json'))
+
+    # select the first split of series ids from the keys in first_timestamps
+    all_sids = list(first_timestamps.keys())
+    all_sids.sort()
+    train_ids = all_sids[:int(len(all_sids)*split)]
+
     series = {}
-    for series_id in tqdm(first_timestamps, desc='Loading data'):
+    for series_id in tqdm(train_ids, desc='Loading data'):
         series[series_id] = pd.read_parquet(f'./data/processed/train/labeled/{series_id}.parquet')
 
     # Create a list to store processed data
@@ -103,6 +110,9 @@ if __name__ == '__main__':
 
     for window in tqdm(processed_data, desc='Transforming data'):
         window[:] = scaler.transform(window.T).T
+
+    # save the scalar
+    joblib.dump(scaler, './tm/std_scaler.bin', compress=True)
 
     # save the numpy arrays to disk
     np.save('./data/processed/train/featured/processed_data.npy', processed_data)

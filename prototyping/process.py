@@ -22,6 +22,8 @@ first_timestamps = dict()
 
 pbar = tqdm(data.groupby(['series_id']))
 for series_id, group in pbar:
+    pbar.set_description(
+        f"Processing series {sid}, of {len(group) / STEPS_PER_DAY:.1f} days")
 
     # drop series
     sid = group['series_id'].iloc[0]
@@ -32,18 +34,12 @@ for series_id, group in pbar:
     first_timestamps[sid] = first_timestamp
 
     # convert timestamp to datetime
-    pbar.set_description(
-        f"Processing series {sid}, of {len(group) / STEPS_PER_DAY:.1f} days, converting timestamp to datetime")
     timestamp_pl = pl.from_pandas(pd.Series(group.timestamp, copy=False))
     timestamp_pl = timestamp_pl.str.slice(0, 19)
     timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S", time_unit='ms')
     group['timestamp'] = timestamp_pl
 
     # convert timestamp to hours and minutes
-    pbar.set_description(
-        f"Processing series {sid}, of {len(group) / STEPS_PER_DAY:.1f} days, "
-        f"converting timestamp to hours and minutes")
-
     group['hour'] = group['timestamp'].dt.hour
     group['minute'] = group['timestamp'].dt.minute
     group.drop(['timestamp'], axis=1, inplace=True)

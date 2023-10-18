@@ -1,6 +1,7 @@
 import json
 import sys
 
+import joblib
 import numpy as np
 import pandas as pd
 import plotly
@@ -13,7 +14,7 @@ from prototyping.features import add_features
 from prototyping.model import TimeSeriesSegmentationModel
 
 window_length = 17280
-
+split = 0.7
 
 def masked_x(index: pd.Index, mask):
     """where the mask is false, replace the value with NaN, returns a copy"""
@@ -45,14 +46,15 @@ def plot_data(series, segment_pred, event_pred, title_id, feature, subsample=1, 
     awake_2_x = masked_x(series.index, series['awake'] == 2)
     awake_3_x = masked_x(series.index, series['awake'] == 3)
 
-    # normalize the feature
-    series[feature] = (series[feature] - series[feature].mean()) / series[feature].std()
+
+    y = series[feature].values
+    y = (y - np.mean(y))/np.std(y)
 
     fig_anglez = px.line()
-    fig_anglez.add_scatter(x=awake_0_x, y=series[feature], mode='lines', name='0 (Sleep)', line=dict(color='blue'))
-    fig_anglez.add_scatter(x=awake_1_x, y=series[feature], mode='lines', name='1 (Awake)', line=dict(color='red'))
-    fig_anglez.add_scatter(x=awake_2_x, y=series[feature], mode='lines', name='2 (NaN)', line=dict(color='green'))
-    fig_anglez.add_scatter(x=awake_3_x, y=series[feature], mode='lines', name='3 (Unlabeled)', line=dict(color='grey'))
+    fig_anglez.add_scatter(x=awake_0_x, y=y, mode='lines', name='0 (Sleep)', line=dict(color='blue'))
+    fig_anglez.add_scatter(x=awake_1_x, y=y, mode='lines', name='1 (Awake)', line=dict(color='red'))
+    fig_anglez.add_scatter(x=awake_2_x, y=y, mode='lines', name='2 (NaN)', line=dict(color='green'))
+    fig_anglez.add_scatter(x=awake_3_x, y=y, mode='lines', name='3 (Unlabeled)', line=dict(color='grey'))
 
     fig_anglez.add_scatter(x=series.index, y=segment_pred, mode='lines', name='segmentation', line=dict(color='light grey'))
     fig_anglez.add_scatter(x=series.index, y=onset_pred, mode='lines', name='onset', line=dict(color='orange'))
@@ -86,9 +88,7 @@ def series_to_model_input(df):
     # Convert to a numpy array
     processed_data = np.array(processed_data)
 
-    scaler = StandardScaler()
-    reshaped = processed_data.transpose(0, 2, 1).reshape(-1, processed_data.shape[1])
-    scaler.fit(reshaped)
+    scaler = joblib.load('./tm/std_scaler.bin')
 
     for window in tqdm(processed_data, desc='Transforming data'):
         window[:] = scaler.transform(window.T).T
@@ -99,22 +99,26 @@ def series_to_model_input(df):
 if __name__ == '__main__':
     # Load the pandas version of the series
     first_timestamps = json.load(open('./data/processed/train/first_timestamps.json'))
-    pbar = tqdm(first_timestamps, file=sys.stdout)
+
+    # get the test series ids
+    all_sids = list(first_timestamps.keys())
+    all_sids.sort()
+    test_ids = all_sids[:int(len(all_sids) * split)]
+
+    pbar = tqdm(test_ids, file=sys.stdout)
     series = dict()
-    series_ids = list()
     for series_id in pbar:
         data = pd.read_parquet(f'./data/processed/train/labeled/{series_id}.parquet')
         series[series_id] = data
-        series_ids.append(series_id)
 
     # load the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = TimeSeriesSegmentationModel().double().to(device)
-    model.load_state_dict(torch.load('./tm/model_9.pt'))
+    model.load_state_dict(torch.load('./tm/model_1.pt'))
     print('Loaded model')
 
     # make predictions
-    for series_id in series_ids[:10]:
+    for series_id in test_ids[:10]:
         df = series[series_id]
         df = df.groupby('window').filter(lambda x: len(x) == window_length)
         model_input = series_to_model_input(df)
@@ -130,5 +134,4 @@ if __name__ == '__main__':
 
         print(f'Plotting series {series_id}')
         # plot the predictions
-        plot_data(df, segment_pred, event_pred, series_id, 'anglez', subsample=1,
-                  save='html')
+        plot_data(df, segment_pred, event_pred, series_id, 'anglez', subsample=12, save=None)

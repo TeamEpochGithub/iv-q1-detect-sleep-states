@@ -26,6 +26,5 @@ for series_id in pbar:
     if offset < 0:
         offset += STEPS_PER_DAY
 
-    series['window'] = (series.index + offset) // STEPS_PER_DAY
-
+    series['window'] = ((series.index.astype(int) - offset) // STEPS_PER_DAY)+1
     series.to_parquet(f'./data/processed/{dataset}/windowed/{series_id}.parquet')

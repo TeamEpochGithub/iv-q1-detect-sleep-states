@@ -7,6 +7,7 @@ from prototyping.data import get_data_loader
 from prototyping.model import TimeSeriesSegmentationModel
 
 event_loss_weight = 1e6
+label_balance = 0.639847
 
 if __name__ == '__main__':
     if torch.cuda.is_available():
@@ -46,11 +47,13 @@ if __name__ == '__main__':
             segment_pred, event_pred = model(data)
 
             # Compute losses
+            weight_rebal = torch.where(segmentation_target == 1.0, 1/(1-label_balance), 1/label_balance)
+            segmentation_criterion = nn.BCELoss(weight=weight_rebal)
             segmentation_loss = segmentation_criterion(segment_pred, segmentation_target)
             event_classification_loss = event_classification_criterion(event_pred, event_classification_target)
 
             # Total loss
-            total_loss = segmentation_loss + event_loss_weight*event_classification_loss
+            total_loss = segmentation_loss #+ event_loss_weight*event_classification_loss
 
             total_loss.backward()
             optimizer.step()

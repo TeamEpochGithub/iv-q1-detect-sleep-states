@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import joblib
 import pandas as pd
+import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler, MaxAbsScaler, PowerTransformer, \
     QuantileTransformer, Normalizer
@@ -79,25 +80,25 @@ class Scaler:
 
         self.scaler.fit(df)
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> np.ndarray:
         """Transform the data with the scaler.
 
         :param df: the data to transform
         :return: the transformed data
         """
         if self.scaler is None:
-            return df
+            return df.to_numpy(dtype=np.float32)
 
         return self.scaler.transform(df)
 
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit_transform(self, df: pd.DataFrame) -> np.ndarray:
         """Fit the scaler to the data and transform the data with the scaler.
 
         :param df: the data to fit the scaler to and transform
         :return: the transformed data
         """
         if self.scaler is None:
-            return df
+            return df.to_numpy(dtype=np.float32)
 
         return self.scaler.fit_transform(df)
 

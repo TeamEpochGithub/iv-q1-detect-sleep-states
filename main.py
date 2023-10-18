@@ -69,11 +69,7 @@ def main(config: ConfigLoader) -> None:
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
 
-    X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain(featured_data)
-
-    # Save scaler
-    scaler_filename: str = config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl"
-    pretrain.scaler.save(scaler_filename)
+    X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain_split(featured_data)
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
@@ -197,7 +193,14 @@ def main(config: ConfigLoader) -> None:
 
     if config.get_train_for_submission():
         logger.info("Retraining models for submission")
+
         # Retrain all models with optimal parameters
+        X_train, y_train = Pretrain.pretrain_final(featured_data)
+
+        # Save scaler
+        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl"
+        pretrain.scaler.save(scaler_filename)
+
         for i, model in enumerate(models):
             model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
@@ -206,8 +209,10 @@ def main(config: ConfigLoader) -> None:
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(*Pretrain.split_on_labels(featured_data))
+                models[model].train_full(X_train, y_train)
                 models[model].save(model_filename_submit)
+
+
     else:
         logger.info("Not training best model for submission")
 

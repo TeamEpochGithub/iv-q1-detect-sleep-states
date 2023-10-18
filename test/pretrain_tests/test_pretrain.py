@@ -17,21 +17,33 @@ class TestPretrain(TestCase):
         self.assertTrue(pretrain.scaler.scaler.copy)
 
     def test_pretrain(self):
-        pretrain: Pretrain = Pretrain.from_config({"test_size": 0.25, "scaler": {"kind": "none"}})
+        pretrain: Pretrain = Pretrain.from_config({"test_size": 0.25, "scaler": {"kind": "standard-scaler"}})
 
         df: pd.DataFrame = pd.DataFrame({"series_id": np.concatenate(
             (np.repeat(0, 34560), np.repeat(1, 34560), np.repeat(2, 34560), np.repeat(3, 34560))),
-                                         "enmo": np.repeat(0, 138240),
-                                         "anglez": np.repeat(0, 138240),
-                                         "awake": np.repeat(0, 138240),
-                                         "f_test": np.repeat(0, 138240)})
+            "enmo": np.random.rand(138240) * 2 + 1,
+            "anglez": np.random.rand(138240) * 2 + 1,
+            "awake": np.random.rand(138240) * 2 + 1,
+            "f_test": np.random.rand(138240) * 2 + 1})
 
-        X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain(df)
+        X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain_split(df)
 
         self.assertEqual(X_train.shape, (6, 17280, 3))
         self.assertEqual(X_test.shape, (2, 17280, 3))
         self.assertEqual(y_train.shape, (6, 17280, 1))
         self.assertEqual(y_test.shape, (2, 17280, 1))
+
+        # Assert that train data is perfectly normal
+        for feature in range(3):
+            flat = X_train[:, :, feature].flatten()
+            self.assertAlmostEqual(0, flat.mean(), delta=1e-5)
+            self.assertAlmostEqual(1, flat.std(), delta=1e-5)
+
+        # Assert that test data is sort of normal
+        for feature in range(3):
+            flat = X_train[:, :, feature].flatten()
+            self.assertAlmostEqual(0, flat.mean(), delta=0.1)
+            self.assertAlmostEqual(1, flat.std(), delta=0.1)
 
     def test_preprocess(self):
         pretrain: Pretrain = Pretrain.from_config({"test_size": 0.5, "scaler": {"kind": "none"}})
@@ -81,4 +93,5 @@ class TestPretrain(TestCase):
         df: pd.DataFrame = pd.DataFrame({"series_id": np.repeat(0, 34560),
                                          "enmo": np.repeat(0, 34560),
                                          "anglez": np.repeat(0, 34560)})
-        self.assertEqual(Pretrain.to_window_numpy(df).shape, (2, 17280, 3))
+        arr = df.to_numpy(dtype=np.float32)
+        self.assertEqual(Pretrain.to_windows(arr).shape, (2, 17280, 3))

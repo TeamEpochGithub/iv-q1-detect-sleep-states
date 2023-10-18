@@ -37,7 +37,7 @@ class Pretrain:
 
         return Pretrain(scaler, test_size)
 
-    def pretrain(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array):
+    def pretrain_split(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
@@ -52,15 +52,36 @@ class Pretrain:
         X_train, y_train = self.split_on_labels(train_data)
         X_test, y_test = self.split_on_labels(test_data)
 
-        self.scaler.fit_transform(X_train)
-        self.scaler.transform(X_test)
+        X_train = self.scaler.fit_transform(X_train).astype(np.float32)
+        X_test = self.scaler.transform(X_test).astype(np.float32)
+        y_train = y_train.to_numpy(dtype=np.float32)
+        y_test = y_test.to_numpy(dtype=np.float32)
 
-        X_train = self.to_window_numpy(X_train)
-        X_test = self.to_window_numpy(X_test)
-        y_train = self.to_window_numpy(y_train)
-        y_test = self.to_window_numpy(y_test)
+        X_train = self.to_windows(X_train)
+        X_test = self.to_windows(X_test)
+        y_train = self.to_windows(y_train)
+        y_test = self.to_windows(y_test)
 
         return X_train, X_test, y_train, y_test, train_idx, test_idx
+
+    def pretrain_final(self, df: pd.DataFrame) -> (np.array, np.array):
+        """Prepare the data for training
+
+        It splits the data into train and test sets, standardizes the data according to the train set,
+        splits the data into features and labels, and converts the data to a numpy array.
+
+        :param df: the dataframe to pretrain on
+        :return: the train data, test data, train labels, test labels, train indices and test indices
+        """
+
+        X_train, y_train = self.split_on_labels(df)
+        X_train = self.scaler.fit_transform(X_train).astype(np.float32)
+        y_train = y_train.to_numpy(dtype=np.float32)
+
+        X_train = self.to_windows(X_train)
+        y_train = self.to_windows(y_train)
+
+        return X_train, y_train
 
     def preprocess(self, x_data: pd.DataFrame) -> np.array:
         """Prepare the data for submission
@@ -71,8 +92,8 @@ class Pretrain:
         :return: the processed data
         """
         x_data = self.get_features(x_data)
-        self.scaler.transform(x_data)
-        return self.to_window_numpy(x_data)
+        x_data = self.scaler.transform(x_data).astype(np.float32)
+        return self.to_windows(x_data)
 
     @staticmethod
     def train_test_split(df: pd.DataFrame, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
@@ -117,13 +138,13 @@ class Pretrain:
         return df[['enmo', 'anglez'] + feature_cols], df[keep_y_train_columns]
 
     @staticmethod
-    def to_window_numpy(df: pd.DataFrame) -> np.array:
-        """Convert a dataframe to a numpy array
+    def to_windows(arr: np.ndarray) -> np.array:
+        """Convert an array to a 3D tensor with shape (window, window_size, n_features)
 
         It's really just a simple reshape, but specifically for the windows.
         17280 is the number of steps in a window.
 
-        :param df: the dataframe to convert
+        :param arr: the array to convert, with shape (dataset length, number of columns)
         :return: the numpy array
         """
-        return df.to_numpy(dtype='float32').reshape(-1, 17280, len(df.columns))
+        return arr.reshape(-1, 17280, arr.shape[-1])

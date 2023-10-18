@@ -17,9 +17,11 @@
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
-    "pre_training": {
+    "pretraining": {
         "test_size": 0.2,
-        "standardize": "standard"
+        "scaler": {
+            "kind": "standard-scaler"
+        }
     },
     "models": {
         "1D-Unet-CNN": {

@@ -73,7 +73,7 @@ class SegUnet1D(nn.Module):
     SegUnetId model. Contains the architecture of the SegUnetId model.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, config : dict):
+    def __init__(self, in_channels: int, out_channels: int, config: dict):
         super(SegUnet1D, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -109,7 +109,6 @@ class SegUnet1D(nn.Module):
     def forward(self, x):
         pool_x1 = self.AvgPool1D1(x)
         pool_x2 = self.AvgPool1D2(x)
-        pool_x3 = self.AvgPool1D3(x)
 
         # Encoder
         out_0 = self.layer1(x)

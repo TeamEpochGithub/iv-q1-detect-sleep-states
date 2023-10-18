@@ -45,8 +45,6 @@ class TestPretrain(TestCase):
             self.assertAlmostEqual(0, flat.mean(), delta=0.1)
             self.assertAlmostEqual(1, flat.std(), delta=0.1)
 
-
-
     def test_preprocess(self):
         pretrain: Pretrain = Pretrain.from_config({"test_size": 0.5, "scaler": {"kind": "none"}})
 

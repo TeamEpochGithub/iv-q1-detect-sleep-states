@@ -159,6 +159,7 @@ class SegmentationUnet1DCNN(Model):
         counter = 0
         lowest_val_loss = np.inf
         best_model = self.model.state_dict()
+        stopped = False
 
         # Train the model
         for epoch in range(epochs):
@@ -237,16 +238,17 @@ class SegmentationUnet1DCNN(Model):
                         logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
                             total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
+                        stopped = True
                         break
-
 
         # Log full train and test plot
         if wandb.run is not None:
             self.log_train_test(avg_losses, avg_val_losses, total_epochs)
         logger.info("--- Training of model complete!")
 
-        # Set total_epochs in config
-        total_epochs -= early_stopping
+        # Set total_epochs in config if broken by the early stopping
+        if stopped:
+            total_epochs -= early_stopping
         self.config["total_epochs"] = total_epochs
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
@@ -264,7 +266,7 @@ class SegmentationUnet1DCNN(Model):
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-        # Flatten y_train and y_test so we only get the awake label
+        # Get only the one hot encoded features
         y_train = y_train[:, :, -3:]
         y_train = torch.from_numpy(y_train)
         # Create a dataset from X and y
@@ -410,7 +412,7 @@ class SegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], out_channels=3, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

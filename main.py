@@ -195,7 +195,7 @@ def main(config: ConfigLoader) -> None:
         logger.info("Retraining models for submission")
 
         # Retrain all models with optimal parameters
-        X_train, y_train = Pretrain.pretrain_final(featured_data)
+        X_train, y_train = pretrain.pretrain_final(featured_data)
 
         # Save scaler
         scaler_filename: str = config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl"

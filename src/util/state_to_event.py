@@ -9,8 +9,6 @@ def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
     return np.argmax(one_hot, axis=0)
 
 
-
-
 def find_events(pred: np.ndarray, median_filter_size: int = None):
     """Given a numpy array of integer encoded predictions for a single day window,
      find the onsets and awakes of sleep events.

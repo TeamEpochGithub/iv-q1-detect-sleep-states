@@ -9,7 +9,7 @@ def standardize(df: pd.DataFrame, method: str) -> pd.DataFrame:
     # data_to_standardize = df.filter(regex='^f_')
     # if data_to_standardize.empty:
     #     return df
-    data_to_standardize = df[['enmo', 'anglez', 'f_hour', 'f_minute']]
+    data_to_standardize = df[['enmo', 'anglez']]
 
     if method == "standard":
         scaler = StandardScaler()

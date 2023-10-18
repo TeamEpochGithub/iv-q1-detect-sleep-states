@@ -237,15 +237,17 @@ class SegmentationUnet1DCNN(Model):
                         logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
                             total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
-                        total_epochs -= early_stopping
                         break
-        # Set total_epochs in config
-        self.config["total_epochs"] = total_epochs
+
 
         # Log full train and test plot
         if wandb.run is not None:
             self.log_train_test(avg_losses, avg_val_losses, total_epochs)
         logger.info("--- Training of model complete!")
+
+        # Set total_epochs in config
+        total_epochs -= early_stopping
+        self.config["total_epochs"] = total_epochs
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """

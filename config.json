@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -14,10 +14,6 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
-        "time": {
-            "hour": true,
-            "minute": true
-        }
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
@@ -28,13 +24,13 @@
     "models": {
         "1D-Unet-CNN": {
             "type": "seg-unet-1d-cnn",
-            "loss": "ce-torch",
+            "loss": "bce-torch",
             "optimizer": "adam-torch",
-            "epochs": 50,
+            "epochs": 100,
             "batch_size": 32,
             "lr": 0.0005,
-            "hidden_layers": 32,
-            "early_stopping": 10
+            "hidden_layers": 8,
+            "early_stopping": 5
         }
     },
     "model_store_loc": "tm",

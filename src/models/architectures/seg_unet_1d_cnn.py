@@ -81,9 +81,9 @@ class SegUnet1D(nn.Module):
         self.kernel_size = config["kernel_size"]
         self.depth = config["depth"]
 
-        self.AvgPool1D1 = nn.AvgPool1d(in_channels, stride=4)
-        self.AvgPool1D2 = nn.AvgPool1d(in_channels, stride=16)
-        self.AvgPool1D3 = nn.AvgPool1d(in_channels, stride=64)
+        self.AvgPool1D1 = nn.AvgPool1d(kernel_size=5, stride=4, padding=1)
+        self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=16, padding=1)
+        self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=64, padding=1)
 
         self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, 2)
         self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, 4, 2)

@@ -28,6 +28,7 @@ class EventRegressionTransformer(Model):
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the data
+        :param name: name of the model
         """
         super().__init__(config, name)
         # Init model

@@ -30,11 +30,11 @@
             "type": "seg-unet-1d-cnn",
             "loss": "ce-torch",
             "optimizer": "adam-torch",
-            "epochs": 1,
+            "epochs": 50,
             "batch_size": 32,
             "lr": 0.0005,
             "hidden_layers": 32,
-            "early_stopping": 7
+            "early_stopping": 10
         }
     },
     "model_store_loc": "tm",
@@ -52,6 +52,6 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true
 }

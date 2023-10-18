@@ -17,7 +17,7 @@ from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
-from ..pretrain.pretrain import Pretrain
+from ..models.transformers.event_regression_transformer import EventRegressionTransformer
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels
 from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
@@ -27,6 +27,7 @@ from ..preprocessing.pp import PP
 from ..preprocessing.remove_unlabeled import RemoveUnlabeled
 from ..preprocessing.split_windows import SplitWindows
 from ..preprocessing.truncate import Truncate
+from ..pretrain.pretrain import Pretrain
 
 
 class ConfigLoader:
@@ -200,7 +201,8 @@ class ConfigLoader:
         """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.
         :return: the config of preprocessing, feature engineering and pretraining as a string
         """
-        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(self.config["pretraining"])
+        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(
+            self.config["pretraining"])
 
     def get_fe_out(self) -> str:
         """Get the path to the feature engineering output folder
@@ -245,6 +247,8 @@ class ConfigLoader:
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
                 case "event-nan-regression-transformer":
                     curr_model = EventNaNRegressionTransformer(model_config, model_name)
+                case "event-regression-transformer":
+                    curr_model = EventRegressionTransformer(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

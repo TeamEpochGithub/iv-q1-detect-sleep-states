@@ -253,7 +253,7 @@ class EventRegressionTransformer(Model):
         Prediction function for the model.
         :param data: unlabelled data
         :param with_cpu: whether to use cpu
-        :return: predictions of the model (window_size, labels)
+        :return: predictions of the model (windows, labels)
         """
 
         # Check which device to use
@@ -265,8 +265,8 @@ class EventRegressionTransformer(Model):
         # Push to device
         self.model.to(device).float()
 
-        # Turn data from (window_size, features) to (1, window_size, features)
-        data = torch.from_numpy(data)  # .unsqueeze(0)
+        # Turn data into numpy array
+        data = torch.from_numpy(data)
 
         # Patch data
         patch_size = self.config["patch_size"]
@@ -285,6 +285,9 @@ class EventRegressionTransformer(Model):
             for _, data in enumerate(tepoch):
                 predictions = self._pred_one_batch(
                     data, predictions, self.model)
+
+        # Limit predictions from 0 to data.shape[1]
+        predictions = np.clip(predictions, 0, data.shape[1])
 
         return predictions
 

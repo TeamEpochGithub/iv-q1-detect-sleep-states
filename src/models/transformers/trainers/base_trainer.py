@@ -90,18 +90,20 @@ class Trainer:
                            f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
             # Save model if validation loss is lower than previous lowest validation loss
-            if val_loss < lowest_val_loss:
+            if not full_train and val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss
                 best_model = model.state_dict()
                 counter = 0
-            else:
+            elif not full_train:
                 counter += 1
                 trained_epochs = epoch
                 if counter >= max_counter:
                     model.load_state_dict(best_model)
                     break
 
-        model.load_state_dict(best_model)
+        # Load best model
+        if not full_train:
+            model.load_state_dict(best_model)
 
         return avg_train_losses, avg_val_losses, trained_epochs
 

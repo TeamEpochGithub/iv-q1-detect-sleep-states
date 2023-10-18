@@ -38,6 +38,7 @@ class EventRegressionTransformer(Model):
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
         self.load_config(**config)
+        self.trained_epochs = self.config["epochs"]
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -186,11 +187,67 @@ class EventRegressionTransformer(Model):
         logger.info("Training events model")
         trainer = Trainer(epochs=epochs,
                           criterion=criterion)
-        avg_train_loss, avg_val_loss = trainer.fit(
+        avg_train_loss, avg_val_loss, self.trained_epochs = trainer.fit(
             train_dataloader, test_dataloader, self.model, optimizer, self.name)
         if wandb.run is not None:
             self.log_train_test(avg_train_loss,
                                 avg_val_loss, len(avg_train_loss))
+
+    def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
+        """
+        Train the model on the full dataset.
+        :param X_train: the training data
+        :param y_train: the training labels
+        """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info(f"Training model: {type(self).__name__}")
+        logger.info(f"Hyperparameters: {self.config}")
+
+        # Load hyperparameters
+        criterion = self.config["loss"]
+        optimizer = self.config["optimizer"]
+        epochs = self.trained_epochs
+        batch_size = self.config["batch_size"]
+
+        # Print the shapes and types of train and test
+        logger.debug(
+            f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.debug(
+            f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+
+        # Remove labels
+        y_train = y_train[:, :, 1:]
+
+        X_train = torch.from_numpy(X_train)
+        y_train = torch.from_numpy(y_train)
+
+        # Do patching
+        patch_size = self.config["patch_size"]
+
+        # Patch the data for the features
+        X_train = patch_x_data(X_train, patch_size)
+
+        # Patch the data for the labels
+        y_train = patch_y_data(y_train, patch_size)
+
+        # Regression
+        y_train = y_train[:, 0]
+
+        # Create a dataset from X and y
+        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+
+        # Create a dataloader from the dataset
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
+
+        # Train events
+        logger.info("Training events model")
+        trainer = Trainer(epochs=epochs,
+                          criterion=criterion)
+        trainer.fit(
+            train_dataloader, None, self.model, optimizer, self.name)
+
+
 
     def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
         """

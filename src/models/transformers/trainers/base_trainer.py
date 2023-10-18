@@ -33,7 +33,7 @@ class Trainer:
         use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda:" + cuda_dev if use_cuda else "cpu")
 
-    def fit(self, dataloader: torch.utils.data.DataLoader, testloader, model: nn.Module, optimiser: torch.optim.Optimizer, name: str):
+    def fit(self, dataloader: torch.utils.data.DataLoader, testloader: torch.utils.data.DataLoader, model: nn.Module, optimiser: torch.optim.Optimizer, name: str):
         """
         Train the model on the training set and validate on the test set.
 
@@ -57,6 +57,11 @@ class Trainer:
                 f"Train {str(self.criterion)} of {name}", step_metric="epoch")
             wandb.define_metric(
                 f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+            
+        # Check if full training or not
+        full_train = False
+        if testloader is None:
+            full_train = True
 
         # Train and validate
         avg_train_losses = []
@@ -65,17 +70,22 @@ class Trainer:
         best_model = model.state_dict()
         counter = 0
         max_counter = 5
+        trained_epochs = 0
         for epoch in range(self.n_epochs):
-            val_losses = []
+
             train_losses = self.train_one_epoch(
                 dataloader=dataloader, epoch_no=epoch, optimiser=optimiser, model=model)
-            val_losses = self.val_loss(testloader, epoch, model)
             train_loss = sum(train_losses) / len(train_losses)
-            val_loss = sum(val_losses) / len(val_losses)
             avg_train_losses.append(train_loss.cpu())
-            avg_val_losses.append(val_loss.cpu())
 
-            if wandb.run is not None:
+            # Validation
+            val_losses = []
+            if not full_train:
+                val_losses = self.val_loss(testloader, epoch, model)
+                val_loss = sum(val_losses) / len(val_losses)
+                avg_val_losses.append(val_loss.cpu())
+
+            if wandb.run is not None and not full_train:
                 wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
                            f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
@@ -86,13 +96,14 @@ class Trainer:
                 counter = 0
             else:
                 counter += 1
+                trained_epochs = epoch
                 if counter >= max_counter:
                     model.load_state_dict(best_model)
                     break
 
         model.load_state_dict(best_model)
 
-        return avg_train_losses, avg_val_losses
+        return avg_train_losses, avg_val_losses, trained_epochs
 
     def train_one_epoch(self, dataloader, epoch_no, optimiser, model, disable_tqdm=False) -> List[float]:
         """

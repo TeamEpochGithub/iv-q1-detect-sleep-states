@@ -64,7 +64,8 @@ class Trainer:
         lowest_val_loss = np.inf
         best_model = model.state_dict()
         counter = 0
-        max_counter = 5
+        max_counter = 10
+        trained_epochs = 0
         for epoch in range(self.n_epochs):
             val_losses = []
             train_losses = self.train_one_epoch(

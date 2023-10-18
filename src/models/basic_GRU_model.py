@@ -39,7 +39,8 @@ class SimpleGRUModel(Model):
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "regression"
-        self.model = SimpleGRU(config, input_size[0])
+        self.input_size = input_size
+        self.model = SimpleGRU(config, self.input_size[0])
         # Load model
         self.load_config(config)
 
@@ -189,20 +190,25 @@ class SimpleGRUModel(Model):
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
-        Train the model on the full dataset.
+        Train function for the model.
         :param X_train: the training data
+        :param X_test: the test data
         :param y_train: the training labels
+        :param y_test: the test labels
         """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
-        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
+        X_train = torch.from_numpy(X_train)
 
-        # Flatten y_train and y_test so we only get the regression label
-        y_train = y_train[:, :, 1]
+        # Flatten y_train and y_test so we only get the regression labels
+        y_train = y_train[:, 0, 1]
         y_train = torch.from_numpy(y_train)
+
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 
@@ -219,13 +225,17 @@ class SimpleGRUModel(Model):
 
         # Define wandb metrics
         wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
-        pbar = tqdm(range(epochs))
-        for epoch in pbar:
+        avg_losses = []
+        # Train the model
+
+        for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
+            pbar = tqdm(enumerate(train_dataloader))
+            for i, (x, y) in pbar:
                 x = x.to(device=self.device)
                 y = y.to(device=self.device)
 
@@ -234,7 +244,7 @@ class SimpleGRUModel(Model):
 
                 # Forward pass
                 outputs = self.model(x)
-                loss = criterion(outputs, y)
+                loss = criterion(outputs.squeeze(), y)
 
                 # Backward and optimize
                 loss.backward()
@@ -248,10 +258,10 @@ class SimpleGRUModel(Model):
             logger.debug(descr)
             pbar.set_description(descr)
 
-            # Log train full
-            if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
-        logger.info("--- Full train complete!")
+            # Add average losses to list
+            avg_losses.append(avg_loss)
+
+        logger.info("--- Training of model complete!")
 
     def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
@@ -282,9 +292,9 @@ class SimpleGRUModel(Model):
             # make predcitions in batches
             for sample in data:
                 if prediction is None:
-                    prediction = self.model(sample)
+                    prediction = self.model(sample.unsqueeze(0))
                 else:
-                    prediction.cat(self.model(sample))
+                    prediction = torch.cat([prediction, self.model(sample.unsqueeze(0))])
 
         if with_cpu:
             prediction = prediction.numpy()
@@ -292,16 +302,8 @@ class SimpleGRUModel(Model):
             prediction = prediction.cpu().numpy()
 
         logger.info(f"--- Done making predictions with model {self.name}")
-        # All predictions
-        all_predictions = []
 
-        for pred in tqdm(prediction, desc="Converting predictions to events", unit="window"):
-            # Convert to relative window event timestamps
-            events = find_events(pred, median_filter_size=15)
-            all_predictions.append(events)
-
-        # Return numpy array
-        return np.array(all_predictions)
+        return np.array(prediction).T
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """
@@ -341,7 +343,7 @@ class SimpleGRUModel(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SimpleGRU(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
+            self.model = SimpleGRU(config=self.config, input_size=self.input_size[0])
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

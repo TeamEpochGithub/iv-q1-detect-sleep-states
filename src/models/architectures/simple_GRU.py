@@ -17,9 +17,9 @@ class SimpleGRU(nn.Module):
         self.GRU = nn.GRU(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers,
                           dropout=self.dropout, bidirectional=self.bidirectional, batch_first=self.batch_first)
         if self.bidirectional:
-            self.fc = nn.Linear(self.hidden_size * 2 * self.input_size, 1)
+            self.fc = nn.Linear(self.hidden_size * 2 * self.num_layers, 1)
         else:
-            self.fc = nn.Linear(self.hidden_size * self.input_size, 1)
+            self.fc = nn.Linear(self.hidden_size * self.num_layers, 1)
 
     def forward(self, x):
         if self.bidirectional:

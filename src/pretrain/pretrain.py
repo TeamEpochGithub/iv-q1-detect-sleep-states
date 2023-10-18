@@ -49,11 +49,11 @@ class Pretrain:
 
         train_data, test_data, train_idx, test_idx = self.train_test_split(df, test_size=self.test_size)
 
-        self.scaler.fit_transform(train_data)
-        self.scaler.transform(test_data)
-
         X_train, y_train = self.split_on_labels(train_data)
         X_test, y_test = self.split_on_labels(test_data)
+
+        self.scaler.fit_transform(X_train)
+        self.scaler.transform(X_test)
 
         X_train = self.to_window_numpy(X_train)
         X_test = self.to_window_numpy(X_test)
@@ -67,7 +67,7 @@ class Pretrain:
 
         The data is supposed to be processed the same way as for the training and testing data.
 
-        :param x_data: the dataframe to pretrain on
+        :param x_data: the dataframe to preprocess
         :return: the processed data
         """
         x_data = self.get_features(x_data)
@@ -76,7 +76,7 @@ class Pretrain:
 
     @staticmethod
     def train_test_split(df: pd.DataFrame, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
-        """Split data into train and test on series id using gss
+        """Split data into train and test on series id using GroupShuffleSplit
 
         :param df: the dataframe to split
         :param test_size: the size of the test set
@@ -120,8 +120,8 @@ class Pretrain:
     def to_window_numpy(df: pd.DataFrame) -> np.array:
         """Convert a dataframe to a numpy array
 
-        It's really just a simple reshape, but it's here for clarity.
-        17280 is the number of steps in a window
+        It's really just a simple reshape, but specifically for the windows.
+        17280 is the number of steps in a window.
 
         :param df: the dataframe to convert
         :return: the numpy array

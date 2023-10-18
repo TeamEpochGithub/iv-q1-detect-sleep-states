@@ -22,8 +22,7 @@
     "pretraining": {
         "test_size": 0.2,
         "scaler": {
-            "kind": "standard",
-            "copy": true
+            "kind": "standard-scaler"
         }
     },
     "models": {

@@ -24,17 +24,17 @@ class Scaler:
         self.kind = kind
 
         match kind:
-            case "standard":
+            case "standard-scaler":
                 self.scaler = StandardScaler(**kwargs)
-            case "minmax":
+            case "minmax-scaler":
                 self.scaler = MinMaxScaler(**kwargs)
-            case "maxabs":
+            case "maxabs-scaler":
                 self.scaler = MaxAbsScaler(**kwargs)
-            case "robust":
+            case "robust-scaler":
                 self.scaler = RobustScaler(**kwargs)
-            case "powertransformer":
+            case "power-transformer":
                 self.scaler = PowerTransformer(**kwargs)
-            case "quantiletransformer":
+            case "quantile-transformer":
                 self.scaler = QuantileTransformer(**kwargs)
             case "normalizer":
                 self.scaler = Normalizer(**kwargs)
@@ -63,14 +63,9 @@ class Scaler:
         """Load the scaler from a file.
 
         It uses joblib to load the scaler from a file.
-        If the scaler is None, do nothing.
 
         :param path: the path to load the scaler from
         """
-        if self.scaler is None:
-            logger.info("--- No scaler used.")
-            return
-
         self.scaler: BaseEstimator = joblib.load(path)
         logger.info("--- Scaler loaded from: " + path)
 
@@ -82,9 +77,7 @@ class Scaler:
         if self.scaler is None:
             return
 
-        feature_cols = [col for col in df.columns if col.startswith('f_')]
-        data_to_standardize = df[['enmo', 'anglez'] + feature_cols]
-        self.scaler.fit(data_to_standardize)
+        self.scaler.fit(df)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform the data with the scaler.
@@ -95,15 +88,7 @@ class Scaler:
         if self.scaler is None:
             return df
 
-        feature_cols = [col for col in df.columns if col.startswith('f_')]
-        data_to_standardize = df[['enmo', 'anglez'] + feature_cols]
-        standardized_data = self.scaler.transform(data_to_standardize)
-
-        # Create a copy of the DataFrame before modifying it
-        df = df.copy()
-        df.loc[:, list(data_to_standardize.columns)] = standardized_data
-
-        return df
+        return self.scaler.transform(df)
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Fit the scaler to the data and transform the data with the scaler.
@@ -114,15 +99,7 @@ class Scaler:
         if self.scaler is None:
             return df
 
-        feature_cols = [col for col in df.columns if col.startswith('f_')]
-        data_to_standardize = df[['enmo', 'anglez'] + feature_cols]
-        standardized_data = self.scaler.fit_transform(data_to_standardize)
-
-        # Create a copy of the DataFrame before modifying it
-        df = df.copy()
-        df.loc[:, list(data_to_standardize.columns)] = standardized_data
-
-        return df
+        return self.scaler.fit_transform(df)
 
 
 class ScalerException(Exception):

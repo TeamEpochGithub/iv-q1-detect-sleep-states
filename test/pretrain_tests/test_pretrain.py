@@ -9,11 +9,11 @@ from src.pretrain.pretrain import Pretrain
 class TestPretrain(TestCase):
     def test_from_config(self):
         pretrain: Pretrain = Pretrain.from_config({"test_size": 0.5, "scaler": {
-            "kind": "standard",
+            "kind": "standard-scaler",
             "copy": True
         }})
         self.assertEqual(pretrain.test_size, 0.5)
-        self.assertEqual(pretrain.scaler.kind, "standard")
+        self.assertEqual(pretrain.scaler.kind, "standard-scaler")
         self.assertTrue(pretrain.scaler.scaler.copy)
 
     def test_pretrain(self):

@@ -9,18 +9,18 @@ from src.scaler.scaler import Scaler, ScalerException
 
 class TestScaler(TestCase):
     def test_get_scaler(self):
-        self.assertIsInstance(Scaler("standard").scaler, StandardScaler)
-        self.assertIsInstance(Scaler("minmax").scaler, MinMaxScaler)
-        self.assertIsInstance(Scaler("robust").scaler, RobustScaler)
-        self.assertIsInstance(Scaler("maxabs").scaler, MaxAbsScaler)
-        self.assertIsInstance(Scaler("powertransformer").scaler, PowerTransformer)
-        self.assertIsInstance(Scaler("quantiletransformer").scaler, QuantileTransformer)
+        self.assertIsInstance(Scaler("standard-scaler").scaler, StandardScaler)
+        self.assertIsInstance(Scaler("minmax-scaler").scaler, MinMaxScaler)
+        self.assertIsInstance(Scaler("robust-scaler").scaler, RobustScaler)
+        self.assertIsInstance(Scaler("maxabs-scaler").scaler, MaxAbsScaler)
+        self.assertIsInstance(Scaler("power-transformer").scaler, PowerTransformer)
+        self.assertIsInstance(Scaler("quantile-transformer").scaler, QuantileTransformer)
         self.assertIsInstance(Scaler("normalizer").scaler, Normalizer)
         self.assertIsNone(Scaler("none").scaler)
         self.assertRaises(ScalerException, Scaler, "unknown")
 
     def test_scale_standard(self):
-        scaler: Scaler = Scaler("standard")
+        scaler: Scaler = Scaler("standard-scaler")
 
         df = pd.DataFrame({"enmo": [0, 1],
                            "anglez": [0, 2],

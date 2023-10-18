@@ -41,7 +41,7 @@ class TestPretrain(TestCase):
 
         # Assert that test data is sort of normal
         for feature in range(3):
-            flat = X_train[:, :, feature].flatten()
+            flat = X_test[:, :, feature].flatten()
             self.assertAlmostEqual(0, flat.mean(), delta=0.1)
             self.assertAlmostEqual(1, flat.std(), delta=0.1)
 

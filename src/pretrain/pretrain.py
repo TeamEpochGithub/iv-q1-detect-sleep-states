@@ -133,7 +133,7 @@ class Pretrain:
 
         keep_columns: list[str] = ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN",
                                    "hot-asleep", "hot-awake", "hot-NaN"]
-        keep_y_train_columns: np.array = np.intersect1d(keep_columns, df.columns)
+        keep_y_train_columns: list = [column for column in keep_columns if column in df.columns]
 
         return df[['enmo', 'anglez'] + feature_cols], df[keep_y_train_columns]
 

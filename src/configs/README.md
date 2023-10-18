@@ -165,7 +165,7 @@ These models should either be a statistical, regression or state_prediction mode
 
 #### Implemented Models types and config options
 
-This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters.
+This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters that are standard.
 
 - example-fc-model
     - epochs (required)
@@ -181,15 +181,16 @@ This contains all the models and their hyperparameters that are implemented. The
     - lr
     - batch_size
 
-- seg-unet-1d-cnn
-    - loss (required)
+- seg-unet-1d-cnn (one-hot state segmentation model that predicts awake, asleep, NaN for each timestep)
+    - loss (required, ce-torch recommended)
     - optimizer (required)
     - epochs=10
-    - hidden_layers=128
-    - lr=0.001
     - batch_size=32
-    - kernel_size=7
-    - depth=3
+    - lr=0.001
+    - hidden_layers=32
+    - kernel_size=7 (only works on 7 for now)
+    - depth=2
+    - early_stopping=-1
 
 - regression-transformer
     - epochs (required)
@@ -292,8 +293,13 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
 
 "1D-Unet-CNN": {
     "type": "seg-unet-1d-cnn",
-    "loss": "bce-logits-torch",
-    "optimizer": "adam-torch"
+    "loss": "ce-torch",
+    "optimizer": "adam-torch",
+    "epochs": 15,
+    "batch_size": 32,
+    "lr": 0.001,
+    "hidden_layers": 32,
+    "early_stopping": 5
 }
 ```
 

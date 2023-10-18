@@ -29,12 +29,11 @@
             "type": "seg-unet-1d-cnn",
             "loss": "ce-torch",
             "optimizer": "adam-torch",
-            "epochs": 10,
+            "epochs": 15,
             "batch_size": 32,
-            "lr": 0.0003,
+            "lr": 0.001,
             "hidden_layers": 32,
-            "kernel_size": 7,
-            "depth": 2
+            "early_stopping": 5
         }
     },
     "model_store_loc": "tm",

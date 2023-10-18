@@ -14,11 +14,11 @@ class AddStateLabels(PP):
     The values are 0 for asleep, 1 for awake, and 2 for unlabeled.
     """
 
-    def __init__(self, events_path: str, id_encoding_path: str, **kwargs) -> None:
+    def __init__(self, events_path: str, id_encoding_path: str, **kwargs: dict) -> None:
         """Initialize the AddStateLabels class.
 
         :param events_path: the path to the events csv file
-        :raises PPException: If no path to the events csv file is given
+        :param id_encoding_path: the path to the encoding file of the series id
         """
         super().__init__(**kwargs)
 

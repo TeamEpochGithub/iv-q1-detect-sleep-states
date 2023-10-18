@@ -17,7 +17,7 @@ class AddSegmentationLabels(PP):
         :return: The dataframe with the segmentation labels
         """
         # Apply one-hot encoding using dummies to the 'awake' column and call then hot-asleep, hot-awake and hot-NaN as type int8
-
+        # TODO Check if the awake column is present #190
         awake = data['awake']
 
         data = pd.get_dummies(data, columns=['awake'], prefix='hot', dtype=np.int8)

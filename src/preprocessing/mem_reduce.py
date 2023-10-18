@@ -1,5 +1,6 @@
 import gc
 import json
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -15,13 +16,23 @@ class MemReduce(PP):
     It will reduce the memory usage of the data by changing the data types of the columns.
     """
 
-    def __init__(self, encoding_path: str, **kwargs) -> None:
+    def __init__(self, id_encoding_path: Optional[str] = None, **kwargs) -> None:
         """Initialize the MemReduce class.
 
-        :param encoding_path: the path to the encoding file of the series id
+        :param id_encoding_path: the path to the encoding file of the series id
         """
         super().__init__(**kwargs)
-        self.encoding_path: str = encoding_path
+        self.encoding_path: str = id_encoding_path
+        self.encoding = {}
+
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Run the preprocessing step.
+
+        :param data: the data to preprocess
+        :return: the preprocessed data
+        """
+
+        return self.preprocess(data)
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by reducing the memory usage of the data.
@@ -42,11 +53,18 @@ class MemReduce(PP):
         # so, we can decode it later
         sids = data['series_id'].unique()
         encoding = dict(zip(sids, range(len(sids))))
-        # TODO Don't open the file here to make this method testable
-        with open(self.encoding_path, 'w') as f:
-            json.dump(encoding, f)
 
-        logger.debug(f"------ Done saving series encoding to {self.encoding_path}")
+        if self.encoding_path is None:
+            logger.warning("No encoding path given, not saving encoding")
+        else:
+            logger.debug(f"------ Saving series encoding to {self.encoding_path}")
+
+            # TODO Don't write the file here to make this method testable
+            with open(self.encoding_path, 'w') as f:
+                json.dump(encoding, f)
+
+            logger.debug(f"------ Done saving series encoding to {self.encoding_path}")
+
         data['series_id'] = data['series_id'].map(encoding).astype('int16')
 
         timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))

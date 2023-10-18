@@ -7,23 +7,18 @@
     "test_series_path": "data/raw/test_series.parquet",
     "preprocessing": [
         {
-            "name": "mem_reduce",
-            "params": {
-                "encoding_path": "series_id_encoding.json"
-            }
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
         },
         {
-            "name": "add_state_labels",
-            "params": {
-                "encoding_path": "series_id_encoding.json",
-                "events_path": "data/raw/train_events.csv"
-            }
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv"
         },
         {
-            "name": "split_windows",
-            "params": {
-                "start_hour": 15
-            }
+            "kind": "split_windows",
+            "start_hour": 15,
+            "window_size": 17280
         }
     ],
     "processed_loc_out": "data/processed",

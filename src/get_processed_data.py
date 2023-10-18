@@ -1,19 +1,22 @@
+import gc
+import os
+import tracemalloc
+
+import pandas as pd
+
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
-import os
-import pandas as pd
-import gc
-import tracemalloc
 
 
 def log_memory():
     size, peak = tracemalloc.get_traced_memory()
-    logger.debug(f"Current memory usage is {size / 10**6:.2f} MB; Peak was {peak / 10**6:.2f} MB")
+    logger.debug(f"Current memory usage is {size / 10 ** 6:.2f} MB; Peak was {peak / 10 ** 6:.2f} MB")
     tracemalloc.reset_peak()
 
 
 def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
-    pp_steps, pp_step_names = config.get_pp_steps(training=training)
+    pp_steps = config.get_pp_steps(training=training)
+    pp_step_names = [pp_step.kind for pp_step in pp_steps]
 
     fe_steps, fe_step_names = config.get_features()
     fe_steps = [fe_steps[key] for key in fe_steps]

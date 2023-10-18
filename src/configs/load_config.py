@@ -7,9 +7,9 @@ from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.mean import Mean
+from ..feature_engineering.rotation import Rotation
 from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.time import Time
-from ..feature_engineering.rotation import Rotation
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
@@ -18,16 +18,7 @@ from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
 from ..models.transformers.event_regression_transformer import EventRegressionTransformer
-
-from ..preprocessing.add_noise import AddNoise
-from ..preprocessing.add_regression_labels import AddRegressionLabels
-from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
-from ..preprocessing.add_state_labels import AddStateLabels
-from ..preprocessing.mem_reduce import MemReduce
 from ..preprocessing.pp import PP
-from ..preprocessing.remove_unlabeled import RemoveUnlabeled
-from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.truncate import Truncate
 
 
 class ConfigLoader:
@@ -80,46 +71,13 @@ class ConfigLoader:
         """
         return self.config["test_series_path"]
 
-    def get_pp_steps(self, training) -> (list[PP], list[str]):
+    def get_pp_steps(self, training: bool) -> list[PP]:
         """Get the preprocessing steps classes
 
         :param training: whether the preprocessing is for training or testing
         :return: the preprocessing steps and their names
         """
-        pp_step_names: list[str] = []
-        pp_steps: list[PP] = []
-        pp_names: list[str] = []
-        for pp_step in self.config["preprocessing"]:
-            pp_step_names.append(pp_step["name"])
-            # Check if the step is only for training
-            if not training and pp_step["name"] in ["add_state_labels", "remove_unlabeled", "truncate",
-                                                    "add_event_labels", "add_regression_labels",
-                                                    "add_segmentation_labels"]:
-                logger.info("Preprocessing step " + pp_step["name"] + " is only used for training. Continuing...")
-                continue
-
-            match pp_step["name"]:
-                case "mem_reduce":
-                    pp_steps.append(MemReduce(*pp_step["params"]))
-                case "add_noise":
-                    pp_steps.append(AddNoise(*pp_step["params"]))
-                case "split_windows":
-                    pp_steps.append(SplitWindows(*pp_step["params"]))
-                case "add_state_labels":
-                    pp_steps.append(AddStateLabels(*pp_step["params"]))
-                case "remove_unlabeled":
-                    pp_steps.append(RemoveUnlabeled(*pp_step["params"]))
-                case "truncate":
-                    pp_steps.append(Truncate(*pp_step["params"]))
-                case "add_regression_labels":
-                    pp_steps.append(AddRegressionLabels(*pp_step["params"]))
-                case "add_segmentation_labels":
-                    pp_steps.append(AddSegmentationLabels(*pp_step["params"]))
-                case _:
-                    logger.critical("Preprocessing step not found: " + pp_step["name"])
-                    raise ConfigException("Preprocessing step not found: " + pp_step["name"])
-
-        return pp_steps, pp_step_names
+        return PP.from_config(self.config["preprocessing"], training)
 
     def get_pp_out(self) -> str:
         """Get the path to the preprocessing output folder
@@ -199,7 +157,8 @@ class ConfigLoader:
         """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.
         :return: the config of preprocessing, feature engineering and pretraining as a string
         """
-        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(self.config["pre_training"])
+        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(
+            self.config["pre_training"])
 
     def get_fe_out(self) -> str:
         """Get the path to the feature engineering output folder

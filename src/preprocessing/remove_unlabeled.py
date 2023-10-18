@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ..preprocessing.pp import PP, PPException
 from ..logger.logger import logger
+from ..preprocessing.pp import PP, PPException
 
 
 class RemoveUnlabeled(PP):
@@ -19,6 +19,7 @@ class RemoveUnlabeled(PP):
         :return: The dataframe without the unlabeled data
         :raises PPException: If AddStateLabels wasn't used before
         """
+        # TODO Do this check with the config checker instead #190
         if "awake" not in data.columns:
             logger.critical("No awake column. Did you run AddStateLabels before?")
             raise PPException("No awake column. Did you run AddStateLabels before?")

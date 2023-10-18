@@ -53,7 +53,7 @@ if __name__ == '__main__':
             event_classification_loss = event_classification_criterion(event_pred, event_classification_target)
 
             # Total loss
-            total_loss = segmentation_loss #+ event_loss_weight*event_classification_loss
+            total_loss = segmentation_loss + event_loss_weight*event_classification_loss
 
             total_loss.backward()
             optimizer.step()

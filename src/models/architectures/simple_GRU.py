@@ -17,15 +17,18 @@ class SimpleGRU(nn.Module):
         self.GRU = nn.GRU(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers,
                           dropout=self.dropout, bidirectional=self.bidirectional, batch_first=self.batch_first)
         if self.bidirectional:
-            self.fc = nn.Linear(self.hidden_size * 2, 1)
+            self.fc = nn.Linear(self.hidden_size * 2 * self.input_size, 1)
         else:
-            self.fc = nn.Linear(self.hidden_size, 1)
+            self.fc = nn.Linear(self.hidden_size * self.input_size, 1)
 
     def forward(self, x):
         if self.bidirectional:
             h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(x.device)
         else:
             h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        x, _ = self.GRU(x, h0)
+        _, x = self.GRU(x, h0)
+        # put the batch first
+        x = x.permute(1, 0, 2)
+        x = torch.flatten(x, start_dim=1)
         y = self.fc(x)
         return y

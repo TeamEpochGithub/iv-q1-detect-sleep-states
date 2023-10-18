@@ -45,9 +45,9 @@ class SimpleGRUModel(Model):
 
         # If we log the run to weights and biases, we can
         if wandb.run is not None:
-            # from torchsummary import summary
-            # summary(self.model.cuda(), input_size=[input_size[0]])
-            pass
+            from torchsummary import summary
+            summary(self.model.cuda(), input_size=(input_size[1], input_size[0]))
+            # pass
 
     def load_config(self, config: dict) -> None:
         """
@@ -150,7 +150,7 @@ class SimpleGRUModel(Model):
 
                 # Forward pass
                 outputs = self.model(x)
-                loss = criterion(outputs, y)
+                loss = criterion(outputs.squeeze(), y)
 
                 # Backward and optimize
                 loss.backward()
@@ -271,14 +271,20 @@ class SimpleGRUModel(Model):
 
         self.model.to(device)
         # Convert data to tensor
-        data = torch.from_numpy(data).permute(0, 2, 1).to(device)
+        data = torch.from_numpy(data).to(device)
 
         # Print data shape
         logger.info(f"--- Data shape of predictions: {data.shape}")
 
         # Make a prediction
+        prediction = None
         with torch.no_grad():
-            prediction = self.model(data)
+            # make predcitions in batches
+            for sample in data:
+                if prediction is None:
+                    prediction = self.model(sample)
+                else:
+                    prediction.cat(self.model(sample))
 
         if with_cpu:
             prediction = prediction.numpy()
@@ -335,7 +341,7 @@ class SimpleGRUModel(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
+            self.model = SimpleGRU(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

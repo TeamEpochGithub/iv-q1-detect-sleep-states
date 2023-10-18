@@ -1,6 +1,16 @@
 import numpy as np
 
 
+def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
+    """Convert a one-hot encoded array to a state array,
+    where the state is the index of the one-hot encoding. Normally used for predictions.
+    param: one_hot numpy array, 0=sleep, 1=awake, 2=non-wear
+    """
+    return np.argmax(one_hot, axis=0)
+
+
+
+
 def find_events(pred: np.ndarray, median_filter_size: int = None):
     """Given a numpy array of integer encoded predictions for a single day window,
      find the onsets and awakes of sleep events.

@@ -1,4 +1,5 @@
 import copy
+import logging
 from typing import Any
 
 import numpy as np
@@ -13,7 +14,7 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-from ..util.state_to_event import find_events
+from ..util.state_to_event import find_events, one_hot_to_state
 
 
 class SegmentationUnet1DCNN(Model):
@@ -76,6 +77,7 @@ class SegmentationUnet1DCNN(Model):
         config["hidden_layers"] = config.get("hidden_layers", default_config["hidden_layers"])
         config["kernel_size"] = config.get("kernel_size", default_config["kernel_size"])
         config["depth"] = config.get("depth", default_config["depth"])
+        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
         self.config = config
 
     def load_optimizer(self) -> None:
@@ -90,7 +92,7 @@ class SegmentationUnet1DCNN(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1}
 
     def get_type(self) -> str:
         """
@@ -113,6 +115,9 @@ class SegmentationUnet1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+        early_stopping = self.config["early_stopping"]
+        if early_stopping > 0:
+            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
         # TODO Change
         X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
@@ -143,18 +148,27 @@ class SegmentationUnet1DCNN(Model):
         self.model.to(self.device)
 
         # Define wandb metrics
-        wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
+        # Initialize place holder arrays for train and test loss and early stopping
+        total_epochs = 0
         avg_losses = []
         avg_val_losses = []
-        # Train the model
+        counter = 0
+        lowest_val_loss = np.inf
+        best_model = self.model.state_dict()
 
-        # pbar = tqdm(range(epochs))
+        # Train the model
         for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
+            avg_val_loss = 0
+            total_batch_loss = 0
+            total_val_batch_loss = 0
+            # Train loop
             with tqdm(train_dataloader, unit="batch") as tepoch:
                 for i, (x, y) in enumerate(tepoch):
                     x = x.to(device=self.device)
@@ -171,39 +185,62 @@ class SegmentationUnet1DCNN(Model):
                     loss.backward()
                     optimizer.step()
 
-                    # Calculate the avg loss for 1 epoch
-                    avg_loss += loss.item() / len(train_dataloader)
+                    # Get the current loss
+                    current_loss = loss.item()
+                    total_batch_loss += current_loss
+                    avg_loss = total_batch_loss / (i + 1)
 
                     # Log to console
-                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_description(f" Train Epoch {epoch}")
                     tepoch.set_postfix(loss=avg_loss)
 
             # Calculate the validation loss
             self.model.train(False)
-            avg_val_loss = 0
+
             with torch.no_grad():
-                for i, (vx, vy) in enumerate(test_dataloader):
-                    vx = vx.to(self.device)
-                    vy = vy.to(self.device)
-                    voutputs = self.model(vx)
-                    vloss = criterion(voutputs, vy)
-                    avg_val_loss += vloss.item() / len(test_dataloader)
+                with tqdm(test_dataloader, unit="batch") as vepoch:
+                    for i, (vx, vy) in enumerate(vepoch):
+                        vx = vx.to(self.device)
+                        vy = vy.to(self.device)
+                        voutputs = self.model(vx)
+                        vloss = criterion(voutputs, vy)
+
+                        current_loss = vloss.item()
+                        total_val_batch_loss += current_loss
+                        avg_val_loss = total_val_batch_loss / (i + 1)
+
+                        vepoch.set_description(f" Test  Epoch {epoch}")
+                        vepoch.set_postfix(loss=avg_val_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
             logger.debug(descr)
-            #pbar.set_description(descr)
 
-            # Add average losses to list
+            # Add average losses and epochs to list
             avg_losses.append(avg_loss)
             avg_val_losses.append(avg_val_loss)
+            total_epochs += 1
 
             # Log train test loss to wandb
             if wandb.run is not None:
                 wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
+            # Early stopping
+            if early_stopping > 0:
+                # Save model if validation loss is lower than previous lowest validation loss
+                if avg_val_loss < lowest_val_loss:
+                    lowest_val_loss = avg_val_loss
+                    best_model = self.model.state_dict()
+                    counter = 0
+                else:
+                    counter += 1
+                    if counter >= self.early_stopping:
+                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Stopping training and loading best model.")
+                        self.model.load_state_dict(best_model)
+                        break
+
         # Log full train and test plot
-        self.log_train_test(avg_losses, avg_val_losses, epochs)
+        self.log_train_test(avg_losses, avg_val_losses, total_epochs)
         logger.info("--- Training of model complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
@@ -237,10 +274,11 @@ class SegmentationUnet1DCNN(Model):
         self.model.to(self.device)
 
         # Define wandb metrics
-        wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
-        #pbar = tqdm(range(epochs))
+        # pbar = tqdm(range(epochs))
         for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
@@ -271,7 +309,7 @@ class SegmentationUnet1DCNN(Model):
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
             logger.debug(descr)
 
-            #pbar.set_description(descr)
+            # pbar.set_description(descr)
 
             # Log train full
             if wandb.run is not None:
@@ -311,11 +349,13 @@ class SegmentationUnet1DCNN(Model):
             prediction = prediction.cpu().numpy()
 
         logger.info(f"--- Done making predictions with model {self.name}")
+
         # All predictions
         all_predictions = []
 
         for pred in tqdm(prediction, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
+            pred = one_hot_to_state(pred)
             events = find_events(pred, median_filter_size=15)
             all_predictions.append(events)
 

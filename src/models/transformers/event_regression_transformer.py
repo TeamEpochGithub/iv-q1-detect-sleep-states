@@ -27,13 +27,13 @@ class EventRegressionTransformer(Model):
         """
         Init function of the example model
         :param config: configuration to set up the model
+        :param data_shape: shape of the data
         """
         super().__init__(config, name)
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["feat_dim"] = config["patch_size"] * \
-            data_shape[0]
+        self.transformer_config["feat_dim"] = config.get("patch_size", 36) * data_shape[0]
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
         self.load_config(**config)
@@ -49,7 +49,10 @@ class EventRegressionTransformer(Model):
     def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
         Load config function for the model.
-        :param config: configuration to set up the model
+        :param loss: loss function
+        :param epochs: number of epochs
+        :param optimizer: optimizer
+        :param kwargs: other parameters
         """
 
         # Get default_config
@@ -262,6 +265,7 @@ class EventRegressionTransformer(Model):
         """
         Load function for the model.
         :param path: path to model checkpoint
+        :param only_hyperparameters: whether to only load the hyperparameters
         """
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)

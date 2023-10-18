@@ -21,7 +21,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
 
     # Apply pretraining
     pretrain: Pretrain = config.get_pretraining()
-    pretrain.scaler.load(config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl")
+    pretrain.scaler.load(config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl")
 
     x_data = pretrain.preprocess(featured_data)
 

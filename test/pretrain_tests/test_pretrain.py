@@ -87,7 +87,7 @@ class TestPretrain(TestCase):
                                          "wakeup-NaN": [0, 1]})
         X, y = Pretrain.split_on_labels(df)
         self.assertListEqual(list(X.columns), ["enmo", "anglez"])
-        self.assertListEqual(list(y.columns), ["awake", "onset", "onset-NaN", "wakeup", "wakeup-NaN"])
+        self.assertListEqual(list(y.columns), ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN"])
 
     def test_to_window_numpy(self):
         df: pd.DataFrame = pd.DataFrame({"series_id": np.repeat(0, 34560),

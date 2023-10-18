@@ -53,7 +53,9 @@ class Model:
         :param y_test: the test labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
+        # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
+
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -62,7 +64,9 @@ class Model:
         :param y_train: the training labels
         """
         # Get hyperparameters from config (epochs, lr, optimizer)
+        # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
+
 
     def pred(self, X_pred: np.ndarray, with_cpu: bool) -> list[float, float]:
         """

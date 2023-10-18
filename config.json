@@ -19,7 +19,7 @@
     "fe_loc_in": "data/processed",
     "pretraining": {
         "test_size": 0.2,
-        "scaler": {
+        "scaler":{
             "kind": "standard-scaler"
         }
     },
@@ -32,7 +32,7 @@
             "batch_size": 32,
             "lr": 0.0005,
             "hidden_layers": 8,
-            "early_stopping": 5
+            "early_stopping": 7
         }
     },
     "model_store_loc": "tm",

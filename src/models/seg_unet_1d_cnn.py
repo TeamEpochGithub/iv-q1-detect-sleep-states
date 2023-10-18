@@ -265,7 +265,7 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
+        y_train = y_train[:, :, -3:]
         y_train = torch.from_numpy(y_train)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)

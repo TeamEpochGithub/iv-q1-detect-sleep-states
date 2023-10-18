@@ -1,5 +1,4 @@
 import copy
-import logging
 from typing import Any
 
 import numpy as np
@@ -234,10 +233,14 @@ class SegmentationUnet1DCNN(Model):
                     counter = 0
                 else:
                     counter += 1
-                    if counter >= self.early_stopping:
-                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Stopping training and loading best model.")
+                    if counter >= early_stopping:
+                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
+                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
+                        total_epochs -= early_stopping
                         break
+        # Set total_epochs in config
+        self.config["total_epochs"] = total_epochs
 
         # Log full train and test plot
         self.log_train_test(avg_losses, avg_val_losses, total_epochs)
@@ -251,8 +254,10 @@ class SegmentationUnet1DCNN(Model):
         """
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.config["epochs"]
+        epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
+
+        logger.info("--- Running for " + str(epochs) + " epochs.")
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
@@ -278,9 +283,9 @@ class SegmentationUnet1DCNN(Model):
             wandb.define_metric("epoch")
             wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
-        # pbar = tqdm(range(epochs))
         for epoch in range(epochs):
             self.model.train(True)
+            total_batch_loss = 0
             avg_loss = 0
             with tqdm(train_dataloader, unit="batch") as tepoch:
                 for i, (x, y) in enumerate(tepoch):
@@ -298,8 +303,10 @@ class SegmentationUnet1DCNN(Model):
                     loss.backward()
                     optimizer.step()
 
-                    # Calculate the avg loss for 1 epoch
-                    avg_loss += loss.item() / len(train_dataloader)
+                    # Get the current loss
+                    current_loss = loss.item()
+                    total_batch_loss += current_loss
+                    avg_loss = total_batch_loss / (i + 1)
 
                     # Log to console
                     tepoch.set_description(f"Epoch {epoch}")

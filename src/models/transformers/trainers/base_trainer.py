@@ -113,7 +113,10 @@ class Trainer:
                 losses = self._train_one_loop(
                     data=data, losses=losses, model=model, optimiser=optimiser)
                 tepoch.set_description(f"Epoch {epoch_no}")
-                tepoch.set_postfix(loss=sum(losses) / len(losses))
+                if len(losses) > 0:
+                    tepoch.set_postfix(loss=sum(losses) / len(losses))
+                else:
+                    tepoch.set_postfix(loss=-1)
         return losses
 
     def _train_one_loop(
@@ -170,7 +173,10 @@ class Trainer:
                 losses = self._val_one_loop(
                     data=data, losses=losses, model=model)
                 tepoch.set_description(f"Epoch {epoch_no}")
-                tepoch.set_postfix(loss=sum(losses) / len(losses))
+                if len(losses) > 0:
+                    tepoch.set_postfix(loss=sum(losses) / len(losses))
+                else:
+                    tepoch.set_postfix(loss=-1)
         return losses
 
     def _val_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module):

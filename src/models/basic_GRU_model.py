@@ -12,19 +12,20 @@ from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import find_events
+from .architectures.simple_GRU import SimpleGRU
 
 
-class SimpleGRU(Model):
+class SimpleGRUModel(Model):
     """
     This is a sample model file. You can use this as a template for your own models.
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, input_size: int, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data (input/output shape, features)
+        :param input_size: the number of features in the data
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -37,15 +38,16 @@ class SimpleGRU(Model):
             self.device = torch.device("cuda")
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-        self.model_type = "segmentation"
-        self.data_shape = data_shape
+        self.model_type = "regression"
+        self.model = SimpleGRU(config, input_size)
         # Load model
         self.load_config(config)
 
         # If we log the run to weights and biases, we can
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+            summary(self.model.cuda(), input_size=input_size)
+            pass
 
     def load_config(self, config: dict) -> None:
         """

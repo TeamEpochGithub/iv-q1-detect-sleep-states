@@ -17,6 +17,7 @@ from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
+from ..models.basic_GRU_model import SimpleGRUModel
 
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels
@@ -245,6 +246,8 @@ class ConfigLoader:
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
                 case "event-nan-regression-transformer":
                     curr_model = EventNaNRegressionTransformer(model_config, model_name)
+                case "regression-GRU":
+                    curr_model = SimpleGRUModel(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

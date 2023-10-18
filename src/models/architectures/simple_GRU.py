@@ -22,7 +22,10 @@ class SimpleGRU(nn.Module):
             self.fc = nn.Linear(self.hidden_size, 1)
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        y, _ = self.GRU(x, h0)
-        y = self.fc(y)
+        if self.bidirectional:
+            h0 = torch.zeros(2*self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        else:
+            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        x, _ = self.GRU(x, h0)
+        y = self.fc(x)
         return y

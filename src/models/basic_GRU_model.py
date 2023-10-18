@@ -21,7 +21,7 @@ class SimpleGRUModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, input_size: int, name: str) -> None:
+    def __init__(self, config: dict, input_size: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -39,14 +39,14 @@ class SimpleGRUModel(Model):
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "regression"
-        self.model = SimpleGRU(config, input_size)
+        self.model = SimpleGRU(config, input_size[0])
         # Load model
         self.load_config(config)
 
         # If we log the run to weights and biases, we can
         if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model.cuda(), input_size=input_size)
+            # from torchsummary import summary
+            # summary(self.model.cuda(), input_size=[input_size[0]])
             pass
 
     def load_config(self, config: dict) -> None:
@@ -101,12 +101,12 @@ class SimpleGRUModel(Model):
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
-        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
-        X_test = torch.from_numpy(X_test).permute(0, 2, 1)
+        X_train = torch.from_numpy(X_train)
+        X_test = torch.from_numpy(X_test)
 
-        # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
-        y_test = y_test[:, :, 0]
+        # Flatten y_train and y_test so we only get the regression labels
+        y_train = y_train[:, 0, 1]
+        y_test = y_test[:, 0, 1]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -200,8 +200,8 @@ class SimpleGRUModel(Model):
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-        # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
+        # Flatten y_train and y_test so we only get the regression label
+        y_train = y_train[:, :, 1]
         y_train = torch.from_numpy(y_train)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)

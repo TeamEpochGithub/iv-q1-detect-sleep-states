@@ -57,7 +57,7 @@ class Trainer:
                 f"Train {str(self.criterion)} of {name}", step_metric="epoch")
             wandb.define_metric(
                 f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
-            
+
         # Check if full training or not
         full_train = False
         if testloader is None:

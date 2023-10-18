@@ -34,7 +34,8 @@ class EventRegressionTransformer(Model):
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["feat_dim"] = config.get("patch_size", 36) * data_shape[0]
+        self.transformer_config["feat_dim"] = config.get(
+            "patch_size", 36) * data_shape[0]
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
         self.load_config(**config)
@@ -246,8 +247,6 @@ class EventRegressionTransformer(Model):
                           criterion=criterion)
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
-
-
 
     def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
         """

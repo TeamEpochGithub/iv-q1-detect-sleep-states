@@ -203,15 +203,16 @@ def main(config: ConfigLoader) -> None:
 
         for i, model in enumerate(models):
             model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
-            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
+                model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
-                logger.info("Found existing fully trained optimal model " + str(i) + ": " + model + " with location " + model_filename)
+                logger.info("Found existing fully trained optimal model " + str(
+                    i) + ": " + model + " with location " + model_filename)
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
                 models[model].train_full(X_train, y_train)
                 models[model].save(model_filename_submit)
-
 
     else:
         logger.info("Not training best model for submission")

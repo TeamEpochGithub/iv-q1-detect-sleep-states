@@ -247,7 +247,7 @@ class ConfigLoader:
                 case "event-nan-regression-transformer":
                     curr_model = EventNaNRegressionTransformer(model_config, model_name)
                 case "event-regression-transformer":
-                    curr_model = EventRegressionTransformer(model_config, model_name)
+                    curr_model = EventRegressionTransformer(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

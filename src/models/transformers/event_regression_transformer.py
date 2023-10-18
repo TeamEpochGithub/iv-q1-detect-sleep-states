@@ -23,7 +23,7 @@ class EventRegressionTransformer(Model):
     This is the model file for the event regression transformer model.
     """
 
-    def __init__(self, config: dict, name: str):
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -32,58 +32,59 @@ class EventRegressionTransformer(Model):
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
+        self.transformer_config["feat_dim"] = config["patch_size"] * \
+            data_shape[0]
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
-        self.load_config(config)
+        self.load_config(**config)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
+            logger.critical("GPU not available")
             raise ModelException("GPU not available")
 
-        print("GPU Found: " + torch.cuda.get_device_name(0))
+        logger.info("GPU Found: " + torch.cuda.get_device_name(0))
         self.device = torch.device("cuda")
 
-    def load_config(self, config):
+    def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
         Load config function for the model.
         :param config: configuration to set up the model
-        :return:
         """
-        # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "epochs", "optimizer"]
-        for req in required:
-            if req not in config:
-                logger.critical(
-                    "------ Config is missing required parameter: " + req)
-                raise ModelException(
-                    "Config is missing required parameter: " + req)
 
         # Get default_config
         default_config = self.get_default_config()
-        config = copy.deepcopy(config)
-        config["loss"] = Loss.get_loss(config["loss"])
+
+        # Copy kwargs
+        config = copy.deepcopy(kwargs)
+
+        # Add parameters
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(
-            config["optimizer"], config["lr"], self.model)
         config["patch_size"] = config.get(
             "patch_size", default_config["patch_size"])
 
+        # Add loss, epochs and optimizer to config
+        config["loss"] = Loss.get_loss(loss)
+        config["optimizer"] = Optimizer.get_optimizer(
+            optimizer, config["lr"], self.model)
+        config["epochs"] = epochs
+
         self.config = config
 
-    def get_default_config(self):
+    def get_default_config(self) -> dict[str, int | str]:
         """
         Get default config function for the model.
         :return: default config
         """
         return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
 
-    def load_transformer_config(self, config):
+    def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """
-        Load config function for the model.
-        :param config: configuration to set up the model
-        :return:
+        Load transformer config function for the model.
+        :param config: configuration to set up the transformer architecture
+        :return: transformer config
         """
         # Check if all necessary parameters are in the config.
         default_config = self.get_default_transformer_config()
@@ -94,13 +95,12 @@ class EventRegressionTransformer(Model):
 
         return new_config
 
-    def get_default_transformer_config(self):
+    def get_default_transformer_config(self) -> dict[str, int | float | str]:
         """
         Get default config function for the model.
         :return: default config
         """
         return {
-            'feat_dim': 72,
             'max_len': 480,
             'd_model': 192,
             'n_heads': 6,
@@ -115,11 +115,13 @@ class EventRegressionTransformer(Model):
             'freeze': False,
         }
 
-    def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array):
+    def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array) -> None:
         """
         Train function for the model.
-        :param data: labelled data
-        :return:
+        :param X_train: the training data
+        :param X_test: the test data
+        :param y_train: the training labels
+        :param y_test: the test labels
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
@@ -190,7 +192,8 @@ class EventRegressionTransformer(Model):
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :return:
+        :param with_cpu: whether to use cpu
+        :return: predictions of the model (window_size, labels)
         """
 
         # Check which device to use
@@ -247,7 +250,6 @@ class EventRegressionTransformer(Model):
         """
         Save function for the model.
         :param path: path to save the model to
-        :return:
         """
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
@@ -260,7 +262,6 @@ class EventRegressionTransformer(Model):
         """
         Load function for the model.
         :param path: path to model checkpoint
-        :return:
         """
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)

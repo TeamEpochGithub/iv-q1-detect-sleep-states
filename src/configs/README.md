@@ -217,7 +217,6 @@ This contains all the models and their hyperparameters that are implemented. The
     - lr=0.000035
     - batch_size=16
     - patch_size=36
-    - feat_dim=patch_size*num_features
     - max_len=window_size
     - d_model=x (x * n_heads)
     - n_heads=6
@@ -284,7 +283,6 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "lr": 0.000035,
     "batch_size": 16,
     "patch_size": 30,
-    "feat_dim": 180,
     "max_len": 576,
     "d_model": 96,
     "n_heads": 6,

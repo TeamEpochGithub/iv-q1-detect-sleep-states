@@ -39,7 +39,7 @@ class EventRegressionTransformer(Model):
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
         self.load_config(**config)
-        self.trained_epochs = self.config["epochs"]
+        self.config["trained_epochs"] = self.config["epochs"]
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -188,7 +188,7 @@ class EventRegressionTransformer(Model):
         logger.info("Training events model")
         trainer = Trainer(epochs=epochs,
                           criterion=criterion)
-        avg_train_loss, avg_val_loss, self.trained_epochs = trainer.fit(
+        avg_train_loss, avg_val_loss, self.config["trained_epochs"] = trainer.fit(
             train_dataloader, test_dataloader, self.model, optimizer, self.name)
         if wandb.run is not None:
             self.log_train_test(avg_train_loss,
@@ -207,7 +207,7 @@ class EventRegressionTransformer(Model):
         # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.trained_epochs
+        epochs = self.config["trained_epochs"]
         batch_size = self.config["batch_size"]
 
         # Print the shapes and types of train and test
@@ -268,6 +268,9 @@ class EventRegressionTransformer(Model):
         # Turn data into numpy array
         data = torch.from_numpy(data)
 
+        # Get window size
+        window_size = data.shape[1]
+
         # Patch data
         patch_size = self.config["patch_size"]
         data = patch_x_data(data, patch_size)
@@ -287,7 +290,7 @@ class EventRegressionTransformer(Model):
                     data, predictions, self.model)
 
         # Limit predictions from 0 to data.shape[1]
-        predictions = np.clip(predictions, 0, data.shape[1])
+        predictions = np.clip(predictions, 0, window_size)
 
         return predictions
 
@@ -327,8 +330,20 @@ class EventRegressionTransformer(Model):
         :param path: path to model checkpoint
         :param only_hyperparameters: whether to only load the hyperparameters
         """
+        if self.device == torch.device("cpu"):
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
+        else:
+            checkpoint = torch.load(path)
+        self.config = checkpoint['config']
+
         self.model = TSTransformerEncoderClassiregressor(
             **self.transformer_config)
-        checkpoint = torch.load(path)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.config = checkpoint['config']
+        if not only_hyperparameters:
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+
+    def reset_optimizer(self) -> None:
+
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model.
+        """
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])

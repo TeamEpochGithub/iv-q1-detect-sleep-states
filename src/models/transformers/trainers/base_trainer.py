@@ -96,10 +96,12 @@ class Trainer:
                 counter = 0
             elif not full_train:
                 counter += 1
-                trained_epochs = epoch + 1
                 if counter >= max_counter:
                     model.load_state_dict(best_model)
+                    trained_epochs = (epoch - counter + 1)
                     break
+            
+            trained_epochs = epoch + 1
 
         # Load best model
         if not full_train:

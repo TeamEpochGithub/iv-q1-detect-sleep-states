@@ -340,6 +340,8 @@ class EventRegressionTransformer(Model):
             **self.transformer_config)
         if not only_hyperparameters:
             self.model.load_state_dict(checkpoint['model_state_dict'])
+        else:
+            self.reset_optimizer()
 
     def reset_optimizer(self) -> None:
 

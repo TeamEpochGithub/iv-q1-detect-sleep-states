@@ -198,7 +198,7 @@ def main(config: ConfigLoader) -> None:
         X_train, y_train = pretrain.pretrain_final(featured_data)
 
         # Save scaler
-        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl"
+        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):

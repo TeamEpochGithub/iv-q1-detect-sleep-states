@@ -7,7 +7,6 @@ import wandb
 from numpy import ndarray, dtype
 from tqdm import tqdm
 
-from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from .architectures.seg_unet_1d_cnn import SegUnet1D
 from ..logger.logger import logger
 from ..loss.loss import Loss
@@ -268,7 +267,7 @@ class SegmentationUnet1DCNN(Model):
 
         # Get only the one hot encoded features
         y_train = y_train[:, :, -3:]
-        y_train = torch.from_numpy(y_train)
+        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 

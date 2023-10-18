@@ -100,7 +100,7 @@ class Trainer:
                     model.load_state_dict(best_model)
                     trained_epochs = (epoch - counter + 1)
                     break
-            
+
             trained_epochs = epoch + 1
 
         # Load best model

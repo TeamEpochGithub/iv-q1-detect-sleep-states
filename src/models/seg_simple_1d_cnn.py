@@ -44,10 +44,10 @@ class SegmentationSimple1DCNN(Model):
         self.model = SegSimple1DCNN(window_length=data_shape[1], in_channels=data_shape[0], config=config)
         self.load_config(config)
 
-        # Print model summary
-        # TODO: have a way of using non-kaggle packages #151
-        # logger.info("--- Model summary")
-        # summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+        # If we log the run to weights and biases, we can
+        if wandb.run is not None:
+            from torchsummary import summary
+            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:
         """

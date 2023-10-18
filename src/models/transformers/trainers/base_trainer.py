@@ -61,6 +61,10 @@ class Trainer:
         # Train and validate
         avg_train_losses = []
         avg_val_losses = []
+        lowest_val_loss = np.inf
+        best_model = model.state_dict()
+        counter = 0
+        max_counter = 5
         for epoch in range(self.n_epochs):
             val_losses = []
             train_losses = self.train_one_epoch(
@@ -70,8 +74,20 @@ class Trainer:
             val_loss = sum(val_losses) / len(val_losses)
             avg_train_losses.append(train_loss.cpu())
             avg_val_losses.append(val_loss.cpu())
+
             wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
                       f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+
+            # Save model if validation loss is lower than previous lowest validation loss
+            if val_loss < lowest_val_loss:
+                lowest_val_loss = val_loss
+                best_model = model.state_dict()
+                counter = 0
+            else:
+                counter += 1
+                if counter >= max_counter:
+                    model.load_state_dict(best_model)
+                    break
 
         return avg_train_losses, avg_val_losses
 
@@ -123,7 +139,7 @@ class Trainer:
 
         # Calculate loss
         loss = self.criterion(output, data[1].type(
-            torch.DoubleTensor).to(self.device), mask)
+            torch.FloatTensor).to(self.device), mask)
 
         # Backpropagate loss if not nan
         if not np.isnan(loss.item()):
@@ -151,7 +167,10 @@ class Trainer:
                 losses = self._val_one_loop(
                     data=data, losses=losses, model=model)
                 tepoch.set_description(f"Epoch {epoch_no}")
-                tepoch.set_postfix(loss=sum(losses) / len(losses))
+                if len(losses) > 0:
+                    tepoch.set_postfix(loss=sum(losses) / len(losses))
+                else:
+                    tepoch.set_postfix(loss=-1)
         return losses
 
     def _val_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module):
@@ -177,7 +196,7 @@ class Trainer:
             mask[:, 1] = (1 - data[1][:, 3])
 
             loss = self.criterion(output, data[1].type(
-                torch.DoubleTensor).to(self.device), mask)
+                torch.FloatTensor).to(self.device), mask)
             if not np.isnan(loss.item()):
                 losses.append(loss.detach())
         return losses

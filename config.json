@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -14,6 +14,9 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
+        "rotation": {
+            "window_sizes": [10,100,1000]
+        }
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",

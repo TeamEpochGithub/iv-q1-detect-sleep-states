@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
@@ -23,51 +24,94 @@ class AddRegressionLabels(PP):
         :param data: The dataframe to add the event labels to
         :return: The dataframe with the event labels
         """
+        tqdm.pandas()
 
         if "window" not in data.columns:
-            logger.critical("No window column. Did you run SplitWindows before?")
-            raise PPException("No window column. Did you run SplitWindows before?")
+            logger.critical(
+                "No window column. Did you run SplitWindows before?")
+            raise PPException(
+                "No window column. Did you run SplitWindows before?")
         if "awake" not in data.columns:
-            logger.critical("No awake column. Did you run AddStateLabels before?")
-            raise PPException("No awake column. Did you run AddStateLabels before?")
+            logger.critical(
+                "No awake column. Did you run AddStateLabels before?")
+            raise PPException(
+                "No awake column. Did you run AddStateLabels before?")
+
+        # Set onset and wakeup to -1
+        data["onset"] = np.int16(-1)
+        data["wakeup"] = np.int16(-1)
+        data["onset-NaN"] = np.int8(1)
+        data["wakeup-NaN"] = np.int8(1)
+
+        # Create a hashmap to map (window, series_id) to the first index
+
+        # Group the DataFrame by 'window' and 'series_id' and get the first index of each group
+        first_indices = data.groupby(['series_id', 'window']).apply(
+            lambda group: group.index[0])
+        # Convert the resulting Series to a dictionary
+        window_series_map = first_indices.to_dict()
 
         # Find transitions from 1 to 0 (excluding 2-1 and 1-2 transitions)
-        sleep_onsets = data[(data['awake'].diff() == -1) & (data['awake'].shift() == 1)]["step"].tolist()
+        onsets = data[(data['awake'].diff() == -1) &
+                      (data['awake'].shift() == 1)]
 
-        # Find transitions from 0 to 1 (excluding 1-2 and 2-1 transitions)
-        sleep_awakes = data[(data['awake'].diff() == 1) & (data['awake'].shift() == 0)]["step"].tolist()
+        # Find transitions from 0 to 1 (excluding 2-1 and 1-2 transitions)
+        awakes = data[(data['awake'].diff() == 1) &
+                      (data['awake'].shift() == 0)]
 
-        # This should never happen
-        if len(sleep_onsets) >= 2 and len(sleep_awakes) >= 2:
-            logger.warn(
-                f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)}. More than 2 onsets and windows.. This should never happen...")
-            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
+        # Fill the onset and wakeup columns
+        onsets.groupby([data['series_id'], data['window']]).progress_apply(
+            fill_onset, data=data, d=window_series_map, is_onset=True)
+        awakes.groupby([data['series_id'], data['window']]).progress_apply(
+            fill_onset, data=data, d=window_series_map, is_onset=False)
 
-        if abs(len(sleep_onsets) - len(sleep_awakes)) > 1:
-            logger.warn(
-                f"--- Found {len(sleep_onsets)} onsets and {len(sleep_awakes)} in 1 window. This should never happen...")
-            logger.debug(f"--- ERROR: {sleep_onsets} onsets, {sleep_awakes} awakes")
-
-        # If we have 1/2 sleep onsets, we pick first onset
-        if len(sleep_onsets) == 1 or len(sleep_onsets) == 2:
-            data["onset"] = np.int16(sleep_onsets[0])
-            data["onset-NaN"] = np.int8(0)
-
-        if len(sleep_awakes) == 1:
-            data["wakeup"] = np.int16(sleep_awakes[0])
-            data["wakeup-NaN"] = np.int8(0)
-        elif len(sleep_awakes) == 2:
-            data["wakeup"] = np.int16(sleep_awakes[1])
-            data["wakeup-NaN"] = np.int8(0)
-
-        # If we have 0 sleep onsets, we set onset to -1 and onset-NaN to 1
-        if len(sleep_onsets) == 0:
-            data["onset"] = np.int16(-1)
-            data["onset-NaN"] = np.int8(1)
-        # If we have 0 sleep awakes, we set wakeup to -1 and wakeup-NaN to 1
-        if len(sleep_awakes) == 0:
-            data["wakeup"] = np.int16(-1)
-            data["wakeup-NaN"] = np.int8(1)
-            return data
-
+        # Set the NaN onset/wakeup to 1
         return data
+
+
+def fill_onset(group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool) -> None:
+    """
+    Fill the onset/wakeup column for the group
+    :param group: a series_id and window group
+    :param data: the complete dataframe
+    :param map: a hashmap to map (series_id, window) to the first index
+    :param is_onset: boolean for if it is an onset event
+    """
+    # TODO this is hardcoded, but should be changed to a variable #99
+    window_size = 17280
+    series_id = group['series_id'].iloc[0]
+    window = group['window'].iloc[0]
+    events = group['step'].tolist()
+    # Get the start
+    id_start = d[(series_id, window)]
+
+    # Get step of start
+    step_start = data.iloc[id_start]['step'] - 1
+
+    if id_start + window_size > len(data):
+        logger.warn(
+            f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
+
+    events = (events - step_start).tolist()
+    # Get the end
+    id_end = id_start + window_size
+
+    if is_onset:
+        if len(events) == 1 or len(events) == 2:
+            # Update the 'onset' and 'onset-NaN' columns using NumPy
+            data.iloc[id_start:id_end, data.columns.get_indexer(
+                ['onset', 'onset-NaN'])] = [np.int16(events[0]), np.int8(0)]
+    else:
+        if len(events) == 1:
+            # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
+            data.iloc[id_start:id_end, data.columns.get_indexer(
+                ['wakeup', 'wakeup-NaN'])] = [np.int16(events[0]), np.int8(0)]
+        elif len(events) == 2:
+            # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
+            data.iloc[id_start:id_end, data.columns.get_indexer(
+                ['wakeup', 'wakeup-NaN'])] = [np.int16(events[1]), np.int8(0)]
+    if len(events) >= 2:
+        message = f"--- Found {len(events)} onsets" if is_onset else f"--- Found {len(events)} awakes"
+        logger.warn(f"{message} in 1 window. This should never happen...")
+        logger.debug(
+            f"--- ERROR: {events} {'onsets' if is_onset else 'awakes'}")

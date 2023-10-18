@@ -88,6 +88,13 @@ List of options and their config options
 - "skewness"
     - "window_sizes": x > 3
     - "features": Any existing numerical features
+- "time"
+    - "day": true | false (opt)
+    - "hour": true | false (opt)
+    - "minute": true | false (opt)
+    - "second": true | false (opt)
+- "rotation"
+  - window_sizes: a list of sizes for rolling median smoothing, classic baseline uses 100
 
 Example:
 ``` 
@@ -96,8 +103,13 @@ Example:
         "window_sizes": [5, 10],
         "features": ["enmo", "anglez"]
     },
-    "fe2": {}
+    "time": {
+        "day": true,
+        "hour": true,
+        "minute": false,
+        "second": false
     }
+}
 ```
 
 ### Feature engineering data location
@@ -168,6 +180,55 @@ This contains all the models and their hyperparameters that are implemented. The
     - epochs
     - lr
     - batch_size
+
+- regression-transformer
+    - epochs (required)
+    - loss (required)
+    - optimizer (required)
+    - lr=0.001
+    - batch_size=32
+    - patch_size=36
+    - feat_dim=patch_size*num_features
+    - max_len=window_size
+    - d_model=x (x * n_heads)
+    - n_heads=6
+    - num_layers=5
+    - dim_feedforward=2048
+    - num_classes=4 (Points to regress to)
+    - dropout=0.1
+    - pos_encoding='learnable' ["learnable", "fixed"]
+    - activation="relu" ["relu", "gelu"]
+    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
+    - freeze=False
+
+- classic-base-model
+  - median_window=100
+  - threshold=.1
+
+- event-nan-regression-transformer
+    - epochs_events (required)
+    - epochs_nans (required)
+    - loss_events (required)
+    - loss_nans (required)
+    - optimizer_events (required)
+    - optimizer_nans (required)
+    - lr_events=0.000035
+    - lr_nans=0.000035
+    - batch_size=16
+    - patch_size=36
+    - feat_dim=patch_size*num_features
+    - max_len=window_size
+    - d_model=x (x * n_heads)
+    - n_heads=6
+    - num_layers=5
+    - dim_feedforward=2048
+    - num_classes=2 (Points to regress to)
+    - dropout=0.1
+    - pos_encoding='learnable' ["learnable", "fixed"]
+    - act_int="relu" ["relu", "gelu"]
+    - act_out="relu" ["relu", "gelu", "sigmoid"]
+    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
+    - freeze=False
   
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
@@ -186,6 +247,37 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "epochs": 5,
     "batch_size": 64,
     "lr": 0.01
+}
+"EventNanRegressionTransformer": {
+            "type": "event-nan-regression-transformer",
+            "epochs_events": 20,
+            "epochs_nans": 20,
+            "loss_events": "event-regression-mae",
+            "loss_nans": "nan-regression",
+            "optimizer_events": "adam-torch",
+            "optimizer_nans": "adam-torch",
+            "lr_events": 0.000035,
+            "lr_nans": 0.000035,
+            "batch_size": 16,
+            "patch_size": 36,
+            "feat_dim": 72,
+            "max_len": 480,
+            "d_model": 480,
+            "n_heads": 6,
+            "num_layers": 5,
+            "dim_feedforward": 256,
+            "num_classes": 2,
+            "dropout": 0.1,
+            "pos_encoding": "fixed",
+            "act_int": "relu",
+            "act_out": "relu",
+            "norm": "BatchNorm",
+            "freeze": false
+        }
+"Classic-baseline": {
+    "type": "classic-base-model",
+    "median_window": 100,
+    "threshold": .1
 }
 ```
 

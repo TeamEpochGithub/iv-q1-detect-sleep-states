@@ -1,6 +1,7 @@
 {
     "name": "config",
     "log_to_wandb": false,
+    "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -23,51 +24,41 @@
             "params": {
                 "start_hour": 15
             }
-        },
-        {
-            "name": "remove_unlabeled",
-            "params": {}
-        },
-        {
-            "name": "add_segmentation_labels",
-            "params": {}
         }
     ],
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "feature_engineering": {
+        "rotation": {
+            "window_sizes": [10,100,1000]
+        }
     },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "pre_training": {
         "test_size": 0.2,
-        "standardize": "standard"
+        "standardize": "none"
     },
     "models": {
-        "1D-CNN": {
-            "type": "seg-simple-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 2,
-            "batch_size": 32,
-            "lr": 0.001
+        "Classic-baseline": {
+            "type": "classic-base-model"
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-CNN"],
+        "models": ["Classic-baseline"],
         "weights": [1],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
     "hpo": {
-        "apply": true,
+        "apply": false,
         "method": "example_hpo"
     },
     "cv": {
-        "apply": true,
+        "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission": true,
-    "scoring": true
+    "scoring": true,
+    "train_for_submission": true
 }

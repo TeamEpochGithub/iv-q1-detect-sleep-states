@@ -15,12 +15,21 @@ class ExampleModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
+        :param name: name of the model
         """
         super().__init__(config)
+
+        # Check if gpu is available, else return an exception
+        if not torch.cuda.is_available():
+            logger.critical("GPU not available")
+            raise ModelException("GPU not available")
+
+        logger.info(f"--- Device set to model {type(self).__name__}: " + torch.cuda.get_device_name(0))
+        self.device = torch.device("cuda")
 
         self.model_type = "state-prediction"
         # Load model

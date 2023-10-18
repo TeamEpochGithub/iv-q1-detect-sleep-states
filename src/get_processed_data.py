@@ -3,10 +3,18 @@ from src.logger.logger import logger
 import os
 import pandas as pd
 import gc
+import tracemalloc
+
+
+def log_memory():
+    size, peak = tracemalloc.get_traced_memory()
+    logger.debug(f"Current memory usage is {size / 10**6:.2f} MB; Peak was {peak / 10**6:.2f} MB")
+    tracemalloc.reset_peak()
 
 
 def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
     pp_steps, pp_step_names = config.get_pp_steps(training=training)
+
     fe_steps, fe_step_names = config.get_features()
     fe_steps = [fe_steps[key] for key in fe_steps]
     step_names = pp_step_names + fe_step_names
@@ -25,6 +33,8 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
         else:
             logger.debug(f'File not found at: {path}')
 
+    tracemalloc.start()
+    log_memory()
     if i == 0:
         series_path = config.get_train_series_path() if training else config.get_test_series_path()
         logger.info(f'No files found, reading from: {series_path}')
@@ -33,16 +43,22 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
 
     # now using i run the preprocessing steps that were not applied
     for j, step in enumerate(step_names[i:]):
+        log_memory()
+        logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
         path = config.get_pp_out() + '/' + '_'.join(step_names[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
         processed = step.run(processed)
         gc.collect()
+
         # save the result
         logger.info('--- Step was applied')
         if save_output:
             logger.info(f'--- Saving to: {path}')
             processed.to_parquet(path)
             logger.info('--- Finished saving')
+    log_memory()
+    logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+    tracemalloc.stop()
     return processed

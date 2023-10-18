@@ -2,7 +2,6 @@
 
 # Imports
 import numpy as np
-import pandas as pd
 
 from ..logger.logger import logger
 
@@ -21,57 +20,37 @@ class Ensemble:
         else:
             self.weight_matrix = weight_matrix
 
-    def pred(self, data: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, data: np.ndarray, pred_cpu: bool) -> np.ndarray:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
         and converts the window-relative steps to absolute steps since the start of the series
 
-        :param data: complete dataset with engineered features
-        :return: dataframe, example:
-                   series_id  window     onset    wakeup
-            0   038441c925bb     0.0    5046.0    8794.0
-            1   038441c925bb     1.0   20336.0   23482.0
-            2   038441c925bb     2.0   40049.0   44322.0
+        :param data: 3D tensor with shape (window, n_timesteps, n_features)
+        :param pred_cpu: whether to predict on cpu
+        :return: 3D array with shape (window, 2), with onset and wakeup steps (nan if no detection)
         """
-
         logger.info("Predicting with ensemble")
+        logger.info("Data shape: " + str(data.shape))
         # Run each model
         predictions = []
+        # model_pred is (onset, wakeup) tuples for each window
         for model in self.models:
-            # group data by series_id, apply model.pred to each group, and get the output pairs
-            # get the step at the index of the prediction
-            model_pred = (data
-                          .groupby(['series_id', 'window'])
-                          .apply(lambda x: pred_window(x, model))
-                          .reset_index(0, drop=True))
+            # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
+            if hasattr(model, 'device'):
+                model_pred = model.pred(data, pred_cpu)
+            else:
+                model_pred = model.pred(data)
 
-            # split the series of tuples into two column
-            predictions.append(model_pred.to_list())
+            # Model_pred is (onset, wakeup) tuples for each window
+            # Split the series of tuples into two column
+            predictions.append(model_pred)
+
+        # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 
         # Weight the predictions
         predictions = np.array(predictions)
-        predictions = np.average(
+        aggregate = np.average(
             predictions, axis=0, weights=self.weight_matrix)
 
-        # Return a dataframe with the prediction for each series_id and window
-        output_df = (data.groupby(['series_id', 'window'])
-                         .apply(lambda x: x.iloc[0][['series_id', 'window']])
-                         .reset_index(drop=True))
-        output_df['onset'] = predictions[:, 0]
-        output_df['wakeup'] = predictions[:, 1]
-        return output_df
-
-
-def pred_window(window: pd.DataFrame, model):
-    """
-    Get the step value for this window predicted by the model
-    :param window: one window of the data
-    :param model:
-    :return: predicted onset and wakeup, absolute (relative to start of series)
-    """
-    # get the step at the index of the prediction
-    onset_rel, wakeup_rel = model.pred(window)
-    onset = window['step'].iloc[onset_rel] if onset_rel is not np.nan else np.nan
-    wakeup = window['step'].iloc[wakeup_rel] if wakeup_rel is not np.nan else np.nan
-    return onset, wakeup
+        return aggregate

@@ -8,12 +8,16 @@ from ..feature_engineering.feature_engineering import FE
 from ..feature_engineering.kurtosis import Kurtosis
 from ..feature_engineering.mean import Mean
 from ..feature_engineering.skewness import Skewness
+from ..feature_engineering.time import Time
+from ..feature_engineering.rotation import Rotation
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
+from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
+
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels
 from ..preprocessing.add_segmentation_labels import AddSegmentationLabels
@@ -83,6 +87,7 @@ class ConfigLoader:
         """
         pp_step_names: list[str] = []
         pp_steps: list[PP] = []
+        pp_names: list[str] = []
         for pp_step in self.config["preprocessing"]:
             pp_step_names.append(pp_step["name"])
             # Check if the step is only for training
@@ -121,6 +126,13 @@ class ConfigLoader:
         :return: the path to the preprocessing output folder
         """
         return self.config["processed_loc_out"]
+
+    def get_pred_with_cpu(self) -> bool:
+        """Get whether to use CPU for prediction
+
+        :return: whether to use CPU for prediction
+        """
+        return self.config["pred_with_cpu"]
 
     def get_pp_in(self) -> str:
         """Get the path to the preprocessing input data folder
@@ -167,12 +179,26 @@ class ConfigLoader:
                 features.sort()
                 features = str(features).replace(" ", "")
                 fe_s.append(fe_step + features + window_sizes)
+            elif fe_step == "time":
+                fe_steps["time"] = Time(
+                    self.config["feature_engineering"]["time"])
+                fe_s.append(fe_step)
+            elif fe_step == "rotation":
+                fe_steps["rotation"] = Rotation(
+                    self.config["feature_engineering"]["rotation"])
+                fe_s.append(fe_step)
             else:
                 logger.critical("Feature engineering step not found: " + fe_step)
                 raise ConfigException(
                     "Feature engineering step not found: " + fe_step)
 
         return fe_steps, fe_s
+
+    def get_pp_fe_pretrain(self) -> str:
+        """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.
+        :return: the config of preprocessing, feature engineering and pretraining as a string
+        """
+        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(self.config["pre_training"])
 
     def get_fe_out(self) -> str:
         """Get the path to the feature engineering output folder
@@ -205,20 +231,23 @@ class ConfigLoader:
         models: dict = {}
         # Loop through models
         logger.info("Models: " + str(self.config.get("models")))
-        for model in self.config["models"]:
-            model_config = self.config["models"][model]
+        for model_name in self.config["models"]:
+            model_config = self.config["models"][model_name]
             curr_model = None
             match model_config["type"]:
                 case "example-fc-model":
-                    curr_model = ExampleModel(model_config)
+                    curr_model = ExampleModel(model_config, model_name)
                 case "classic-base-model":
-                    curr_model = ClassicBaseModel(model_config)
+                    curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, data_shape)
+                    curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
+                case "event-nan-regression-transformer":
+                    curr_model = EventNaNRegressionTransformer(model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])
-            models[model] = curr_model
+
+            models[model_name] = curr_model
 
         return models
 
@@ -229,7 +258,7 @@ class ConfigLoader:
         """
         return self.config["model_store_loc"]
 
-    def get_ensemble(self, models: list) -> Ensemble:
+    def get_ensemble(self, models: dict) -> Ensemble:
         """Get the ensemble from the config
 
         :param models: the models

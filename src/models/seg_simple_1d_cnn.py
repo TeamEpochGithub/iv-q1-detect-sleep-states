@@ -1,12 +1,18 @@
+import copy
+from typing import Any
+
 import numpy as np
 import torch
-from torchsummary import summary
+import wandb
+from numpy import ndarray, dtype
+from tqdm import tqdm
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
+from ..util.state_to_event import find_events
 
 
 class SegmentationSimple1DCNN(Model):
@@ -15,13 +21,22 @@ class SegmentationSimple1DCNN(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the data (input/output shape, features)
+        :param name: name of the model
         """
-        super().__init__(config)
+        super().__init__(config, name)
+
+        # Check if gpu is available, else return an exception
+        if not torch.cuda.is_available():
+            logger.warning("GPU not available - using CPU")
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device("cuda")
+            logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "segmentation"
         self.data_shape = data_shape
@@ -29,15 +44,18 @@ class SegmentationSimple1DCNN(Model):
         self.model = SegSimple1DCNN(window_length=data_shape[1], in_channels=data_shape[0], config=config)
         self.load_config(config)
 
-        # Print model summary
-        logger.info("--- Model summary")
-        summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+        # If we log the run to weights and biases, we can
+        if wandb.run is not None:
+            from torchsummary import summary
+            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
     def load_config(self, config: dict) -> None:
         """
         Load config function for the model.
         :param config: configuration to set up the model
         """
+        config = copy.deepcopy(config)
+
         # Error checks. Check if all necessary parameters are in the config.
         required = ["loss", "optimizer"]
         for req in required:
@@ -110,8 +128,17 @@ class SegmentationSimple1DCNN(Model):
         # self.model.half()
         self.model.to(self.device)
 
+        # Define wandb metrics
+        wandb.define_metric("epoch")
+        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+
+        avg_losses = []
+        avg_val_losses = []
         # Train the model
-        for epoch in range(epochs):
+
+        pbar = tqdm(range(epochs))
+        for epoch in pbar:
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
@@ -144,8 +171,21 @@ class SegmentationSimple1DCNN(Model):
                     avg_val_loss += vloss.item() / len(test_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
-                        f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
+            logger.debug(descr)
+            pbar.set_description(descr)
+
+            # Add average losses to list
+            avg_losses.append(avg_loss)
+            avg_val_losses.append(avg_val_loss)
+
+            # Log train test loss to wandb
+            if wandb.run is not None:
+                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+
+        # Log full train and test plot
+        self.log_train_test(avg_losses, avg_val_losses, epochs)
+        logger.info("--- Training of model complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -176,8 +216,13 @@ class SegmentationSimple1DCNN(Model):
         # Add model and data to device cuda
         # self.model.half()
         self.model.to(self.device)
-        # Train the model
-        for epoch in range(epochs):
+
+        # Define wandb metrics
+        wandb.define_metric("epoch")
+        wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+
+        pbar = tqdm(range(epochs))
+        for epoch in pbar:
             self.model.train(True)
             avg_loss = 0
             for i, (x, y) in enumerate(train_dataloader):
@@ -199,27 +244,58 @@ class SegmentationSimple1DCNN(Model):
                 avg_loss += loss.item() / len(train_dataloader)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            logger.info(f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}")
-        # Get hyperparameters from config (epochs, lr, optimizer)
+            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
+            logger.debug(descr)
+            pbar.set_description(descr)
+
+            # Log train full
+            if wandb.run is not None:
+                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray) -> np.ndarray:
+    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
+        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
-        logger.info("--- Predicting model")
+        logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        # Push to device
-        self.model.to(self.device)
+        if with_cpu:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda")
+
+        self.model.to(device)
+        # Convert data to tensor
+        data = torch.from_numpy(data).permute(0, 2, 1).to(device)
+
+        # Print data shape
+        logger.info(f"--- Data shape of predictions: {data.shape}")
 
         # Make a prediction
         with torch.no_grad():
             prediction = self.model(data)
-        return prediction
+
+        if with_cpu:
+            prediction = prediction.numpy()
+        else:
+            prediction = prediction.cpu().numpy()
+
+        logger.info(f"--- Done making predictions with model {self.name}")
+        # All predictions
+        all_predictions = []
+
+        for pred in tqdm(prediction, desc="Converting predictions to events", unit="window"):
+            # Convert to relative window event timestamps
+            events = find_events(pred, median_filter_size=15)
+            all_predictions.append(events)
+
+        # Return numpy array
+        return np.array(all_predictions)
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """
@@ -247,13 +323,16 @@ class SegmentationSimple1DCNN(Model):
         torch.save(checkpoint, path)
         logger.info("--- Model saved to: " + path)
 
-    def load(self, path: str, only_hyperparameters: False) -> None:
+    def load(self, path: str, only_hyperparameters: bool = False) -> None:
         """
         Load function for the model.
         :param path: path to model checkpoint
         :param only_hyperparameters: whether to only load the hyperparameters
         """
-        checkpoint = torch.load(path)
+        if self.device == torch.device("cpu"):
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
+        else:
+            checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
@@ -262,10 +341,12 @@ class SegmentationSimple1DCNN(Model):
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
         return
 
     def reset_optimizer(self) -> None:
+
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """

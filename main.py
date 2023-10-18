@@ -185,16 +185,15 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)
-        if config.get_visualize_preds():
-            # the plot function applies encoding to the submission
-            # we do not want to change the ids on the original submission
-            plot_submission = submission.copy()
-            # pass only the test data
-            plot_preds_on_series(plot_submission,
-                                 featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
-                                 number_of_series_to_plot=config.get_number_of_plots(),
-                                 folder_path='prediction_plots/' + hash_config(config.get_ensemble(models).config),
-                                 show_plot=config.get_visualize_preds())
+        # the plot function applies encoding to the submission
+        # we do not want to change the ids on the original submission
+        plot_submission = submission.copy()
+        # pass only the test data
+        plot_preds_on_series(plot_submission,
+                             featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
+                             number_of_series_to_plot=config.get_number_of_plots(),
+                             folder_path='prediction_plots/' + config_hash,
+                             show_plot=config.get_visualize_preds())
     else:
         logger.info("Not scoring")
 

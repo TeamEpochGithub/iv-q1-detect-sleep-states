@@ -25,8 +25,8 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         ids_to_plot (list, optional): The encoded ids of the series to plot. Defaults to None.
         """
     # make a plrediction_plots folder if it doesnt exist
-    if not os.path.exists('prediction_plots'):
-        os.mkdir('prediction_plots')
+    # if not os.path.exists('prediction_plots'):
+    #     os.mkdir('prediction_plots')
     # Load the encoding JSON
     with open('series_id_encoding.json', 'r') as f:
         id_encoding = json.load(f)
@@ -148,7 +148,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                 fig = FigureResampler(fig)
                 # if the hash config dir doesnt exist make it
                 if not os.path.exists(folder_path):
-                    os.mkdir(folder_path)
+                    os.makedirs(folder_path)
                 fig.write_image(folder_path + '/' + 'series_id--' + f'{id_decoding[id]}-({id}).jpeg', width=2000, height=600)
 
 

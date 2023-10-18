@@ -56,7 +56,6 @@ class Model:
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
 
-
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
         Train the model on the full dataset. This function should be overwritten by the user.
@@ -66,7 +65,6 @@ class Model:
         # Get hyperparameters from config (epochs, lr, optimizer)
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
-
 
     def pred(self, X_pred: np.ndarray, with_cpu: bool) -> list[float, float]:
         """

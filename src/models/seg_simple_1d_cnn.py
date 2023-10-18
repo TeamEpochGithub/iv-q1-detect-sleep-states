@@ -184,7 +184,8 @@ class SegmentationSimple1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
         # Log full train and test plot
-        self.log_train_test(avg_losses, avg_val_losses, epochs)
+        if wandb.run is not None:
+            self.log_train_test(avg_losses, avg_val_losses, epochs)
         logger.info("--- Training of model complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:

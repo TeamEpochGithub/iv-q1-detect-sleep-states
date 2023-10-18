@@ -243,7 +243,8 @@ class SegmentationUnet1DCNN(Model):
         self.config["total_epochs"] = total_epochs
 
         # Log full train and test plot
-        self.log_train_test(avg_losses, avg_val_losses, total_epochs)
+        if wandb.run is not None:
+            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
         logger.info("--- Training of model complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:

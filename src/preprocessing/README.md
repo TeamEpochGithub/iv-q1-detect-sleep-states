@@ -2,6 +2,9 @@
 
 This directory contains the preprocessing steps. The following steps are currently implemented:
 
+- `mem_reduce`
+    - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
+      a datetime object. 
 - `add-noise`
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`

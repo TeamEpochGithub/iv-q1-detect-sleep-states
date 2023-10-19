@@ -8,6 +8,10 @@ class AddSegmentationLabels(PP):
     """Preprocessing step that adds the segmentation labels to the data
     """
 
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the AddSegmentationLabels class"""
+        super().__init__(**kwargs | {"kind": "add_segmentation_labels"})
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Adds the segmentation labels to the data.
 

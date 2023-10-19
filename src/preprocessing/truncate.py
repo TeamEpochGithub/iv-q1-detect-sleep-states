@@ -11,6 +11,10 @@ class Truncate(PP):
     this will look at the last time the participant is either awake or asleep and truncate all data after that.
     """
 
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the Truncate class"""
+        super().__init__(**kwargs | {"kind": "truncate"})
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Truncates the unlabeled end of the data
 

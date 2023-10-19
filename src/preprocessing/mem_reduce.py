@@ -21,8 +21,9 @@ class MemReduce(PP):
 
         :param id_encoding_path: the path to the encoding file of the series id
         """
-        super().__init__(**kwargs)
-        self.encoding_path: str = id_encoding_path
+        super().__init__(**kwargs | {"kind": "mem_reduce"})
+
+        self.id_encoding_path: str = id_encoding_path
         self.encoding = {}
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -54,16 +55,16 @@ class MemReduce(PP):
         sids = data['series_id'].unique()
         encoding = dict(zip(sids, range(len(sids))))
 
-        if self.encoding_path is None:
+        if self.id_encoding_path is None:
             logger.warning("No encoding path given, not saving encoding")
         else:
-            logger.debug(f"------ Saving series encoding to {self.encoding_path}")
+            logger.debug(f"------ Saving series encoding to {self.id_encoding_path}")
 
             # TODO Don't write the file here to make this method testable
-            with open(self.encoding_path, 'w') as f:
+            with open(self.id_encoding_path, 'w') as f:
                 json.dump(encoding, f)
 
-            logger.debug(f"------ Done saving series encoding to {self.encoding_path}")
+            logger.debug(f"------ Done saving series encoding to {self.id_encoding_path}")
 
         data['series_id'] = data['series_id'].map(encoding).astype('int16')
 

@@ -12,6 +12,10 @@ class RemoveUnlabeled(PP):
     If the "window" column in present, only drop the windows where all the "awake" values are 2.
     """
 
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the RemoveUnlabeled class"""
+        super().__init__(**kwargs | {"kind": "remove_unlabeled"})
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Removes all the data points where there is no labeled data
 

@@ -13,7 +13,8 @@ class AddRegressionLabels(PP):
     """
 
     def __init__(self, window_size: int = 17280, **kwargs: dict) -> None:
-        super().__init__(**kwargs)
+        """Initialize the AddRegressionLabels class"""
+        super().__init__(**kwargs | {"kind": "add_regression_labels"})
 
         self.window_size = window_size
 

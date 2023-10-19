@@ -20,7 +20,7 @@ class AddStateLabels(PP):
         :param events_path: the path to the events csv file
         :param id_encoding_path: the path to the encoding file of the series id
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs | {"kind": "add_state_labels"})
 
         self.events_path: str = events_path
         self.events: pd.DataFrame = pd.DataFrame()

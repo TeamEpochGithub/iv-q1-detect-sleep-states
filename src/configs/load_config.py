@@ -19,6 +19,7 @@ from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
 from ..models.transformers.event_regression_transformer import EventRegressionTransformer
 from ..preprocessing.pp import PP
+from ..pretrain.pretrain import Pretrain
 
 
 class ConfigLoader:
@@ -158,7 +159,7 @@ class ConfigLoader:
         :return: the config of preprocessing, feature engineering and pretraining as a string
         """
         return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(
-            self.config["pre_training"])
+            self.config["pretraining"])
 
     def get_fe_out(self) -> str:
         """Get the path to the feature engineering output folder
@@ -174,12 +175,12 @@ class ConfigLoader:
         """
         return self.config["fe_loc_in"]
 
-    def get_pretraining(self) -> dict:
+    def get_pretraining(self) -> Pretrain:
         """Get the pretraining parameters
 
-        :return: the pretraining parameters
+        :return: the pretraining object
         """
-        return self.config["pre_training"]
+        return Pretrain.from_config(self.config["pretraining"])
 
     # Function to retrieve model data
     def get_models(self, data_shape: tuple) -> dict:

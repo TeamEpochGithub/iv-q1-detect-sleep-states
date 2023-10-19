@@ -12,7 +12,7 @@ class AddNoise(PP):
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the AddNoise class"""
-        super().__init__(**kwargs)
+        super().__init__(**kwargs | {"kind": "add_noise"})
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by adding noise to the data.

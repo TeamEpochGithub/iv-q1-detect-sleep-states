@@ -19,7 +19,7 @@ class SplitWindows(PP):
         :param start_hour: the hour of the day to start the window at. Default is 15:00.
         :param window_size: the size of the window in steps. Default is 24 * 60 * 12 = 17280.
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs | {"kind": "split_windows"})
 
         self.start_hour = start_hour
         self.window_size = window_size
@@ -69,8 +69,7 @@ class SplitWindows(PP):
         first_time = group['timestamp'].iloc[0]
 
         # Get initial seconds
-        initial_steps = first_time.hour * 60 * 12 + \
-                        first_time.minute * 12 + int(first_time.second / 5)
+        initial_steps = first_time.hour * 60 * 12 + first_time.minute * 12 + int(first_time.second / 5)
 
         # If index is 0, then the first row is at 15:00:00 so do nothing
         # If index is negative, time is before 15:00:00 and after 00:00:00 so add initial seconds and 9 hours
@@ -110,8 +109,7 @@ class SplitWindows(PP):
         last_time = group['timestamp'].iloc[-1]
 
         # Pad the end with enmo = 0 and anglez = 0 and steps being relative to the last step until timestamp is 15:00:00
-        amount_of_padding_end = self.window_size - \
-                                ((len(start_pad_df) + len(group)) % self.window_size)
+        amount_of_padding_end = self.window_size - ((len(start_pad_df) + len(group)) % self.window_size)
 
         last_step = group['step'].iloc[-1]
 
@@ -123,8 +121,7 @@ class SplitWindows(PP):
         step = np.arange(last_step + 1, last_step + amount_of_padding_end + 1)
 
         # Create a numpy array of timestamps using date range
-        timestamps = last_time + \
-                     np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
+        timestamps = last_time + np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
 
         # Create a numpy array of series ids
         series_id = np.full(amount_of_padding_end, curr_series_id)

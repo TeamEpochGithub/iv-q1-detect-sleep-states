@@ -5,7 +5,9 @@ import tracemalloc
 import pandas as pd
 
 from src.configs.load_config import ConfigLoader
+from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
+from src.preprocessing.pp import PP
 
 
 def log_memory():
@@ -15,13 +17,13 @@ def log_memory():
 
 
 def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
-    pp_steps = config.get_pp_steps(training=training)
-    pp_step_names = [pp_step.kind for pp_step in pp_steps]
+    pp_steps: list[PP] = config.get_pp_steps(training=training)
+    pp_step_names: list[str] = [pp_step.kind for pp_step in pp_steps]
 
     fe_steps, fe_step_names = config.get_features()
-    fe_steps = [fe_steps[key] for key in fe_steps]
-    step_names = pp_step_names + fe_step_names
-    steps = pp_steps + fe_steps
+    fe_steps: list[FE] = [fe_steps[key] for key in fe_steps]
+    step_names: list[str] = pp_step_names + fe_step_names
+    steps: list[PP | FE] = pp_steps + fe_steps
 
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()

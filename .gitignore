@@ -193,3 +193,6 @@ tm.zip
 #Ignore configs
 configs/
 prediction_plots/
+
+#Ignore submissions
+submissions/

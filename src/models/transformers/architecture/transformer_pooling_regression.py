@@ -3,7 +3,7 @@ import torch
 
 # Base imports
 from ..base.encoder_block import TransformerEncoderBlock
-from ..base.seq_pool import SeqPool, LSTMPooling
+from ..base.seq_pool import SeqPool, LSTMPooling, NoPooling
 from src.logger.logger import logger
 
 
@@ -26,7 +26,7 @@ class PatchPoolTransformerEncoder(nn.Module):
     def __init__(
         self, heads: int = 12, emb_dim: int = 768, feat_dim: int = 3072, 
         dropout: float = 0.1, layers: int = 12, patch_size: int = 16, 
-        channels: int = 3, seq_len: int = 17280, num_class: int = 2
+        channels: int = 3, seq_len: int = 17280, num_class: int = 2, pooling: str = "none"
     ) -> None:
         super(PatchPoolTransformerEncoder, self).__init__()
         self.patch_size = patch_size
@@ -48,8 +48,14 @@ class PatchPoolTransformerEncoder(nn.Module):
                 )
             )
         self.encoder_stack = nn.Sequential(*encoders)
-        self.seq_pool = LSTMPooling(emb_dim=emb_dim)
-        self.mlp_head = nn.Linear(seq_len // patch_size, num_class)
+        self.seq_pool = NoPooling(emb_dim=emb_dim)
+        self.mlp_head = nn.Linear((seq_len // patch_size) * emb_dim, num_class)
+        if pooling == "lstm":
+            self.seq_pool = LSTMPooling(emb_dim=emb_dim)
+            self.mlp_head = nn.Linear((seq_len // patch_size), num_class)
+        elif pooling == "softmax":
+            self.seq_pool = SeqPool(emb_dim=emb_dim)
+            self.mlp_head = nn.Linear(emb_dim, num_class)
 
     def forward(self, x: Tensor) -> Tensor:
         """

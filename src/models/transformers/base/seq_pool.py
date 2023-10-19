@@ -35,4 +35,12 @@ class LSTMPooling(nn.Module):
         out = out.reshape(-1, out.shape[1])
         return out
     
+class NoPooling(nn.Module):
+    def __init__(self, emb_dim=256):
+        super(NoPooling, self).__init__()
+        self.emb_dim = emb_dim
+    
+    def forward(self, all_hidden_states):
+        return all_hidden_states.reshape(all_hidden_states.shape[0], -1)
+    
     

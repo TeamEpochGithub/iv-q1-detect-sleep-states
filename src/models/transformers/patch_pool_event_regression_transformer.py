@@ -115,7 +115,8 @@ class PatchPoolEventRegressionTransformer(Model):
             'patch_size': 36,
             'channels': 2,
             'seq_len': 17280,
-            'num_class': 2
+            'num_class': 2,
+            'pooling': 'none'
         }
 
     def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array) -> None:

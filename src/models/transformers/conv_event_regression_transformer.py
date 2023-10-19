@@ -140,7 +140,6 @@ class ConvolutionalEventRegressionTransformer(Model):
         :return: default config
         """
         return {
-            'hidden_layers': 64,
             'kernel': 7,
             'depth': 2,
             'heads': 4,

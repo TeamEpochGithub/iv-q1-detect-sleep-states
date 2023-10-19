@@ -192,3 +192,6 @@ tm.zip
 
 #Ignore configs
 configs/
+
+#Ignore submissions
+submissions/

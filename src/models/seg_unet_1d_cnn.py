@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
+from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
@@ -344,27 +345,37 @@ class SegmentationUnet1DCNN(Model):
             device = torch.device("cuda")
 
         self.model.to(device)
-        # Convert data to tensor
-        data = torch.from_numpy(data).permute(0, 2, 1).to(device)
 
         # Print data shape
-        logger.info(f"--- Data shape of predictions: {data.shape}")
+        logger.info(f"--- Data shape of predictions dataset: {data.shape}")
 
-        # Make a prediction
+        # Create a DataLoader for batched inference
+        dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
+        dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+
+        predictions = []
+
         with torch.no_grad():
-            prediction = self.model(data)
+            for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
+                batch_data = batch_data[0].to(device)
 
-        if with_cpu:
-            prediction = prediction.numpy()
-        else:
-            prediction = prediction.cpu().numpy()
+                # Make a batch prediction
+                batch_prediction = self.model(batch_data)
 
-        logger.info(f"--- Done making predictions with model {self.name}")
+                if with_cpu:
+                    batch_prediction = batch_prediction.numpy()
+                else:
+                    batch_prediction = batch_prediction.cpu().numpy()
 
-        # All predictions
+                predictions.append(batch_prediction)
+
+        # Concatenate the predictions from all batches
+        predictions = np.concatenate(predictions, axis=0)
+
         all_predictions = []
 
-        for pred in tqdm(prediction, desc="Converting predictions to events", unit="window"):
+        # Convert to events
+        for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             pred = one_hot_to_state(pred)
             events = find_events(pred, median_filter_size=15)

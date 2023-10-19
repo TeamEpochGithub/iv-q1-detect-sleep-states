@@ -34,8 +34,7 @@ class ConvolutionalEventRegressionTransformer(Model):
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["feat_dim"] = config.get(
-            "patch_size", 36) * data_shape[0]
+        self.transformer_config["sequence_size"] = data_shape[1]
         self.model = ConvolutionalTransformerEncoder(
             **self.transformer_config)
         self.load_config(**config)

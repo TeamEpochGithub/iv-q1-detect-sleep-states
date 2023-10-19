@@ -19,7 +19,7 @@ from typing import Any
 
 class PatchPoolEventRegressionTransformer(Model):
     """
-    This is the model file for the event regression transformer model.
+    This is the model file for the patch pool event regression transformer model.
     """
 
     def __init__(self, config: dict, data_shape: tuple, name: str) -> None:

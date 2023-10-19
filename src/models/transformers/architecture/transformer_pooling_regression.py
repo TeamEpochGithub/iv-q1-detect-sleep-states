@@ -60,6 +60,10 @@ class PatchPoolTransformerEncoder(nn.Module):
         Returns:
             (batch_size, num_classes)
         """
+
+        # Input is (batch_size, seq_length, feat_dim) but should be (bs, feat_dim, seq_length) for patch pool
+        x = x.permute(0, 2, 1)
+
         bs, c, l = x.shape  # (bs, c, l)
         torch._assert(
             self.seq_len % self.patch_size == 0, 
@@ -68,7 +72,7 @@ class PatchPoolTransformerEncoder(nn.Module):
 
         # below 2 lines creates patches using view/reshape and permutations
         # (bs, c, no_of_patches, patch_l) -> (bs, no_of_patches, c, patch_l)
-        x = x.view(bs, c, self.seq_len // self.patch_size, self.patch_size).permute(0, 2, 1, 3)
+        x = x.view(bs, c, l // self.patch_size, self.patch_size).permute(0, 2, 1, 3)
         # (bs, no_of_patches, c*seq_len)
         x = x.reshape(bs, self.seq_len // self.patch_size, c*self.patch_size)
 

@@ -96,17 +96,17 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                 # This part plots the features for awake=0, awake=1, awake=2 in a way that the jumps are not connected
                 # and we get only 1 legend item for the entire group by showing legend only on the first trace
                 awake_0_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
-                                                                                        y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0',
-                                                                                        line=dict(color='blue'), legendgroup=feature_to_plot+'Awake=0',
-                                                                                        showlegend=True if x.name == 0 else False)))
+                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0',
+                                                                                     line=dict(color='blue'), legendgroup=feature_to_plot+'Awake=0',
+                                                                                     showlegend=True if x.name == 0 else False)))
                 awake_1_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
-                                                                                        y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=1',
-                                                                                        line=dict(color='red'), legendgroup=feature_to_plot+'Awake=1',
-                                                                                        showlegend=True if x.name == 0 else False)))
+                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=1',
+                                                                                     line=dict(color='red'), legendgroup=feature_to_plot+'Awake=1',
+                                                                                     showlegend=True if x.name == 0 else False)))
                 awake_2_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
-                                                                                        y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2',
-                                                                                        line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
-                                                                                        showlegend=True if x.name == 0 else False)))
+                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2',
+                                                                                     line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
+                                                                                     showlegend=True if x.name == 0 else False)))
                 fig.update_xaxes(title='Timestamp')#, range=[0, current_series.shape[0]])
                 fig.update_yaxes(title='Feature values')
                 fig.update_layout(
@@ -119,24 +119,24 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         # and the annotations are colored according to the event type
         for current_onset in current_events[current_events['event'] == 'onset']['step'].dropna():
             fig.add_vline(x=current_onset, line_dash="dash", line_color="black", line_width=2,
-                            annotation_text=f'<span style="color:black">real_onset:<br> {current_onset}</span>',
-                            annotation_position="top", name=f'Vertical Line at x={current_onset}', annotation_textangle=315,
-                            )
+                          annotation_text=f'<span style="color:black">real_onset:<br> {current_onset}</span>',
+                          annotation_position="top", name=f'Vertical Line at x={current_onset}', annotation_textangle=315,
+                          )
         for current_wakeup in current_events[current_events['event'] == 'wakeup']['step'].dropna():
             fig.add_vline(x=current_wakeup, line_dash="dash", line_color="green", name="wakeup", line_width=2,
-                            annotation_text=f'<span style="color:green">real_wakeup:<br> {current_wakeup}</span>',
-                            annotation_position="top", annotation_textangle=315)
+                          annotation_text=f'<span style="color:green">real_wakeup:<br> {current_wakeup}</span>',
+                          annotation_position="top", annotation_textangle=315)
 
         for current_pred_onset in current_preds[current_preds['event'] == 'onset']['step'].dropna():
             fig.add_vline(x=current_pred_onset, line_dash="dash", line_color="red", line_width=2,
-                            annotation_text=f'<span style="color:red">pred_onset:<br> {current_pred_onset}</span>',
-                            annotation_position="top", name=f'Vertical Line at x={current_pred_onset}', annotation_textangle=315,
-                            )
+                          annotation_text=f'<span style="color:red">pred_onset:<br> {current_pred_onset}</span>',
+                          annotation_position="top", name=f'Vertical Line at x={current_pred_onset}', annotation_textangle=315,
+                          )
         for current_pred_wakeup in current_preds[current_preds['event'] == 'wakeup']['step'].dropna():
             fig.add_vline(x=current_pred_wakeup, line_dash="dash", line_color="orange", name="wakeup", line_width=2,
-                            annotation_text=f'<span style="color:orange"> pred_wakeup:<br> {current_pred_wakeup}</span>',
-                            annotation_position="top", annotation_textangle=315,
-                            )
+                          annotation_text=f'<span style="color:orange"> pred_wakeup:<br> {current_pred_wakeup}</span>',
+                          annotation_position="top", annotation_textangle=315,
+                          )
         # The normal margin doesnt work for the annotations
         fig.update_layout(margin=dict(t=160))
         if show_plot:

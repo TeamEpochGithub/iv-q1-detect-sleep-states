@@ -22,7 +22,7 @@
     "pretraining": {
         "test_size": 0.2,
         "scaler": {
-            "kind": "standard-scaler"
+            "kind": "none"
         }
     },
     "models": {
@@ -47,6 +47,6 @@
     },
     "scoring": true,
     "train_for_submission": true,
-    "visualize_preds": false,
+    "visualize_preds": true,
     "number_of_plots": 10
 }

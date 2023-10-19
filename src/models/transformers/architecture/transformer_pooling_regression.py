@@ -3,7 +3,7 @@ import torch
 
 # Base imports
 from ..base.encoder_block import TransformerEncoderBlock
-from ..base.seq_pool import SeqPool
+from ..base.seq_pool import SeqPool, LSTMPooling
 from src.logger.logger import logger
 
 

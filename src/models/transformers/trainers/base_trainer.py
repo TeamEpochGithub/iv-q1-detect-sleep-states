@@ -73,17 +73,19 @@ class Trainer:
         trained_epochs = 0
         for epoch in range(self.n_epochs):
 
+            # Training loss
             train_losses = self.train_one_epoch(
                 dataloader=dataloader, epoch_no=epoch, optimiser=optimiser, model=model)
-            train_loss = sum(train_losses) / len(train_losses)
-            avg_train_losses.append(train_loss.cpu())
+            if len(train_losses) > 0:
+                train_loss = sum(train_losses) / len(train_losses)
+                avg_train_losses.append(train_loss.cpu())
 
             # Validation
-            val_losses = []
             if not full_train:
                 val_losses = self.val_loss(testloader, epoch, model)
-                val_loss = sum(val_losses) / len(val_losses)
-                avg_val_losses.append(val_loss.cpu())
+                if len(val_losses) > 0:
+                    val_loss = sum(val_losses) / len(val_losses)
+                    avg_val_losses.append(val_loss.cpu())
 
             if wandb.run is not None and not full_train:
                 wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,

@@ -50,7 +50,6 @@ class PatchPoolTransformerEncoder(nn.Module):
         self.encoder_stack = nn.Sequential(*encoders)
         self.seq_pool = SeqPool(emb_dim=emb_dim)
         self.mlp_head = nn.Linear(emb_dim, num_class)
-        self.act = nn.ReLU()
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -91,7 +90,5 @@ class PatchPoolTransformerEncoder(nn.Module):
 
         # MLP head used to get logits
         x = self.mlp_head(x)
-
-        x = self.act(x)
 
         return x

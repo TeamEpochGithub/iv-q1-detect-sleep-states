@@ -24,7 +24,7 @@ class ConvTokenizer(nn.Module):
         self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(
             self.in_channels), int(self.hidden_layers * 3), self.kernel_size, 4, 2)
         self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(
-            self.in_channels), int(self.hidden_layers * 4), self.kernel_size, 4, 2)
+            self.in_channels), emb_dim, self.kernel_size, 4, 2)
 
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
         block = []
@@ -53,6 +53,13 @@ class ConvTokenizer(nn.Module):
 class ConBrBlock(nn.Module):
     """
     Convolution + Batch Normalization + ReLU Block.
+
+    Args:
+        in_layer: number of input channels
+        out_layer: number of output channels
+        kernel_size: kernel size for convolution
+        stride: stride for convolution
+        dilation: dilation for convolution
     """
 
     def __init__(self, in_layer, out_layer, kernel_size, stride, dilation):

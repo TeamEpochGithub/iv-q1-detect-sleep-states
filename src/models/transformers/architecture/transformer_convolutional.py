@@ -3,6 +3,7 @@ import torch
 
 # Base imports
 from ..base.conv_tokenizer import ConvTokenizer
+from ..base.simple_tokenizer import SimpleTokenizer
 from ..base.encoder_block import TransformerEncoderBlock
 from ..base.seq_pool import SeqPool
 from src.logger.logger import logger
@@ -10,37 +11,35 @@ from src.logger.logger import logger
 
 class ConvolutionalTransformerEncoder(nn.Module):
     """
-    Simplest classifier/regressor. Can be either regressor or classifier because the output does not include
-    softmax. Concatenates final layer embeddings and uses 0s to ignore padding embeddings in final output layer.
+    Transformer encoder with convolutional tokenizer.
 
     Args:
-        feat_dim: feature dimension
-        max_len: maximum length of the input sequence
-        d_model: the embed dim
-        n_heads: the number of heads in the multihead attention models
-        n_layers: the number of sub-encoder-layers in the encoder
-        dim_feedforward: the dimension of the feedforward network model
-        num_classes: the number of classes in the classification task
-        dropout: the dropout value
-        pos_encoding: positional encoding method
-        act_int: the activation function of intermediate layer, relu or gelu
-        act_out: the activation function of output layer, relu, gelu, sigmoid or none
-        norm: the normalization layer
-        freeze: whether to freeze the positional encoding layer
+        kernel: kernel size for convolutional tokenizer
+        depth: depth of convolutional tokenizer
+        hidden_layers: hidden layers for convolutional tokenizer
+        heads: number of heads for transformer encoder
+        emb_dim: embedding dimension
+        forward_dim: forward dimension for transformer encoder
+        dropout: dropout for transformer encoder
+        attention_dropout: dropout for attention in transformer encoder
+        layers: number of transformer encoder layers
+        channels: number of channels in input
+        sequence_size: sequence size of input
+        num_class: number of classes for regression
     """
 
     def __init__(
-        self, kernel: int = 3, depth: int = 2,
+        self, kernel: int = 3, depth: int = 2, hidden_layers: int = 64,
         heads: int = 4, emb_dim: int = 256, forward_dim: int = 2*256,
         dropout: float = 0.1, attention_dropout: float = 0.1, layers: int = 7,
         channels: int = 2, sequence_size: int = 17280, num_class: int = 2
-    ):
+    ) -> None:
         super(ConvolutionalTransformerEncoder, self).__init__()
         self.emb_dim = emb_dim
         self.sequence_size = sequence_size
 
-        self.tokenizer = ConvTokenizer(
-            channels, emb_dim, int(emb_dim / 4), kernel, depth)
+        self.tokenizer = SimpleTokenizer(
+            channels, emb_dim, hidden_layers, kernel, depth)
 
         with torch.no_grad():
             x = torch.randn([1, channels, sequence_size])

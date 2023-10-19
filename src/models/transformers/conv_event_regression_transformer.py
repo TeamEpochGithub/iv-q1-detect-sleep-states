@@ -144,6 +144,7 @@ class ConvolutionalEventRegressionTransformer(Model):
             'depth': 2,
             'heads': 4,
             'emb_dim': 256,
+            'hidden_layers': 64,
             'forward_dim': 512,
             'dropout': 0.1,
             'attention_dropout': 0.1,

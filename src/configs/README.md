@@ -68,39 +68,37 @@ The following steps are currently implemented:
 
 Example for each step:
 ```JSON
-{
-  "preprocessing": [
+"preprocessing": [
     {
-      "kind": "mem_reduce",
-      "id_encoding_path": "series_id_encoding.json"
+        "kind": "mem_reduce",
+        "id_encoding_path": "series_id_encoding.json"
     },
     {
-      "kind": "add_noise"
+        "kind": "add_noise"
     },
     {
-      "kind": "add_state_labels",
-      "id_encoding_path": "series_id_encoding.json",
-      "events_path": "data/raw/train_events.csv"
+        "kind": "add_state_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv"
     },
     {
-      "kind": "split_windows",
-      "start_hour": 15,
-      "window_size": 17280
+        "kind": "split_windows",
+        "start_hour": 15,
+        "window_size": 17280
     },
     {
-      "kind": "remove_unlabeled"
+        "kind": "remove_unlabeled"
     },
     {
-      "kind": "truncate"
+        "kind": "truncate"
     },
     {
-      "kind": "add_regression_labels"
+        "kind": "add_regression_labels"
     },
     {
-      "kind": "add_segmentation_labels"
+        "kind": "add_segmentation_labels"
     }
-  ]
-}
+]
 ```
 
 ## Preprocessing data location

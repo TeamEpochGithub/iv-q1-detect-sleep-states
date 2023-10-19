@@ -131,7 +131,7 @@ if __name__ == "__main__":
     # for testing you need a submission.csv file in the main folder
     # and it read the processed data
     preds = pd.read_csv("submission.csv")
-    config = ConfigLoader("configs/164_stacked_transformer_config.json")
+    config = ConfigLoader("config.json")
     series_path = 'data/raw/train_series.parquet'
     featured_data = get_processed_data(config, series_path, save_output=True)
     # plot the predictions on the series data

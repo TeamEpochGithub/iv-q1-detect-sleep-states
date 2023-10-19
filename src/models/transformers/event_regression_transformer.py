@@ -49,9 +49,6 @@ class EventRegressionTransformer(Model):
             self.device = torch.device("cuda")
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-        logger.info("GPU Found: " + torch.cuda.get_device_name(0))
-        self.device = torch.device("cuda")
-
     def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
         Load config function for the model.

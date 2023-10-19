@@ -108,13 +108,13 @@ class ConvolutionalEventRegressionTransformer(Model):
         """
         return {
             'conv_kernel': 3,
-            'conv_stride': 2,
+            'conv_stride': 6,
             'conv_pad': 3,
-            'pool_kernel': 3,
-            'pool_stride': 2,
+            'pool_kernel': 12,
+            'pool_stride': 6,
             'pool_pad': 1,
             'heads': 4,
-            'emb_dim': 256,
+            'emb_dim': 128,
             'forward_dim': 512,
             'dropout': 0.1,
             'attention_dropout': 0.1,
@@ -159,17 +159,6 @@ class ConvolutionalEventRegressionTransformer(Model):
         X_test = torch.from_numpy(X_test)
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
-
-        # Do patching
-        patch_size = self.config["patch_size"]
-
-        # Patch the data for the features
-        X_train = patch_x_data(X_train, patch_size)
-        X_test = patch_x_data(X_test, patch_size)
-
-        # Patch the data for the labels
-        y_train = patch_y_data(y_train, patch_size)
-        y_test = patch_y_data(y_test, patch_size)
 
         # Regression
         y_train = y_train[:, 0]
@@ -222,15 +211,6 @@ class ConvolutionalEventRegressionTransformer(Model):
 
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)
-
-        # Do patching
-        patch_size = self.config["patch_size"]
-
-        # Patch the data for the features
-        X_train = patch_x_data(X_train, patch_size)
-
-        # Patch the data for the labels
-        y_train = patch_y_data(y_train, patch_size)
 
         # Regression
         y_train = y_train[:, 0]

@@ -8,7 +8,7 @@ class ConvTokenizer(nn.Module):
         self,
         in_channels: int = 3, emb_dim: int = 256,
         conv_kernel: int = 3, conv_stride: int = 1, conv_pad: int = 1,
-        pool_kernel: int = 2, pool_stride: int = 1, pool_pad: int = 0,
+        pool_kernel: int = 3, pool_stride: int = 1, pool_pad: int = 0,
         activation: Callable = nn.ReLU
     ):
         super().__init__()

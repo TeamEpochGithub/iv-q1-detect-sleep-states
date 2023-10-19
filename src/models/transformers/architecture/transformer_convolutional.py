@@ -50,7 +50,7 @@ class ConvolutionalTransformerEncoder(nn.Module):
         self.linear_projection = nn.Linear(l_c, emb_dim)
 
         self.pos_emb = nn.Parameter(torch.randn(
-            [1, sequence_size, emb_dim]).normal_(std=0.02))
+            [1, l_c, emb_dim]).normal_(std=0.02))
 
         self.dropout = nn.Dropout(dropout)
         encoders = []
@@ -60,6 +60,7 @@ class ConvolutionalTransformerEncoder(nn.Module):
         self.encoder_stack = nn.Sequential(*encoders)
         self.seq_pool = SeqPool(emb_dim=emb_dim)
         self.mlp_head = nn.Linear(emb_dim, num_class)
+        self.act = nn.ReLU()
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -73,14 +74,14 @@ class ConvolutionalTransformerEncoder(nn.Module):
         x = x.permute(0, 2, 1)
         bs, _, _ = x.shape
 
-        # Apply convolutional tokenizer
+        # Apply convolutional tokenizer, output is (batch_size, emb_dim, seq_length)
         x = self.tokenizer(x)
 
-        # Permute as pytorch convention for transformers is (seq_length, batch_size, feat_dim)
-        x = x.permute(2, 0, 1)
+        # Permute as positional embeddings are (batch_size, seq_length, emb_dim)
+        x = x.permute(0, 2, 1)
 
         # Add positional embeddings
-        x = self.pos_emb.expand(bs, -1) + x
+        x = self.pos_emb.expand(bs, -1, -1) + x
         x = self.dropout(x)
 
         # Pass through transformer encoder
@@ -92,6 +93,6 @@ class ConvolutionalTransformerEncoder(nn.Module):
         # MLP head used to get logits
         x = self.mlp_head(x)
 
-        x = nn.Relu(x)
+        x = self.act(x)
 
         return x

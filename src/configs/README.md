@@ -138,8 +138,11 @@ These models should either be a statistical, regression or state_prediction mode
 }
 ```
 
-### Implemented Models types and config options
-This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters.
+
+#### Implemented Models types and config options
+
+This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters that are standard.
+
 
 - example-fc-model
     - epochs (required)
@@ -154,6 +157,38 @@ This contains all the models and their hyperparameters that are implemented. The
     - epochs
     - lr
     - batch_size
+
+
+- seg-unet-1d-cnn (one-hot state segmentation model that predicts awake, asleep, NaN for each timestep)
+    - loss (required, ce-torch recommended)
+    - optimizer (required)
+    - epochs=10
+    - batch_size=32
+    - lr=0.001
+    - hidden_layers=32
+    - kernel_size=7 (only works on 7 for now)
+    - depth=2
+    - early_stopping=-1
+
+- regression-transformer
+    - epochs (required)
+    - loss (required)
+    - optimizer (required)
+    - lr=0.001
+    - batch_size=32
+    - patch_size=36
+    - feat_dim=patch_size*num_features
+    - max_len=window_size
+    - d_model=x (x * n_heads)
+    - n_heads=6
+    - num_layers=5
+    - dim_feedforward=2048
+    - num_classes=4 (Points to regress to)
+    - dropout=0.1
+    - pos_encoding='learnable' ["learnable", "fixed"]
+    - activation="relu" ["relu", "gelu"]
+    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
+    - freeze=False
 
 - classic-base-model
   - median_window=100
@@ -274,6 +309,17 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "type": "classic-base-model",
     "median_window": 100,
     "threshold": .1
+}
+
+"1D-Unet-CNN": {
+    "type": "seg-unet-1d-cnn",
+    "loss": "ce-torch",
+    "optimizer": "adam-torch",
+    "epochs": 15,
+    "batch_size": 32,
+    "lr": 0.001,
+    "hidden_layers": 32,
+    "early_stopping": 5
 }
 ```
 

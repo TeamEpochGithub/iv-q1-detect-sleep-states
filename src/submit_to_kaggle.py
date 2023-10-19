@@ -16,12 +16,11 @@ def submit(config: ConfigLoader, submit=False) -> None:
     pred_cpu = config.get_pred_with_cpu()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
-    config_hash = hash_config(config.get_config(), length=16)
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
     # Apply pretraining
     pretrain: Pretrain = config.get_pretraining()
-    pretrain.scaler.load(config.get_model_store_loc() + "/scaler-" + config_hash + ".pkl")
+    pretrain.scaler.load(config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl")
 
     x_data = pretrain.preprocess(featured_data)
 

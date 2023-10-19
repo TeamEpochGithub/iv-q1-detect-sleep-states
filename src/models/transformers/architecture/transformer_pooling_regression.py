@@ -48,8 +48,8 @@ class PatchPoolTransformerEncoder(nn.Module):
                 )
             )
         self.encoder_stack = nn.Sequential(*encoders)
-        self.seq_pool = SeqPool(emb_dim=emb_dim)
-        self.mlp_head = nn.Linear(emb_dim, num_class)
+        self.seq_pool = LSTMPooling(emb_dim=emb_dim)
+        self.mlp_head = nn.Linear(seq_len // patch_size, num_class)
 
     def forward(self, x: Tensor) -> Tensor:
         """

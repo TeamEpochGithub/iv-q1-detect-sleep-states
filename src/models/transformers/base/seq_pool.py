@@ -24,19 +24,15 @@ class SeqPool(nn.Module):
         return x
     
 class LSTMPooling(nn.Module):
-    def __init__(self, emb_dim=256, hidden_size=64):
+    def __init__(self, emb_dim=256):
         super(LSTMPooling, self).__init__()
-        self.num_hidden_layers = 2
         self.emb_dim = emb_dim
-        self.hidden_size = hidden_size
-        self.lstm = nn.LSTM(input_size=emb_dim, hidden_size=hidden_size, batch_first=True)
-        self.dropout = nn.Dropout(0.1)
+        self.lstm = nn.LSTM(input_size=emb_dim, hidden_size=emb_dim // 2, proj_size=1, bidirectional=False, batch_first=True, dropout=0.1)
     
     def forward(self, all_hidden_states):
-        ## forward
-        hidden_states = torch.stack([all_hidden_states[layer_i][:, 0].squeeze()
-                                     for layer_i in range(1, self.num_hidden_layers+1)], dim=-1)
-        hidden_states = hidden_states.view(-1, self.num_hidden_layers, self.hidden_size)
-        out, _ = self.lstm(hidden_states, None)
-        out = self.dropout(out[:, -1, :])
+        # Forward propagate LSTM
+        out, _ = self.lstm(all_hidden_states, None)
+        out = out.reshape(-1, out.shape[1])
         return out
+    
+    

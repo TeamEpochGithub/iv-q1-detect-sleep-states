@@ -5,6 +5,7 @@ import torch
 from ..base.conv_tokenizer import ConvTokenizer
 from ..base.encoder_block import TransformerEncoderBlock
 from ..base.seq_pool import SeqPool
+from src.logger.logger import logger
 
 
 class ConvolutionalTransformerEncoder(nn.Module):
@@ -45,6 +46,7 @@ class ConvolutionalTransformerEncoder(nn.Module):
             x = torch.randn([1, channels, sequence_size])
             out = self.tokenizer(x)
             _, _, l_c = out.shape
+            logger.debug("Convolutional transformer attention size" + str(l_c))
 
         self.linear_projection = nn.Linear(l_c, emb_dim)
 

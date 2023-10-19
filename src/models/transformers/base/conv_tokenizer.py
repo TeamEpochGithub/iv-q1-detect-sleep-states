@@ -26,7 +26,6 @@ class ConvTokenizer(nn.Module):
         self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(
             self.in_channels), int(self.hidden_layers * 4), self.kernel_size, 4, 2)
 
-
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
         block = []
         block.append(ConBrBlock(input_layer, out_layer, kernel, stride, 1))

@@ -40,13 +40,45 @@ class ConvolutionalEventRegressionTransformer(Model):
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
 
+        # Create custom adam optimizer
+        # save layer names
+        layer_names = []
+        for idx, (name, param) in enumerate(self.model.named_parameters()):
+            layer_names.append(name)
+
+        # placeholder
+        parameters = []
+
+        # store params & learning rates
+        for idx, name in enumerate(layer_names):
+
+            # Learning rate
+            lr = self.config['lr']
+
+            # parameter group name
+            cur_group_name = name.split('.')[0]
+
+            # update learning rate
+            if cur_group_name == 'tokenizer':
+                lr = self.config['lr_tokenizer']
+
+            # display info
+            logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
+
+            # append layer parameters
+            parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
+                            'lr': lr}]
+
+        self.config['optimizer'] = type(self.config['optimizer'])(parameters)
+
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
             logger.warning("GPU not available - using CPU")
             self.device = torch.device("cpu")
         else:
             self.device = torch.device("cuda")
-            logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
+            logger.info(
+                f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
     def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
@@ -67,6 +99,8 @@ class ConvolutionalEventRegressionTransformer(Model):
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
+        config["lr_tokenizer"] = config.get(
+            "lr_tokenizer", default_config["lr_tokenizer"])
         config["patch_size"] = config.get(
             "patch_size", default_config["patch_size"])
 
@@ -83,7 +117,7 @@ class ConvolutionalEventRegressionTransformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
+        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36, 'lr_tokenizer': 0.001}
 
     def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """
@@ -106,11 +140,11 @@ class ConvolutionalEventRegressionTransformer(Model):
         :return: default config
         """
         return {
-            'hidden_layers': 32,
+            'hidden_layers': 64,
             'kernel': 7,
             'depth': 2,
             'heads': 4,
-            'emb_dim': 128,
+            'emb_dim': 256,
             'forward_dim': 512,
             'dropout': 0.1,
             'attention_dropout': 0.1,
@@ -317,8 +351,8 @@ class ConvolutionalEventRegressionTransformer(Model):
             self.reset_optimizer()
 
     def reset_optimizer(self) -> None:
-
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(
+            self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])

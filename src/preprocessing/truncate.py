@@ -11,6 +11,10 @@ class Truncate(PP):
     this will look at the last time the participant is either awake or asleep and truncate all data after that.
     """
 
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the Truncate class"""
+        super().__init__(**kwargs | {"kind": "truncate"})
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Truncates the unlabeled end of the data
 
@@ -18,6 +22,7 @@ class Truncate(PP):
         :return: The dataframe without the unlabeled end
         :raises PPException: If AddStateLabels wasn't used before
         """
+        # TODO Do this check with the config checker instead #190
         if "awake" not in data.columns:
             logger.critical("No awake column. Did you run AddStateLabels before?")
             raise PPException("No awake column. Did you run AddStateLabels before?")
@@ -28,4 +33,5 @@ class Truncate(PP):
             raise NotImplementedError()
 
         logger.info("------ Truncating data without windowing")
-        return data.groupby("series_id").apply(lambda x: x.truncate(after=x[(x["awake"] != 2)].last_valid_index()))
+        return data.groupby("series_id").apply(
+            lambda x: x.truncate(after=x[(x["awake"] != 2)].last_valid_index())).reset_index(drop=True)

@@ -18,7 +18,7 @@ from numpy import ndarray, dtype
 from typing import Any
 
 
-class EventRegressionTransformer(Model):
+class PatchEventRegressionTransformer(Model):
     """
     This is the model file for the event regression transformer model.
     """

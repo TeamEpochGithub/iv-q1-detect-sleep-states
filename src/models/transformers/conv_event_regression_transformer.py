@@ -9,7 +9,7 @@ from src.models.transformers.trainers.base_trainer import Trainer
 from ...loss.loss import Loss
 from ..model import Model
 from ...optimizer.optimizer import Optimizer
-from .architecture.transformer_encoder import TSTransformerEncoderClassiregressor
+from .architecture.transformer_convolutional import ConvolutionalTransformerEncoder
 from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 from typing import List
 from torch import nn
@@ -18,7 +18,7 @@ from numpy import ndarray, dtype
 from typing import Any
 
 
-class EventRegressionTransformer(Model):
+class ConvolutionalEventRegressionTransformer(Model):
     """
     This is the model file for the event regression transformer model.
     """
@@ -27,7 +27,7 @@ class EventRegressionTransformer(Model):
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data
+        :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -36,7 +36,7 @@ class EventRegressionTransformer(Model):
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["feat_dim"] = config.get(
             "patch_size", 36) * data_shape[0]
-        self.model = TSTransformerEncoderClassiregressor(
+        self.model = ConvolutionalTransformerEncoder(
             **self.transformer_config)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
@@ -107,18 +107,20 @@ class EventRegressionTransformer(Model):
         :return: default config
         """
         return {
-            'max_len': 480,
-            'd_model': 192,
-            'n_heads': 6,
-            'n_layers': 5,
-            'dim_feedforward': 2048,
-            'num_classes': 2,
+            'conv_kernel': 3,
+            'conv_stride': 2,
+            'conv_pad': 3,
+            'pool_kernel': 3,
+            'pool_stride': 2,
+            'pool_pad': 1,
+            'heads': 4,
+            'emb_dim': 256,
+            'forward_dim': 512,
             'dropout': 0.1,
-            'pos_encoding': "learnable",
-            'act_int': "relu",
-            'act_out': "relu",
-            'norm': "BatchNorm",
-            'freeze': False,
+            'attention_dropout': 0.1,
+            'layers': 7,
+            'channels': 2,
+            'num_class': 2
         }
 
     def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array) -> None:
@@ -336,7 +338,7 @@ class EventRegressionTransformer(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
 
-        self.model = TSTransformerEncoderClassiregressor(
+        self.model = ConvolutionalTransformerEncoder(
             **self.transformer_config)
         if not only_hyperparameters:
             self.model.load_state_dict(checkpoint['model_state_dict'])

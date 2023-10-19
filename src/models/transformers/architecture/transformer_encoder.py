@@ -2,7 +2,7 @@ import math
 from torch import nn, Tensor
 
 from src.models.transformers.utils import get_activation_fn
-from .encoder import TransformerBatchNormEncoderLayer
+from ..base.encoder import TransformerBatchNormEncoderLayer
 from .positional_encoding import get_pos_encoder
 from torch.nn.modules import TransformerEncoderLayer
 

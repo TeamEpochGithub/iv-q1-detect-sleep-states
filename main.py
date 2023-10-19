@@ -221,7 +221,7 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config = ConfigLoader("configs/main.json")
+    config = ConfigLoader("configs/178_convolutional_layer_transformer.json")
 
     # Run main
     main(config)

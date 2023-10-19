@@ -107,7 +107,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                                                                                      y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2',
                                                                                      line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
                                                                                      showlegend=True if x.name == 0 else False)))
-                fig.update_xaxes(title='Timestamp')#, range=[0, current_series.shape[0]])
+                fig.update_xaxes(title='Timestamp')
                 fig.update_yaxes(title='Feature values')
                 fig.update_layout(
                     title=f'Anglez for Series ID: {id_decoding[id]}-{id}')

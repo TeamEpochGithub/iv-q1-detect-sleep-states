@@ -29,8 +29,7 @@ class ConvolutionalTransformerEncoder(nn.Module):
     """
 
     def __init__(
-        self, conv_kernel: int = 3, conv_stride: int = 2, conv_pad: int = 3,
-        pool_kernel: int = 3, pool_stride: int = 2, pool_pad: int = 1,
+        self, kernel: int = 3, hidden_layers: int = 64, depth: int = 2,
         heads: int = 4, emb_dim: int = 256, forward_dim: int = 2*256,
         dropout: float = 0.1, attention_dropout: float = 0.1, layers: int = 7,
         channels: int = 2, sequence_size: int = 17280, num_class: int = 2
@@ -40,7 +39,7 @@ class ConvolutionalTransformerEncoder(nn.Module):
         self.sequence_size = sequence_size
 
         self.tokenizer = ConvTokenizer(
-            channels, emb_dim, conv_kernel, conv_stride, conv_pad, pool_kernel, pool_stride, pool_pad, nn.ReLU)
+            channels, emb_dim, hidden_layers, kernel, depth)
 
         with torch.no_grad():
             x = torch.randn([1, channels, sequence_size])

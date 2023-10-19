@@ -10,7 +10,6 @@ from ...loss.loss import Loss
 from ..model import Model
 from ...optimizer.optimizer import Optimizer
 from .architecture.transformer_convolutional import ConvolutionalTransformerEncoder
-from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 from typing import List
 from torch import nn
 from tqdm import tqdm
@@ -107,12 +106,9 @@ class ConvolutionalEventRegressionTransformer(Model):
         :return: default config
         """
         return {
-            'conv_kernel': 3,
-            'conv_stride': 6,
-            'conv_pad': 3,
-            'pool_kernel': 12,
-            'pool_stride': 6,
-            'pool_pad': 1,
+            'hidden_layers': 64,
+            'kernel': 3,
+            'depth': 2,
             'heads': 4,
             'emb_dim': 128,
             'forward_dim': 512,

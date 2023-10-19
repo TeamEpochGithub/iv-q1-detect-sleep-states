@@ -6,6 +6,7 @@ from src.configs.load_config import ConfigLoader
 import warnings
 from plotly_resampler import FigureResampler
 import os
+import numpy as np
 
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
@@ -48,44 +49,8 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         current_events = real_events.loc[real_events['series_id'] == id]
         # Take the preds for the current series
         current_preds = preds.loc[preds['series_id'] == id]
-        # Separate the series by awake values to plot with different colors
-        awake_0_df = current_series[current_series['awake'] == 0]
-        awake_1_df = current_series[current_series['awake'] == 1]
-        awake_2_df = current_series[current_series['awake'] == 2]
-
-        # The steps of the dataframes awake-0_df will have diff > 1 for when a jump occurs
-        # We need to find the indices of the jumps and use the indices to give them a group number
-        # Then using .groupby('group') we can plot the groups separately
-        # This way the jumps will not be connected
-
-        # Writing this part in place was going to be too hard so i didnt do it
-        # This way works but gives warnings about SettingWithCopyWarning
-        # So we just ignore those warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # get the diff of the steps
-            awake_0_df['diff'] = awake_0_df['step'].diff()
-            # get the indices of the jumps
-            jump_indices = awake_0_df[awake_0_df['diff'] > 1].index
-            # create a new column with the group number
-            awake_0_df['group'] = 0
-            # loop through the jump indices and increment the group number
-            for i in jump_indices:
-                awake_0_df.loc[i:, 'group'] += 1
-
-            awake_1_df['diff'] = awake_1_df['step'].diff()
-            jump_indices = awake_1_df[awake_1_df['diff'] > 1].index
-            awake_1_df['group'] = 0
-            for i in jump_indices:
-                awake_1_df.loc[i:, 'group'] += 1
-
-            awake_2_df['diff'] = awake_2_df['step'].diff()
-            jump_indices = awake_2_df[awake_2_df['diff'] > 1].index
-            awake_2_df['group'] = 0
-            for i in jump_indices:
-                awake_2_df.loc[i:, 'group'] += 1
-
         # Create the figure
+
         fig = go.Figure()
         # If features_to_plot is None, plot all the features
         if features_to_plot is None:
@@ -93,20 +58,27 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         for feature_to_plot in features_to_plot:
             # Some features are not meant to be plotted like step, series_id, awake, timestamp
             if feature_to_plot == 'anglez' or feature_to_plot == 'enmo' or 'f_' in feature_to_plot:
-                # This part plots the features for awake=0, awake=1, awake=2 in a way that the jumps are not connected
-                # and we get only 1 legend item for the entire group by showing legend only on the first trace
-                awake_0_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
-                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=0',
-                                                                                     line=dict(color='blue'), legendgroup=feature_to_plot+'Awake=0',
-                                                                                     showlegend=True if x.name == 0 else False)))
-                awake_1_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
-                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=1',
-                                                                                     line=dict(color='red'), legendgroup=feature_to_plot+'Awake=1',
-                                                                                     showlegend=True if x.name == 0 else False)))
-                awake_2_df.groupby('group').apply(lambda x: fig.add_trace(go.Scatter(x=x['step'],
-                                                                                     y=x[feature_to_plot], mode='lines', name=feature_to_plot+'Awake=2',
-                                                                                     line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
-                                                                                     showlegend=True if x.name == 0 else False)))
+                mask = current_series['awake'] == 0
+                x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
+                x[~mask] = np.nan
+                fig.add_trace(go.Scatter(x=x, y=current_series[feature_to_plot].values,
+                                         mode='lines', name=feature_to_plot+'Awake=0',
+                                         line=dict(color='blue'), legendgroup=feature_to_plot+'Awake=0',
+                                         showlegend=True))
+                mask = current_series['awake'] == 1
+                x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
+                x[~mask] = np.nan
+                fig.add_trace(go.Scatter(x=x, y=current_series[feature_to_plot].values,
+                                         mode='lines', name=feature_to_plot+'Awake=1',
+                                         line=dict(color='red'), legendgroup=feature_to_plot+'Awake=1',
+                                         showlegend=True))
+                mask = current_series['awake'] == 2
+                x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
+                x[~mask] = np.nan
+                fig.add_trace(go.Scatter(x=x, y=current_series[feature_to_plot].values,
+                                         mode='lines', name=feature_to_plot+'Awake=2',
+                                         line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
+                                         showlegend=True))
                 fig.update_xaxes(title='Timestamp')
                 fig.update_yaxes(title='Feature values')
                 fig.update_layout(

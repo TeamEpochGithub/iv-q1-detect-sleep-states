@@ -33,10 +33,12 @@ class Loss:
                 return nn.MSELoss()
             case "mae-torch":
                 return nn.L1Loss()
-            case "crossentropy-torch":
+            case "ce-torch":
                 return nn.CrossEntropyLoss()
-            case "binarycrossentropy-torch":
+            case "bce-torch":
                 return nn.BCELoss()
+            case "bce-logits-torch":
+                return nn.BCEWithLogitsLoss()
             case "regression":
                 return RegressionLoss()
             case "event-regression":

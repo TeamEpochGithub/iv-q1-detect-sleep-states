@@ -14,7 +14,7 @@ class TestLoss(TestCase):
         self.assertEqual("mseloss", loss.__class__.__name__.lower())
 
     def test_get_loss_crossentropy(self):
-        loss_text = "crossentropy-torch"
+        loss_text = "ce-torch"
         loss = Loss.get_loss(loss_text)
         self.assertEqual("crossentropyloss", loss.__class__.__name__.lower())
 

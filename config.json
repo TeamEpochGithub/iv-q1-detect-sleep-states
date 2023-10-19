@@ -20,24 +20,17 @@
     "pretraining": {
         "test_size": 0.2,
         "scaler":{
-            "kind": "standard-scaler"
+            "kind": "none"
         }
     },
     "models": {
-        "1D-Unet-CNN": {
-            "type": "seg-unet-1d-cnn",
-            "loss": "bce-torch",
-            "optimizer": "adam-torch",
-            "epochs": 50,
-            "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 5
+        "Classic-baseline": {
+            "type": "classic-base-model"
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-Unet-CNN"],
+        "models": ["Classic-baseline"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -53,5 +46,5 @@
     "scoring": true,
     "train_for_submission": true,
     "visualize_preds": true,
-    "number_of_plots": 10
+    "number_of_plots": 20
 }

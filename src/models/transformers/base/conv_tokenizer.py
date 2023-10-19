@@ -16,7 +16,6 @@ class ConvTokenizer(nn.Module):
 
         self.AvgPool1D1 = nn.AvgPool1d(kernel_size=5, stride=4, padding=1)
         self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=16, padding=1)
-        self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=64, padding=1)
 
         self.layer1 = self.down_layer(
             self.in_channels, self.hidden_layers, self.kernel_size, 1, 2)
@@ -26,20 +25,7 @@ class ConvTokenizer(nn.Module):
             self.in_channels), int(self.hidden_layers * 3), self.kernel_size, 4, 2)
         self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(
             self.in_channels), int(self.hidden_layers * 4), self.kernel_size, 4, 2)
-        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(
-            self.in_channels), int(self.hidden_layers * 5), self.kernel_size, 4, 2)
 
-        self.cbr_up1 = ConBrBlock(
-            int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
-        self.cbr_up2 = ConBrBlock(
-            int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
-        self.cbr_up3 = ConBrBlock(
-            int(self.hidden_layers * 3), self.hidden_layers, self.kernel_size, 1, 1)
-        self.upsample = nn.Upsample(scale_factor=4, mode='nearest')
-        self.upsample1 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.softmax = nn.Softmax(dim=1)
-        self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels,
-                                kernel_size=self.kernel_size, stride=1, padding=3)
 
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
         block = []
@@ -60,22 +46,7 @@ class ConvTokenizer(nn.Module):
         out_2 = self.layer3(x)
 
         x = torch.cat([out_2, pool_x2], 1)
-        x = self.layer4(x)
-
-        # Decoder
-        up = self.upsample1(x)
-        up = torch.cat([up, out_2], 1)
-        up = self.cbr_up1(up)
-
-        up = self.upsample(up)
-        up = torch.cat([up, out_1], 1)
-        up = self.cbr_up2(up)
-
-        up = self.upsample(up)
-        up = torch.cat([up, out_0], 1)
-        up = self.cbr_up3(up)
-
-        out = self.outcov(up)
+        out = self.layer4(x)
 
         return out
 

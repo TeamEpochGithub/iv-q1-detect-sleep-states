@@ -106,8 +106,8 @@ class ConvolutionalEventRegressionTransformer(Model):
         :return: default config
         """
         return {
-            'hidden_layers': 64,
-            'kernel': 3,
+            'hidden_layers': 32,
+            'kernel': 7,
             'depth': 2,
             'heads': 4,
             'emb_dim': 128,
@@ -247,10 +247,6 @@ class ConvolutionalEventRegressionTransformer(Model):
 
         # Get window size
         window_size = data.shape[1]
-
-        # Patch data
-        patch_size = self.config["patch_size"]
-        data = patch_x_data(data, patch_size)
 
         test_dataset = torch.utils.data.TensorDataset(
             data, torch.zeros((data.shape[0], data.shape[1])))

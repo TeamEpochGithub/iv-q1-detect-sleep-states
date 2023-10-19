@@ -40,37 +40,6 @@ class PatchPoolEventRegressionTransformer(Model):
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
 
-        # Create custom adam optimizer
-        # save layer names
-        layer_names = []
-        for idx, (name, param) in enumerate(self.model.named_parameters()):
-            layer_names.append(name)
-
-        # placeholder
-        parameters = []
-
-        # store params & learning rates
-        for idx, name in enumerate(layer_names):
-
-            # Learning rate
-            lr = self.config['lr']
-
-            # parameter group name
-            cur_group_name = name.split('.')[0]
-
-            # update learning rate
-            if cur_group_name == 'tokenizer':
-                lr = self.config['lr_tokenizer']
-
-            # display info
-            logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
-
-            # append layer parameters
-            parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
-                            'lr': lr}]
-
-        self.config['optimizer'] = type(self.config['optimizer'])(parameters)
-
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
             logger.warning("GPU not available - using CPU")
@@ -99,8 +68,6 @@ class PatchPoolEventRegressionTransformer(Model):
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["lr_tokenizer"] = config.get(
-            "lr_tokenizer", default_config["lr_tokenizer"])
         config["patch_size"] = config.get(
             "patch_size", default_config["patch_size"])
 
@@ -117,7 +84,7 @@ class PatchPoolEventRegressionTransformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
+        return {"batch_size": 32, "lr": 0.000035, 'patch_size': 36}
 
     def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """
@@ -141,8 +108,8 @@ class PatchPoolEventRegressionTransformer(Model):
         """
         return {
             'heads': 12,
-            'emb_dim': 256,
-            'feat_dim': 1024,
+            'emb_dim': 768,
+            'feat_dim': 3072,
             'dropout': 0.1,
             'layers': 12,
             'patch_size': 36,

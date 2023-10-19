@@ -1,5 +1,6 @@
 import math
 from torch import nn, Tensor
+import torch
 
 from src.models.transformers.utils import get_activation_fn
 from ..base.encoder import TransformerBatchNormEncoderLayer
@@ -105,7 +106,7 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         # add F.log_softmax and use NLLoss
         return output_layer
 
-    def forward(self, X: Tensor, padding_masks: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """
         Args:
             X: (batch_size, seq_length, feat_dim) torch tensor of masked features (input)
@@ -113,9 +114,11 @@ class TSTransformerEncoderClassiregressor(nn.Module):
         Returns:
             output: (batch_size, num_classes)
         """
+        # Set padding mask
+        padding_masks = torch.ones((x[0].shape[0], x[0].shape[1])) > 0
 
         # permute because pytorch convention for transformers is [seq_length, batch_size, feat_dim]. padding_masks [batch_size, feat_dim]
-        inp = X.permute(1, 0, 2)
+        inp = x.permute(1, 0, 2)
         inp = self.project_inp(inp) * math.sqrt(
             self.d_model
         )  # [seq_length, batch_size, d_model] project input vectors to d_model dimensional space

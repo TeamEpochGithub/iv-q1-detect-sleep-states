@@ -152,8 +152,7 @@ class Trainer:
         # Retrieve target and output
         optimiser.zero_grad()
         data[0] = data[0].float()
-        padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-        output = model(data[0].to(self.device), padding_mask.to(self.device))
+        output = model(data[0].to(self.device))
 
         # Create mask to ignore nan values
         mask = torch.ones_like(data[1]).to(self.device)
@@ -209,9 +208,7 @@ class Trainer:
         # Use torch.no_grad() to disable gradient calculation and calculate loss
         with torch.no_grad():
             data[0] = data[0].float()
-            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-            output = model(data[0].to(self.device),
-                           padding_mask.to(self.device))
+            output = model(data[0].to(self.device))
 
             # Create mask to ignore nan values
             mask = torch.ones_like(data[1]).to(self.device)

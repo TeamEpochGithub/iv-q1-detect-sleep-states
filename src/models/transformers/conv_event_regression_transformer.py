@@ -35,6 +35,7 @@ class ConvolutionalEventRegressionTransformer(Model):
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["sequence_size"] = data_shape[1]
+        self.transformer_config["channels"] = data_shape[0]
         self.model = ConvolutionalTransformerEncoder(
             **self.transformer_config)
         self.load_config(**config)
@@ -118,7 +119,6 @@ class ConvolutionalEventRegressionTransformer(Model):
             'dropout': 0.1,
             'attention_dropout': 0.1,
             'layers': 7,
-            'channels': 2,
             'num_class': 2
         }
 

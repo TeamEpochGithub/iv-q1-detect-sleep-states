@@ -1,33 +1,58 @@
-# Config Options
+# Config
+The config file is a JSON file that contains all the information needed to run the pipeline. 
+The config file is split up in different sections. Each section has its own config options.
+
+## Config Options
 1. [Preprocessing steps](#preprocessing-steps)
 2. [Preprocessing data location](#preprocessing-data-location)
 3. [Feature engineering](#feature-engineering)
 4. [Feature engineering data location](#feature-engineering-data-location)
-5. [Models](#models)
-6. [Ensemble](#ensemble)
-7. [Loss](#loss)
-8. [Hyperparameter optimization](#hyperparameter-optimization)
-9. [Cross validation](#cross-validation)
-10. [Scoring](#scoring)
+5. [Pretraining](#pretraining)
+6. [Models](#models)
+7. [Model store location](#model-store-location)
+7. [Ensemble](#ensemble)
+8. [Loss](#loss)
+9. [Hyperparameter optimization](#hyperparameter-optimization)
+10. [Cross validation](#cross-validation)
+11. [Scoring](#scoring)
+
+## General
+- `name`: `str`
+    - Name of the config
+- `log_to_wandb`: `bool`
+    - Whether to log to wandb or not
+- `pred_with_cpu`: `bool`
+    - Whether to predict with cpu or not
+- `train_series_path`: `str`
+    - Path to the series to train on
+- `train_events_path`: `str`
+    - Path to the events to train on
+- `test_series_path`: `str`
+    - Path to the series to test on
 
 ## Preprocessing steps
 These steps are executed in order placed in the list. 
 The order is important as some steps depend on the output of previous steps.
+For more information on the preprocessing steps, see [Preprocessing](../preprocessing/README.md).
 
-List of steps and their function:
+The following steps are currently implemented:
 
 - `mem_reduce`
+    - Parameters: `id_encoding_path: Optional[str] = None`
     - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
-      a datetime object. 
+      a datetime object.
+    - Stores the series ID encoding in the specified path. If there is no path specified, it will not store the encoding.
 - `add-noise`
-    - Adds gaussian noise to the sensor data. 
+    - Adds gaussian noise to the sensor data.
 - `add_state_labels`
-    - Labels the data in a way that each timestep gets a label. 
-      - `0`: asleep.
-      - `1`: awake. 
-      - `2`: `NaN`, not labeled. 
+    - Parameters: `id_encoding_path: str`, `events_path: str`
+    - Labels the data in a way that each timestep gets a label.
+        - `0`: asleep.
+        - `1`: awake.
+        - `2`: `NaN`, not labeled.
 - `split_windows`
-    - Splits the data in to 24 hour long windows (currently hardcoded)
+    - Parameters: `start_hour: int = 15`, `window_size: int = 17280`
+    - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
     - Removes all the data points where there is no labeled data
 - `truncate` (requires `add_state_labels`)
@@ -36,11 +61,46 @@ List of steps and their function:
 - `add_regression_labels` (requires `add_state_labels`, `split_windows`)
     - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
 - `add_segmentation_labels` (requires `add_state_labels`)
-    - Adds 3 columns, hot encoded, for the segmentation labels: 0: hot-asleep, 1: hot-awake, 2: hot-NaN (not labeled)
+    - Adds 3 columns, hot encoded, for the segmentation labels
+        - 0: `hot-asleep`
+        - 1: `hot-awake`
+        - 2: `hot-NaN`, not labeled
 
-Example:
+Example for each step:
 ```JSON
-"preprocessing": ["mem_reduce", "add_state_labels"]
+{
+  "preprocessing": [
+    {
+      "kind": "mem_reduce",
+      "id_encoding_path": "series_id_encoding.json"
+    },
+    {
+      "kind": "add_noise"
+    },
+    {
+      "kind": "add_state_labels",
+      "id_encoding_path": "series_id_encoding.json",
+      "events_path": "data/raw/train_events.csv"
+    },
+    {
+      "kind": "split_windows",
+      "start_hour": 15,
+      "window_size": 17280
+    },
+    {
+      "kind": "remove_unlabeled"
+    },
+    {
+      "kind": "truncate"
+    },
+    {
+      "kind": "add_regression_labels"
+    },
+    {
+      "kind": "add_segmentation_labels"
+    }
+  ]
+}
 ```
 
 ## Preprocessing data location

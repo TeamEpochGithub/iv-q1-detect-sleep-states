@@ -19,6 +19,7 @@ from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
 from ..models.transformers.patch_event_regression_transformer import PatchEventRegressionTransformer
 from ..models.transformers.conv_event_regression_transformer import ConvolutionalEventRegressionTransformer
+from ..models.transformers.patch_pool_event_regression_transformer import PatchPoolEventRegressionTransformer
 
 from ..preprocessing.add_noise import AddNoise
 from ..preprocessing.add_regression_labels import AddRegressionLabels
@@ -251,6 +252,8 @@ class ConfigLoader:
                     curr_model = PatchEventRegressionTransformer(model_config, data_shape, model_name)
                 case "convolutional-event-regression-transformer":
                     curr_model = ConvolutionalEventRegressionTransformer(model_config, data_shape, model_name)
+                case "patch-pool-event-regression-transformer":
+                    curr_model = PatchPoolEventRegressionTransformer(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

@@ -10,6 +10,7 @@ from ..feature_engineering.mean import Mean
 from ..feature_engineering.rotation import Rotation
 from ..feature_engineering.skewness import Skewness
 from ..feature_engineering.time import Time
+from ..feature_engineering.derivative import Derivative
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
@@ -148,6 +149,9 @@ class ConfigLoader:
             elif fe_step == "rotation":
                 fe_steps["rotation"] = Rotation(
                     self.config["feature_engineering"]["rotation"])
+                fe_s.append(fe_step)
+            elif fe_step == "f_derivative_anglez":
+                fe_steps["f_derivative_anglez"] = Derivative(self.config)
                 fe_s.append(fe_step)
             else:
                 logger.critical("Feature engineering step not found: " + fe_step)

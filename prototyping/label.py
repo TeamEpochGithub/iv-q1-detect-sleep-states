@@ -13,8 +13,12 @@ dataset = 'train'
 
 def fill_series_labels(series_id, series) -> None:
     series['awake'] = 2
+    series['onset'] = 0
+    series['wakeup'] = 0
 
     awake_col = series.columns.get_loc('awake')
+    onset_col = series.columns.get_loc('onset')
+    wakeup_col = series.columns.get_loc('wakeup')
     current_events = events[events["series_id"] == series_id]
 
     if len(current_events) == 0:
@@ -39,6 +43,11 @@ def fill_series_labels(series_id, series) -> None:
             series.iloc[prev_step:step, awake_col] = 0
         else:
             raise Exception(f"Unknown event type: {row['event']}")
+
+        if row['event'] == 'onset':
+            series.iloc[step, onset_col] = 1
+        elif row['event'] == 'wakeup':
+            series.iloc[step, wakeup_col] = 1
 
         prev_step = step
         prev_was_nan = False

@@ -4,7 +4,7 @@ import os
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
-from src.pre_train.standardization import standardize
+from src.pretrain.pretrain import Pretrain
 from src.util.hash_config import hash_config
 from src.util.submissionformat import to_submission_format
 
@@ -18,14 +18,12 @@ def submit(config: ConfigLoader, submit=False) -> None:
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
-    # format the data
-    feature_cols = [col for col in featured_data.columns if col.startswith('f_')]
-    x_data = featured_data[['enmo', 'anglez'] + feature_cols]
+    # Apply pretraining
+    pretrain: Pretrain = config.get_pretraining()
+    pretrain.scaler.load(config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl")
 
-    # apply pretraining
-    pretrain = config.get_pretraining()
-    x_data = standardize(x_data, method=pretrain["standardize"])
-    x_data = x_data.to_numpy(dtype='float32').reshape(-1, 17280, len(x_data.columns))
+    x_data = pretrain.preprocess(featured_data)
+
     gc.collect()
 
     # for the first step of each window get the series id and step offset

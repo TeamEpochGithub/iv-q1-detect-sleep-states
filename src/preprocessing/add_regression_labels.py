@@ -12,6 +12,12 @@ class AddRegressionLabels(PP):
     This will add the event labels to the data by using the event data.
     """
 
+    def __init__(self, window_size: int = 17280, **kwargs: dict) -> None:
+        """Initialize the AddRegressionLabels class"""
+        super().__init__(**kwargs | {"kind": "add_regression_labels"})
+
+        self.window_size = window_size
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Adds the event labels to the data.
 
@@ -26,6 +32,7 @@ class AddRegressionLabels(PP):
         """
         tqdm.pandas()
 
+        # TODO Do this check with the config checker instead #190
         if "window" not in data.columns:
             logger.critical(
                 "No window column. Did you run SplitWindows before?")
@@ -61,57 +68,54 @@ class AddRegressionLabels(PP):
 
         # Fill the onset and wakeup columns
         onsets.groupby([data['series_id'], data['window']]).progress_apply(
-            fill_onset, data=data, d=window_series_map, is_onset=True)
+            self.fill_onset, data=data, d=window_series_map, is_onset=True)
         awakes.groupby([data['series_id'], data['window']]).progress_apply(
-            fill_onset, data=data, d=window_series_map, is_onset=False)
+            self.fill_onset, data=data, d=window_series_map, is_onset=False)
 
         # Set the NaN onset/wakeup to 1
         return data
 
+    def fill_onset(self, group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool) -> None:
+        """
+        Fill the onset/wakeup column for the group
+        :param group: a series_id and window group
+        :param data: the complete dataframe
+        :param d: a hashmap to map (series_id, window) to the first index
+        :param is_onset: boolean for if it is an onset event
+        """
+        series_id = group['series_id'].iloc[0]
+        window = group['window'].iloc[0]
+        events = group['step'].tolist()
+        # Get the start
+        id_start = d[(series_id, window)]
 
-def fill_onset(group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool) -> None:
-    """
-    Fill the onset/wakeup column for the group
-    :param group: a series_id and window group
-    :param data: the complete dataframe
-    :param map: a hashmap to map (series_id, window) to the first index
-    :param is_onset: boolean for if it is an onset event
-    """
-    # TODO this is hardcoded, but should be changed to a variable #99
-    window_size = 17280
-    series_id = group['series_id'].iloc[0]
-    window = group['window'].iloc[0]
-    events = group['step'].tolist()
-    # Get the start
-    id_start = d[(series_id, window)]
+        # Get step of start
+        step_start = data.iloc[id_start]['step'] - 1
 
-    # Get step of start
-    step_start = data.iloc[id_start]['step'] - 1
+        if id_start + self.window_size > len(data):
+            logger.warn(
+                f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
 
-    if id_start + window_size > len(data):
-        logger.warn(
-            f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
+        events = (events - step_start).tolist()
+        # Get the end
+        id_end = id_start + self.window_size
 
-    events = (events - step_start).tolist()
-    # Get the end
-    id_end = id_start + window_size
-
-    if is_onset:
-        if len(events) == 1 or len(events) == 2:
-            # Update the 'onset' and 'onset-NaN' columns using NumPy
-            data.iloc[id_start:id_end, data.columns.get_indexer(
-                ['onset', 'onset-NaN'])] = [np.int16(events[0]), np.int8(0)]
-    else:
-        if len(events) == 1:
-            # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
-            data.iloc[id_start:id_end, data.columns.get_indexer(
-                ['wakeup', 'wakeup-NaN'])] = [np.int16(events[0]), np.int8(0)]
-        elif len(events) == 2:
-            # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
-            data.iloc[id_start:id_end, data.columns.get_indexer(
-                ['wakeup', 'wakeup-NaN'])] = [np.int16(events[1]), np.int8(0)]
-    if len(events) >= 2:
-        message = f"--- Found {len(events)} onsets" if is_onset else f"--- Found {len(events)} awakes"
-        logger.warn(f"{message} in 1 window. This should never happen...")
-        logger.debug(
-            f"--- ERROR: {events} {'onsets' if is_onset else 'awakes'}")
+        if is_onset:
+            if len(events) == 1 or len(events) == 2:
+                # Update the 'onset' and 'onset-NaN' columns using NumPy
+                data.iloc[id_start:id_end, data.columns.get_indexer(
+                    ['onset', 'onset-NaN'])] = [np.int16(events[0]), np.int8(0)]
+        else:
+            if len(events) == 1:
+                # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
+                data.iloc[id_start:id_end, data.columns.get_indexer(
+                    ['wakeup', 'wakeup-NaN'])] = [np.int16(events[0]), np.int8(0)]
+            elif len(events) == 2:
+                # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
+                data.iloc[id_start:id_end, data.columns.get_indexer(
+                    ['wakeup', 'wakeup-NaN'])] = [np.int16(events[1]), np.int8(0)]
+        if len(events) >= 2:
+            message = f"--- Found {len(events)} onsets" if is_onset else f"--- Found {len(events)} awakes"
+            logger.warn(f"{message} in 1 window. This should never happen...")
+            logger.debug(
+                f"--- ERROR: {events} {'onsets' if is_onset else 'awakes'}")

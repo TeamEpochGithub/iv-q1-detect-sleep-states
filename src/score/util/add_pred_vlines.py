@@ -31,4 +31,3 @@ def add_pred_vlines(fig: go.Figure, current_events: pd.DataFrame, current_preds:
         fig.add_vline(x=current_pred_wakeup, line_dash="dash", line_color="orange", line_width=2,
                       annotation_text=f'<span style="color:orange"> pred_wakeup:<br> {current_pred_wakeup}</span>',
                       annotation_position="top", annotation_textangle=315)
-    return fig

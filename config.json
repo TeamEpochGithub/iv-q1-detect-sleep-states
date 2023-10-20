@@ -58,6 +58,6 @@
     },
     "scoring": true,
     "train_for_submission": true,
-    "visualize_preds": false,
-    "number_of_plots": 5
+    "visualize_preds": true,
+    "number_of_plots": 10
 }

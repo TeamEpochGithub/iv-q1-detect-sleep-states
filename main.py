@@ -187,6 +187,7 @@ def main(config: ConfigLoader) -> None:
         # we do not want to change the ids on the original submission
         plot_submission = submission.copy()
         # pass only the test data
+        logger.info('Creating plots...')
         plot_preds_on_series(plot_submission,
                              featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
                              number_of_series_to_plot=config.get_number_of_plots(),

@@ -1,15 +1,9 @@
 import pandas as pd
 import json
-import plotly.graph_objects as go
 from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
-from plotly_resampler import FigureResampler
-import os
-import numpy as np
-from util.add_pred_vlines import add_pred_vlines
-from util.plot_with_plotly import plot_w_plotly
-import matplotlib.pyplot as plt
-from util.save_plots import save_plots
+from src.score.util.plot_with_plotly import plot_w_plotly
+from src.score.util.save_plots import save_plots
 
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
@@ -63,16 +57,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
             if features_to_plot is None:
                 features_to_plot = data.columns.values
             save_plots(current_series, current_events,
-                       current_preds, id_decoding, id, features_to_plot)
-            
-
-
-            
-            # If the hash config dir doesnt exist make it
-            # if not os.path.exists(folder_path):
-            #     os.makedirs(folder_path)
-            # fig.write_image(folder_path + '/' + 'series_id--' +
-            #                 f'{id_decoding[id]}-({id}).jpeg', width=2000, height=600)
+                       current_preds, id_decoding, id, features_to_plot, folder_path)
 
 
 if __name__ == "__main__":
@@ -84,4 +69,4 @@ if __name__ == "__main__":
     featured_data = get_processed_data(config, series_path, save_output=True)
     # Plot the predictions on the series data for the chosen series_ids
     plot_preds_on_series(preds, featured_data,
-                         number_of_series_to_plot=5, show_plot=False)
+                         number_of_series_to_plot=5, show_plot=True)

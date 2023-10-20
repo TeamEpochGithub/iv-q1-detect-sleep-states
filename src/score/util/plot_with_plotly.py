@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-from util.add_pred_vlines import add_pred_vlines
+from src.score.util.add_pred_vlines import add_pred_vlines
 import numpy as np
 
 

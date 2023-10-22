@@ -254,6 +254,7 @@ This contains all the models and their hyperparameters that are implemented. The
 - classic-base-model
   - median_window=100
   - threshold=.1
+  - use_nan_similarity=True
 
 - event-nan-regression-transformer
     - epochs_events (required)
@@ -369,7 +370,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
 "Classic-baseline": {
     "type": "classic-base-model",
     "median_window": 100,
-    "threshold": .1
+    "threshold": 0.1,
+    "use_nan_similarity": true
 }
 
 "1D-Unet-CNN": {

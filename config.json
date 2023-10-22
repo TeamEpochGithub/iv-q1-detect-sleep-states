@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -11,20 +11,17 @@
             "id_encoding_path": "series_id_encoding.json"
         },
         {
-            "kind": "similarity_nan"
-        },
-        {
-            "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv"
-        },
-        {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
         },
         {
-            "kind": "add_segmentation_labels"
+            "kind": "similarity_nan"
+        },
+         {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv"
         }
     ],
     "processed_loc_out": "data/processed",
@@ -36,24 +33,20 @@
     "pretraining": {
         "test_size": 0.2,
         "scaler":{
-            "kind": "standard-scaler"
+            "kind": "none"
         }
     },
     "models": {
-        "1D-Unet-CNN": {
-            "type": "seg-unet-1d-cnn",
-            "loss": "bce-torch",
-            "optimizer": "adam-torch",
-            "epochs": 50,
-            "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 5
+        "Classic-baseline": {
+            "type": "classic-base-model",
+            "median_window": 100,
+            "threshold": 0.1,
+            "use_nan_similarity": true
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["1D-Unet-CNN"],
+        "models": ["Classic-baseline"],
         "weights": [1],
         "comb_method": "addition"
     },

@@ -140,6 +140,5 @@ class SplitWindows(PP):
         # Concatenate the dfs
         dfs_to_concat = [start_pad_df, group, end_pad_df]
         group = pd.concat(dfs_to_concat, ignore_index=True)
-        group.astype(pad_type)
 
-        return group
+        return group.astype(pad_type)

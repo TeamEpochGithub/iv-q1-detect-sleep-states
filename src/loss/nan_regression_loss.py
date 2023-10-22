@@ -16,7 +16,7 @@ class NanRegressionLoss(nn.Module):
         # Always calculate loss for y_pred nan predictions
 
         # Calculate loss as mean squared error
-        loss = nn.BCELoss()
+        loss = nn.BCELoss().float()
         output = loss(y_pred, y_true[:, 2:])
 
         return output

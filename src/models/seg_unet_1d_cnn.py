@@ -5,20 +5,20 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
+from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
-from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
+from .architectures.seg_unet_1d_cnn import SegUnet1D
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-from ..util.state_to_event import find_events
+from ..util.state_to_event import find_events, one_hot_to_state
 
 
-class SegmentationSimple1DCNN(Model):
+class SegmentationUnet1DCNN(Model):
     """
-    This is a sample model file. You can use this as a template for your own models.
-    The model file should contain a class that inherits from the Model class.
+    This model is a segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
     def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
@@ -40,11 +40,15 @@ class SegmentationSimple1DCNN(Model):
 
         self.model_type = "segmentation"
         self.data_shape = data_shape
-        # Load model
-        self.model = SegSimple1DCNN(window_length=data_shape[1], in_channels=data_shape[0], config=config)
-        self.load_config(config)
 
-        # If we log the run to weights and biases, we can
+        # Load config and model
+        self.load_config(config)
+        self.model = SegUnet1D(in_channels=data_shape[0], out_channels=3, config=self.config)
+
+        # Load optimizer
+        self.load_optimizer()
+
+        # Print model summary
         if wandb.run is not None:
             from torchsummary import summary
             summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
@@ -67,17 +71,27 @@ class SegmentationSimple1DCNN(Model):
         default_config = self.get_default_config()
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
-        config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
         config["epochs"] = config.get("epochs", default_config["epochs"])
+        config["lr"] = config.get("lr", default_config["lr"])
+        config["hidden_layers"] = config.get("hidden_layers", default_config["hidden_layers"])
+        config["kernel_size"] = config.get("kernel_size", default_config["kernel_size"])
+        config["depth"] = config.get("depth", default_config["depth"])
+        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
         self.config = config
+
+    def load_optimizer(self) -> None:
+        """
+        Load optimizer function for the model.
+        """
+        # Load optimizer
+        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"], self.model)
 
     def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 1, "lr": 0.1, "epochs": 20}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1}
 
     def get_type(self) -> str:
         """
@@ -100,15 +114,19 @@ class SegmentationSimple1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+        early_stopping = self.config["early_stopping"]
+        if early_stopping > 0:
+            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
-        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
-        X_test = torch.from_numpy(X_test).permute(0, 2, 1)
+        # TODO Change
+        X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
+        X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
 
-        # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
-        y_test = y_test[:, :, 0]
-        y_train = torch.from_numpy(y_train)
-        y_test = torch.from_numpy(y_test)
+        # Get only the one hot encoded features
+        y_train = y_train[:, :, -3:]
+        y_test = y_test[:, :, -3:]
+        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
+        y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -129,64 +147,109 @@ class SegmentationSimple1DCNN(Model):
         self.model.to(self.device)
 
         # Define wandb metrics
-        wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
+        # Initialize place holder arrays for train and test loss and early stopping
+        total_epochs = 0
         avg_losses = []
         avg_val_losses = []
-        # Train the model
+        counter = 0
+        lowest_val_loss = np.inf
+        best_model = self.model.state_dict()
+        stopped = False
 
-        pbar = tqdm(range(epochs))
-        for epoch in pbar:
+        # Train the model
+        for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(device=self.device)
-                y = y.to(device=self.device)
+            avg_val_loss = 0
+            total_batch_loss = 0
+            total_val_batch_loss = 0
+            # Train loop
+            with tqdm(train_dataloader, unit="batch") as tepoch:
+                for i, (x, y) in enumerate(tepoch):
+                    x = x.to(device=self.device)
+                    y = y.to(device=self.device)
 
-                # Clear gradients
-                optimizer.zero_grad()
+                    # Clear gradients
+                    optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs, y)
+                    # Forward pass
+                    outputs = self.model(x)
+                    loss = criterion(outputs, y)
 
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
+                    # Backward and optimize
+                    loss.backward()
+                    optimizer.step()
 
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
+                    # Get the current loss
+                    current_loss = loss.item()
+                    total_batch_loss += current_loss
+                    avg_loss = total_batch_loss / (i + 1)
+
+                    # Log to console
+                    tepoch.set_description(f" Train Epoch {epoch}")
+                    tepoch.set_postfix(loss=avg_loss)
 
             # Calculate the validation loss
             self.model.train(False)
-            avg_val_loss = 0
+
             with torch.no_grad():
-                for i, (vx, vy) in enumerate(test_dataloader):
-                    vx = vx.to(self.device)
-                    vy = vy.to(self.device)
-                    voutputs = self.model(vx)
-                    vloss = criterion(voutputs, vy)
-                    avg_val_loss += vloss.item() / len(test_dataloader)
+                with tqdm(test_dataloader, unit="batch") as vepoch:
+                    for i, (vx, vy) in enumerate(vepoch):
+                        vx = vx.to(self.device)
+                        vy = vy.to(self.device)
+                        voutputs = self.model(vx)
+                        vloss = criterion(voutputs, vy)
+
+                        current_loss = vloss.item()
+                        total_val_batch_loss += current_loss
+                        avg_val_loss = total_val_batch_loss / (i + 1)
+
+                        vepoch.set_description(f" Test  Epoch {epoch}")
+                        vepoch.set_postfix(loss=avg_val_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
             logger.debug(descr)
-            pbar.set_description(descr)
 
-            # Add average losses to list
+            # Add average losses and epochs to list
             avg_losses.append(avg_loss)
             avg_val_losses.append(avg_val_loss)
+            total_epochs += 1
 
             # Log train test loss to wandb
             if wandb.run is not None:
                 wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
+            # Early stopping
+            if early_stopping > 0:
+                # Save model if validation loss is lower than previous lowest validation loss
+                if avg_val_loss < lowest_val_loss:
+                    lowest_val_loss = avg_val_loss
+                    best_model = self.model.state_dict()
+                    counter = 0
+                else:
+                    counter += 1
+                    if counter >= early_stopping:
+                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
+                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
+                        self.model.load_state_dict(best_model)
+                        stopped = True
+                        break
+
         # Log full train and test plot
         if wandb.run is not None:
-            self.log_train_test(avg_losses, avg_val_losses, epochs)
+            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
         logger.info("--- Training of model complete!")
+
+        # Set total_epochs in config if broken by the early stopping
+        if stopped:
+            total_epochs -= early_stopping
+        self.config["total_epochs"] = total_epochs
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -196,14 +259,16 @@ class SegmentationSimple1DCNN(Model):
         """
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.config["epochs"]
+        epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
+
+        logger.info("--- Running for " + str(epochs) + " epochs.")
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-        # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
-        y_train = torch.from_numpy(y_train)
+        # Get only the one hot encoded features
+        y_train = y_train[:, :, -3:]
+        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 
@@ -219,35 +284,44 @@ class SegmentationSimple1DCNN(Model):
         self.model.to(self.device)
 
         # Define wandb metrics
-        wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
-        pbar = tqdm(range(epochs))
-        for epoch in pbar:
+        for epoch in range(epochs):
             self.model.train(True)
+            total_batch_loss = 0
             avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(device=self.device)
-                y = y.to(device=self.device)
+            with tqdm(train_dataloader, unit="batch") as tepoch:
+                for i, (x, y) in enumerate(tepoch):
+                    x = x.to(device=self.device)
+                    y = y.to(device=self.device)
 
-                # Clear gradients
-                optimizer.zero_grad()
+                    # Clear gradients
+                    optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs, y)
+                    # Forward pass
+                    outputs = self.model(x)
+                    loss = criterion(outputs, y)
 
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
+                    # Backward and optimize
+                    loss.backward()
+                    optimizer.step()
 
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
+                    # Get the current loss
+                    current_loss = loss.item()
+                    total_batch_loss += current_loss
+                    avg_loss = total_batch_loss / (i + 1)
+
+                    # Log to console
+                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_postfix(loss=avg_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
             logger.debug(descr)
-            pbar.set_description(descr)
+
+            # pbar.set_description(descr)
 
             # Log train full
             if wandb.run is not None:
@@ -271,27 +345,39 @@ class SegmentationSimple1DCNN(Model):
             device = torch.device("cuda")
 
         self.model.to(device)
-        # Convert data to tensor
-        data = torch.from_numpy(data).permute(0, 2, 1).to(device)
 
         # Print data shape
-        logger.info(f"--- Data shape of predictions: {data.shape}")
+        logger.info(f"--- Data shape of predictions dataset: {data.shape}")
 
-        # Make a prediction
+        # Create a DataLoader for batched inference
+        dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
+        dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+
+        predictions = []
+
         with torch.no_grad():
-            prediction = self.model(data)
+            for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
+                batch_data = batch_data[0].to(device)
 
-        if with_cpu:
-            prediction = prediction.numpy()
-        else:
-            prediction = prediction.cpu().numpy()
+                # Make a batch prediction
+                batch_prediction = self.model(batch_data)
 
-        logger.info(f"--- Done making predictions with model {self.name}")
-        # All predictions
+                if with_cpu:
+                    batch_prediction = batch_prediction.numpy()
+                else:
+                    batch_prediction = batch_prediction.cpu().numpy()
+
+                predictions.append(batch_prediction)
+
+        # Concatenate the predictions from all batches
+        predictions = np.concatenate(predictions, axis=0)
+
         all_predictions = []
 
-        for pred in tqdm(prediction, desc="Converting predictions to events", unit="window"):
+        # Convert to events
+        for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
+            pred = one_hot_to_state(pred)
             events = find_events(pred, median_filter_size=15)
             all_predictions.append(events)
 
@@ -336,7 +422,7 @@ class SegmentationSimple1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], out_channels=3, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

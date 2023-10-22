@@ -18,84 +18,79 @@ from numpy import ndarray, dtype
 from typing import Any
 
 
-class EventNaNRegressionTransformer(Model):
+class EventRegressionTransformer(Model):
     """
-    This is the model file for the stacked transformer model.
+    This is the model file for the event regression transformer model.
     """
 
-    def __init__(self, config: dict, name: str):
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
+        :param data_shape: shape of the data
+        :param name: name of the model
         """
         super().__init__(config, name)
         # Init model
         self.name = name
-        self.events_transformer_config = self.load_transformer_config(
-            config).copy()
-        self.nans_transformer_config = self.load_transformer_config(
-            config).copy()
-        self.nans_transformer_config["act_out"] = "sigmoid"
-        self.model_events = TSTransformerEncoderClassiregressor(
-            **self.events_transformer_config)
-        self.model_nans = TSTransformerEncoderClassiregressor(
-            **self.nans_transformer_config)
-        self.load_config(config)
+        self.transformer_config = self.load_transformer_config(config).copy()
+        self.transformer_config["feat_dim"] = config.get(
+            "patch_size", 36) * data_shape[0]
+        self.model = TSTransformerEncoderClassiregressor(
+            **self.transformer_config)
+        self.load_config(**config)
+        self.config["trained_epochs"] = self.config["epochs"]
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
+            logger.critical("GPU not available")
             raise ModelException("GPU not available")
 
-        print("GPU Found: " + torch.cuda.get_device_name(0))
+        logger.info("GPU Found: " + torch.cuda.get_device_name(0))
         self.device = torch.device("cuda")
 
-    def load_config(self, config):
+    def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
         Load config function for the model.
-        :param config: configuration to set up the model
-        :return:
+        :param loss: loss function
+        :param epochs: number of epochs
+        :param optimizer: optimizer
+        :param kwargs: other parameters
         """
-        # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss_events", "loss_nans", "epochs_events",
-                    "epochs_nans", "optimizer_events", "optimizer_nans"]
-        for req in required:
-            if req not in config:
-                logger.critical(
-                    "------ Config is missing required parameter: " + req)
-                raise ModelException(
-                    "Config is missing required parameter: " + req)
 
         # Get default_config
         default_config = self.get_default_config()
-        config = copy.deepcopy(config)
-        config["loss_events"] = Loss.get_loss(config["loss_events"])
-        config["loss_nans"] = Loss.get_loss(config["loss_nans"])
+
+        # Copy kwargs
+        config = copy.deepcopy(kwargs)
+
+        # Add parameters
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
-        config["lr_events"] = config.get(
-            "lr_events", default_config["lr_events"])
-        config["lr_nans"] = config.get("lr_nans", default_config["lr_nans"])
-        config["optimizer_events"] = Optimizer.get_optimizer(
-            config["optimizer_events"], config["lr_events"], self.model_events)
-        config["optimizer_nans"] = Optimizer.get_optimizer(
-            config["optimizer_nans"], config["lr_nans"], self.model_nans)
+        config["lr"] = config.get("lr", default_config["lr"])
         config["patch_size"] = config.get(
             "patch_size", default_config["patch_size"])
 
+        # Add loss, epochs and optimizer to config
+        config["loss"] = Loss.get_loss(loss)
+        config["optimizer"] = Optimizer.get_optimizer(
+            optimizer, config["lr"], self.model)
+        config["epochs"] = epochs
+
         self.config = config
 
-    def get_default_config(self):
+    def get_default_config(self) -> dict[str, int | str]:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr_events": 0.001, "lr_nans": 0.001, 'patch_size': 36}
+        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
 
-    def load_transformer_config(self, config):
+    def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """
-        Load config function for the model.
-        :param config: configuration to set up the model
-        :return:
+        Load transformer config function for the model.
+        :param config: configuration to set up the transformer architecture
+        :return: transformer config
         """
         # Check if all necessary parameters are in the config.
         default_config = self.get_default_transformer_config()
@@ -106,13 +101,12 @@ class EventNaNRegressionTransformer(Model):
 
         return new_config
 
-    def get_default_transformer_config(self):
+    def get_default_transformer_config(self) -> dict[str, int | float | str]:
         """
         Get default config function for the model.
         :return: default config
         """
         return {
-            'feat_dim': 72,
             'max_len': 480,
             'd_model': 192,
             'n_heads': 6,
@@ -127,11 +121,13 @@ class EventNaNRegressionTransformer(Model):
             'freeze': False,
         }
 
-    def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array):
+    def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array) -> None:
         """
         Train function for the model.
-        :param data: labelled data
-        :return:
+        :param X_train: the training data
+        :param X_test: the test data
+        :param y_train: the training labels
+        :param y_test: the test labels
         """
 
         # Get hyperparameters from config (epochs, lr, optimizer)
@@ -139,12 +135,9 @@ class EventNaNRegressionTransformer(Model):
         logger.info(f"Hyperparameters: {self.config}")
 
         # Load hyperparameters
-        criterion_events = self.config["loss_events"]
-        criterion_nans = self.config["loss_nans"]
-        optimizer_events = self.config["optimizer_events"]
-        optimizer_nans = self.config["optimizer_nans"]
-        epochs_events = self.config["epochs_events"]
-        epochs_nans = self.config["epochs_nans"]
+        criterion = self.config["loss"]
+        optimizer = self.config["optimizer"]
+        epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
         # Print the shapes and types of train and test
@@ -193,28 +186,74 @@ class EventNaNRegressionTransformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = Trainer(epochs=epochs_events,
-                          criterion=criterion_events)
-        avg_train_loss_event, avg_val_loss_event = trainer.fit(
-            train_dataloader, test_dataloader, self.model_events, optimizer_events, self.name)
+        trainer = Trainer(epochs=epochs,
+                          criterion=criterion)
+        avg_train_loss, avg_val_loss, self.config["trained_epochs"] = trainer.fit(
+            train_dataloader, test_dataloader, self.model, optimizer, self.name)
         if wandb.run is not None:
-            self.log_train_test(avg_train_loss_event,
-                                avg_val_loss_event, len(avg_train_loss_event))
+            self.log_train_test(avg_train_loss,
+                                avg_val_loss, len(avg_train_loss))
 
-        # Train nans
-        logger.info("Training nans model")
-        trainer = Trainer(epochs=epochs_nans, criterion=criterion_nans)
-        avg_train_loss_nan, avg_val_loss_nan = trainer.fit(
-            train_dataloader, test_dataloader, self.model_nans, optimizer_nans, self.name)
-        if wandb.run is not None:
-            self.log_train_test(avg_train_loss_nan,
-                                avg_val_loss_nan, len(avg_train_loss_nan))
+    def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
+        """
+        Train the model on the full dataset.
+        :param X_train: the training data
+        :param y_train: the training labels
+        """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info(f"Training model: {type(self).__name__}")
+        logger.info(f"Hyperparameters: {self.config}")
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+        # Load hyperparameters
+        criterion = self.config["loss"]
+        optimizer = self.config["optimizer"]
+        epochs = self.config["trained_epochs"]
+        batch_size = self.config["batch_size"]
+
+        # Print the shapes and types of train and test
+        logger.debug(
+            f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.debug(
+            f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+
+        # Remove labels
+        y_train = y_train[:, :, 1:]
+
+        X_train = torch.from_numpy(X_train)
+        y_train = torch.from_numpy(y_train)
+
+        # Do patching
+        patch_size = self.config["patch_size"]
+
+        # Patch the data for the features
+        X_train = patch_x_data(X_train, patch_size)
+
+        # Patch the data for the labels
+        y_train = patch_y_data(y_train, patch_size)
+
+        # Regression
+        y_train = y_train[:, 0]
+
+        # Create a dataset from X and y
+        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+
+        # Create a dataloader from the dataset
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
+
+        # Train events
+        logger.info("Training events model")
+        trainer = Trainer(epochs=epochs,
+                          criterion=criterion)
+        trainer.fit(
+            train_dataloader, None, self.model, optimizer, self.name)
+
+    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :return:
+        :param with_cpu: whether to use cpu
+        :return: predictions of the model (windows, labels)
         """
 
         # Check which device to use
@@ -224,11 +263,13 @@ class EventNaNRegressionTransformer(Model):
             device = torch.device("cuda")
 
         # Push to device
-        self.model_events.to(device).float()
-        self.model_nans.to(device).float()
+        self.model.to(device).float()
 
-        # Turn data from (window_size, features) to (1, window_size, features)
-        data = torch.from_numpy(data)  # .unsqueeze(0)
+        # Turn data into numpy array
+        data = torch.from_numpy(data)
+
+        # Get window size
+        window_size = data.shape[1]
 
         # Patch data
         patch_size = self.config["patch_size"]
@@ -242,25 +283,16 @@ class EventNaNRegressionTransformer(Model):
             test_dataset, batch_size=self.config["batch_size"])
 
         # Make predictions
-        prediction_events = np.empty((0, 2))
-        prediction_nans = np.empty((0, 2))
+        predictions = np.empty((0, 2))
         with tqdm(test_dataloader, unit="batch", disable=False) as tepoch:
-            for idx, data in enumerate(tepoch):
-                prediction_events = self._pred_one_batch(
-                    data, prediction_events, self.model_events)
-                prediction_nans = self._pred_one_batch(
-                    data, prediction_nans, self.model_nans)
+            for _, data in enumerate(tepoch):
+                predictions = self._pred_one_batch(
+                    data, predictions, self.model)
 
-        # Set the threshold for the nans
-        threshold = 1.0
+        # Limit predictions from 0 to data.shape[1]
+        predictions = np.clip(predictions, 0, window_size)
 
-        # Create mask where if prediction_nans is above threshold, prediction_events is nans
-        for i in range(len(prediction_events)):
-            if prediction_nans[i, 0] > threshold or prediction_nans[i, 1] > threshold:
-                prediction_events[i, 0] = np.NAN
-                prediction_events[i, 1] = np.NAN
-
-        return prediction_events
+        return predictions
 
     def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
         """
@@ -284,11 +316,9 @@ class EventNaNRegressionTransformer(Model):
         """
         Save function for the model.
         :param path: path to save the model to
-        :return:
         """
         checkpoint = {
-            'model_state_dict_events': self.model_events.state_dict(),
-            'model_state_dict_nans': self.model_nans.state_dict(),
+            'model_state_dict': self.model.state_dict(),
             'config': self.config
         }
         torch.save(checkpoint, path)
@@ -298,14 +328,24 @@ class EventNaNRegressionTransformer(Model):
         """
         Load function for the model.
         :param path: path to model checkpoint
-        :return:
+        :param only_hyperparameters: whether to only load the hyperparameters
         """
-        self.model_events = TSTransformerEncoderClassiregressor(
-            **self.events_transformer_config)
-        self.model_nans = TSTransformerEncoderClassiregressor(
-            **self.nans_transformer_config)
-        checkpoint = torch.load(path)
-        self.model_events.load_state_dict(
-            checkpoint['model_state_dict_events'])
-        self.model_nans.load_state_dict(checkpoint['model_state_dict_nans'])
+        if self.device == torch.device("cpu"):
+            checkpoint = torch.load(path, map_location=torch.device('cpu'))
+        else:
+            checkpoint = torch.load(path)
         self.config = checkpoint['config']
+
+        self.model = TSTransformerEncoderClassiregressor(
+            **self.transformer_config)
+        if not only_hyperparameters:
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+        else:
+            self.reset_optimizer()
+
+    def reset_optimizer(self) -> None:
+
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model.
+        """
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])

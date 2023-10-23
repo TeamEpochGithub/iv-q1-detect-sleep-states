@@ -38,10 +38,8 @@
             "standard": "mean"
         },
         {
-            "kind": "remove_enmo"
-        },
-        {
-            "kind": "remove_anglez"
+            "kind": "del_features",
+            "features": ["anglez", "enmo"]
         }
     ],
     "pretraining": {

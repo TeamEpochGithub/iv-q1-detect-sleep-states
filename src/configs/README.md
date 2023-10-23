@@ -137,8 +137,8 @@ List of options and their config options:
     - `features`: Any existing numerical features
     - `methods`: ["min", "max", "mean", "std", "median"]
     - `standard`: "mean" | "median"
-- `remove_enmo`
-- `remove_anglez`
+- `del_features`
+    - `features`: Any existing numerical features
 
 Example:
 ```JSON
@@ -150,10 +150,8 @@ Example:
             "standard": "mean"
         },
         {
-            "kind": "remove_enmo"
-        },
-        {
-            "kind": "remove_anglez"
+            "kind": "del_features",
+            "features": ["anglez", "enmo"]
         },
         {
             "kind": "rotation",

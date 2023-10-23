@@ -1,5 +1,3 @@
-# This directory contains scripts related to feature engineering
-
 ## Feature engineering
 Features that should be included during training and submission. It contains a list of feature engineering steps, applied in order, where each step is a dictionary.
 
@@ -21,13 +19,13 @@ List of options and their config options:
     - `second`: true | false (opt)
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
-- `downsample`: Downsamples all features 
+- `downsample`: Downsamples all features
     - `factor`: downsampling factor
+    - `features`: Any existing numerical features
     - `methods`: ["min", "max", "mean", "std", "median"]
     - `standard`: "mean" | "median"
-- `remove_enmo`
-- `remove_anglez`
-
+- `del_features`
+    - `features`: Any existing numerical features
 
 Example:
 ```JSON
@@ -39,10 +37,8 @@ Example:
             "standard": "mean"
         },
         {
-            "kind": "remove_enmo"
-        },
-        {
-            "kind": "remove_anglez"
+            "kind": "del_features",
+            "features": ["anglez", "enmo"]
         },
         {
             "kind": "rotation",

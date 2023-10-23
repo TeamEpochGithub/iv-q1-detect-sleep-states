@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
 
+from .downsampler import Downsampler
 from ..scaler.scaler import Scaler
 
 
@@ -15,13 +16,17 @@ class Pretrain:
     and convert the data to a numpy array.
     """
 
-    def __init__(self, scaler: Scaler, test_size: float):
+    def __init__(self, scaler: Scaler, downsampler: Downsampler, remove_features: list, test_size: float):
         """Initialize the pretrain object
 
         :param scaler: the scaler to use
+        :param downsampler: the downsampler to use
+        :param remove_features: the features to remove
         :param test_size: the size of the test set
         """
         self.scaler = scaler
+        self.downsampler = downsampler
+        self.remove_features = remove_features
         self.test_size = test_size
 
     @staticmethod
@@ -31,17 +36,22 @@ class Pretrain:
         :param config: the config to create the pretrain object from
         :return: the pretrain object
         """
+        # Instantiate downsampler object from config
+        downsampler = None
+        if config.get("downsample") is not None:
+            downsampler = Downsampler(**config['downsample'])
 
+        remove_features = config.get("remove_features")
         scaler = Scaler(**config['scaler'])
         test_size = config["test_size"]
 
-        return Pretrain(scaler, test_size)
+        return Pretrain(scaler, downsampler, remove_features, test_size)
 
     def pretrain_split(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
-        splits the data into features and labels, and converts the data to a numpy array.
+        splits the data into features and labels, and converts the data to a numpy array of shape (window, window_size, n_features).
 
         :param df: the dataframe to pretrain on
         :return: the train data, test data, train labels, test labels, train indices and test indices
@@ -52,15 +62,31 @@ class Pretrain:
         X_train, y_train = self.split_on_labels(train_data)
         X_test, y_test = self.split_on_labels(test_data)
 
+        #Apply downsampling
+        if self.downsampler is not None:
+            X_train = self.downsampler.downsampleX(X_train)
+            X_test = self.downsampler.downsampleX(X_test)
+            y_train = self.downsampler.downsampleY(y_train)
+            y_test = self.downsampler.downsampleY(y_test)
+
+        #Remove features
+        if self.remove_features is not None:
+            X_train = X_train.drop(columns=self.remove_features)
+            X_test = X_test.drop(columns=self.remove_features)
+
+
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
         X_test = self.scaler.transform(X_test).astype(np.float32)
         y_train = y_train.to_numpy(dtype=np.float32)
         y_test = y_test.to_numpy(dtype=np.float32)
 
-        X_train = self.to_windows(X_train)
-        X_test = self.to_windows(X_test)
-        y_train = self.to_windows(y_train)
-        y_test = self.to_windows(y_test)
+        #Get the window size from the data (group by window feature and get the size of the first group)
+        window_size = X_train.groupby("window").size().iloc[0]
+
+        X_train = self.to_windows(X_train, window_size)
+        X_test = self.to_windows(X_test, window_size)
+        y_train = self.to_windows(y_train, window_size)
+        y_test = self.to_windows(y_test, window_size)
 
         return X_train, X_test, y_train, y_test, train_idx, test_idx
 
@@ -68,18 +94,34 @@ class Pretrain:
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
-        splits the data into features and labels, and converts the data to a numpy array.
+        splits the data into features and labels, and converts the data to a numpy array of shape (window, window_size, n_features).
 
         :param df: the dataframe to pretrain on
         :return: the train data, test data, train labels, test labels, train indices and test indices
         """
 
         X_train, y_train = self.split_on_labels(df)
+
+        #Apply downsampling
+        if self.downsampler is not None:
+            X_train = self.downsampler.downsampleX(X_train)
+            y_train = self.downsampler.downsampleY(y_train)
+
+        #Remove features
+        if self.remove_features is not None:
+            X_train = X_train.drop(columns=self.remove_features)
+
+
+        #Apply scaler
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
         y_train = y_train.to_numpy(dtype=np.float32)
 
-        X_train = self.to_windows(X_train)
-        y_train = self.to_windows(y_train)
+
+        #Get the window size from the data (group by window feature and get the size of the first group)
+        window_size = X_train.groupby("window").size().iloc[0]
+
+        X_train = self.to_windows(X_train, window_size)
+        y_train = self.to_windows(y_train, window_size)
 
         return X_train, y_train
 
@@ -129,22 +171,25 @@ class Pretrain:
         :param df: the dataframe to split
         :return: the data + features (1) and labels (2)
         """
+        #Rename enmo and anglez to f_enmo and f_anglez
+        df = df.rename(columns={"enmo": "f_enmo", "anglez": "f_anglez"})
         feature_cols = [col for col in df.columns if col.startswith('f_')]
 
         keep_columns: list[str] = ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN",
                                    "hot-asleep", "hot-awake", "hot-NaN"]
         keep_y_train_columns: list = [column for column in keep_columns if column in df.columns]
 
-        return df[['enmo', 'anglez'] + feature_cols], df[keep_y_train_columns]
+        return df[feature_cols], df[keep_y_train_columns]
 
     @staticmethod
-    def to_windows(arr: np.ndarray) -> np.array:
+    def to_windows(arr: np.ndarray, window_size: int) -> np.array:
         """Convert an array to a 3D tensor with shape (window, window_size, n_features)
 
         It's really just a simple reshape, but specifically for the windows.
-        17280 is the number of steps in a window.
+        window_size is the number of steps in a window.
 
         :param arr: the array to convert, with shape (dataset length, number of columns)
-        :return: the numpy array
+        :param window_size: the size of the window
+        :return: the numpy array of shape (window, window_size, n_features)
         """
-        return arr.reshape(-1, 17280, arr.shape[-1])
+        return arr.reshape(-1, window_size, arr.shape[-1])

@@ -311,19 +311,26 @@ class ConfigLoader:
         """
         return self.config["scoring"]
 
-    def get_visualize_preds(self) -> bool:
+    def get_browser_plot(self) -> bool:
         """Get whether to visualize from the config
 
         :return: whether to visualize
         """
-        return self.config["visualize_preds"]
+        return self.config["visualize_preds"]["browser_plot"]
 
     def get_number_of_plots(self) -> int:
         """Get the number of plots from the config
 
         :return: the number of plots
         """
-        return self.config["number_of_plots"]
+        return self.config["visualize_preds"]["n"]
+    
+    def get_store_plots(self) -> bool:
+        """Get whether to store plots from the config
+
+        :return: whether to store plots
+        """
+        return self.config["visualize_preds"]["save"]
 
 
 # ConfigException class

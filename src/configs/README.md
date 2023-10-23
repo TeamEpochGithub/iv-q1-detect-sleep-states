@@ -456,15 +456,15 @@ by setting the following to true:
 ```
 
 ### Visualize preds
-Choose whether to display the plots for the submission. If true the plotly plot is generated. If false the figure is saved as a jpeg
+Configures how plots are generated. 
+- "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
+- "browser_plot": Boolean that if set to True creates plotly plots
+- "save": Boolean that if set to True   
 
 ```
-"visualize_preds": True | False
-```
-
-### Number of plots
-Choose how many plots you want to generate for testing
-
-```
-"number_of_plots": 10
+"visualize_preds": {
+        "n": 5,
+        "browser_plot": true,
+        "save": false
+    }
 ```

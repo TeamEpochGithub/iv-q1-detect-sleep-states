@@ -8,7 +8,7 @@ from src.score.util.save_plots import save_plots
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
                          features_to_plot: list = None, number_of_series_to_plot: int = 1, show_plot: bool = False,
-                         ids_to_plot: list = None, folder_path: str = '') -> None:
+                         ids_to_plot: list = None, folder_path: str = '', save_figures: bool = True) -> None:
     """ This function plots the predictions on the series data. It also plots the real events on the series data.
         The predictions and the events are vertical lines on the plot. The vertical lines have annotations that show
         the real and predicted values and the timestamps. The annotations are colored according to the event type.
@@ -47,15 +47,13 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         # Take the preds for the current series
         current_preds = preds.loc[preds['series_id'] == id]
         # Create the figure
+        if features_to_plot is None:
+            features_to_plot = data.columns.values
         if show_plot:
             # If features_to_plot is None, plot all the features
-            if features_to_plot is None:
-                features_to_plot = data.columns.values
             plot_w_plotly(current_series, current_events,
                           current_preds, id_decoding, id, features_to_plot)
-        else:
-            if features_to_plot is None:
-                features_to_plot = data.columns.values
+        if save_figures:
             save_plots(current_series, current_events,
                        current_preds, id_decoding, id, features_to_plot, folder_path)
 

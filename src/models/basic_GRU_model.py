@@ -11,7 +11,6 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-from ..util.state_to_event import find_events
 from .architectures.simple_GRU import SimpleGRU
 
 
@@ -138,38 +137,43 @@ class SimpleGRUModel(Model):
         avg_val_losses = []
         # Train the model
 
-        pbar = tqdm(range(epochs))
-        for epoch in pbar:
+        for epoch in range(epochs):
             self.model.train(True)
             avg_loss = 0
-            for i, (x, y) in enumerate(train_dataloader):
-                x = x.to(device=self.device)
-                y = y.to(device=self.device)
+            with tqdm(train_dataloader, unit="batch") as pbar:
+                for i, (x, y) in enumerate(pbar):
+                    pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
+                    x = x.to(device=self.device)
+                    y = y.to(device=self.device)
 
-                # Clear gradients
-                optimizer.zero_grad()
+                    # Clear gradients
+                    optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs.squeeze(), y)
+                    # Forward pass
+                    outputs = self.model(x)
+                    loss = criterion(outputs.squeeze(), y)
 
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
+                    # Backward and optimize
+                    loss.backward()
+                    optimizer.step()
 
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
+                    # Calculate the avg loss for 1 epoch
+                    avg_loss += loss.item() / len(train_dataloader)
+                    pbar.set_postfix(loss=avg_loss)
 
             # Calculate the validation loss
             self.model.train(False)
             avg_val_loss = 0
             with torch.no_grad():
-                for i, (vx, vy) in enumerate(test_dataloader):
-                    vx = vx.to(self.device)
-                    vy = vy.to(self.device)
-                    voutputs = self.model(vx)
-                    vloss = criterion(voutputs, vy)
-                    avg_val_loss += vloss.item() / len(test_dataloader)
+                with tqdm(test_dataloader, unit="batch") as pbar:
+                    for i, (vx, vy) in enumerate(pbar):
+                        pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
+                        vx = vx.to(self.device)
+                        vy = vy.to(self.device)
+                        voutputs = self.model(vx)
+                        vloss = criterion(voutputs, vy)
+                        avg_val_loss += vloss.item() / len(test_dataloader)
+                        pbar.set_postfix(loss=avg_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"

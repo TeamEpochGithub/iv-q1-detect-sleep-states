@@ -212,7 +212,7 @@ class ConfigLoader:
                     curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
                 case "event-nan-regression-transformer":
                     curr_model = EventNaNRegressionTransformer(model_config, model_name)
-                case "regression-GRU":
+                case "segmentation-GRU":
                     curr_model = SimpleGRUModel(model_config, data_shape, model_name)
                 case "event-regression-transformer":
                     curr_model = EventRegressionTransformer(model_config, data_shape, model_name)

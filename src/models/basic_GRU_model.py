@@ -37,17 +37,17 @@ class SimpleGRUModel(Model):
             self.device = torch.device("cuda")
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-        self.model_type = "regression"
+        self.model_type = "segmentation"
         self.input_size = input_size
         self.model = SimpleGRU(config, self.input_size[0])
         # Load model
         self.load_config(config)
 
         # If we log the run to weights and biases, we can
-        if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model.cuda(), input_size=(input_size[1], input_size[0]))
-            # pass
+        # if wandb.run is not None:
+        #     from torchsummary import summary
+        #     summary(self.model.cuda(), input_size=(input_size[1], input_size[0]))
+        #     # pass
 
     def load_config(self, config: dict) -> None:
         """
@@ -105,8 +105,8 @@ class SimpleGRUModel(Model):
         X_test = torch.from_numpy(X_test)
 
         # Flatten y_train and y_test so we only get the regression labels
-        y_train = y_train[:, 0, 1]
-        y_test = y_test[:, 0, 1]
+        y_train = y_train[:, :, -3:]
+        y_test = y_test[:, :, -3:]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -129,9 +129,10 @@ class SimpleGRUModel(Model):
         self.model.to(self.device)
 
         # Define wandb metrics
-        wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
         avg_losses = []
         avg_val_losses = []
@@ -139,7 +140,7 @@ class SimpleGRUModel(Model):
 
         for epoch in range(epochs):
             self.model.train(True)
-            avg_loss = 0
+            total_loss = 0
             with tqdm(train_dataloader, unit="batch") as pbar:
                 for i, (x, y) in enumerate(pbar):
                     pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
@@ -151,19 +152,20 @@ class SimpleGRUModel(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs.squeeze(), y)
+                    loss = criterion(outputs, y.permute(0, 2, 1))
 
                     # Backward and optimize
                     loss.backward()
                     optimizer.step()
 
                     # Calculate the avg loss for 1 epoch
-                    avg_loss += loss.item() / len(train_dataloader)
+                    total_loss += loss.item()
+                    avg_loss = total_loss / (i + 1)
                     pbar.set_postfix(loss=avg_loss)
 
             # Calculate the validation loss
             self.model.train(False)
-            avg_val_loss = 0
+            total_val_loss = 0
             with torch.no_grad():
                 with tqdm(test_dataloader, unit="batch") as pbar:
                     for i, (vx, vy) in enumerate(pbar):
@@ -171,9 +173,10 @@ class SimpleGRUModel(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model(vx)
-                        vloss = criterion(voutputs, vy)
-                        avg_val_loss += vloss.item() / len(test_dataloader)
-                        pbar.set_postfix(loss=avg_loss)
+                        vloss = criterion(voutputs, vy.permute(0, 2, 1))
+                        total_val_loss += vloss.item()
+                        avg_val_loss = total_val_loss / (i + 1)
+                        pbar.set_postfix(loss=avg_val_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
@@ -189,7 +192,8 @@ class SimpleGRUModel(Model):
                 wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
         # Log full train and test plot
-        self.log_train_test(avg_losses, avg_val_losses, epochs)
+        if wandb.run is not None:
+            self.log_train_test(avg_losses, avg_val_losses, epochs)
         logger.info("--- Training of model complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:

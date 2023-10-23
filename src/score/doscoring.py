@@ -22,7 +22,8 @@ class ScoringError(Exception):
     pass
 
 
-def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
+# TODO Properly refactor this function
+def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame) -> (float, float):
     # Verify that there are no consecutive onsets or wakeups
     same_event = submission['event'] == submission['event'].shift(1)
     same_series = submission['series_id'] == submission['series_id'].shift(1)
@@ -42,8 +43,8 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
     logger.debug(f'solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
-    result = score(solution, submission, tolerances, **column_names)
-    logger.info(f'Score for all {len(solution["series_id"].unique())} series: {result}')
+    score_full = score(solution, submission, tolerances, **column_names)
+    logger.info(f'Score for all {len(solution["series_id"].unique())} series: {score_full}')
 
     # Filter on clean series (series with no nans in the solution)
     solution_no_nan = (solution
@@ -54,19 +55,28 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
                                   .groupby('series_id')
                                   .filter(lambda x: x['series_id'].iloc[0] in solution_no_nan_ids))
 
-    # Log the scores to WandB
-    if wandb.run is not None:
-        wandb.log({'score': result})
-
     # Compute the score for the clean series
+    score_clean = np.NaN
     if len(solution_no_nan_ids) == 0 or len(submission_filtered_no_nan) == 0:
         logger.info(f'No clean series to compute non-nan score with,'
                     f' submission has none of the {len(solution_no_nan_ids)} clean series')
     else:
-        result = score(solution_no_nan, submission_filtered_no_nan, tolerances, **column_names)
-        if wandb.run is not None:
-            wandb.log({'score_clean': result})
-        logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {result}')
+        score_clean = score(solution_no_nan, submission_filtered_no_nan, tolerances, **column_names)
+        logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {score_clean}')
+
+    return score_full, score_clean
+
+
+def log_scores_to_wandb(score_full: float, score_clean: float) -> None:
+    """Log the scores to both console and wandb
+
+    :param score_full: the score for all series
+    :param score_clean: the score for the clean series
+    """
+    if wandb.run is None:
+        wandb.log({'score': score_full})
+        if score_clean is not np.NaN:
+            wandb.log({'score_clean': score_clean})
 
 
 if __name__ == '__main__':
@@ -75,4 +85,4 @@ if __name__ == '__main__':
     coloredlogs.install()
     submission = pd.read_csv('./submission.csv')
     solution = pd.read_csv('./data/raw/train_events.csv')
-    compute_scores(submission, solution)
+    log_scores_to_wandb(**compute_scores(submission, solution))

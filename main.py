@@ -9,7 +9,7 @@ from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
-from src.score.doscoring import compute_scores
+from src.score.doscoring import compute_scores, log_scores_to_wandb
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -181,7 +181,7 @@ def main(config: ConfigLoader) -> None:
                     .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
-        compute_scores(submission, solution)
+        log_scores_to_wandb(**compute_scores(submission, solution))
     else:
         logger.info("Not scoring")
 

@@ -60,8 +60,10 @@
         "method": "example_hpo"
     },
     "cv": {
-        "apply": false,
-        "method": "example_cv"
+        "apply": true,
+        "splitter": "stratified-group-k-fold",
+        "scoring": "score_full",
+        "k_folds": 5
     },
     "train_for_submission":true,
     "scoring": true

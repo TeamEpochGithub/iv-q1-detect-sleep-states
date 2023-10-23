@@ -1,5 +1,6 @@
 import json
 
+import pandas as pd
 from torch import nn
 
 from ..cv.cv import CV
@@ -281,19 +282,12 @@ class ConfigLoader:
 
         return hpo_class
 
-    def get_cv(self) -> CV:
+    def get_cv(self, data: pd.DataFrame, labels: pd.Series) -> CV:
         """Get the cross validation method from the config
 
         :return: the cross validation method
         """
-        cv_class = None
-        if self.config["cv"]["method"] == "example_cv":
-            cv_class = CV()
-        else:
-            raise ConfigException("Cross validation method not found: " +
-                                  self.config["cv"]["method"])
-
-        return cv_class
+        return CV(data, labels, **self.config["cv"])
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

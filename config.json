@@ -30,19 +30,15 @@
         }
     ],
     "feature_engineering": [
-        {
-            "kind": "downsample",
+    ],
+    "pretraining": {
+        "downsample": {
             "factor": 12,
             "features": ["anglez", "enmo"],
             "methods": ["min", "max", "mean", "std", "median"],
             "standard": "mean"
         },
-        {
-            "kind": "del_features",
-            "features": ["anglez", "enmo"]
-        }
-    ],
-    "pretraining": {
+        "remove_features": ["anglez", "enmo"],
         "test_size": 0.2,
         "scaler":{
             "kind": "standard-scaler"

@@ -1,16 +1,28 @@
-from src.feature_engineering.feature_engineering import FE
+import pandas as pd
 
+from ..feature_engineering.feature_engineering import FE
 
 class Time(FE):
-    def __init__(self, config):
-        super().__init__(config)
-        self.day = self.config.get("day", False)
-        self.hour = self.config.get("hour", False)
-        self.minute = self.config.get("minute", False)
-        self.second = self.config.get("second", False)
+    """Add time features to the data
 
-    def feature_engineering(self, data):
-        # Group the data
+    The following time-related features can be added: day, hour, minute, and second.
+
+    # TODO Refactor to add `time_features: str | list[str]` for weekday, week, month, year, etc.
+    """
+    def __init__(self, day: bool, hour: bool, minute: bool, second: bool, **kwargs: dict) -> None:
+        """Initialize the Time class"""
+        super().__init__(**kwargs)
+        self.day = day
+        self.hour = hour
+        self.minute = minute
+        self.second = second
+
+    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Add the selected time columns.
+
+        :param data: the original data
+        :return: the data with the selected time data added
+        """
         if self.day:
             data["f_day"] = data["timestamp"].dt.day
         if self.hour:

@@ -19,27 +19,10 @@ List of options and their config options:
     - `second`: true | false (opt)
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
-- `downsample`: Downsamples all features
-    - `factor`: downsampling factor
-    - `features`: Any existing numerical features
-    - `methods`: ["min", "max", "mean", "std", "median"]
-    - `standard`: "mean" | "median"
-- `del_features`
-    - `features`: Any existing numerical features
 
-Example:
+    - Example:
 ```JSON
 "feature_engineering": [
-        {
-            "kind": "downsample",
-            "factor": 12,
-            "methods": ["min", "max", "mean", "std", "median"],
-            "standard": "mean"
-        },
-        {
-            "kind": "del_features",
-            "features": ["anglez", "enmo"]
-        },
         {
             "kind": "rotation",
             "window_sizes": [100]

@@ -132,7 +132,7 @@ List of options and their config options:
     - `second`: true | false (opt)
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
-- `downsample`
+- `downsample`: Downsamples all features
     - `factor`: downsampling factor
     - `features`: Any existing numerical features
     - `methods`: ["min", "max", "mean", "std", "median"]
@@ -146,7 +146,6 @@ Example:
         {
             "kind": "downsample",
             "factor": 12,
-            "features": ["anglez", "enmo"],
             "methods": ["min", "max", "mean", "std", "median"],
             "standard": "mean"
         },

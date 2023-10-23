@@ -7,14 +7,14 @@ import pandas as pd
 class SimilarityNan(PP):
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         tqdm.pandas()
-
         data = (data.groupby('series_id')
-                .progress_apply(last_window_diff)
+                .progress_apply(similarity_nan)
                 .reset_index(0, drop=True))
         return data
 
 
-def last_window_diff(series):
+def similarity_nan(series):
+    """Computes the similarity of each point to that at the same time in the last 24h hours"""
     STEPS_PER_DAY = (24 * 60 * 60) // 5
 
     if len(series) < STEPS_PER_DAY:
@@ -42,3 +42,4 @@ def last_window_diff(series):
     # add the diff to the series as a column of float32
     series['f_similarity_nan'] = diff[:len(feature_np)].astype(np.float32)
     return series
+

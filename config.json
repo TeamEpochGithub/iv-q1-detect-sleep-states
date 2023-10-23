@@ -5,6 +5,11 @@
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "model_store_loc": "tm",
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -24,12 +29,21 @@
             "kind": "add_segmentation_labels"
         }
     ],
-    "processed_loc_out": "data/processed",
-    "processed_loc_in": "data/raw",
-    "feature_engineering": {
-    },
-    "fe_loc_out": "data/features",
-    "fe_loc_in": "data/processed",
+    "feature_engineering": [
+        {
+            "kind": "downsample",
+            "factor": 12,
+            "features": ["anglez", "enmo"],
+            "methods": ["min", "max", "mean", "std", "median"],
+            "standard": "mean"
+        },
+        {
+            "kind": "remove_enmo"
+        },
+        {
+            "kind": "remove_anglez"
+        }
+    ],
     "pretraining": {
         "test_size": 0.2,
         "scaler":{
@@ -48,7 +62,6 @@
             "early_stopping": 5
         }
     },
-    "model_store_loc": "tm",
     "ensemble": {
         "models": ["1D-Unet-CNN"],
         "weights": [1],

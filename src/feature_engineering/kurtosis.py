@@ -1,14 +1,17 @@
-# Class for kurtosis feature
+import pandas as pd
+
 from ..feature_engineering.rolling_window import RollingWindow
 from ..logger.logger import logger
 
 
 class Kurtosis(RollingWindow):
+    # TODO Add docstrings for the class, feature_engineering and kurtosis functions
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the Kurtosis class"""
+        super().__init__(**kwargs)
 
-    def feature_engineering(self, data):
+    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         # Loop through window sizes
         logger.debug("------ All features: " + str(self.features))
         for feature in self.features:
@@ -20,7 +23,7 @@ class Kurtosis(RollingWindow):
         return data
 
     # Create rolling window features for kurtosis
-    def kurtosis(self, data, window_size, feature):
+    def kurtosis(self, data: pd.DataFrame, window_size: int, feature: str) -> pd.DataFrame:
         # Create a rolling window for kurtosis per series_id
         data["f_kurtosis_" + feature + "_" + str(window_size)] = data.groupby("series_id")[feature].rolling(
             window_size).kurt().reset_index(0, drop=True)

@@ -1,14 +1,17 @@
-# Class for mean feature
+import pandas as pd
+
 from ..feature_engineering.rolling_window import RollingWindow
 from ..logger.logger import logger
 
 
 class Mean(RollingWindow):
+    # TODO Add docstrings for the class, feature_engineering and mean functions
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the Mean class"""
+        super().__init__(**kwargs)
 
-    def feature_engineering(self, data):
+    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         logger.debug("------ All features: " + str(self.features))
         # Loop through window sizes
         for feature in self.features:

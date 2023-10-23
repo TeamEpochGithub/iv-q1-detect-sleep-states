@@ -31,7 +31,6 @@ class Pretrain:
         :param config: the config to create the pretrain object from
         :return: the pretrain object
         """
-
         scaler = Scaler(**config['scaler'])
         test_size = config["test_size"]
 

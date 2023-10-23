@@ -102,7 +102,7 @@ class ConfigLoader:
         """
         return self.config["processed_loc_in"]
 
-    def get_features(self) -> (dict[FE], list[str]):
+    def get_fe_steps(self) -> (dict[FE], list[str]):
         """Get the feature engineering steps classes
 
         :return: the feature engineering steps and their names

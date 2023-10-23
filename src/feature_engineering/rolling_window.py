@@ -1,18 +1,19 @@
 import pandas as pd
 
-from ..feature_engineering.feature_engineering import FE, FEException
+from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 
 
 class RollingWindow(FE):
     """Base class for features that need a rolling window.
 
-    # TODO Describe this, I don't know what this is for
+    # TODO Describe this class, I don't know what this does
     """
 
     def __init__(self, window_sizes: list[int], features: list[str], **kwargs: dict) -> None:
         """Initialize the Rolling Window class
 
+        # TODO Describe window_sizes and features
         :param window_sizes: ???
         :param features: ???
         """

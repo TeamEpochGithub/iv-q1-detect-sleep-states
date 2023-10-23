@@ -20,7 +20,7 @@ List of options and their config options:
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 
-    - Example:
+Example:
 ```JSON
 "feature_engineering": [
         {

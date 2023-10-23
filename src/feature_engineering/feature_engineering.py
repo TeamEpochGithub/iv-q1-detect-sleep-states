@@ -11,14 +11,13 @@ class FE:
     All child classes should implement the feature engineering method.
     """
 
-    def __init__(self, kind: str, **kwargs):
+    def __init__(self, kind: str, **kwargs: dict) -> None:
         """Initialize the feature engineering step.
 
         :param kind: the kind of feature engineering step
         :param kwargs: the parameters for the feature engineering step
         """
         self.kind = kind
-
 
     @staticmethod
     def from_config_single(config: dict) -> FE:
@@ -46,8 +45,8 @@ class FE:
                 from .rotation import Rotation
                 return Rotation(**config)
             case _:
-                logger.critical(f"Unknown preprocessing step: {kind}")
-                raise FEException(f"Unknown preprocessing step: {kind}")
+                logger.critical(f"Unknown feature engineering step: {kind}")
+                raise FEException(f"Unknown feature engineering step: {kind}")
 
     @staticmethod
     def from_config(config_list: list[dict]) -> list[FE]:
@@ -76,6 +75,7 @@ class FE:
         """
         logger.critical("Feature engineering method not implemented. Did you forget to override it?")
         raise FEException("Feature engineering method not implemented. Did you forget to override it?")
+
 
 class FEException(Exception):
     """

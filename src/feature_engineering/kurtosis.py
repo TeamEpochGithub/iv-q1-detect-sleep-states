@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ..feature_engineering.rolling_window import RollingWindow
+from .rolling_window import RollingWindow
 from ..logger.logger import logger
 
 
@@ -10,6 +10,14 @@ class Kurtosis(RollingWindow):
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Kurtosis class"""
         super().__init__(**kwargs)
+
+    def __str__(self) -> str:
+        """Return the name of the class as a string"""
+        return f"{self.__class__.__name__}"
+
+    def __repr__(self) -> str:
+        """Return a string representation of a Kurtosis object"""
+        return f"{self.__class__.__name__}(window_sizes={self.window_sizes}, features={self.features})"
 
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         # Loop through window sizes
@@ -29,5 +37,6 @@ class Kurtosis(RollingWindow):
             window_size).kurt().reset_index(0, drop=True)
 
         # Make sure there are no NaN values turn them into 0
-        data["f_kurtosis_" + feature + "_" + str(window_size)] = data["f_kurtosis_" + feature + "_" + str(window_size)].fillna(0.0)
+        data["f_kurtosis_" + feature + "_" + str(window_size)] = data[
+            "f_kurtosis_" + feature + "_" + str(window_size)].fillna(0.0)
         return data

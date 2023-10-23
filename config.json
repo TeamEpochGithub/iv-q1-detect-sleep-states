@@ -37,13 +37,20 @@
         }
     },
     "models": {
-        "Classic-baseline": {
-            "type": "classic-base-model"
+        "1D-Unet-CNN": {
+            "type": "seg-unet-1d-cnn",
+            "loss": "bce-torch",
+            "optimizer": "adam-torch",
+            "epochs": 3,
+            "batch_size": 32,
+            "lr": 0.0005,
+            "hidden_layers": 8,
+            "early_stopping": 7
         }
     },
     "model_store_loc": "tm",
     "ensemble": {
-        "models": ["Classic-baseline"],
+        "models": ["1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -60,8 +67,8 @@
     "train_for_submission": true,
     "visualize_preds": {
         "n": 5,
-        "browser_plot": true,
-        "save": false
+        "browser_plot": false,
+        "save": true
     }
 
 

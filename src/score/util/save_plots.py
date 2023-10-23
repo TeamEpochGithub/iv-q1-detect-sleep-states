@@ -1,6 +1,9 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+
+from src.logger.logger import logger
 
 
 def save_plots(current_series, current_events, current_preds, id_decoding, id, features_to_plot, folder_path):
@@ -10,7 +13,7 @@ def save_plots(current_series, current_events, current_preds, id_decoding, id, f
                                               current_series.columns.isin(["anglez", "enmo"])]
     max_value = current_series[selected_columns].max().max()
     min_value = current_series[selected_columns].min().min()
-    plt.figure()
+    plt.figure(figsize=(80, 20))
     plt.vlines(x=current_events[current_events['event'] == 'onset']['step'].dropna(), colors='black',
                linestyles='dashed', label='real_onset', ymax=max_value, ymin=min_value)
     plt.vlines(x=current_events[current_events['event'] == 'wakeup']['step'].dropna(), colors='green',
@@ -51,4 +54,5 @@ def save_plots(current_series, current_events, current_preds, id_decoding, id, f
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     plt.savefig(folder_path + '/' + 'series_id--' +
-                f'{id_decoding[id]}-({id}).jpeg', dpi=600)
+                f'{id_decoding[id]}-({id}).png')
+    logger.info(f'Plot saved at: {folder_path + "/" + "series_id--" + f"{id_decoding[id]}-({id}).png"}')

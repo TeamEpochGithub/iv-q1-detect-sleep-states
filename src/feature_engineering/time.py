@@ -8,7 +8,7 @@ class Time(FE):
 
     The following time-related features can be added: day, hour, minute, and second.
 
-    # TODO Refactor to add parameter `time_features: str | list[str]` for weekday, week, month, year, etc.
+    # TODO Refactor to parameter `time_features: str | list[str]` for weekday, week, month, year, etc.
     """
 
     def __init__(self, day: bool, hour: bool, minute: bool, second: bool, **kwargs: dict) -> None:

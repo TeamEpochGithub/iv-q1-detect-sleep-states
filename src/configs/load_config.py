@@ -324,7 +324,7 @@ class ConfigLoader:
         :return: the number of plots
         """
         return self.config["visualize_preds"]["n"]
-    
+
     def get_store_plots(self) -> bool:
         """Get whether to store plots from the config
 

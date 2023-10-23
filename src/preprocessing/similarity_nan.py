@@ -8,33 +8,36 @@ class SimilarityNan(PP):
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         tqdm.pandas()
 
-        data = data.groupby('series_id').progress_apply(last_window_diff)
+        data = data.groupby('series_id').progress_apply(similarity_nan).reset_index(drop=True)
         return data
 
 
-def last_window_diff(series):
+def similarity_nan(series):
+    """Computes the similarity of each point to that at the same time in the last 24h hours"""
     STEPS_PER_DAY = (24 * 60 * 60) // 5
 
     if len(series) < STEPS_PER_DAY:
         return np.zeros(len(series))
 
-    last_24h = series['anglez'].iloc[-STEPS_PER_DAY:]
+    # get an array of the anglez padded with NaNs to make it a multiple of STEPS_PER_DAY
+    feature_np = series['anglez'].to_numpy()
+    padded = np.pad(feature_np, (0, STEPS_PER_DAY - (len(series) % STEPS_PER_DAY)), 'constant', constant_values=0)
 
-    # create a comparison series, consisting of the last 24 repeated to the size of the series, backwards from the end
-    comparison = np.tile(last_24h.to_numpy(), len(series) // STEPS_PER_DAY + 1)[-len(series):]
+    # make the comparison matrix
+    num_days = len(padded) // STEPS_PER_DAY
+    comparison = np.empty((num_days, len(padded)))
+    for day in range(num_days):
+        day_data = padded[day * STEPS_PER_DAY:(day + 1) * STEPS_PER_DAY]
+        comparison[day, :] = np.tile(day_data, num_days)
+        comparison[day, :] = np.abs(comparison[day, :] - padded)
 
-    # compute the absolute difference
-    diff = np.abs(series['anglez'].to_numpy() - comparison)
+    # set the self-comparison to inf
+    for day in range(num_days):
+        comparison[day, day * STEPS_PER_DAY:(day + 1) * STEPS_PER_DAY] = np.inf
 
-    # pad left with the average diff and reshape
-    diff_padded_left = np.pad(diff, (0, STEPS_PER_DAY - len(diff) % STEPS_PER_DAY), constant_values=np.mean(diff))
-    reshaped = diff_padded_left.reshape(-1, STEPS_PER_DAY)
+    min_comparison = np.min(comparison, axis=0)
 
-    # replace the diff of the last day with that of the most similar day
-    # (else it would always be 0 by comparing to itself)
-    avg_similarity = np.mean(reshaped, axis=1)
-    best = np.argmin(avg_similarity[:-1])
-    diff[-STEPS_PER_DAY:] = reshaped[best]
+    diff = min_comparison[:len(series)]
 
-    series['similarity_nan'] = diff
+    series['f_similarity_nan'] = diff
     return series

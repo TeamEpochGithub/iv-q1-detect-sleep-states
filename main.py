@@ -10,6 +10,7 @@ from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.doscoring import compute_scores
+from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -182,6 +183,10 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)
+
+        # compute confusion matrix for making predictions or not
+        window_info['series_id'] = window_info['series_id'].map(decoding)
+        compute_nan_confusion_matrix(submission, solution, window_info)
     else:
         logger.info("Not scoring")
 

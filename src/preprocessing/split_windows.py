@@ -57,7 +57,7 @@ class SplitWindows(PP):
         gc.collect()
 
         # Pad types
-        pad_type = {'step': np.uint32, 'series_id': np.uint16,
+        pad_type = {'step': np.int32, 'series_id': np.uint16,
                     'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
         if 'awake' in group.columns:
             pad_type['awake'] = np.uint8

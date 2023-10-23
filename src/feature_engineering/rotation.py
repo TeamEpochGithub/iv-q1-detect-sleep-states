@@ -6,6 +6,7 @@ from ..logger.logger import logger
 
 class Rotation(FE):
     # TODO Add docstrings for the class and feature_engineering function
+    # TODO Add tests
 
     def __init__(self, window_sizes: list[int] | None = None, **kwargs: dict) -> None:
         """Initialize the Rotation class

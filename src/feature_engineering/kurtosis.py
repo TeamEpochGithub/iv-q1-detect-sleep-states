@@ -6,6 +6,7 @@ from ..logger.logger import logger
 
 class Kurtosis(RollingWindow):
     # TODO Add docstrings for the class, feature_engineering and kurtosis functions
+    # TODO Add tests
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Kurtosis class"""

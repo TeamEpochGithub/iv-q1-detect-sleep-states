@@ -1,4 +1,5 @@
-from torch import nn, Tensor
+from torch import nn
+import torch
 
 # Base imports
 from .pooling import SeqPool, LSTMPooling, NoPooling
@@ -8,17 +9,18 @@ from .encoder_config import EncoderConfig
 class TransformerPool(nn.Module):
     """
     Transformer encoder with patching.
-
-    Args:
-        heads: number of heads for transformer encoder
-        emb_dim: embedding dimension
-        feat_dim: forward dimension for transformer encoder
-        dropout: dropout for transformer encoder
-        layers: number of transformer encoder layers
-        patch_size: patch size for patching
-        channels: number of channels in input
-        seq_len: sequence length of input
-        num_class: number of classes for regression
+    :param heads: Number of heads in transformer
+    :param emb_dim: Embedding dimension
+    :param forward_dim: Forward dimension in transformer
+    :param n_layers: Number of layers in transformer
+    :param patch_size: Size of patch in transformer
+    :param seq_len: Length of sequence in transformer
+    :param num_class: Number of classes in transformer
+    :param pooling: Type of pooling to use
+    :param tokenizer: Type of tokenizer to use
+    :param tokenizer_args: Arguments for tokenizer
+    :param pe: Type of positional encoding to use
+    :param dropout: Dropout rate to use
     """
 
     def __init__(
@@ -29,7 +31,7 @@ class TransformerPool(nn.Module):
     ) -> None:
         super(TransformerPool, self).__init__()
         self.encoder = EncoderConfig(
-            tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads)
+            tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len)
         if pooling == "none":
             self.seq_pool = NoPooling(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(
@@ -41,13 +43,11 @@ class TransformerPool(nn.Module):
             self.seq_pool = SeqPool(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(emb_dim, num_class)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Args:
-            x: (batch_size, seq_length, feat_dim)
-
-        Returns:
-            (batch_size, num_classes)
+        Forward function for transformer encoder.
+        :param x: Input tensor (bs, l, c).
+        :return: Output tensor (bs, num_class).
         """
         # Pass x through encoder
         x = self.encoder(x)

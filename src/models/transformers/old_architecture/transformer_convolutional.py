@@ -2,10 +2,12 @@ from torch import nn, Tensor
 import torch
 
 # Base imports
-from ..architecture.tokenizer import ConvTokenizer, SimpleTokenizer
+from ..architecture.tokenizer import SimpleTokenizer
 from ..base.encoder_block import TransformerEncoderBlock
 from ..architecture.pooling import SeqPool
 from src.logger.logger import logger
+
+# This code is left here as reference from the old architecture
 
 
 class ConvolutionalTransformerEncoder(nn.Module):

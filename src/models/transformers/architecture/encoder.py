@@ -1,21 +1,26 @@
-from .positional_encoding import FixedPositionalEncoding
 from .encoder_layer import EncoderLayer
 from src.logger.logger import logger
-
 from torch import nn
 from torch.nn.modules import BatchNorm1d
-import copy
 import torch
 
 
 class Encoder(nn.Module):
-    def __init__(self, tokenizer, pe, emb_dim, forward_dim, n_layers, heads):
+    """
+    Encoder of the transformer architecture.
+    :param tokenizer: Tokenizer.
+    :param pe: Positional encoding.
+    :param emb_dim: Embedding dimension.
+    :param forward_dim: Dimension of the feed forward layer.
+    :param n_layers: Number of encoder layers.
+    :param heads: Number of heads in the multihead attention.
+    """
+
+    def __init__(self, tokenizer: nn.Module, pe: nn.Module, emb_dim: int = 92, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8) -> None:
         super().__init__()
         self.n_layers = n_layers
         self.tokenizer = tokenizer
         self.pe = pe
-        self.layers = get_clones(EncoderLayer(
-            emb_dim, heads, forward_dim), n_layers)
         encoders = []
         for _ in range(0, n_layers):
             encoders.append(
@@ -24,12 +29,13 @@ class Encoder(nn.Module):
         self.encoder_stack = nn.Sequential(*encoders)
         self.norm = BatchNorm1d(emb_dim)
 
-    def forward(self, src):
+    def forward(self, src: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the encoder.
+        :param src: Input tensor.
+        :return: Output of encoder tensor.
+        """
         x = self.tokenizer(src)
         x = self.pe(x)
         x = self.encoder_stack(x)
         return self.norm(x.permute(0, 2, 1)).permute(0, 2, 1)
-
-
-def get_clones(module, n_layers):
-    return nn.ModuleList([copy.deepcopy(module) for i in range(n_layers)])

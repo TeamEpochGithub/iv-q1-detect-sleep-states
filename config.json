@@ -5,11 +5,11 @@
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
-    "fe_loc_out": "data/features",
-    "fe_loc_in": "data/processed",
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -30,30 +30,39 @@
         }
     ],
     "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["day", "hour", "minute", "second"]
+        },
+         {
+            "kind": "mean",
+            "window_sizes": [5, 10],
+            "features": ["anglez"]
+         }
     ],
     "pretraining": {
-        "window_size": 17280,
-        "test_size": 0.2,
         "downsample": {
             "factor": 12,
-            "features": ["f_enmo", "f_anglez"],
-            "methods": ["min", "max", "mean", "std", "median", "var"],
+            "features": ["anglez", "enmo"],
+            "methods": ["min", "max", "mean", "std", "median"],
             "standard": "mean"
         },
-        "scaler": {
-            "kind": "minmax-scaler"
+        "remove_features": ["anglez", "enmo"],
+        "test_size": 0.2,
+        "scaler":{
+            "kind": "standard-scaler"
         }
     },
     "models": {
         "1D-Unet-CNN": {
             "type": "seg-unet-1d-cnn",
             "loss": "bce-torch",
-            "optimizer": "rmsprop-torch",
+            "optimizer": "adam-torch",
             "epochs": 50,
-            "batch_size": 64,
+            "batch_size": 32,
             "lr": 0.0005,
-            "hidden_layers": 16,
-            "early_stopping": 7
+            "hidden_layers": 8,
+            "early_stopping": 5
         }
     },
     "ensemble": {
@@ -70,13 +79,6 @@
         "apply": false,
         "method": "example_cv"
     },
-    "scoring": true,
-    "train_for_submission": true,
-    "visualize_preds": {
-        "n": 5,
-        "browser_plot": false,
-        "save": true
-    }
-
-
+    "train_for_submission":true,
+    "scoring": true
 }

@@ -34,6 +34,6 @@ class Mean(RollingWindow):
             window_size).skew().reset_index(0, drop=True)
 
         # Make sure there are no NaN values turn them into 0
-        data["f_mean_" + feature + "_" + str(window_size)] = data["mean_" + feature + "_" + str(window_size)].fillna(
+        data["f_mean_" + feature + "_" + str(window_size)] = data["f_mean_" + feature + "_" + str(window_size)].fillna(
             0.0)
         return data

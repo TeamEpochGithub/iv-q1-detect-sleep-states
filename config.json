@@ -33,22 +33,17 @@
         {
             "kind": "time",
             "time_features": ["day", "hour", "minute", "second"]
-        },
-         {
-            "kind": "mean",
-            "window_sizes": [5, 10],
-            "features": ["anglez"]
-         }
+        }
     ],
     "pretraining": {
+        "window_size": 17280,
+        "test_size": 0.2,
         "downsample": {
             "factor": 12,
-            "features": ["anglez", "enmo"],
+            "features": ["f_anglez", "f_enmo"],
             "methods": ["min", "max", "mean", "std", "median"],
-            "standard": "mean"
+            "standard": "median"
         },
-        "remove_features": ["anglez", "enmo"],
-        "test_size": 0.2,
         "scaler":{
             "kind": "standard-scaler"
         }

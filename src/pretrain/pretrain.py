@@ -124,8 +124,15 @@ class Pretrain:
         :return: the processed data
         """
         x_data = self.get_features(x_data)
+
+        # Apply downsampling
+        if self.downsampler is not None:
+            logger.info("Downsampling data with factor %s", str(self.downsampler.factor))
+            self.window_size = self.window_size // self.downsampler.factor
+            x_data = self.downsampler.downsampleX(x_data)
+
         x_data = self.scaler.transform(x_data).astype(np.float32)
-        return self.to_windows(x_data, 17280)
+        return self.to_windows(x_data, self.window_size)
 
     @staticmethod
     def train_test_split(df: pd.DataFrame, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
@@ -150,9 +157,10 @@ class Pretrain:
         :param df: the dataframe to split
         :return: the data and features
         """
+        df = df.rename(columns={"enmo": "f_enmo", "anglez": "f_anglez"})
         feature_cols = [col for col in df.columns if col.startswith('f_')]
 
-        return df[['enmo', 'anglez'] + feature_cols]
+        return df[feature_cols]
 
     @staticmethod
     def split_on_labels(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):

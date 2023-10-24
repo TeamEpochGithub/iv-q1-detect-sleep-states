@@ -75,7 +75,7 @@ class TestPretrain(TestCase):
                                          "anglez": [1, 2],
                                          "awake": [0, 1],
                                          "f_test": [0, 1]})
-        self.assertListEqual(list(Pretrain.get_features(df).columns), ["enmo", "anglez", "f_test"])
+        self.assertListEqual(list(Pretrain.get_features(df).columns), ["f_enmo", "f_anglez", "f_test"])
 
     def test_split_on_labels(self):
         df: pd.DataFrame = pd.DataFrame({"series_id": [0, 1],

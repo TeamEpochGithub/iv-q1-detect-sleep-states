@@ -15,6 +15,10 @@ class Truncate(PP):
         """Initialize the Truncate class"""
         super().__init__(**kwargs | {"kind": "truncate"})
 
+    def __repr__(self) -> str:
+        """Return a string representation of a Truncate object"""
+        return f"{self.__class__.__name__}()"
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Truncates the unlabeled end of the data
 

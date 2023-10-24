@@ -18,7 +18,8 @@ class EncoderConfig(nn.Module):
     :param heads: Number of heads in the multihead attention.
     """
 
-    def __init__(self, tokenizer: str = "patch", tokenizer_args: dict = {}, pe: str = "fixed", emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, seq_len: int = 17280) -> None:
+    def __init__(self, tokenizer: str = "patch", tokenizer_args: dict = {}, pe: str = "fixed",
+                 emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, seq_len: int = 17280) -> None:
         super().__init__()
         self.tokenizer = get_tokenizer(tokenizer, emb_dim, tokenizer_args)
         with torch.no_grad():

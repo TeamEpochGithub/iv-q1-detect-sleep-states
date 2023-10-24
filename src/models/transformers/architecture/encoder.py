@@ -1,5 +1,4 @@
 from .encoder_layer import EncoderLayer
-from src.logger.logger import logger
 from torch import nn
 from torch.nn.modules import BatchNorm1d
 import torch

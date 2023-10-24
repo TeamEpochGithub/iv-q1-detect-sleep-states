@@ -307,8 +307,8 @@ class Transformer(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
 
-        self.model = PatchPoolTransformerEncoder(
-            **self.transformer_config)
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         if not only_hyperparameters:
             self.model.load_state_dict(checkpoint['model_state_dict'])
         else:

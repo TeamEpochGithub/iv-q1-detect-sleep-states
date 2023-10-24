@@ -8,21 +8,13 @@ import copy
 import torch
 
 class Encoder(nn.Module):
-    def __init__(self, tokenizer, pe, seq_len, d_model, N, heads):
+    def __init__(self, tokenizer, pe, emb_dim, forward_dim, n_layers, heads):
         super().__init__()
-        self.N = N
+        self.n_layers = n_layers
         self.tokenizer = tokenizer
         self.pe = pe
-
-        with torch.no_grad():
-            x = torch.randn([1, channels, seq_len])
-            out = self.tokenizer(x)
-            _, _, l_c = out.shape
-            logger.debug("Transformer attention size" + str(l_c))
-        
-        self.pe = FixedPositionalEncoding(d_model, max_len=l_c)
-        self.layers = get_clones(EncoderLayer(d_model, heads), N)
-        self.norm = BatchNorm1d(d_model)
+        self.layers = get_clones(EncoderLayer(emb_dim, heads, forward_dim), n_layers)
+        self.norm = BatchNorm1d(emb_dim)
     def forward(self, src, mask):
         x = self.tokenizer(src)
         x = self.pe(x)
@@ -30,5 +22,5 @@ class Encoder(nn.Module):
             x = self.layers[i](x, mask)
         return self.norm(x)
     
-def get_clones(module, N):
-    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
+def get_clones(module, n_layers):
+    return nn.ModuleList([copy.deepcopy(module) for i in range(n_layers)])

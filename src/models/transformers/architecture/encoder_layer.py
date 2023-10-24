@@ -8,12 +8,12 @@ from .feed_forward import FeedForward
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, d_model, heads, dropout = 0.1):
+    def __init__(self, emb_dim: int = 92, heads: int = 6, forward_dim: int = 2048, dropout = 0.1):
         super().__init__()
-        self.norm_1 = BatchNorm1d(d_model)
-        self.norm_2 = BatchNorm1d(d_model)
-        self.attn = MultiheadAttention(heads, d_model)
-        self.ff = FeedForward(d_model)
+        self.norm_1 = BatchNorm1d(emb_dim)
+        self.norm_2 = BatchNorm1d(emb_dim)
+        self.attn = MultiheadAttention(heads, emb_dim)
+        self.ff = FeedForward(emb_dim, forward_dim)
         self.dropout_1 = Dropout(dropout)
         self.dropout_2 = Dropout(dropout)
         

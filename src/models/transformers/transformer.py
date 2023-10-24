@@ -9,7 +9,7 @@ from src.models.transformers.trainers.base_trainer import Trainer
 from ...loss.loss import Loss
 from ..model import Model
 from ...optimizer.optimizer import Optimizer
-from .old_architecture.transformer_pooling_regression import PatchPoolTransformerEncoder
+from .architecture.encoder_config import EncoderConfig
 from typing import List
 from torch import nn
 from tqdm import tqdm
@@ -35,7 +35,7 @@ class PatchPoolEventRegressionTransformer(Model):
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_shape[1]
         self.transformer_config["channels"] = data_shape[0]
-        self.model = PatchPoolTransformerEncoder(
+        self.model = EncoderConfig(
             **self.transformer_config)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]

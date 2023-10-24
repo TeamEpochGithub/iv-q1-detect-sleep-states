@@ -6,12 +6,12 @@ import torch.nn.functional as F
 class FeedForward(nn.Module):
     """FeedForward block"""
 
-    def __init__(self, emb_dim: int, feat_dim: int = 2048, dropout: float = 0.1):
+    def __init__(self, emb_dim: int, forward_dim: int = 2048, dropout: float = 0.1):
         super().__init__()
-        self.layer1 = nn.Linear(emb_dim, feat_dim)
-        self.activation = nn.GELU()
+        self.layer1 = nn.Linear(emb_dim, forward_dim)
+        self.activation = F.gelu
         self.dropout = nn.Dropout(dropout)
-        self.layer2 = nn.Linear(feat_dim, emb_dim)
+        self.layer2 = nn.Linear(forward_dim, emb_dim)
 
         # below init from torchvision
         nn.init.xavier_uniform_(self.layer1.weight)

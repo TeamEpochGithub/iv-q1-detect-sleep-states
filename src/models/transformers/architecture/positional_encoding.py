@@ -80,12 +80,21 @@ class LearnablePositionalEncoding(nn.Module):
         x = x + self.pe[: x.size(0), :]
         return self.dropout(x)
 
+class OtherPositionalEncoding(nn.Module):
+    def __init__(self, l_c, emb_dim):
+        self.pos_emb = nn.Parameter(torch.randn(
+            [1, l_c, emb_dim]).normal_(std=0.02))
+        
+    def forward(self, x):
+        return self.pos_emb(x) + x
 
 def get_pos_encoder(pos_encoding: str) -> Type[nn.Module]:
     if pos_encoding == "learnable":
         return LearnablePositionalEncoding
     elif pos_encoding == "fixed":
         return FixedPositionalEncoding
+    elif pos_encoding == "other":
+        return OtherPositionalEncoding
 
     raise NotImplementedError(
         "pos_encoding should be 'learnable'/'fixed', not '{}'".format(

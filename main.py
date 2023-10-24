@@ -9,7 +9,7 @@ from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
-from src.score.doscoring import compute_scores, log_scores_to_wandb
+from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean, verify_submission
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -100,7 +100,6 @@ def main(config: ConfigLoader) -> None:
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
-    # TODO Add crossvalidation to models and hyperparameter optimization #107, #101
     for i, model in enumerate(models):
         # Get filename of model
         model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
@@ -110,9 +109,11 @@ def main(config: ConfigLoader) -> None:
             models[model].load(model_filename, only_hyperparameters=False)
         else:
             logger.info("Training model " + str(i) + ": " + model)
-            models[model].train(X_train, X_test, y_train, y_test)
+            # TODO Implement hyperparameter optimization #101
+            # It now only saves the model from the last fold
+            scores = cv.cross_validate(models[model], X_train, y_train)
             models[model].save(model_filename)
-            logger.info("Training model " + str(i) + ": " + model)
+            logger.info("Done training model " + str(i) + ": " + model + " with mean CV scores of " + str(scores))
 
     # Store optimal models
     for i, model in enumerate(models):
@@ -183,7 +184,8 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Start scoring test predictions...")
 
-        log_scores_to_wandb(**compute_scores(submission, solution))
+        verify_submission(submission)
+        log_scores_to_wandb(compute_score_full(submission, solution), compute_score_clean(submission, solution))
         # the plot function applies encoding to the submission
         # we do not want to change the ids on the original submission
         plot_submission = submission.copy()

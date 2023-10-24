@@ -1,32 +1,34 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GroupKFold, StratifiedGroupKFold, KFold
+from sklearn.model_selection import GroupKFold, StratifiedGroupKFold, GroupShuffleSplit, LeaveOneGroupOut
 
 from ..logger.logger import logger
 from ..models.model import Model
-from ..score.doscoring import compute_scores
+from ..score.compute_score import compute_score_full, compute_score_clean
 
-_SPLITTERS: dict[str | KFold] = {
-    "group_k_fold": GroupKFold,
+_SPLITTERS: dict[str] = {
+    "group-k-fold": GroupKFold,
+    "group_shuffle_split": GroupShuffleSplit,
+    "leave-one-group-out": LeaveOneGroupOut,
     "stratified_group_k_fold": StratifiedGroupKFold,
 }
 
 _SCORERS: dict[str, callable] = {
-    "score_full": lambda x, y: compute_scores(x, y)[0],
-    "score_clean": lambda x, y: compute_scores(x, y)[1],
+    "score_full": compute_score_full,
+    "score_clean": compute_score_clean,
 }
 
 
 def _get_scoring(scoring: str | callable | list[str | callable]) -> callable | list[callable]:
     match scoring:
+        case callable():
+            return scoring
         case str():
             try:
                 return _SCORERS[scoring]
             except KeyError:
                 logger.critical("Unknown scoring method %s", scoring)
                 raise CVException("Unknown scoring method %s", scoring)
-        case callable():
-            return scoring
         case list():
             return [_get_scoring(s) for s in scoring]
 
@@ -42,8 +44,8 @@ class CV:
         try:
             self.splitter = _SPLITTERS[splitter](**kwargs)
         except KeyError:
-            logger.critical("Unknown CV method %s", splitter)
-            raise CVException("Unknown CV method %s", splitter)
+            logger.critical("Unknown CV splitter %s", splitter)
+            raise CVException("Unknown CV splitter %s", splitter)
 
         self.scoring = _get_scoring(scoring)
 
@@ -61,7 +63,7 @@ class CV:
         :return: the average score
         """
         scores: list = []
-        for train_idx, test_idx in self.splitter.split(data, labels, self.data['series_id']):
+        for i, train_idx, test_idx in enumerate(self.splitter.split(data, labels, data['series_id'])):
             model.reset_optimizer()
 
             X_train, X_test = data.iloc[train_idx], data.iloc[test_idx]
@@ -75,7 +77,9 @@ class CV:
                 score = self.scoring(X_test, y_test)
             scores.append(score)
 
-        # TODO Check axes
+            logger.debug(f"Score of fold {i}: {score}")
+
+        # TODO Check axes in case of multiple scoring metrics
         return np.mean(scores)
 
 

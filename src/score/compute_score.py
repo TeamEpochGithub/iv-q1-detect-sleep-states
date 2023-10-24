@@ -2,15 +2,15 @@ import numpy as np
 import pandas as pd
 import wandb
 
-from src.logger.logger import logger
-from src.score.scoring import score
+from ..logger.logger import logger
+from .scoring import score
 
-tolerances = {
+_TOLERANCES = {
     'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
     'wakeup': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
 }
 
-column_names = {
+_COLUMN_NAMES = {
     'series_id_column_name': 'series_id',
     'time_column_name': 'step',
     'event_column_name': 'event',
@@ -18,21 +18,28 @@ column_names = {
 }
 
 
-class ScoringError(Exception):
-    pass
+def verify_submission(submission: pd.DataFrame) -> None:
+    """Verify that there are no consecutive onsets or wakeups
 
-
-# TODO Properly refactor this function
-def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame) -> (float, float):
-    # Verify that there are no consecutive onsets or wakeups
+    :param submission: the submission dataframe of shape (n_events, 5)
+    :raises ScoringException: if there are consecutive onsets or wakeups
+    """
     same_event = submission['event'] == submission['event'].shift(1)
     same_series = submission['series_id'] == submission['series_id'].shift(1)
     same = submission[same_event & same_series]
     if len(same) > 0:
         logger.critical(f'Submission contains {len(same)} consecutive equal events')
         logger.critical(same)
-        raise ScoringError('Submission contains consecutive equal events')
+        raise ScoringException('Submission contains consecutive equal events')
 
+
+def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
+    """Compute the score for the entire dataset
+
+    :param submission: the submission dataframe of shape (n_events, 5)
+    :param solution: the solution dataframe of shape (n_events, 5)
+    :return: the score for the entire dataset
+    """
     # Count the number of labelled series in the submission and solution
     submission_sids = submission['series_id'].unique()
     solution_not_all_nan = (solution
@@ -43,9 +50,19 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame) -> (float, 
     logger.debug(f'solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
-    score_full = score(solution, submission, tolerances, **column_names)
+    score_full = score(solution, submission, _TOLERANCES, **_COLUMN_NAMES)
     logger.info(f'Score for all {len(solution["series_id"].unique())} series: {score_full}')
 
+    return score_full
+
+
+def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
+    """Compute the score for the clean series
+
+    :param submission: the submission dataframe of shape (n_events, 5)
+    :param solution: the solution dataframe of shape (n_events, 5)
+    :return: the score for the clean series or NaN if there are no clean series
+    """
     # Filter on clean series (series with no nans in the solution)
     solution_no_nan = (solution
                        .groupby('series_id')
@@ -61,28 +78,37 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame) -> (float, 
         logger.info(f'No clean series to compute non-nan score with,'
                     f' submission has none of the {len(solution_no_nan_ids)} clean series')
     else:
-        score_clean = score(solution_no_nan, submission_filtered_no_nan, tolerances, **column_names)
+        score_clean = score(solution_no_nan, submission_filtered_no_nan, _TOLERANCES, **_COLUMN_NAMES)
         logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {score_clean}')
 
-    return score_full, score_clean
+    return score_clean
 
 
 def log_scores_to_wandb(score_full: float, score_clean: float) -> None:
-    """Log the scores to both console and wandb
+    """Log the scores to both console and wandb if logging to wandb
 
     :param score_full: the score for all series
     :param score_clean: the score for the clean series
     """
     if wandb.run is None:
-        wandb.log({'score': score_full})
-        if score_clean is not np.NaN:
-            wandb.log({'score_clean': score_clean})
+        return
+
+    wandb.log({'score': score_full})
+    if score_clean is not np.NaN:
+        wandb.log({'score_clean': score_clean})
+
+
+class ScoringException(Exception):
+    """Exception raised when the submission is not valid"""
+    pass
 
 
 if __name__ == '__main__':
     import coloredlogs
 
     coloredlogs.install()
+
     submission = pd.read_csv('./submission.csv')
     solution = pd.read_csv('./data/raw/train_events.csv')
-    log_scores_to_wandb(**compute_scores(submission, solution))
+    verify_submission(submission)
+    log_scores_to_wandb(compute_score_full(submission, solution), compute_score_clean(submission, solution))

@@ -282,12 +282,12 @@ class ConfigLoader:
 
         return hpo_class
 
-    def get_cv(self, data: pd.DataFrame, labels: pd.Series) -> CV:
+    def get_cv(self) -> CV:
         """Get the cross validation method from the config
 
         :return: the cross validation method
         """
-        return CV(data, labels, **self.config["cv"])
+        return CV(**self.config["cv"])
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

@@ -22,14 +22,14 @@ class TransformerPool(nn.Module):
     """
 
     def __init__(
-        self, heads: int = 8, emb_dim: int = 92, feat_dim: int = 2048,
-        layers: int = 6, patch_size: int = 36,
+        self, heads: int = 8, emb_dim: int = 92, forward_dim: int = 2048,
+        n_layers: int = 6, patch_size: int = 36,
         seq_len: int = 17280, num_class: int = 2, pooling: str = "none", tokenizer: str = "patch", tokenizer_args: dict = {},
         pe: str = "fixed", dropout: float = 0.1
     ) -> None:
         super(TransformerPool, self).__init__()
         self.encoder = EncoderConfig(
-            tokenizer, tokenizer_args, pe, emb_dim, feat_dim, layers, heads, patch_size)
+            tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads)
         if pooling == "none":
             self.seq_pool = NoPooling(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(

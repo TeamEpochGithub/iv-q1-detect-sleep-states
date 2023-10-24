@@ -35,8 +35,8 @@ class Transformer(Model):
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_shape[1]
         self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
-        self.model = TransformerPool(
-            **self.transformer_config)
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
 
@@ -109,9 +109,9 @@ class Transformer(Model):
         return {
             'heads': 12,
             'emb_dim': 92,
-            'feat_dim': 2048,
+            'forward_dim': 2048,
             'dropout': 0.1,
-            'layers': 12,
+            'n_layers': 12,
             'tokenizer_args': {'patch_size': 36, 'channels': 2},
             'seq_len': 17280,
             'num_class': 2,
@@ -322,7 +322,7 @@ class Transformer(Model):
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
 
 
-## Custom adam optimizer
+# Custom adam optimizer
 # Create custom adam optimizer
         # # save layer names
         # layer_names = []

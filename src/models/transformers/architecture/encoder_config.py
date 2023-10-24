@@ -12,17 +12,13 @@ class EncoderConfig(nn.Module):
         self.model = Encoder(self.tokenizer, self.pe,
                              emb_dim, forward_dim, n_layers, heads)
 
-    def forward(self, src, mask):
-        x = self.tokenizer(src)
-        x = self.pe(x)
-        for i in range(self.N):
-            x = self.layers[i](x, mask)
-        return self.norm(x)
+    def forward(self, x):
+        return self.model(x)
 
 
 def get_tokenizer(tokenizer, emb_dim, tokenizer_args={}):
     if tokenizer == "patch":
-        return PatchTokenizer(emb_dim, **tokenizer_args)
+        return PatchTokenizer(emb_dim=emb_dim, **tokenizer_args)
     elif tokenizer == "unet_encoder":
         return ConvTokenizer(emb_dim=emb_dim, **tokenizer_args)
     elif tokenizer == "simple_conv":

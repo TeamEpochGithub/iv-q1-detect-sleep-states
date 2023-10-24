@@ -21,7 +21,7 @@ class Encoder(nn.Module):
             )
         self.encoder_stack = nn.Sequential(*encoders)
         self.norm = BatchNorm1d(emb_dim)
-    def forward(self, src, mask):
+    def forward(self, src):
         x = self.tokenizer(src)
         x = self.pe(x)
         x = self.encoder_stack(x)

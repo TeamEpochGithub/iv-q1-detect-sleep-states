@@ -21,7 +21,7 @@ class PatchTokenizer(nn.Module):
 
         bs, c, l = x.shape  # (bs, c, l)
         torch._assert(
-            self.seq_len % self.patch_size == 0, 
+            l % self.patch_size == 0, 
             "Sequence not disivible by patch_size"
         )
 
@@ -29,7 +29,7 @@ class PatchTokenizer(nn.Module):
         # (bs, c, no_of_patches, patch_l) -> (bs, no_of_patches, c, patch_l)
         x = x.view(bs, c, l // self.patch_size, self.patch_size).permute(0, 2, 1, 3)
         # (bs, no_of_patches, c*seq_len)
-        x = x.reshape(bs, self.seq_len // self.patch_size, c*self.patch_size)
+        x = x.reshape(bs, l // self.patch_size, c*self.patch_size)
 
         # linear projection to embedding dimension
         x = self.linear_projection(x)

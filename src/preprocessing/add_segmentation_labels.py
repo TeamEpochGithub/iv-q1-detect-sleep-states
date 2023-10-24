@@ -12,6 +12,10 @@ class AddSegmentationLabels(PP):
         """Initialize the AddSegmentationLabels class"""
         super().__init__(**kwargs | {"kind": "add_segmentation_labels"})
 
+    def __repr__(self) -> str:
+        """Return a string representation of a AddSegmentationLabels object"""
+        return f"{self.__class__.__name__}()"
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Adds the segmentation labels to the data.
 

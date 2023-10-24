@@ -37,6 +37,8 @@ class Transformer(Model):
         self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
+        self.transformer_config = self.load_transformer_config(config).copy()
+        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
 

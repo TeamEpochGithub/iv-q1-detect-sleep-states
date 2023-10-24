@@ -25,8 +25,6 @@ class PatchTokenizer(nn.Module):
         :param x: Input tensor (bs, l, c).
         :return: Output tensor (bs, l_c, e).
         """
-        x = x.permute(0, 2, 1)
-
         bs, c, len = x.shape  # (bs, c, l)
         torch._assert(
             len % self.patch_size == 0,

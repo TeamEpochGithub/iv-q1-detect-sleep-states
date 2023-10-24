@@ -45,7 +45,6 @@ class TestDownsampler(TestCase):
         self.assertEqual(dummy_df_downsampled['y_sum'].values.tolist(), [3, 7, 11, 15])
         self.assertEqual(dummy_df_downsampled['z_sum'].values.tolist(), [3, 7, 11, 15])
 
-    pass
 
     def test_downsamplerY(self):
         """

@@ -12,6 +12,8 @@ from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from .architectures.simple_GRU import SimpleGRU
+from ..util.state_to_event import find_events, one_hot_to_state
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class SimpleGRUModel(Model):
@@ -214,7 +216,7 @@ class SimpleGRUModel(Model):
         X_train = torch.from_numpy(X_train)
 
         # Flatten y_train and y_test so we only get the regression labels
-        y_train = y_train[:, 0, 1]
+        y_train = y_train[:, :, -3:]
         y_train = torch.from_numpy(y_train)
 
         # Create a dataset from X and y
@@ -232,9 +234,10 @@ class SimpleGRUModel(Model):
         self.model.to(self.device)
 
         # Define wandb metrics
-        wandb.define_metric("epoch")
-        wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-        wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+        if wandb.run is not None:
+            wandb.define_metric("epoch")
+            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
         avg_losses = []
         # Train the model
@@ -252,7 +255,7 @@ class SimpleGRUModel(Model):
 
                 # Forward pass
                 outputs = self.model(x)
-                loss = criterion(outputs.squeeze(), y)
+                loss = criterion(outputs, y.permute(0, 2, 1))
 
                 # Backward and optimize
                 loss.backward()
@@ -288,30 +291,44 @@ class SimpleGRUModel(Model):
             device = torch.device("cuda")
 
         self.model.to(device)
-        # Convert data to tensor
-        data = torch.from_numpy(data).to(device)
 
         # Print data shape
-        logger.info(f"--- Data shape of predictions: {data.shape}")
+        logger.info(f"--- Data shape of predictions dataset: {data.shape}")
 
-        # Make a prediction
-        prediction = None
+        # Create a DataLoader for batched inference
+        dataset = TensorDataset(torch.from_numpy(data))
+        dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+
+        predictions = []
+
         with torch.no_grad():
-            # make predcitions in batches
-            for sample in data:
-                if prediction is None:
-                    prediction = self.model(sample.unsqueeze(0))
+            for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
+                batch_data = batch_data[0].to(device)
+
+                # Make a batch prediction
+                batch_prediction = self.model(batch_data)
+
+                if with_cpu:
+                    batch_prediction = batch_prediction.numpy()
                 else:
-                    prediction = torch.cat([prediction, self.model(sample.unsqueeze(0))])
+                    batch_prediction = batch_prediction.cpu().numpy()
 
-        if with_cpu:
-            prediction = prediction.numpy()
-        else:
-            prediction = prediction.cpu().numpy()
+                predictions.append(batch_prediction)
 
-        logger.info(f"--- Done making predictions with model {self.name}")
+        # Concatenate the predictions from all batches
+        predictions = np.concatenate(predictions, axis=0)
 
-        return np.array(prediction).T
+        all_predictions = []
+
+        # Convert to events
+        for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+            # Convert to relative window event timestamps
+            pred = one_hot_to_state(pred)
+            events = find_events(pred, median_filter_size=15)
+            all_predictions.append(events)
+
+        # Return numpy array
+        return np.array(all_predictions)
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

@@ -16,6 +16,10 @@ class RemoveUnlabeled(PP):
         """Initialize the RemoveUnlabeled class"""
         super().__init__(**kwargs | {"kind": "remove_unlabeled"})
 
+    def __repr__(self) -> str:
+        """Return a string representation of a RemoveUnlabeled object"""
+        return f"{self.__class__.__name__}()"
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Removes all the data points where there is no labeled data
 

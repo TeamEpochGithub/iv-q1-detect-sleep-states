@@ -13,16 +13,12 @@ class Rotation(FE):
 
         :param window_sizes: the window sizes to use for the rolling window
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs | {"kind": "rotation"})
 
         if window_sizes is None:
             self.window_sizes = [100]
         else:
             self.window_sizes = window_sizes
-
-    def __str__(self) -> str:
-        """Return the name of the class as a string"""
-        return f"{self.__class__.__name__}"
 
     def __repr__(self) -> str:
         """Return a string representation of a Rotation object"""

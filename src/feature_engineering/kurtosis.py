@@ -10,11 +10,7 @@ class Kurtosis(RollingWindow):
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize the Kurtosis class"""
-        super().__init__(**kwargs)
-
-    def __str__(self) -> str:
-        """Return the name of the class as a string"""
-        return f"{self.__class__.__name__}"
+        super().__init__(**kwargs | {"kind": "kurtosis"})
 
     def __repr__(self) -> str:
         """Return a string representation of a Kurtosis object"""

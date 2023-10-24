@@ -19,7 +19,7 @@ class TestFE(TestCase):
             FE.from_config_single({"kind": "skewness", "window_sizes": [5, 10], "features": ["anglez", "enmo"]}),
             Skewness)
         self.assertIsInstance(
-            FE.from_config_single({"kind": "time", "day": True, "hour": True, "minute": True, "second": True}), Time)
+            FE.from_config_single({"kind": "time", "time_features": ["day", "hour", "minute", "second"]}), Time)
         self.assertIsInstance(FE.from_config_single({"kind": "rotation"}), Rotation)
         self.assertRaises(FEException, FE.from_config_single, {"kind": "e"})
 
@@ -43,10 +43,7 @@ class TestFE(TestCase):
                 },
                 {
                     "kind": "time",
-                    "day": True,
-                    "hour": True,
-                    "minute": True,
-                    "second": True
+                    "time_features": ["day", "hour", "minute", "second"]
                 },
                 {
                     "kind": "rotation",
@@ -68,9 +65,6 @@ class TestFE(TestCase):
         self.assertListEqual(fe_steps[2].window_sizes, [5, 10])
         self.assertListEqual(fe_steps[2].features, ["anglez", "enmo"])
         self.assertIsInstance(fe_steps[3], Time)
-        self.assertTrue(fe_steps[3].day)
-        self.assertTrue(fe_steps[3].hour)
-        self.assertTrue(fe_steps[3].minute)
-        self.assertTrue(fe_steps[3].second)
+        self.assertListEqual(fe_steps[3].time_features, ["day", "hour", "minute", "second"])
         self.assertIsInstance(fe_steps[4], Rotation)
         self.assertListEqual(fe_steps[4].window_sizes, [100])

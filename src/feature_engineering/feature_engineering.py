@@ -26,27 +26,27 @@ class FE:
         :param config: the config of a single feature engineering step
         :return: the specific feature engineering step
         """
+        from .kurtosis import Kurtosis
+        from .mean import Mean
+        from .skewness import Skewness
+        from .time import Time
+        from .rotation import Rotation
+
+        _FEATURE_ENGINEERING_STEPS: dict[str, type[FE]] = {
+            "kurtosis": Kurtosis,
+            "mean": Mean,
+            "skewness": Skewness,
+            "time": Time,
+            "rotation": Rotation
+        }
+
         kind: str = config["kind"]
 
-        match kind:
-            case "kurtosis":
-                from .kurtosis import Kurtosis
-                return Kurtosis(**config)
-            case "mean":
-                from .mean import Mean
-                return Mean(**config)
-            case "skewness":
-                from .skewness import Skewness
-                return Skewness(**config)
-            case "time":
-                from .time import Time
-                return Time(**config)
-            case "rotation":
-                from .rotation import Rotation
-                return Rotation(**config)
-            case _:
-                logger.critical(f"Unknown feature engineering step: {kind}")
-                raise FEException(f"Unknown feature engineering step: {kind}")
+        try:
+            return _FEATURE_ENGINEERING_STEPS[kind](**config)
+        except KeyError:
+            logger.critical(f"Unknown feature engineering step: {kind}")
+            raise FEException(f"Unknown feature engineering step: {kind}")
 
     @staticmethod
     def from_config(config_list: list[dict]) -> list[FE]:

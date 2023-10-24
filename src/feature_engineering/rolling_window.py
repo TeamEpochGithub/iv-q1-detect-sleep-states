@@ -7,7 +7,7 @@ from ..logger.logger import logger
 class RollingWindow(FE):
     """Base class for features that need a rolling window.
 
-    # TODO Describe this class, I don't know what this does
+    # TODO Describe this class
     """
 
     def __init__(self, window_sizes: list[int], features: list[str], **kwargs: dict) -> None:
@@ -17,8 +17,8 @@ class RollingWindow(FE):
         :param window_sizes: ???
         :param features: ???
         """
-
         super().__init__(**kwargs)
+
         self.window_sizes = window_sizes
         self.window_sizes.sort()
         self.features = features

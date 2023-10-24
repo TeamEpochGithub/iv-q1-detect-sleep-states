@@ -244,7 +244,7 @@ class ConfigLoader:
                 case "seg-simple-1d-cnn":
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
                 case "transformer":
-                    curr_model = Transformer(model_config, model_name)
+                    curr_model = Transformer(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

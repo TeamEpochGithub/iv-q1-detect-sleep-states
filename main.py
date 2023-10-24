@@ -221,7 +221,7 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config = ConfigLoader("configs/patch_pool.json")
+    config = ConfigLoader("configs/new_transformer.json")
 
     # Run main
     main(config)

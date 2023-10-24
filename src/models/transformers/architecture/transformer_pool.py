@@ -1,10 +1,7 @@
 from torch import nn, Tensor
-import torch
 
 # Base imports
-from ..base.encoder_block import TransformerEncoderBlock
 from .pooling import SeqPool, LSTMPooling, NoPooling
-from src.logger.logger import logger
 from .encoder_config import EncoderConfig
 
 
@@ -25,16 +22,18 @@ class TransformerPool(nn.Module):
     """
 
     def __init__(
-        self, heads: int = 8, emb_dim: int = 92, feat_dim: int = 2048, 
-        layers: int = 6, patch_size: int = 36, 
+        self, heads: int = 8, emb_dim: int = 92, feat_dim: int = 2048,
+        layers: int = 6, patch_size: int = 36,
         seq_len: int = 17280, num_class: int = 2, pooling: str = "none", tokenizer: str = "patch", tokenizer_args: dict = {},
-        pe: str = "fixed"
+        pe: str = "fixed", dropout: float = 0.1
     ) -> None:
         super(TransformerPool, self).__init__()
-        self.encoder = EncoderConfig(tokenizer, tokenizer_args, pe, emb_dim, feat_dim, layers, heads, patch_size)
+        self.encoder = EncoderConfig(
+            tokenizer, tokenizer_args, pe, emb_dim, feat_dim, layers, heads, patch_size)
         if pooling == "none":
             self.seq_pool = NoPooling(emb_dim=emb_dim)
-            self.mlp_head = nn.Linear((seq_len // patch_size) * emb_dim, num_class)
+            self.mlp_head = nn.Linear(
+                (seq_len // patch_size) * emb_dim, num_class)
         if pooling == "lstm":
             self.seq_pool = LSTMPooling(emb_dim=emb_dim)
             self.mlp_head = nn.Linear((seq_len // patch_size), num_class)

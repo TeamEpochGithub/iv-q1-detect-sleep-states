@@ -34,7 +34,7 @@ class Transformer(Model):
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_shape[1]
-        self.transformer_config["channels"] = data_shape[0]
+        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.model = TransformerPool(
             **self.transformer_config)
         self.load_config(**config)
@@ -108,12 +108,11 @@ class Transformer(Model):
         """
         return {
             'heads': 12,
-            'emb_dim': 768,
-            'feat_dim': 3072,
+            'emb_dim': 92,
+            'feat_dim': 2048,
             'dropout': 0.1,
             'layers': 12,
-            'patch_size': 36,
-            'channels': 2,
+            'tokenizer_args': {'patch_size': 36, 'channels': 2},
             'seq_len': 17280,
             'num_class': 2,
             'pooling': 'none'

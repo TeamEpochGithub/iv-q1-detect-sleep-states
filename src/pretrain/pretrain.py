@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
 
 from .downsampler import Downsampler
+from ..logger.logger import logger
 from ..scaler.scaler import Scaler
 
 
@@ -16,7 +17,8 @@ class Pretrain:
     and convert the data to a numpy array.
     """
 
-    def __init__(self, scaler: Scaler, downsampler: Downsampler, remove_features: list, test_size: float):
+    def __init__(self, window_size: int, scaler: Scaler, downsampler: Downsampler, test_size: float):
+
         """Initialize the pretrain object
 
         :param scaler: the scaler to use
@@ -25,8 +27,8 @@ class Pretrain:
         :param test_size: the size of the test set
         """
         self.scaler = scaler
+        self.window_size = window_size
         self.downsampler = downsampler
-        self.remove_features = remove_features
         self.test_size = test_size
 
     @staticmethod
@@ -41,11 +43,12 @@ class Pretrain:
         if config.get("downsample") is not None:
             downsampler = Downsampler(**config['downsample'])
 
-        remove_features = config.get("remove_features")
+        window_size = config["window_size"]
+        # Instantiate scaler object from config
         scaler = Scaler(**config['scaler'])
         test_size = config["test_size"]
 
-        return Pretrain(scaler, downsampler, remove_features, test_size)
+        return Pretrain(window_size, scaler, downsampler, test_size)
 
     def pretrain_split(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
@@ -62,31 +65,24 @@ class Pretrain:
         X_train, y_train = self.split_on_labels(train_data)
         X_test, y_test = self.split_on_labels(test_data)
 
-        #Apply downsampling
+        # Apply downsampling
         if self.downsampler is not None:
+            logger.info("Downsampling data with factor %s", str(self.downsampler.factor))
+            self.window_size = self.window_size // self.downsampler.factor
             X_train = self.downsampler.downsampleX(X_train)
             X_test = self.downsampler.downsampleX(X_test)
             y_train = self.downsampler.downsampleY(y_train)
             y_test = self.downsampler.downsampleY(y_test)
-
-        #Remove features
-        if self.remove_features is not None:
-            X_train = X_train.drop(columns=self.remove_features)
-            X_test = X_test.drop(columns=self.remove_features)
-
 
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
         X_test = self.scaler.transform(X_test).astype(np.float32)
         y_train = y_train.to_numpy(dtype=np.float32)
         y_test = y_test.to_numpy(dtype=np.float32)
 
-        #Get the window size from the data (group by window feature and get the size of the first group)
-        window_size = X_train.groupby("window").size().iloc[0]
-
-        X_train = self.to_windows(X_train, window_size)
-        X_test = self.to_windows(X_test, window_size)
-        y_train = self.to_windows(y_train, window_size)
-        y_test = self.to_windows(y_test, window_size)
+        X_train = self.to_windows(X_train, self.window_size)
+        X_test = self.to_windows(X_test, self.window_size)
+        y_train = self.to_windows(y_train, self.window_size)
+        y_test = self.to_windows(y_test, self.window_size)
 
         return X_train, X_test, y_train, y_test, train_idx, test_idx
 
@@ -100,28 +96,22 @@ class Pretrain:
         :return: the train data, test data, train labels, test labels, train indices and test indices
         """
 
+        # Get the window size from the data (group by window feature and get the size of the first group)
+
         X_train, y_train = self.split_on_labels(df)
 
-        #Apply downsampling
+        # Apply downsampling
         if self.downsampler is not None:
+            logger.info("Downsampling data with factor %s", str(self.downsampler.factor))
             X_train = self.downsampler.downsampleX(X_train)
             y_train = self.downsampler.downsampleY(y_train)
 
-        #Remove features
-        if self.remove_features is not None:
-            X_train = X_train.drop(columns=self.remove_features)
-
-
-        #Apply scaler
+        # Apply scaler
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
         y_train = y_train.to_numpy(dtype=np.float32)
 
-
-        #Get the window size from the data (group by window feature and get the size of the first group)
-        window_size = X_train.groupby("window").size().iloc[0]
-
-        X_train = self.to_windows(X_train, window_size)
-        y_train = self.to_windows(y_train, window_size)
+        X_train = self.to_windows(X_train, self.window_size)
+        y_train = self.to_windows(y_train, self.window_size)
 
         return X_train, y_train
 
@@ -135,7 +125,7 @@ class Pretrain:
         """
         x_data = self.get_features(x_data)
         x_data = self.scaler.transform(x_data).astype(np.float32)
-        return self.to_windows(x_data)
+        return self.to_windows(x_data, 17280)
 
     @staticmethod
     def train_test_split(df: pd.DataFrame, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
@@ -171,7 +161,7 @@ class Pretrain:
         :param df: the dataframe to split
         :return: the data + features (1) and labels (2)
         """
-        #Rename enmo and anglez to f_enmo and f_anglez
+        # Rename enmo and anglez to f_enmo and f_anglez
         df = df.rename(columns={"enmo": "f_enmo", "anglez": "f_anglez"})
         feature_cols = [col for col in df.columns if col.startswith('f_')]
 

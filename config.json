@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -32,28 +32,27 @@
     "feature_engineering": {
     },
     "pretraining": {
+        "window_size": 17280,
+        "test_size": 0.2,
         "downsample": {
             "factor": 12,
-            "features": ["f_anglez", "f_enmo"],
+            "features": ["f_enmo", "f_anglez"],
             "methods": ["min", "max", "mean", "std", "median", "var"],
             "standard": "mean"
         },
-        "remove_features": ["f_anglez", "f_enmo"],
-        "test_size": 0.2,
         "scaler": {
-            "kind": "standard-scaler",
-            "copy": true
+            "kind": "minmax-scaler"
         }
     },
     "models": {
         "1D-Unet-CNN": {
             "type": "seg-unet-1d-cnn",
             "loss": "bce-torch",
-            "optimizer": "adam-torch",
-            "epochs": 3,
-            "batch_size": 32,
+            "optimizer": "rmsprop-torch",
+            "epochs": 50,
+            "batch_size": 64,
             "lr": 0.0005,
-            "hidden_layers": 8,
+            "hidden_layers": 16,
             "early_stopping": 7
         }
     },

@@ -34,14 +34,16 @@ class Downsampler:
     def downsampleY(self, y: pd.DataFrame) -> pd.DataFrame:
         """
         Downsample the y data that contains the labels and always use median for this, since it works best.
-        :param y: the y data to downsample
-        :return: the downsampled y data
+        :param y: the y data to downsample with dim (total_steps, label columns)
+        :return: the downsampled y data (total_steps/factor, label columns)
         """
 
         y_names = y.columns
 
         # Convert to numpy array
         y = y.to_numpy()
+
+        logger.info("Shape of y before downsampling: " + str(y.shape))
 
         # Check if the data can be downsampled and see if it is divisible by the factor
         if y.shape[0] % self.factor != 0:
@@ -50,7 +52,7 @@ class Downsampler:
 
         Y_new = []
 
-        for i in self.y.shape[1]:
+        for i in range(y.shape[1]):
             y_downsampled = np.median(y[:, i].reshape(-1, self.factor), axis=1)
             Y_new.append(y_downsampled)
 
@@ -63,8 +65,8 @@ class Downsampler:
     def downsampleX(self, X: pd.DataFrame) -> pd.DataFrame:
         """Downsample the X data that contains the features
 
-        :param X: the X data to downsample
-        :return: the downsampled X data
+        :param X: the X data to downsample with shape (total_steps, features)
+        :return: the downsampled X data (total_steps/factor, features)
         """
 
         # Get integers for the features and check if they are in X
@@ -74,6 +76,8 @@ class Downsampler:
                 logger.critical("Feature %s not in X", feature)
                 raise Exception("Feature " + feature + " not in X")
             features_iloc.append(X.columns.get_loc(feature))
+
+        X_names = X.columns
 
         # Convert to numpy array
         X = X.to_numpy()
@@ -94,8 +98,8 @@ class Downsampler:
                 try:
                     f_downsampled = _METHODS[method](X[:, i].reshape(-1, self.factor), axis=1)
                     new_X.append(f_downsampled)
-                    new_X_names.append(X.columns[i] + "_" + method)
-                except:
+                    new_X_names.append(X_names[i] + "_" + method)
+                except Exception:
                     logger.critical("Unknown downsampling method %s", method)
                     raise Exception("Unknown downsampling method " + method)
 
@@ -105,8 +109,8 @@ class Downsampler:
                 try:
                     f_downsampled = _METHODS[method](X[:, i].reshape(-1, self.factor), axis=1)
                     new_X.append(f_downsampled)
-                    new_X_names.append(X.columns[i] + "_" + method)
-                except:
+                    new_X_names.append(X_names[i] + "_" + method)
+                except Exception:
                     logger.critical("Unknown downsampling method %s", self.standard)
                     raise Exception("Unknown downsampling method " + self.standard)
 

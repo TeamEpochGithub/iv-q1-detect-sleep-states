@@ -73,29 +73,38 @@ class SegUnet1D(nn.Module):
     SegUnetId model. Contains the architecture of the SegUnetId model.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, config: dict):
+    def __init__(self, in_channels: int, window_size: int, out_channels: int, config: dict):
         super(SegUnet1D, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.hidden_layers = config["hidden_layers"]
         self.kernel_size = config["kernel_size"]
         self.depth = config["depth"]
+        self.window_size = window_size
 
-        self.AvgPool1D1 = nn.AvgPool1d(kernel_size=5, stride=4, padding=1)
-        self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=16, padding=1)
-        self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=64, padding=1)
+        self.stride = 4
+        self.padding = 1
+
+        # If we downsample by 12 (17280/12), we need to have a stride of 2.
+        # TODO Make this work for multiple window sizes
+        if self.window_size == 1440:
+            self.stride = 2
+            self.padding = 2
+        self.AvgPool1D1 = nn.AvgPool1d(kernel_size=5, stride=self.stride, padding=self.padding)
+        self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=self.stride * self.stride, padding=self.padding)
+        self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=self.stride * self.stride * self.stride, padding=self.padding)
 
         self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, 2)
-        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, 4, 2)
-        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, 4, 2)
-        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, 4, 2)
-        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, 4, 2)
+        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, 2)
+        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, self.stride, 2)
+        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, self.stride, 2)
+        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, self.stride, 2)
 
         self.cbr_up1 = ConBrBlock(int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
         self.cbr_up2 = ConBrBlock(int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
         self.cbr_up3 = ConBrBlock(int(self.hidden_layers * 3), self.hidden_layers, self.kernel_size, 1, 1)
-        self.upsample = nn.Upsample(scale_factor=4, mode='nearest')
-        self.upsample1 = nn.Upsample(scale_factor=4, mode='nearest')
+        self.upsample = nn.Upsample(scale_factor=self.stride, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=self.stride, mode='nearest')
         self.softmax = nn.Softmax(dim=1)
         self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
 

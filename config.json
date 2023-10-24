@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -33,7 +33,7 @@
     "pretraining": {
         "test_size": 0.2,
         "scaler":{
-            "kind": "standard-scaler"
+            "kind": "none"
         }
     },
     "models": {
@@ -41,11 +41,11 @@
             "type": "seg-unet-1d-cnn",
             "loss": "bce-torch",
             "optimizer": "adam-torch",
-            "epochs": 50,
+            "epochs": 3,
             "batch_size": 32,
             "lr": 0.0005,
             "hidden_layers": 8,
-            "early_stopping": 5
+            "early_stopping": 7
         }
     },
     "model_store_loc": "tm",
@@ -65,6 +65,13 @@
         "scoring": "score_full",
         "k_folds": 5
     },
-    "train_for_submission":true,
-    "scoring": true
+    "scoring": true,
+    "train_for_submission": true,
+    "visualize_preds": {
+        "n": 5,
+        "browser_plot": false,
+        "save": true
+    }
+
+
 }

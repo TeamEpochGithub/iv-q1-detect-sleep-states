@@ -9,7 +9,7 @@ from src.models.transformers.trainers.base_trainer import Trainer
 from ...loss.loss import Loss
 from ..model import Model
 from ...optimizer.optimizer import Optimizer
-from .architecture.transformer_convolutional import ConvolutionalTransformerEncoder
+from .old_architecture.transformer_convolutional import ConvolutionalTransformerEncoder
 from typing import List
 from torch import nn
 from tqdm import tqdm

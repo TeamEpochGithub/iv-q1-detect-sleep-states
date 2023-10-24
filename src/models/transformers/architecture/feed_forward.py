@@ -1,11 +1,12 @@
 from torch import nn
 import torch
+import torch.nn.functional as F
 
 
-class MLP(nn.Module):
-    """MLP block"""
+class FeedForward(nn.Module):
+    """FeedForward block"""
 
-    def __init__(self, emb_dim: int, feat_dim: int, dropout: float = 0):
+    def __init__(self, emb_dim: int, feat_dim: int = 2048, dropout: float = 0.1):
         super().__init__()
         self.layer1 = nn.Linear(emb_dim, feat_dim)
         self.activation = nn.GELU()
@@ -23,5 +24,4 @@ class MLP(nn.Module):
         x = self.activation(x)
         x = self.dropout(x)
         x = self.layer2(x)
-        x = self.dropout(x)
         return x

@@ -9,7 +9,7 @@ from ..logger.logger import logger
 class Ensemble:
 
     # Init function
-    def __init__(self, models=None, weight_matrix=None, combination_method="addition"):
+    def __init__(self, models=None, weight_matrix=None, combination_method="addition", config=None):
         if models is None:
             self.models = []
         else:
@@ -19,6 +19,8 @@ class Ensemble:
             self.weight_matrix = np.ones(len(self.models))
         else:
             self.weight_matrix = weight_matrix
+
+        self.config = config
 
     def pred(self, data: np.ndarray, pred_cpu: bool) -> np.ndarray:
         """

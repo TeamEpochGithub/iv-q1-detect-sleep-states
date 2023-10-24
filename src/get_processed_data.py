@@ -17,7 +17,7 @@ def log_memory():
 
 
 def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
-    # TODO Refactor pretrain and use the a hash of the string representations of each PP and FE step
+    # TODO Use the a hash of the string representations of each PP and FE step
     pp_steps: list[PP] = config.get_pp_steps(training=training)
     pp_step_names: list[str] = [pp_step.kind for pp_step in pp_steps]
 

@@ -13,12 +13,11 @@ List of options and their config options:
     - `window_sizes` > 3
     - `features`: Any existing numerical features
 - `time`
-    - `day`: true | false (opt)
-    - `hour`: true | false (opt)
-    - `minute`: true | false (opt)
-    - `second`: true | false (opt)
+    - `time_features`: a list of time features to include
+      - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
+
 
 Example:
 ```JSON
@@ -44,10 +43,7 @@ Example:
         },
         {
             "kind": "time",
-            "day": true,
-            "hour": true,
-            "minute": false,
-            "second": false        
+            "time_features": ["day", "hour", "minute", "second"]    
         }
-],
+]
 ```

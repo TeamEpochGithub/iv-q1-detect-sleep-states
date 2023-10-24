@@ -1,10 +1,15 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "model_store_loc": "tm",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -24,16 +29,19 @@
             "events_path": "data/raw/train_events.csv"
         }
     ],
-    "processed_loc_out": "data/processed",
-    "processed_loc_in": "data/raw",
     "feature_engineering": {
     },
-    "fe_loc_out": "data/features",
-    "fe_loc_in": "data/processed",
     "pretraining": {
+        "window_size": 17280,
         "test_size": 0.2,
-        "scaler":{
-            "kind": "none"
+        "downsample": {
+            "factor": 12,
+            "features": ["f_enmo", "f_anglez"],
+            "methods": ["min", "max", "mean", "std", "median", "var"],
+            "standard": "mean"
+        },
+        "scaler": {
+            "kind": "minmax-scaler"
         }
     },
     "models": {
@@ -44,7 +52,6 @@
             "use_nan_similarity": true
         }
     },
-    "model_store_loc": "tm",
     "ensemble": {
         "models": ["Classic-baseline"],
         "weights": [1],

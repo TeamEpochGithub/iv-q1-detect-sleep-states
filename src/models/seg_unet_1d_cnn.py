@@ -25,7 +25,7 @@ class SegmentationUnet1DCNN(Model):
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data (input/output shape, features)
+        :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -43,7 +43,7 @@ class SegmentationUnet1DCNN(Model):
 
         # Load config and model
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=data_shape[0], out_channels=3, config=self.config)
+        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=3, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
@@ -372,6 +372,11 @@ class SegmentationUnet1DCNN(Model):
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
+        # Apply upsampling to the predictions
+        downsampling_factor = 17280 // self.data_shape[1]
+        if downsampling_factor > 1:
+            predictions = np.repeat(predictions, downsampling_factor, axis=2)
+
         all_predictions = []
 
         # Convert to events
@@ -422,7 +427,7 @@ class SegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], out_channels=3, config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=3, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

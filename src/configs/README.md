@@ -170,10 +170,8 @@ List of options:
 - `downsample`: Downsamples all features
     - `factor`: downsampling factor
     - `features`: Any existing numerical features
-    - `methods`: ["min", "max", "mean", "std", "median"]
-    - `standard`: "mean" | "median"
-- `remove_features`
-    - `features`: Any existing numerical features
+    - `methods`: ["min", "max", "mean", "std", "median", "var", "sum"]
+    - `standard`: "min" | "max" | "mean" | "std" | "median" | "var" | "sum"
 - `test_size` ∈ [0, 1]: percentage of data to be used for testing.
 - `scaler`: method used for standardization. See [Scalers](../scaler/README.md) for more info.
 
@@ -186,7 +184,6 @@ Example:
         "methods": ["min", "max", "mean", "std", "median"],
         "standard": "mean"
     },
-    "remove_features": ["anglez", "enmo"],
     "test_size": 0.2,
     "scaler": {
         "kind": "standard-scaler",

@@ -20,12 +20,7 @@ from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
 from ..models.transformers.event_regression_transformer import EventRegressionTransformer
 from ..preprocessing.pp import PP
-from ..preprocessing.remove_unlabeled import RemoveUnlabeled
-from ..preprocessing.similarity_nan import SimilarityNan
-from ..preprocessing.split_windows import SplitWindows
-from ..preprocessing.truncate import Truncate
 from ..pretrain.pretrain import Pretrain
-
 
 
 class ConfigLoader:
@@ -85,7 +80,6 @@ class ConfigLoader:
         :return: the preprocessing steps and their names
         """
         return PP.from_config(self.config["preprocessing"], training)
-
 
     def get_pp_out(self) -> str:
         """Get the path to the preprocessing output folder

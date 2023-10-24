@@ -42,4 +42,3 @@ def similarity_nan(series):
     # add the diff to the series as a column of float32
     series['f_similarity_nan'] = diff[:len(feature_np)].astype(np.float32)
     return series
-

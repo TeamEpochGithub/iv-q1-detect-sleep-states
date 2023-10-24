@@ -29,4 +29,3 @@ class SimilarityTest(TestCase):
             np.zeros(STEPS_PER_DAY - 1000)])
 
         self.assertTrue((expected == df['f_similarity_nan']).all())
-

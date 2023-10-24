@@ -8,7 +8,7 @@ from src.pretrain.pretrain import Pretrain
 
 class TestPretrain(TestCase):
     def test_from_config(self):
-        pretrain: Pretrain = Pretrain.from_config({"test_size": 0.5, "scaler": {
+        pretrain: Pretrain = Pretrain.from_config({"window_size": 17280, "test_size": 0.5, "scaler": {
             "kind": "standard-scaler",
             "copy": True
         }})
@@ -17,11 +17,12 @@ class TestPretrain(TestCase):
         self.assertTrue(pretrain.scaler.scaler.copy)
 
     def test_pretrain(self):
-        pretrain: Pretrain = Pretrain.from_config({"test_size": 0.25, "scaler": {"kind": "standard-scaler"}})
+        pretrain: Pretrain = Pretrain.from_config({"window_size": 17280, "test_size": 0.25, "scaler": {"kind": "standard-scaler"}})
 
         df: pd.DataFrame = pd.DataFrame({"series_id": np.concatenate(
             (np.repeat(0, 34560), np.repeat(1, 34560), np.repeat(2, 34560), np.repeat(3, 34560))),
             "enmo": np.random.rand(138240) * 2 + 1,
+            "window": np.random.rand(138240) * 2 + 1,
             "anglez": np.random.rand(138240) * 2 + 1,
             "awake": np.random.rand(138240) * 2 + 1,
             "f_test": np.random.rand(138240) * 2 + 1})
@@ -46,7 +47,7 @@ class TestPretrain(TestCase):
             self.assertAlmostEqual(1, flat.std(), delta=0.1)
 
     def test_preprocess(self):
-        pretrain: Pretrain = Pretrain.from_config({"test_size": 0.5, "scaler": {"kind": "none"}})
+        pretrain: Pretrain = Pretrain.from_config({"window_size": 17280, "test_size": 0.5, "scaler": {"kind": "none"}})
 
         df: pd.DataFrame = pd.DataFrame({"series_id": np.repeat(0, 34560),
                                          "enmo": np.repeat(0, 34560),
@@ -74,7 +75,7 @@ class TestPretrain(TestCase):
                                          "anglez": [1, 2],
                                          "awake": [0, 1],
                                          "f_test": [0, 1]})
-        self.assertListEqual(list(Pretrain.get_features(df).columns), ["enmo", "anglez", "f_test"])
+        self.assertListEqual(list(Pretrain.get_features(df).columns), ["f_enmo", "f_anglez", "f_test"])
 
     def test_split_on_labels(self):
         df: pd.DataFrame = pd.DataFrame({"series_id": [0, 1],
@@ -86,7 +87,7 @@ class TestPretrain(TestCase):
                                          "onset-NaN": [0, 1],
                                          "wakeup-NaN": [0, 1]})
         X, y = Pretrain.split_on_labels(df)
-        self.assertListEqual(list(X.columns), ["enmo", "anglez"])
+        self.assertListEqual(list(X.columns), ["f_enmo", "f_anglez"])
         self.assertListEqual(list(y.columns), ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN"])
 
     def test_to_window_numpy(self):
@@ -94,4 +95,4 @@ class TestPretrain(TestCase):
                                          "enmo": np.repeat(0, 34560),
                                          "anglez": np.repeat(0, 34560)})
         arr = df.to_numpy(dtype=np.float32)
-        self.assertEqual(Pretrain.to_windows(arr).shape, (2, 17280, 3))
+        self.assertEqual(Pretrain.to_windows(arr, 17280).shape, (2, 17280, 3))

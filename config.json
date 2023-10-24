@@ -5,11 +5,11 @@
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
-    "fe_loc_out": "data/features",
-    "fe_loc_in": "data/processed",
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -32,28 +32,28 @@
     "feature_engineering": [
     ],
     "pretraining": {
+        "window_size": 17280,
+        "test_size": 0.2,
         "downsample": {
             "factor": 12,
-            "features": ["anglez", "enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
+            "features": ["f_enmo", "f_anglez"],
+            "methods": ["min", "max", "mean", "std", "median", "var"],
             "standard": "mean"
         },
-        "remove_features": ["anglez", "enmo"],
-        "test_size": 0.2,
-        "scaler":{
-            "kind": "standard-scaler"
+        "scaler": {
+            "kind": "minmax-scaler"
         }
     },
     "models": {
         "1D-Unet-CNN": {
             "type": "seg-unet-1d-cnn",
             "loss": "bce-torch",
-            "optimizer": "adam-torch",
+            "optimizer": "rmsprop-torch",
             "epochs": 50,
-            "batch_size": 32,
+            "batch_size": 64,
             "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 5
+            "hidden_layers": 16,
+            "early_stopping": 7
         }
     },
     "ensemble": {
@@ -70,6 +70,13 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":true,
-    "scoring": true
+    "scoring": true,
+    "train_for_submission": true,
+    "visualize_preds": {
+        "n": 5,
+        "browser_plot": false,
+        "save": true
+    }
+
+
 }

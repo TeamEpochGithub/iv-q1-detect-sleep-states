@@ -9,15 +9,15 @@ from src.models.transformers.trainers.base_trainer import Trainer
 from ...loss.loss import Loss
 from ..model import Model
 from ...optimizer.optimizer import Optimizer
-from .architecture.encoder_config import EncoderConfig
 from typing import List
 from torch import nn
 from tqdm import tqdm
 from numpy import ndarray, dtype
 from typing import Any
+from .architecture.transformer_pool import TransformerPool
 
 
-class PatchPoolEventRegressionTransformer(Model):
+class Transformer(Model):
     """
     This is the model file for the patch pool event regression transformer model.
     """
@@ -35,7 +35,7 @@ class PatchPoolEventRegressionTransformer(Model):
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_shape[1]
         self.transformer_config["channels"] = data_shape[0]
-        self.model = EncoderConfig(
+        self.model = TransformerPool(
             **self.transformer_config)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
@@ -321,3 +321,36 @@ class PatchPoolEventRegressionTransformer(Model):
         """
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+
+
+## Custom adam optimizer
+# Create custom adam optimizer
+        # # save layer names
+        # layer_names = []
+        # for idx, (name, param) in enumerate(self.model.named_parameters()):
+        #     layer_names.append(name)
+
+        # # placeholder
+        # parameters = []
+
+        # # store params & learning rates
+        # for idx, name in enumerate(layer_names):
+
+        #     # Learning rate
+        #     lr = self.config['lr']
+
+        #     # parameter group name
+        #     cur_group_name = name.split('.')[0]
+
+        #     # update learning rate
+        #     if cur_group_name == 'tokenizer':
+        #         lr = self.config['lr_tokenizer']
+
+        #     # display info
+        #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
+
+        #     # append layer parameters
+        #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
+        #                     'lr': lr}]
+
+        # self.config['optimizer'] = type(self.config['optimizer'])(parameters)

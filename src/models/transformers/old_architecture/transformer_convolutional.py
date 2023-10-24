@@ -2,10 +2,9 @@ from torch import nn, Tensor
 import torch
 
 # Base imports
-from .conv_tokenizer import ConvTokenizer
-from .simple_tokenizer import SimpleTokenizer
+from ..architecture.tokenizer import ConvTokenizer, SimpleTokenizer
 from ..base.encoder_block import TransformerEncoderBlock
-from ..base.seq_pool import SeqPool
+from ..architecture.pooling import SeqPool
 from src.logger.logger import logger
 
 

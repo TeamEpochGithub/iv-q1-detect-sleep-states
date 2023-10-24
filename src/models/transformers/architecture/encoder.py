@@ -14,12 +14,17 @@ class Encoder(nn.Module):
         self.tokenizer = tokenizer
         self.pe = pe
         self.layers = get_clones(EncoderLayer(emb_dim, heads, forward_dim), n_layers)
+        encoders = []
+        for _ in range(0, n_layers):
+            encoders.append(
+                EncoderLayer(emb_dim, heads, forward_dim)
+            )
+        self.encoder_stack = nn.Sequential(*encoders)
         self.norm = BatchNorm1d(emb_dim)
     def forward(self, src, mask):
         x = self.tokenizer(src)
         x = self.pe(x)
-        for i in range(self.N):
-            x = self.layers[i](x, mask)
+        x = self.encoder_stack(x)
         return self.norm(x)
     
 def get_clones(module, n_layers):

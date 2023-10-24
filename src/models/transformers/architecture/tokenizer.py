@@ -2,6 +2,39 @@ from typing import Callable
 import torch
 from torch import nn
 
+class PatchTokenizer(nn.Module):
+    def __init__(self, channels: int = 2, emb_dim: int = 192, patch_size: int = 36):
+        super().__init__()
+        self.patch_size = patch_size
+        self.emb_dim = emb_dim
+        self.linear_projection = nn.Linear(
+            self.patch_size*channels, emb_dim)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward function for patch tokenizer.
+
+        Args:
+            x: (batch_size, seq_len, channels)
+        """
+        x = x.permute(0, 2, 1)
+
+        bs, c, l = x.shape  # (bs, c, l)
+        torch._assert(
+            self.seq_len % self.patch_size == 0, 
+            "Sequence not disivible by patch_size"
+        )
+
+        # below 2 lines creates patches using view/reshape and permutations
+        # (bs, c, no_of_patches, patch_l) -> (bs, no_of_patches, c, patch_l)
+        x = x.view(bs, c, l // self.patch_size, self.patch_size).permute(0, 2, 1, 3)
+        # (bs, no_of_patches, c*seq_len)
+        x = x.reshape(bs, self.seq_len // self.patch_size, c*self.patch_size)
+
+        # linear projection to embedding dimension
+        x = self.linear_projection(x)
+        return x
+
 
 class SimpleTokenizer(nn.Module):
     def __init__(

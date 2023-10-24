@@ -1,13 +1,14 @@
+import torch.nn as nn
 from .encoder import Encoder
-
+from .tokenizer import PatchTokenizer, ConvTokenizer, SimpleTokenizer
+from .positional_encoding import FixedPositionalEncoding
 
 class EncoderConfig(nn.module):
-    def __init__(self, tokenizer, pe, emb_dim, forward_dim, n_layers, heads):
+    def __init__(self, tokenizer: str = "patch", tokenizer_args: dict = {}, pe: str = "fixed", emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, patch_size: int = 36):
         super().__init__()
-        self.n_layers = n_layers
-        self.tokenizer = tokenizer
-        self.pe = pe
-        self.model = Encoder(self.tokenizer, self.pe, self.emb_dim, self.forward_dim, self.n_layers, self.heads)
+        self.tokenizer = get_tokenizer(tokenizer, emb_dim, tokenizer_args)
+        self.pe = get_positional_encoding(pe, emb_dim)
+        self.model = Encoder(self.tokenizer, self.pe, emb_dim, forward_dim, n_layers, heads)
     def forward(self, src, mask):
         x = self.tokenizer(src)
         x = self.pe(x)
@@ -15,8 +16,15 @@ class EncoderConfig(nn.module):
             x = self.layers[i](x, mask)
         return self.norm(x)
 
-def get_tokenizer(tokenizer, emb_dim, patch_size: int = ):
+def get_tokenizer(tokenizer, emb_dim, tokenizer_args={}):
     if tokenizer == "patch":
-        return PatchTokenizer(emb_dim, patch_size)
+        return PatchTokenizer(emb_dim, **tokenizer_args)
     elif tokenizer == "unet_encoder":
-        return 
+        return ConvTokenizer(emb_dim=emb_dim, **tokenizer_args)
+    elif tokenizer == "simple_conv":
+        return SimpleTokenizer(emb_dim, **tokenizer_args)
+
+
+def get_positional_encoding(pe, emb_dim):
+    if pe == "fixed":
+        return FixedPositionalEncoding(emb_dim)

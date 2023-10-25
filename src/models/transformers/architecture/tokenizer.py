@@ -54,9 +54,9 @@ class SimpleTokenizer(nn.Module):
     :param depth: Depth of convolutional tokenizer.
     """
 
-    def __init__(self, in_channels: int = 3, emb_dim: int = 256, hidden_layers: int = 64, kernel_size: int = 7, depth: int = 2) -> None:
+    def __init__(self, channels: int = 3, emb_dim: int = 256, hidden_layers: int = 64, kernel_size: int = 7, depth: int = 2) -> None:
         super().__init__()
-        self.conv1 = nn.Conv1d(in_channels=in_channels, out_channels=hidden_layers,
+        self.conv1 = nn.Conv1d(in_channels=channels, out_channels=hidden_layers,
                                kernel_size=kernel_size, stride=3, padding=1)
         self.act1 = nn.ReLU(inplace=True)
         self.max_pool1 = nn.MaxPool1d(
@@ -74,13 +74,14 @@ class SimpleTokenizer(nn.Module):
         :param x: Input tensor (bs, l, c).
         :return: Output tensor (bs, l_c, e).
         """
+        x = x.permute(0, 2, 1)  # (bs, c, l)
         x = self.conv1(x)
         x = self.act1(x)
         x = self.max_pool1(x)
         x = self.conv2(x)
         x = self.act2(x)
         x = self.max_pool2(x)
-
+        x = x.permute(0, 2, 1)  # (bs, l_c, e)
         return x
 
 
@@ -94,9 +95,9 @@ class ConvTokenizer(nn.Module):
     :param depth: Depth of convolutional tokenizer.
     """
 
-    def __init__(self, in_channels: int = 3, emb_dim: int = 256, hidden_layers: int = 64, kernel_size: int = 3, depth: int = 2) -> None:
+    def __init__(self, channels: int = 3, emb_dim: int = 256, hidden_layers: int = 64, kernel_size: int = 3, depth: int = 2) -> None:
         super().__init__()
-        self.in_channels = in_channels
+        self.in_channels = channels
         self.out_channels = emb_dim
         self.hidden_layers = hidden_layers
         self.kernel_size = kernel_size
@@ -135,6 +136,7 @@ class ConvTokenizer(nn.Module):
         :param x: Input tensor (bs, l, c).
         :return: Output tensor (bs, l_c, e).
         """
+        x = x.permute(0, 2, 1)  # (bs, c, l)
         pool_x1 = self.AvgPool1D1(x)
         pool_x2 = self.AvgPool1D2(x)
 
@@ -147,5 +149,5 @@ class ConvTokenizer(nn.Module):
 
         x = torch.cat([out_2, pool_x2], 1)
         out = self.layer4(x)
-
+        out = out.permute(0, 2, 1)  # (bs, l_c, e)
         return out

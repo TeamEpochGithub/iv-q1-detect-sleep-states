@@ -62,7 +62,7 @@ def get_tokenizer(tokenizer: str = "patch", emb_dim: int = 92, tokenizer_args: d
     elif tokenizer == "unet_encoder":
         return ConvTokenizer(emb_dim=emb_dim, **tokenizer_args)
     elif tokenizer == "simple_conv":
-        return SimpleTokenizer(emb_dim, **tokenizer_args)
+        return SimpleTokenizer(emb_dim=emb_dim, **tokenizer_args)
 
 
 def get_positional_encoding(pe: str = "fixed", emb_dim: int = 92, max_len: int = 480) -> nn.Module:

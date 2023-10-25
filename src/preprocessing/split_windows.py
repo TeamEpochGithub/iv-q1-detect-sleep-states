@@ -65,6 +65,12 @@ class SplitWindows(PP):
                     'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
         if 'awake' in group.columns:
             pad_type['awake'] = np.uint8
+        if 'state-onset' in group.columns:
+            pad_type['state-onset'] = np.float32
+        if 'state-wakeup' in group.columns:
+            pad_type['state-wakeup'] = np.float32
+
+
 
         # Get current series_id
         curr_series_id = group['series_id'].iloc[0]
@@ -108,6 +114,10 @@ class SplitWindows(PP):
         # only pad the awake column if it exists
         if 'awake' in group.columns:
             start_pad_df['awake'] = np.full(amount_of_padding_start, 2)
+        if 'state-onset' in group.columns:
+            start_pad_df['state-onset'] = np.full(amount_of_padding_start, 0)
+        if 'state-wakeup' in group.columns:
+            start_pad_df['state-wakeup'] = np.full(amount_of_padding_start, 0)
 
         # Find the timestamp of the last row for each series_id
         last_time = group['timestamp'].iloc[-1]
@@ -140,6 +150,10 @@ class SplitWindows(PP):
         # only pad the awake column if it exists
         if 'awake' in group.columns:
             end_pad_df['awake'] = np.full(amount_of_padding_end, 2)
+        if 'state-onset' in group.columns:
+            end_pad_df['state-onset'] = np.full(amount_of_padding_end, 0)
+        if 'state-wakeup' in group.columns:
+            end_pad_df['state-wakeup'] = np.full(amount_of_padding_end, 0)
 
         # Concatenate the dfs
         dfs_to_concat = [start_pad_df, group, end_pad_df]

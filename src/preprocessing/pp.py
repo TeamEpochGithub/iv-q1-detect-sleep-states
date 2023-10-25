@@ -43,6 +43,9 @@ class PP:
             case "add_segmentation_labels":
                 from .add_segmentation_labels import AddSegmentationLabels
                 return AddSegmentationLabels(**config)
+            case "add_event_labels":
+                from .add_event_labels import AddEventLabels
+                return AddEventLabels(**config)
             case "add_state_labels":
                 from .add_state_labels import AddStateLabels
                 return AddStateLabels(**config)

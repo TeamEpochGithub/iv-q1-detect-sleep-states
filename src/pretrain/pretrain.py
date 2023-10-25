@@ -174,7 +174,7 @@ class Pretrain:
         feature_cols = [col for col in df.columns if col.startswith('f_')]
 
         keep_columns: list[str] = ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN",
-                                   "hot-asleep", "hot-awake", "hot-NaN"]
+                                   "hot-asleep", "hot-awake", "hot-NaN", "state-onset", "state-wakeup"]
         keep_y_train_columns: list = [column for column in keep_columns if column in df.columns]
 
         return df[feature_cols], df[keep_y_train_columns]

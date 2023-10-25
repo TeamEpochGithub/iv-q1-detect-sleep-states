@@ -70,10 +70,10 @@ class ReBlock(nn.Module):
 
 class SegUnet1D(nn.Module):
     """
-    SegUnetId model. Contains the architecture of the SegUnetId model.
+    SegUnetId model. Contains the architecture of the SegUnetId model used for state and event segmentation.
     """
 
-    def __init__(self, in_channels: int, window_size: int, out_channels: int, config: dict):
+    def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str, config: dict):
         super(SegUnet1D, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -81,13 +81,13 @@ class SegUnet1D(nn.Module):
         self.kernel_size = config["kernel_size"]
         self.depth = config["depth"]
         self.window_size = window_size
+        self.model_type = model_type
 
         self.stride = 4
         self.padding = 1
 
         # If we downsample by 12 (17280/12), we need to have a stride of 2.
-        # TODO Make this work for multiple window sizes
-        if self.window_size == 1440:
+        if self.window_size < 17280:
             self.stride = 2
             self.padding = 2
         self.AvgPool1D1 = nn.AvgPool1d(kernel_size=5, stride=self.stride, padding=self.padding)
@@ -106,6 +106,7 @@ class SegUnet1D(nn.Module):
         self.upsample = nn.Upsample(scale_factor=self.stride, mode='nearest')
         self.upsample1 = nn.Upsample(scale_factor=self.stride, mode='nearest')
         self.softmax = nn.Softmax(dim=1)
+        self.relu = nn.ReLU()
         self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
 
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
@@ -143,8 +144,10 @@ class SegUnet1D(nn.Module):
         up = self.cbr_up3(up)
 
         out = self.outcov(up)
-        out = self.softmax(out)
 
-        # out = nn.functional.softmax(out,dim=2)
+        if self.model_type == "state-segmentation":
+            out = self.softmax(out)
+        elif self.model_type == "event-segmentation":
+            out = self.relu(out)
 
         return out

@@ -1,6 +1,7 @@
+import json
+
 import numpy as np
 import pandas as pd
-import json
 
 
 def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> pd.DataFrame:
@@ -16,10 +17,11 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
 
     # create a new dataframe, by converting every onset and wakeup column values to two rows,
     # one with event='onset' and the other with event='awake'
-    # and then sort by series_id and onset (ascending)
-    df = (window_info.melt(id_vars='series_id', value_vars=['onset', 'wakeup'], var_name='event', value_name='step')
-          .dropna()
-          .sort_values(['series_id', 'step']))
+    # and then sort by series_id and window (ascending)
+    df = window_info.melt(id_vars=['series_id', 'window'], value_vars=['onset', 'wakeup'], var_name='event', value_name='step').sort_values(['series_id', 'window'])
+
+    # Drop the window column
+    df = df.drop('window', axis=1)
 
     # add a confidence score hardcoded of 1.0 for now
     df['score'] = 1.0
@@ -28,7 +30,7 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     df.reset_index(drop=True, inplace=True)
     df.index.name = 'row_id'
 
-    df['step'] = df['step'].astype(int)
+    # df['step'] = df['step'].astype(int)
 
     with open('./series_id_encoding.json', 'r') as f:
         encoding = json.load(f)

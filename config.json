@@ -21,47 +21,41 @@
             "events_path": "data/raw/train_events.csv"
         },
         {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5
+        },
+        {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
-        },
-        {
-            "kind": "add_segmentation_labels"
         }
     ],
     "feature_engineering": [
-        {
-            "kind": "time",
-            "time_features": ["day", "hour", "minute", "second"]
-        }
     ],
     "pretraining": {
         "window_size": 17280,
         "test_size": 0.2,
-        "downsample": {
-            "factor": 12,
-            "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
-            "standard": "median"
-        },
         "scaler":{
             "kind": "standard-scaler"
         }
     },
     "models": {
-        "1D-Unet-CNN": {
-            "type": "seg-unet-1d-cnn",
-            "loss": "bce-torch",
-            "optimizer": "adam-torch",
-            "epochs": 50,
-            "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 5
-        }
+      "Event-1D-Unet-CNN": {
+        "type": "event-seg-unet-1d-cnn",
+        "loss": "mse-torch",
+        "optimizer": "adam-torch",
+        "epochs": 51,
+        "batch_size": 32,
+        "lr": 0.0005,
+        "hidden_layers": 8,
+        "early_stopping": 5,
+        "threshold": 0.5
+      }
     },
     "ensemble": {
-        "models": ["1D-Unet-CNN"],
+        "models": ["Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -75,5 +69,10 @@
         "method": "example_cv"
     },
     "train_for_submission":true,
-    "scoring": true
+    "scoring": true,
+    "visualize_preds": {
+        "n": 5,
+        "browser_plot": true,
+        "save": false
+    }
 }

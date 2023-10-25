@@ -25,7 +25,7 @@ class TransformerPool(nn.Module):
 
     def __init__(
         self, heads: int = 8, emb_dim: int = 92, forward_dim: int = 2048,
-        n_layers: int = 6, patch_size: int = 36,
+        n_layers: int = 6,
         seq_len: int = 17280, num_class: int = 2, pooling: str = "none", tokenizer: str = "patch", tokenizer_args: dict = {},
         pe: str = "fixed", dropout: float = 0.1
     ) -> None:

@@ -25,10 +25,10 @@ class EncoderConfig(nn.Module):
         with torch.no_grad():
             x = torch.randn([1, seq_len, tokenizer_args["channels"]])
             out = self.tokenizer(x)
-            _, _, l_c = out.shape
+            _, l_c, _ = out.shape
             logger.debug("Transformer attention size" + str(l_c))
 
-        self.pe = get_positional_encoding(pe, emb_dim, l_c)
+        self.pe = get_positional_encoding(pe, emb_dim=emb_dim, max_len=l_c)
         self.output_size = emb_dim * l_c
         self.model = Encoder(self.tokenizer, self.pe,
                              emb_dim, forward_dim, n_layers, heads)

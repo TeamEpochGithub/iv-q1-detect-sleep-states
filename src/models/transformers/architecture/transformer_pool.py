@@ -42,6 +42,7 @@ class TransformerPool(nn.Module):
         elif pooling == "softmax":
             self.seq_pool = SeqPool(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(emb_dim, num_class)
+        self.no_head = no_head
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -54,6 +55,8 @@ class TransformerPool(nn.Module):
 
         # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
         x = self.seq_pool(x)
+
+        
 
         # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
         if self.no_head:

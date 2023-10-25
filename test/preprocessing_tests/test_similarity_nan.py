@@ -2,7 +2,7 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from src.preprocessing.similarity_nan import similarity_nan
+from src.preprocessing.similarity_nan import SimilarityNan
 
 STEPS_PER_DAY = (24 * 60 * 60) // 5
 
@@ -20,7 +20,8 @@ class SimilarityTest(TestCase):
         })
 
         # run the function
-        df = similarity_nan(df)
+        sn = SimilarityNan(as_feature=True)
+        df = sn.similarity_nan(df)
 
         expected = np.concatenate([
             np.zeros(STEPS_PER_DAY - 1000), np.ones(1000),

@@ -41,6 +41,7 @@ class Transformer(Model):
         self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
+        self.config["seq_len"] = data_shape[1]
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -246,7 +247,7 @@ class Transformer(Model):
         self.model.to(device).float()
 
         # Turn data into numpy array
-        data = torch.from_numpy(data)
+        data = torch.from_numpy(data).to(device)
 
         # Get window size
         window_size = data.shape[1]
@@ -309,14 +310,14 @@ class Transformer(Model):
         else:
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
-
+        self.transformer_config['seq_len'] = self.config['seq_len']
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         if not only_hyperparameters:
             self.model.load_state_dict(checkpoint['model_state_dict'])
         else:
             self.reset_optimizer()
-
+            
     def reset_optimizer(self) -> None:
         """
         Reset the optimizer to the initial state. Useful for retraining the model.

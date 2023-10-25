@@ -1,7 +1,7 @@
 {
     "name": "config",
     "log_to_wandb": true,
-    "pred_with_cpu": true,
+    "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -58,7 +58,7 @@
     "models": {
         "GeneralTransformer": {
             "type": "transformer",
-            "epochs": 10000,
+            "epochs": 3,
             "loss": "event-regression-rmse",
             "optimizer": "adam-torch",
             "lr": 0.00035,
@@ -85,5 +85,10 @@
         "method": "example_cv"
     },
     "train_for_submission":true,
-    "scoring": true
+    "scoring": true,
+    "visualize_preds": {
+        "n": 1,
+        "browser_plot": false,
+        "save": false
+    }
 }

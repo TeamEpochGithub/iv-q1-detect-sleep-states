@@ -182,7 +182,7 @@ class SegmentationTransformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = Trainer(epochs=epochs,
+        trainer = SegmentationTrainer(epochs=epochs,
                           criterion=criterion)
         avg_train_loss, avg_val_loss, self.config["trained_epochs"] = trainer.fit(
             train_dataloader, test_dataloader, self.model, optimizer, self.name)
@@ -230,7 +230,7 @@ class SegmentationTransformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = Trainer(epochs=epochs,
+        trainer = SegmentationTrainer(epochs=epochs,
                           criterion=criterion)
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)

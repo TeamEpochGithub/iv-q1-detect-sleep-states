@@ -18,6 +18,10 @@ class AddRegressionLabels(PP):
 
         self.window_size = window_size
 
+    def __repr__(self) -> str:
+        """Return a string representation of a AddRegressionLabels object"""
+        return f"{self.__class__.__name__}(window_size={self.window_size})"
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Adds the event labels to the data.
 

@@ -7,47 +7,50 @@ from src.logger.logger import logger
 from src.models.transformers.trainers.base_trainer import Trainer
 
 from ...loss.loss import Loss
-from ..model import Model, ModelException
+from ..model import Model
 from ...optimizer.optimizer import Optimizer
-from .architecture.transformer_encoder import TSTransformerEncoderClassiregressor
-from ...util.patching import patch_x_data, patch_y_data  # , unpatch_data
 from typing import List
 from torch import nn
 from tqdm import tqdm
 from numpy import ndarray, dtype
 from typing import Any
+from .architecture.transformer_pool import TransformerPool
 
 
-class EventRegressionTransformer(Model):
+class Transformer(Model):
     """
-    This is the model file for the event regression transformer model.
+    This is the model file for the patch pool event regression transformer model.
     """
 
     def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data
+        :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
         super().__init__(config, name)
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["feat_dim"] = config.get(
-            "patch_size", 36) * data_shape[0]
-        self.model = TSTransformerEncoderClassiregressor(
-            **self.transformer_config)
+        self.transformer_config["seq_len"] = data_shape[1]
+        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
+        self.transformer_config = self.load_transformer_config(config).copy()
+        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
+        self.config["seq_len"] = data_shape[1]
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
-            logger.critical("GPU not available")
-            raise ModelException("GPU not available")
-
-        logger.info("GPU Found: " + torch.cuda.get_device_name(0))
-        self.device = torch.device("cuda")
+            logger.warning("GPU not available - using CPU")
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device("cuda")
+            logger.info(
+                f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
     def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
@@ -74,7 +77,7 @@ class EventRegressionTransformer(Model):
         # Add loss, epochs and optimizer to config
         config["loss"] = Loss.get_loss(loss)
         config["optimizer"] = Optimizer.get_optimizer(
-            optimizer, config["lr"], self.model)
+            optimizer, config["lr"], model=self.model)
         config["epochs"] = epochs
 
         self.config = config
@@ -84,7 +87,7 @@ class EventRegressionTransformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, 'patch_size': 36}
+        return {"batch_size": 32, "lr": 0.000035, 'patch_size': 36}
 
     def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """
@@ -107,18 +110,16 @@ class EventRegressionTransformer(Model):
         :return: default config
         """
         return {
-            'max_len': 480,
-            'd_model': 192,
-            'n_heads': 6,
-            'n_layers': 5,
-            'dim_feedforward': 2048,
-            'num_classes': 2,
+            'heads': 12,
+            'emb_dim': 92,
+            'forward_dim': 2048,
             'dropout': 0.1,
-            'pos_encoding': "learnable",
-            'act_int': "relu",
-            'act_out': "relu",
-            'norm': "BatchNorm",
-            'freeze': False,
+            'n_layers': 12,
+            "tokenizer": "patch",
+            'tokenizer_args': {},
+            'seq_len': 17280,
+            'num_class': 2,
+            'pooling': 'none'
         }
 
     def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array) -> None:
@@ -158,17 +159,6 @@ class EventRegressionTransformer(Model):
         X_test = torch.from_numpy(X_test)
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
-
-        # Do patching
-        patch_size = self.config["patch_size"]
-
-        # Patch the data for the features
-        X_train = patch_x_data(X_train, patch_size)
-        X_test = patch_x_data(X_test, patch_size)
-
-        # Patch the data for the labels
-        y_train = patch_y_data(y_train, patch_size)
-        y_test = patch_y_data(y_test, patch_size)
 
         # Regression
         y_train = y_train[:, 0]
@@ -222,15 +212,6 @@ class EventRegressionTransformer(Model):
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)
 
-        # Do patching
-        patch_size = self.config["patch_size"]
-
-        # Patch the data for the features
-        X_train = patch_x_data(X_train, patch_size)
-
-        # Patch the data for the labels
-        y_train = patch_y_data(y_train, patch_size)
-
         # Regression
         y_train = y_train[:, 0]
 
@@ -266,14 +247,10 @@ class EventRegressionTransformer(Model):
         self.model.to(device).float()
 
         # Turn data into numpy array
-        data = torch.from_numpy(data)
+        data = torch.from_numpy(data).to(device)
 
         # Get window size
         window_size = data.shape[1]
-
-        # Patch data
-        patch_size = self.config["patch_size"]
-        data = patch_x_data(data, patch_size)
 
         test_dataset = torch.utils.data.TensorDataset(
             data, torch.zeros((data.shape[0], data.shape[1])))
@@ -306,9 +283,7 @@ class EventRegressionTransformer(Model):
         # Make predictions without gradient
         with torch.no_grad():
             data[0] = data[0].float()
-            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-            output = model(data[0].to(self.device),
-                           padding_mask.to(self.device))
+            output = model(data[0].to(self.device))
             preds = np.concatenate((preds, output.cpu().numpy()), axis=0)
         return preds
 
@@ -335,17 +310,50 @@ class EventRegressionTransformer(Model):
         else:
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
-
-        self.model = TSTransformerEncoderClassiregressor(
-            **self.transformer_config)
+        self.transformer_config['seq_len'] = self.config['seq_len']
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         if not only_hyperparameters:
             self.model.load_state_dict(checkpoint['model_state_dict'])
         else:
             self.reset_optimizer()
 
     def reset_optimizer(self) -> None:
-
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(
+            self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+
+
+# Custom adam optimizer
+# Create custom adam optimizer
+        # # save layer names
+        # layer_names = []
+        # for idx, (name, param) in enumerate(self.model.named_parameters()):
+        #     layer_names.append(name)
+
+        # # placeholder
+        # parameters = []
+
+        # # store params & learning rates
+        # for idx, name in enumerate(layer_names):
+
+        #     # Learning rate
+        #     lr = self.config['lr']
+
+        #     # parameter group name
+        #     cur_group_name = name.split('.')[0]
+
+        #     # update learning rate
+        #     if cur_group_name == 'tokenizer':
+        #         lr = self.config['lr_tokenizer']
+
+        #     # display info
+        #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
+
+        #     # append layer parameters
+        #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
+        #                     'lr': lr}]
+
+        # self.config['optimizer'] = type(self.config['optimizer'])(parameters)

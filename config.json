@@ -5,11 +5,11 @@
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
-    "fe_loc_out": "data/features",
-    "fe_loc_in": "data/processed",
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -27,10 +27,21 @@
         },
         {
             "kind": "add_segmentation_labels"
+        },
+        {
+            "kind": "add_regression_labels"
         }
     ],
-    "feature_engineering": {
-    },
+    "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["hour", "minute"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [10, 100, 1000]
+        }
+    ],
     "pretraining": {
         "window_size": 17280,
         "test_size": 0.2,
@@ -60,13 +71,12 @@
         "apply": false,
         "method": "example_cv"
     },
+    "train_for_submission":true,
     "scoring": true,
-    "train_for_submission": true,
     "visualize_preds": {
         "n": 5,
         "browser_plot": true,
         "save": false
     }
-
-
 }
+

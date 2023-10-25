@@ -112,7 +112,7 @@ Location in: Data needed by preprocessing is stored in this directory.
 ```
 
 ## Feature engineering
-Features that should be included during training and submission. 
+Features that should be included during training and submission. It contains a list of feature engineering steps, applied in order, where each step is a dictionary.
 
 List of options and their config options: 
 
@@ -126,27 +126,39 @@ List of options and their config options:
     - `window_sizes` > 3
     - `features`: Any existing numerical features
 - `time`
-    - `day`: true | false (opt)
-    - `hour`: true | false (opt)
-    - `minute`: true | false (opt)
-    - `second`: true | false (opt)
+    - `time_features`: a list of time features to include
+      - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 
+
 Example:
 ```JSON
-"feature_engineering": {
-    "fe1": {
-        "window_sizes": [5, 10],
-        "features": ["enmo", "anglez"]
-    },
-    "time": {
-        "day": true,
-        "hour": true,
-        "minute": false,
-        "second": false
-    }
-}
+"feature_engineering": [
+        {
+            "kind": "rotation",
+            "window_sizes": [100]
+        },
+        {
+            "kind": "kurtosis",
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        {
+            "kind": "mean",
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        {
+            "kind": "skewness",
+            "window_sizes": [5, 10],
+            "features": ["anglez", "enmo"]
+        },
+        {
+            "kind": "time",
+            "time_features": ["day", "hour", "minute", "second"]    
+        }
+]
 ```
 
 ## Feature engineering data location
@@ -239,76 +251,26 @@ This contains all the models and their hyperparameters that are implemented. The
     - kernel_size=7 (only works on 7 for now)
     - depth=2
     - early_stopping=-1
-
-- regression-transformer
-    - epochs (required)
-    - loss (required)
-    - optimizer (required)
-    - lr=0.001
-    - batch_size=32
-    - patch_size=36
-    - feat_dim=patch_size*num_features
-    - max_len=window_size
-    - d_model=x (x * n_heads)
-    - n_heads=6
-    - num_layers=5
-    - dim_feedforward=2048
-    - num_classes=4 (Points to regress to)
-    - dropout=0.1
-    - pos_encoding='learnable' ["learnable", "fixed"]
-    - activation="relu" ["relu", "gelu"]
-    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
-    - freeze=False
+    - weight_decay=0.0
 
 - classic-base-model
   - median_window=100
   - threshold=.1
 
-- event-nan-regression-transformer
-    - epochs_events (required)
-    - epochs_nans (required)
-    - loss_events (required)
-    - loss_nans (required)
-    - optimizer_events (required)
-    - optimizer_nans (required)
-    - lr_events=0.000035
-    - lr_nans=0.000035
-    - batch_size=16
-    - patch_size=36
-    - feat_dim=patch_size*num_features
-    - max_len=window_size
-    - d_model=x (x * n_heads)
-    - n_heads=6
-    - num_layers=5
-    - dim_feedforward=2048
-    - num_classes=2 (Points to regress to)
-    - dropout=0.1
-    - pos_encoding='learnable' ["learnable", "fixed"]
-    - act_int="relu" ["relu", "gelu"]
-    - act_out="relu" ["relu", "gelu", "sigmoid"]
-    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
-    - freeze=False
-
-- event-regression-transformer
+- transformer
     - epochs (required)
     - loss (required)
     - optimizer (required)
-    - lr=0.000035
-    - batch_size=16
-    - patch_size=36
-    - max_len=window_size
-    - d_model=x (x * n_heads)
-    - n_heads=6
-    - num_layers=5
-    - dim_feedforward=2048
-    - num_classes=2 (Points to regress to)
-    - dropout=0.1
-    - pos_encoding='learnable' ["learnable", "fixed"]
-    - act_int="relu" ["relu", "gelu"]
-    - act_out="relu" ["relu", "gelu", "sigmoid"]
-    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
-    - freeze=False
-
+    - lr
+    - tokenizer
+    - tokenizer_args
+    - pe
+    - emb_dim
+    - forward_dim
+    - batch_size
+    - pooling
+    - n_layers
+    - heads
   
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
@@ -328,52 +290,24 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "batch_size": 64,
     "lr": 0.01
 }
-"EventNanRegressionTransformer": {
-    "type": "event-nan-regression-transformer",
-    "epochs_events": 20,
-    "epochs_nans": 20,
-    "loss_events": "event-regression-mae",
-    "loss_nans": "nan-regression",
-    "optimizer_events": "adam-torch",
-    "optimizer_nans": "adam-torch",
-    "lr_events": 0.000035,
-    "lr_nans": 0.000035,
-    "batch_size": 16,
-    "patch_size": 36,
-    "feat_dim": 72,
-    "max_len": 480,
-    "d_model": 480,
-    "n_heads": 6,
-    "num_layers": 5,
-    "dim_feedforward": 256,
-    "num_classes": 2,
-    "dropout": 0.1,
-    "pos_encoding": "fixed",
-    "act_int": "relu",
-    "act_out": "relu",
-    "norm": "BatchNorm",
-    "freeze": false
-}
-"EventTransformer": {
-    "type": "event-regression-transformer",
-    "epochs": 100,
+"GeneralTransformer": {
+    "type": "transformer",
+    "epochs": 5,
     "loss": "event-regression-rmse",
     "optimizer": "adam-torch",
-    "lr": 0.000035,
+    "lr": 0.00035,
+    "tokenizer": "patch",
+    "tokenizer_args": {
+        "channels": 4,
+        "patch_size": 36
+    },
+    "pe": "other",
+    "emb_dim": 48,
+    "forward_dim": 96,
     "batch_size": 16,
-    "patch_size": 30,
-    "max_len": 576,
-    "d_model": 96,
-    "n_heads": 6,
-    "num_layers": 5,
-    "dim_feedforward": 2048,
-    "num_classes": 2,
-    "dropout": 0.1,
-    "pos_encoding": "fixed",
-    "act_int": "relu",
-    "act_out": "relu",
-    "norm": "BatchNorm",
-    "freeze": false
+    "pooling": "none",
+    "n_layers": 6,
+    "heads": 8
 }
 "Classic-baseline": {
     "type": "classic-base-model",
@@ -383,13 +317,12 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
 
 "1D-Unet-CNN": {
     "type": "seg-unet-1d-cnn",
-    "loss": "ce-torch",
+    "loss": "bce-torch",
     "optimizer": "adam-torch",
-    "epochs": 15,
+    "epochs": 2,
     "batch_size": 32,
     "lr": 0.001,
-    "hidden_layers": 32,
-    "early_stopping": 5
+    "hidden_layers": 8
 }
 ```
 

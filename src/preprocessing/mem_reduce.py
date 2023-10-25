@@ -26,6 +26,10 @@ class MemReduce(PP):
         self.id_encoding_path: str = id_encoding_path
         self.encoding = {}
 
+    def __repr__(self) -> str:
+        """Return a string representation of a MemReduce object"""
+        return f"{self.__class__.__name__}(id_encoding_path={self.id_encoding_path})"
+
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.
 

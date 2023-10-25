@@ -25,6 +25,10 @@ class SplitWindows(PP):
         self.window_size = window_size
         self.steps_before = (start_hour * 60 * 12)
 
+    def __repr__(self) -> str:
+        """Return a string representation of a SplitWindows object"""
+        return f"{self.__class__.__name__}(start_hour={self.start_hour}, window_size={self.window_size})"
+
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by splitting it into 24h windows.
 

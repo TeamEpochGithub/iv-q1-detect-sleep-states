@@ -17,6 +17,7 @@ from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
+from ..models.transformers.transformer import Transformer
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.transformers.event_nan_regression_transformer import EventNaNRegressionTransformer
 from ..models.basic_GRU_model import SimpleGRUModel
@@ -104,61 +105,12 @@ class ConfigLoader:
         """
         return self.config["processed_loc_in"]
 
-    def get_features(self) -> (dict[FE], list[str]):
+    def get_fe_steps(self) -> list[FE]:
         """Get the feature engineering steps classes
 
         :return: the feature engineering steps and their names
         """
-        fe_steps: dict = {}
-        fe_s: list = []
-        for fe_step in self.config["feature_engineering"]:
-            if fe_step == "kurtosis":
-                fe_steps["kurtosis"] = Kurtosis(
-                    self.config["feature_engineering"]["kurtosis"])
-                window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
-                window_sizes.sort()
-                window_sizes = str(window_sizes).replace(" ", "")
-                features = self.config["feature_engineering"]["kurtosis"]["features"]
-                features.sort()
-                features = str(features).replace(" ", "")
-                fe_s.append(fe_step + features + window_sizes)
-            elif fe_step == "skewness":
-                fe_steps["skewness"] = Skewness(
-                    self.config["feature_engineering"]["skewness"])
-                window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
-                window_sizes.sort()
-                window_sizes = str(window_sizes).replace(" ", "")
-                features = self.config["feature_engineering"]["skewness"]["features"]
-                features.sort()
-                features = str(features).replace(" ", "")
-                fe_s.append(fe_step + features + window_sizes)
-            elif fe_step == "mean":
-                fe_steps["mean"] = Mean(
-                    self.config["feature_engineering"]["mean"])
-                window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
-                window_sizes.sort()
-                window_sizes = str(window_sizes).replace(" ", "")
-                features = self.config["feature_engineering"]["mean"]["features"]
-                features.sort()
-                features = str(features).replace(" ", "")
-                fe_s.append(fe_step + features + window_sizes)
-            elif fe_step == "time":
-                fe_steps["time"] = Time(
-                    self.config["feature_engineering"]["time"])
-                fe_s.append(fe_step)
-            elif fe_step == "rotation":
-                fe_steps["rotation"] = Rotation(
-                    self.config["feature_engineering"]["rotation"])
-                fe_s.append(fe_step)
-            elif fe_step == "f_derivative_anglez":
-                fe_steps["f_derivative_anglez"] = Derivative(self.config)
-                fe_s.append(fe_step)
-            else:
-                logger.critical("Feature engineering step not found: " + fe_step)
-                raise ConfigException(
-                    "Feature engineering step not found: " + fe_step)
-
-        return fe_steps, fe_s
+        return FE.from_config(self.config["feature_engineering"])
 
     def get_pp_fe_pretrain(self) -> str:
         """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.
@@ -208,14 +160,10 @@ class ConfigLoader:
                     curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
+                case "transformer":
+                    curr_model = Transformer(model_config, data_shape, model_name)
                 case "seg-unet-1d-cnn":
                     curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
-                case "event-nan-regression-transformer":
-                    curr_model = EventNaNRegressionTransformer(model_config, model_name)
-                case "segmentation-GRU":
-                    curr_model = SimpleGRUModel(model_config, data_shape, model_name)
-                case "event-regression-transformer":
-                    curr_model = EventRegressionTransformer(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

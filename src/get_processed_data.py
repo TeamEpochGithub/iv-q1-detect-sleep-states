@@ -17,11 +17,13 @@ def log_memory():
 
 
 def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
+    # TODO Use the a hash of the string representations of each PP and FE step
     pp_steps: list[PP] = config.get_pp_steps(training=training)
     pp_step_names: list[str] = [pp_step.kind for pp_step in pp_steps]
 
-    fe_steps, fe_step_names = config.get_features()
-    fe_steps: list[FE] = [fe_steps[key] for key in fe_steps]
+    fe_steps = config.get_fe_steps()
+    fe_step_names: list[str] = [fe_step.kind for fe_step in fe_steps]
+
     step_names: list[str] = pp_step_names + fe_step_names
     steps: list[PP | FE] = pp_steps + fe_steps
 

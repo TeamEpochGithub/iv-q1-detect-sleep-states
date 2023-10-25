@@ -21,7 +21,7 @@ if __name__ == "__main__":
     else:
         df = pd.read_parquet(config.get_pp_in() + '/train_series.parquet')
     # Initialize feature engineering steps
-    fe_steps, fe_s = config.get_features()
+    fe_steps, fe_s = config.get_fe_steps()
     # Initialize the data
     featured_data = df
     # Get the feature engineering steps as a list of str to make the paths

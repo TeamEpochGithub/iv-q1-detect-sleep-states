@@ -16,7 +16,7 @@ class Optimizer:
         pass
 
     @staticmethod
-    def get_optimizer(optimizer_name: str, learning_rate: float, model: nn.Module):
+    def get_optimizer(optimizer_name: str, learning_rate: float, weight_decay: float, model: nn.Module):
         """
         This function returns the correct optimizer function.
         :param optimizer_name: name of the optimizer
@@ -26,7 +26,7 @@ class Optimizer:
         """
         match optimizer_name:
             case "adam-torch":
-                return optim.Adam(model.parameters(), lr=learning_rate)
+                return optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
             case "sgd-torch":
                 return optim.SGD(model.parameters(), lr=learning_rate)
             case "adagrad-torch":

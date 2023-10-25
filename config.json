@@ -30,20 +30,10 @@
         }
     ],
     "feature_engineering": [
-        {
-            "kind": "time",
-            "time_features": ["day", "hour", "minute", "second"]
-        }
     ],
     "pretraining": {
         "window_size": 17280,
         "test_size": 0.2,
-        "downsample": {
-            "factor": 12,
-            "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
-            "standard": "median"
-        },
         "scaler":{
             "kind": "standard-scaler"
         }
@@ -53,11 +43,10 @@
             "type": "seg-unet-1d-cnn",
             "loss": "bce-torch",
             "optimizer": "adam-torch",
-            "epochs": 50,
+            "epochs": 2,
             "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 5
+            "lr": 0.00001,
+            "hidden_layers": 8
         }
     },
     "ensemble": {
@@ -75,5 +64,10 @@
         "method": "example_cv"
     },
     "train_for_submission":true,
-    "scoring": true
+    "scoring": true,
+    "visualize_preds": {
+    "n": 0,
+    "browser_plot": false,
+    "save": true
+    }
 }

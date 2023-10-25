@@ -251,6 +251,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - kernel_size=7 (only works on 7 for now)
     - depth=2
     - early_stopping=-1
+    - weight_decay=0.0
 
 - regression-transformer
     - epochs (required)
@@ -395,13 +396,12 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
 
 "1D-Unet-CNN": {
     "type": "seg-unet-1d-cnn",
-    "loss": "ce-torch",
+    "loss": "bce-torch",
     "optimizer": "adam-torch",
-    "epochs": 15,
+    "epochs": 2,
     "batch_size": 32,
     "lr": 0.001,
-    "hidden_layers": 32,
-    "early_stopping": 5
+    "hidden_layers": 8
 }
 ```
 

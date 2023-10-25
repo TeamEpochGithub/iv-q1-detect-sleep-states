@@ -117,7 +117,7 @@ class CriticalPointGRU(Model):
         X_test = torch.from_numpy(X_test)
 
         # Flatten y_train and y_test so we only get the regression labels
-        # TODO get the propper labels from the data
+        # TODO get the proper labels from the data
         y_train = y_train[:, :, -3:]
         y_test = y_test[:, :, -3:]
         y_train = torch.from_numpy(y_train)
@@ -132,6 +132,8 @@ class CriticalPointGRU(Model):
         logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
         logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
         logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+
+        steps = X_train.shape[0] * epochs
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
@@ -234,6 +236,9 @@ class CriticalPointGRU(Model):
             self.log_train_test(avg_losses, avg_val_losses, epochs)
 
         logger.info("--- Training of model complete!")
+        if stopped:
+            total_epochs -= early_stopping
+        self.config["total_epochs"] = total_epochs
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         # TODO make this work with scheduler

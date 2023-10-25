@@ -198,3 +198,5 @@ prediction_plots/
 
 #Ignore submissions
 submissions/
+sleep-critical-point-prepare-data.ipynb
+train_data.pkl

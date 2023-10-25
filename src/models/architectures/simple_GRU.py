@@ -16,7 +16,6 @@ class SimpleGRU(nn.Module):
         self.batch_first = config['batch_first']
         self.GRU = nn.GRU(input_size=self.input_size, hidden_size=self.hidden_size, num_layers=self.num_layers,
                           dropout=self.dropout, bidirectional=self.bidirectional, batch_first=self.batch_first)
-        self.layer_norm = nn.LayerNorm(self.hidden_size)
         if self.bidirectional:
             self.pooling = nn.Conv1d(in_channels=2*self.hidden_size, out_channels=3, kernel_size=1, stride=1)
         else:
@@ -30,7 +29,6 @@ class SimpleGRU(nn.Module):
             h0 = torch.zeros(self.num_layers, x.size(1), self.hidden_size).to(x.device)
         x1, _ = self.GRU(x, h0)
         # apply pooling to return 1 label per timestamp
-        x2 = self.layer_norm(x1)
-        x3 = self.pooling(x2.permute(0, 2, 1))
-        y = self.softmax(x3)
+        x2 = self.pooling(x1.permute(0, 2, 1))
+        y = self.softmax(x2)
         return y

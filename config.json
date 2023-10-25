@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -34,30 +34,20 @@
     "pretraining": {
         "window_size": 17280,
         "test_size": 0.2,
-        "downsample": {
-            "factor": 12,
-            "features": ["f_enmo", "f_anglez"],
-            "methods": ["min", "max", "mean", "std", "median", "var"],
-            "standard": "mean"
-        },
+        
         "scaler": {
             "kind": "minmax-scaler"
         }
     },
     "models": {
-        "1D-Unet-CNN": {
-            "type": "seg-unet-1d-cnn",
-            "loss": "bce-torch",
-            "optimizer": "rmsprop-torch",
-            "epochs": 50,
-            "batch_size": 64,
-            "lr": 0.0005,
-            "hidden_layers": 16,
-            "early_stopping": 7
+        "Classic-baseline": {
+            "type": "classic-base-model",
+            "median_window": 100,
+            "threshold": 0.1
         }
     },
     "ensemble": {
-        "models": ["1D-Unet-CNN"],
+        "models": ["Classic-baseline"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -74,8 +64,8 @@
     "train_for_submission": true,
     "visualize_preds": {
         "n": 5,
-        "browser_plot": false,
-        "save": true
+        "browser_plot": true,
+        "save": false
     }
 
 

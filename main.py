@@ -240,7 +240,7 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config = ConfigLoader("configs/Base_GRU.json")
+    config = ConfigLoader("config.json")
 
     # Run main
     main(config)

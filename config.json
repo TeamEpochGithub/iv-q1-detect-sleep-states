@@ -1,36 +1,67 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
-    "preprocessing": [
-        "mem_reduce",
-        "add_state_labels",
-        "split_windows"
-    ],
-    "processed_loc_out": "data/processed",
-    "processed_loc_in": "data/raw",
-    "feature_engineering": {
-        "rotation": {
-            "window_sizes": [10,100,1000]
-        }
-    },
     "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
-    "pre_training": {
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "model_store_loc": "tm",
+    "preprocessing": [
+        {
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
+        },
+        {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv"
+        },
+        {
+            "kind": "split_windows",
+            "start_hour": 15,
+            "window_size": 17280
+        },
+        {
+            "kind": "add_segmentation_labels"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["day", "hour", "minute", "second"]
+        }
+    ],
+    "pretraining": {
+        "window_size": 17280,
         "test_size": 0.2,
-        "standardize": "none"
-    },
-    "models": {
-        "Classic-baseline": {
-            "type": "classic-base-model"
+        "downsample": {
+            "factor": 12,
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median"],
+            "standard": "median"
+        },
+        "scaler":{
+            "kind": "standard-scaler"
         }
     },
-    "model_store_loc": "tm",
+    "models": {
+        "1D-Unet-CNN": {
+            "type": "seg-unet-1d-cnn",
+            "loss": "bce-torch",
+            "optimizer": "adam-torch",
+            "epochs": 50,
+            "batch_size": 32,
+            "lr": 0.0005,
+            "hidden_layers": 8,
+            "early_stopping": 5
+        }
+    },
     "ensemble": {
-        "models": ["Classic-baseline"],
+        "models": ["1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -43,6 +74,6 @@
         "apply": false,
         "method": "example_cv"
     },
-    "scoring": true,
-    "train_for_submission": true
+    "train_for_submission":true,
+    "scoring": true
 }

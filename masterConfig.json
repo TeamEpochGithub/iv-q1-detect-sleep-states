@@ -1,0 +1,13 @@
+{
+  "models": ["modelname-jgfsdhjgfbn","89524377h4","utb34ign"],
+  "dict_map": "jfgbnhjfr.json",
+  "model_store_loc": "tm",
+  "test_series_path": "data/raw/test_series.parquet",
+  "train_series_path": "data/raw/train_series.parquet",
+  "train_events_path": "data/raw/train_events.csv",
+  "ensemble": {
+    "models": ["1D-Unet-CNN"],
+    "weights": [1],
+    "comb_method": "addition"
+  }
+}

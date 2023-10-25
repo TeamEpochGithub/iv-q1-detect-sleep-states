@@ -1,1 +1,0 @@
-# This directory contains scripts related to feature engineering

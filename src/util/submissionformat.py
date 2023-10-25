@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import json
 
-
 def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> pd.DataFrame:
     """ Combine predictions with window info to create a dataframe suitable for submission.csv or scoring
     :param predictions 3D array with shape (window, 2), with onset and wakeup steps

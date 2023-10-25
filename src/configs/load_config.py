@@ -236,7 +236,7 @@ class ConfigLoader:
 
         :return: the cross validation method
         """
-        return CV(**self.config["cv"])
+        return CV(pred_with_cpu=self.config["pred_with_cpu"], **self.config["cv"])
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

@@ -9,7 +9,8 @@ from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
-from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean, verify_submission
+from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean, verify_submission, \
+    compute_score_full_from_numpy, make_scorer
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -55,6 +56,12 @@ def main(config: ConfigLoader) -> None:
 
     featured_data = get_processed_data(config, training=True, save_output=True)
 
+
+
+    # get number of labels
+
+
+
     # ------------------------- #
     #         Pre-train         #
     # ------------------------- #
@@ -70,7 +77,7 @@ def main(config: ConfigLoader) -> None:
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
 
-    X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain_split(featured_data)
+    X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(featured_data)
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
@@ -80,8 +87,18 @@ def main(config: ConfigLoader) -> None:
     logger.info("X Test data shape (size, window_size, features): " + str(
         X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
 
-    # TODO Cross validation should be part of each model
-    cv = config.get_cv()
+    # TODO simplify this
+    # for each window get the series id and step offset
+    window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
+                   .groupby(['series_id', 'window'])
+                   .apply(lambda x: x.iloc[0]))
+    # get only the test series data from the solution
+    test_series_ids = window_info['series_id'].unique()
+    # if visualize is true plot all test series
+    with open('./series_id_encoding.json', 'r') as f:
+        encoding = json.load(f)
+    decoding = {v: k for k, v in encoding.items()}
+    test_series_ids = [decoding[sid] for sid in test_series_ids]
 
     # ------------------------- #
     #          Training         #
@@ -100,6 +117,8 @@ def main(config: ConfigLoader) -> None:
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
+    cv = config.get_cv()
+
     for i, model in enumerate(models):
         # Get filename of model
         model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
@@ -111,9 +130,10 @@ def main(config: ConfigLoader) -> None:
             logger.info("Training model " + str(i) + ": " + model)
             # TODO Implement hyperparameter optimization #101
             # It now only saves the model from the last fold
-            scores = cv.cross_validate(models[model], X_train, y_train)
+            # TODO Figure out how to do grouping without labels
+            scores = cv.cross_validate(models[model], X_train, y_train, groups=None, scoring=make_scorer(compute_score_full_from_numpy, **dict(train_idx_main=train_idx, featured_data=featured_data, downsampling_factor=pretrain.downsampler.factor)))
             models[model].save(model_filename)
-            logger.info("Done training model " + str(i) + ": " + model + " with mean CV scores of " + str(scores))
+            logger.info("Done training model " + str(i) + ": " + model + " with CV scores of " + str(scores))
 
     # Store optimal models
     for i, model in enumerate(models):
@@ -145,10 +165,7 @@ def main(config: ConfigLoader) -> None:
     # ------------------------------------------------------- #
     #          Cross validation optimization for ensemble     #
     # ------------------------------------------------------- #
-    print_section_separator("Cross validation for ensemble", spacing=0)
-    # Initialize CV
-    cv = config.get_cv()
-    cv.run()
+    # print_section_separator("Cross validation for ensemble", spacing=0)
 
     # ------------------------------------------------------- #
     #                    Scoring                              #
@@ -163,20 +180,7 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Formatting predictions...")
 
-        # TODO simplify this
-        # for each window get the series id and step offset
-        window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
-                       .groupby(['series_id', 'window'])
-                       .apply(lambda x: x.iloc[0]))
         submission = to_submission_format(predictions, window_info)
-        # get only the test series data from the solution
-        test_series_ids = window_info['series_id'].unique()
-        # if visualize is true plot all test series
-        with open('./series_id_encoding.json', 'r') as f:
-            encoding = json.load(f)
-        decoding = {v: k for k, v in encoding.items()}
-        test_series_ids = [decoding[sid] for sid in test_series_ids]
-
         solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
@@ -184,7 +188,6 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Start scoring test predictions...")
 
-        verify_submission(submission)
         log_scores_to_wandb(compute_score_full(submission, solution), compute_score_clean(submission, solution))
         # the plot function applies encoding to the submission
         # we do not want to change the ids on the original submission

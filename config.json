@@ -27,12 +27,19 @@
         },
         {
             "kind": "add_segmentation_labels"
+        },
+        {
+            "kind": "add_regression_labels"
         }
     ],
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["day", "hour", "minute", "second"]
+            "time_features": ["hour", "minute"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [10, 100, 1000]
         }
     ],
     "pretraining": {
@@ -49,19 +56,22 @@
         }
     },
     "models": {
-        "1D-Unet-CNN": {
-            "type": "seg-unet-1d-cnn",
-            "loss": "bce-torch",
+        "GeneralTransformer": {
+            "type": "transformer",
+            "epochs": 10000,
+            "loss": "event-regression-rmse",
             "optimizer": "adam-torch",
-            "epochs": 50,
-            "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 5
+            "lr": 0.00035,
+            "tokenizer": "patch",
+            "pe": "other",
+            "emb_dim": 24,
+            "forward_dim": 96,
+            "batch_size": 16,
+            "pooling": "none"
         }
     },
     "ensemble": {
-        "models": ["1D-Unet-CNN"],
+        "models": ["GeneralTransformer"],
         "weights": [1],
         "comb_method": "addition"
     },

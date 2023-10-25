@@ -7,7 +7,7 @@ import pandas as pd
 class SimilarityNan(PP):
 
     def __init__(self, as_feature=False, **kwargs):
-        super().__init__(kind="similarity_nan", **kwargs)
+        super().__init__(**kwargs)
         self.as_feature = as_feature
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:

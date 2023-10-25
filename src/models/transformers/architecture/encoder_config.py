@@ -32,7 +32,7 @@ class EncoderConfig(nn.Module):
         self.output_size = emb_dim * l_c
         self.model = Encoder(self.tokenizer, self.pe,
                              emb_dim, forward_dim, n_layers, heads)
-    
+
     def get_output_size(self) -> int:
         """
         Get output size of encoder.

@@ -77,7 +77,7 @@ class Transformer(Model):
         # Add loss, epochs and optimizer to config
         config["loss"] = Loss.get_loss(loss)
         config["optimizer"] = Optimizer.get_optimizer(
-            optimizer, config["lr"], self.model)
+            optimizer, config["lr"], model=self.model)
         config["epochs"] = epochs
 
         self.config = config
@@ -317,7 +317,7 @@ class Transformer(Model):
             self.model.load_state_dict(checkpoint['model_state_dict'])
         else:
             self.reset_optimizer()
-            
+
     def reset_optimizer(self) -> None:
         """
         Reset the optimizer to the initial state. Useful for retraining the model.

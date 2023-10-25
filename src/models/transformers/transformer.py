@@ -114,7 +114,8 @@ class Transformer(Model):
             'forward_dim': 2048,
             'dropout': 0.1,
             'n_layers': 12,
-            'tokenizer_args': {'patch_size': 36, 'channels': 2},
+            "tokenizer": "patch",
+            'tokenizer_args': {},
             'seq_len': 17280,
             'num_class': 2,
             'pooling': 'none'

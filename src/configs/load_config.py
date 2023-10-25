@@ -5,11 +5,6 @@ from torch import nn
 from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
-from ..feature_engineering.kurtosis import Kurtosis
-from ..feature_engineering.mean import Mean
-from ..feature_engineering.rotation import Rotation
-from ..feature_engineering.skewness import Skewness
-from ..feature_engineering.time import Time
 from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
@@ -102,58 +97,12 @@ class ConfigLoader:
         """
         return self.config["processed_loc_in"]
 
-    def get_features(self) -> (dict[FE], list[str]):
+    def get_fe_steps(self) -> list[FE]:
         """Get the feature engineering steps classes
 
         :return: the feature engineering steps and their names
         """
-        fe_steps: dict = {}
-        fe_s: list = []
-        for fe_step in self.config["feature_engineering"]:
-            if fe_step == "kurtosis":
-                fe_steps["kurtosis"] = Kurtosis(
-                    self.config["feature_engineering"]["kurtosis"])
-                window_sizes = self.config["feature_engineering"]["kurtosis"]["window_sizes"]
-                window_sizes.sort()
-                window_sizes = str(window_sizes).replace(" ", "")
-                features = self.config["feature_engineering"]["kurtosis"]["features"]
-                features.sort()
-                features = str(features).replace(" ", "")
-                fe_s.append(fe_step + features + window_sizes)
-            elif fe_step == "skewness":
-                fe_steps["skewness"] = Skewness(
-                    self.config["feature_engineering"]["skewness"])
-                window_sizes = self.config["feature_engineering"]["skewness"]["window_sizes"]
-                window_sizes.sort()
-                window_sizes = str(window_sizes).replace(" ", "")
-                features = self.config["feature_engineering"]["skewness"]["features"]
-                features.sort()
-                features = str(features).replace(" ", "")
-                fe_s.append(fe_step + features + window_sizes)
-            elif fe_step == "mean":
-                fe_steps["mean"] = Mean(
-                    self.config["feature_engineering"]["mean"])
-                window_sizes = self.config["feature_engineering"]["mean"]["window_sizes"]
-                window_sizes.sort()
-                window_sizes = str(window_sizes).replace(" ", "")
-                features = self.config["feature_engineering"]["mean"]["features"]
-                features.sort()
-                features = str(features).replace(" ", "")
-                fe_s.append(fe_step + features + window_sizes)
-            elif fe_step == "time":
-                fe_steps["time"] = Time(
-                    self.config["feature_engineering"]["time"])
-                fe_s.append(fe_step)
-            elif fe_step == "rotation":
-                fe_steps["rotation"] = Rotation(
-                    self.config["feature_engineering"]["rotation"])
-                fe_s.append(fe_step)
-            else:
-                logger.critical("Feature engineering step not found: " + fe_step)
-                raise ConfigException(
-                    "Feature engineering step not found: " + fe_step)
-
-        return fe_steps, fe_s
+        return FE.from_config(self.config["feature_engineering"])
 
     def get_pp_fe_pretrain(self) -> str:
         """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.

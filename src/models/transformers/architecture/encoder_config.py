@@ -29,8 +29,16 @@ class EncoderConfig(nn.Module):
             logger.debug("Transformer attention size" + str(l_c))
 
         self.pe = get_positional_encoding(pe, emb_dim, l_c)
+        self.output_size = emb_dim * l_c
         self.model = Encoder(self.tokenizer, self.pe,
                              emb_dim, forward_dim, n_layers, heads)
+    
+    def get_output_size(self) -> int:
+        """
+        Get output size of encoder.
+        :return: Output size of encoder.
+        """
+        return self.output_size
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

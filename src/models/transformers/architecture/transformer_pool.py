@@ -35,10 +35,10 @@ class TransformerPool(nn.Module):
         if pooling == "none":
             self.seq_pool = NoPooling(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(
-                (seq_len // patch_size) * emb_dim, num_class)
+                self.encoder.get_output_size(), num_class)
         if pooling == "lstm":
             self.seq_pool = LSTMPooling(emb_dim=emb_dim)
-            self.mlp_head = nn.Linear((seq_len // patch_size), num_class)
+            self.mlp_head = nn.Linear(self.encoder.get_output_size() / emb_dim, num_class)
         elif pooling == "softmax":
             self.seq_pool = SeqPool(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(emb_dim, num_class)

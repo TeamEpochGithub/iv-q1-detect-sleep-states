@@ -133,6 +133,8 @@ List of options and their config options:
       - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
+- `similarity_nan`
+  - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
 
 
 Example:
@@ -161,6 +163,10 @@ Example:
             "kind": "time",
             "time_features": ["day", "hour", "minute", "second"]    
         }
+        {
+            "kind": "similarity_nan",
+            "as_feature": true,
+        },
 ]
 ```
 

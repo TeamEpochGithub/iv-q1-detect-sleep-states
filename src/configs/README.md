@@ -253,26 +253,6 @@ This contains all the models and their hyperparameters that are implemented. The
     - early_stopping=-1
     - weight_decay=0.0
 
-- regression-transformer
-    - epochs (required)
-    - loss (required)
-    - optimizer (required)
-    - lr=0.001
-    - batch_size=32
-    - patch_size=36
-    - feat_dim=patch_size*num_features
-    - max_len=window_size
-    - d_model=x (x * n_heads)
-    - n_heads=6
-    - num_layers=5
-    - dim_feedforward=2048
-    - num_classes=4 (Points to regress to)
-    - dropout=0.1
-    - pos_encoding='learnable' ["learnable", "fixed"]
-    - activation="relu" ["relu", "gelu"]
-    - norm="BatchNorm" ["BatchNorm", "LayerNorm"]
-    - freeze=False
-
 - classic-base-model
   - median_window=100
   - threshold=.1
@@ -320,7 +300,7 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "tokenizer_args": {
         "channels": 4,
         "patch_size": 36
-    }
+    },
     "pe": "other",
     "emb_dim": 48,
     "forward_dim": 96,

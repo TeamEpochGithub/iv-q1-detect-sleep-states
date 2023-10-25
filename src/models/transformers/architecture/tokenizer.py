@@ -1,7 +1,7 @@
 from typing import Callable
 import torch
 from torch import nn
-from ...architectures.seg_unet_1d_cnn import conbr_block, re_block
+from ...architectures.seg_unet_1d_cnn import ConBrBlock, ReBlock
 
 
 class PatchTokenizer(nn.Module):
@@ -125,9 +125,9 @@ class ConvTokenizer(nn.Module):
         :param depth: Depth of convolutional tokenizer.
         """
         block = []
-        block.append(conbr_block(input_layer, out_layer, kernel, stride, 1))
+        block.append(ConBrBlock(input_layer, out_layer, kernel, stride, 1))
         for _ in range(depth):
-            block.append(re_block(out_layer, out_layer, kernel, 1))
+            block.append(ReBlock(out_layer, out_layer, kernel, 1))
         return nn.Sequential(*block)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

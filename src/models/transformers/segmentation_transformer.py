@@ -4,7 +4,7 @@ import torch
 import wandb
 
 from src.logger.logger import logger
-from src.models.transformers.trainers.base_trainer import Trainer
+from src.models.transformers.trainers.segmentation_trainer import SegmentationTrainer
 
 from ...loss.loss import Loss
 from ..model import Model
@@ -17,7 +17,7 @@ from typing import Any
 from .architecture.transformer_pool import TransformerPool
 
 
-class Transformer(Model):
+class SegmentationTransformer(Model):
     """
     This is the model file for the patch pool event regression transformer model.
     """

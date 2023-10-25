@@ -75,9 +75,6 @@ class CriticalPointGRU(Model):
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
-        # TODO hard code the params in the code they have
-        # after the training run is done 
-        config['scheduler'] = CosineLRScheduler(config['optimizer'], t_initial=steps, warmup_t=int(steps*0.2), warmup_lr_init=1e-6,lr_min=2e-8,)
         self.config = config
 
     def get_default_config(self) -> dict:
@@ -108,10 +105,14 @@ class CriticalPointGRU(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
-        scheduler = self.config['scheduler']
+        # in the docs for this function it says that t_initial is the number of epochs
+        # but in the critical point code it is multiplied by the number of samples
+        scheduler = CosineLRScheduler(optimizer, t_initial=epochs,
+                                      warmup_t=int(0.2*epochs),
+                                      warmup_lr_init=1e-6, lr_min=2e-8,)
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
-            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")        
+            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -132,8 +133,6 @@ class CriticalPointGRU(Model):
         logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
         logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
         logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
-
-        steps = X_train.shape[0] * epochs
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
@@ -169,8 +168,7 @@ class CriticalPointGRU(Model):
 
                     # Clear gradients
                     optimizer.zero_grad()
-                    # TODO give the numbers from scheduler
-                    scheduler.step()
+                    scheduler.step(epoch)
                     # Forward pass
                     outputs = self.model(x, h)
                     loss = criterion(outputs, y)
@@ -241,7 +239,6 @@ class CriticalPointGRU(Model):
         self.config["total_epochs"] = total_epochs
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
-        # TODO make this work with scheduler
         """
         Train function for the model.
         :param X_train: the training data
@@ -253,12 +250,21 @@ class CriticalPointGRU(Model):
         # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.config["epochs"]
+        epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
+        # in the docs for this function it says that t_initial is the number of epochs
+        # but in the critical point code it is multiplied by the number of samples
+        scheduler = CosineLRScheduler(optimizer, t_initial=epochs,
+                                      warmup_t=int(0.2*epochs),
+                                      warmup_lr_init=1e-6, lr_min=2e-8,)
+        early_stopping = self.config["early_stopping"]
+        if early_stopping > 0:
+            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
         X_train = torch.from_numpy(X_train)
 
         # Flatten y_train and y_test so we only get the regression labels
+        # TODO get the proper labels from the data
         y_train = y_train[:, :, -3:]
         y_train = torch.from_numpy(y_train)
 
@@ -282,39 +288,42 @@ class CriticalPointGRU(Model):
             wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
             wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
-        avg_losses = []
         # Train the model
 
         for epoch in range(epochs):
             self.model.train(True)
-            avg_loss = 0
-            pbar = tqdm(enumerate(train_dataloader))
-            for i, (x, y) in pbar:
-                x = x.to(device=self.device)
-                y = y.to(device=self.device)
+            total_loss = 0
+            with tqdm(train_dataloader, unit="batch") as pbar:
+                for i, (x, y) in enumerate(pbar):
+                    h = None
+                    pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
+                    x = x.to(device=self.device)
+                    y = y.to(device=self.device)
 
-                # Clear gradients
-                optimizer.zero_grad()
+                    # Clear gradients
+                    optimizer.zero_grad()
+                    scheduler.step(epoch)
+                    # Forward pass
+                    outputs = self.model(x, h)
+                    loss = criterion(outputs, y)
 
-                # Forward pass
-                outputs = self.model(x)
-                loss = criterion(outputs)
+                    # Backward and optimize
+                    loss.backward()
+                    nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1e-1)
+                    optimizer.step()
 
-                # Backward and optimize
-                loss.backward()
-                optimizer.step()
-
-                # Calculate the avg loss for 1 epoch
-                avg_loss += loss.item() / len(train_dataloader)
+                    # Calculate the avg loss for 1 epoch
+                    total_loss += loss.item()
+                    avg_loss = total_loss / (i + 1)
+                    pbar.set_postfix(loss=avg_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
             descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
             logger.debug(descr)
             pbar.set_description(descr)
 
-            # Add average losses to list
-            avg_losses.append(avg_loss)
-
+            if wandb.run is not None:
+                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Training of model complete!")
 
     def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
@@ -365,10 +374,12 @@ class CriticalPointGRU(Model):
 
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
-            # Convert to relative window event timestamps
-            pred = one_hot_to_state(pred)
-            events = find_events(pred, median_filter_size=15)
-            all_predictions.append(events)
+            # Each pred is a sequence with 2 channels
+            # so just return the index of the max per channel
+            events = []
+            for channel in pred:
+                events.append(np.argmax(channel))
+            all_predictions.append(tuple(events))
 
         # Return numpy array
         return np.array(all_predictions)

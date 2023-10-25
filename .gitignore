@@ -200,3 +200,7 @@ prediction_plots/
 submissions/
 sleep-critical-point-prepare-data.ipynb
 train_data.pkl
+history.json
+loss_evo.png
+lr_evo.png
+model_best.pth

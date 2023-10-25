@@ -51,14 +51,18 @@
         }
     },
     "models": {
-        "Classic-baseline": {
-            "type": "classic-base-model",
-            "median_window": 100,
-            "threshold": 0.1
+        "Sleep_Critical_model": {
+            "type": "Sleep_Critical_model",
+            "loss": "mse-loss",
+            "epochs": 10,
+            "batch_size": 32,
+            "lr": 0.001,
+            "optimizer": "adam"
+
         }
     },
     "ensemble": {
-        "models": ["Classic-baseline"],
+        "models": ["Sleep_Critical_model"],
         "weights": [1],
         "comb_method": "addition"
     },

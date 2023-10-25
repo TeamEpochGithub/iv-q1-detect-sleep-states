@@ -45,12 +45,6 @@
     "pretraining": {
         "window_size": 17280,
         "test_size": 0.2,
-        "downsample": {
-            "factor": 12,
-            "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
-            "standard": "median"
-        },
         "scaler":{
             "kind": "standard-scaler"
         }
@@ -85,5 +79,10 @@
         "method": "example_cv"
     },
     "train_for_submission":true,
-    "scoring": true
+    "scoring": true,
+    "visualize_preds": {
+    "n": 0,
+    "browser_plot": false,
+    "save": true
+    }
 }

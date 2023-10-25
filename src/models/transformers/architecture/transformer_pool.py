@@ -49,13 +49,13 @@ class TransformerPool(nn.Module):
         :param x: Input tensor (bs, l, c).
         :return: Output tensor (bs, num_class).
         """
-        # Pass x through encoder
+        # Pass x through encoder (bs, l, c) -> (bs, l_e, e)
         x = self.encoder(x)
 
-        # Perform sequential pooling
+        # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
         x = self.seq_pool(x)
 
-        # MLP head used to get logits
+        # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
         x = self.mlp_head(x)
 
         return x

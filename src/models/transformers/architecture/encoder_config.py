@@ -23,7 +23,7 @@ class EncoderConfig(nn.Module):
         super().__init__()
         self.tokenizer = get_tokenizer(tokenizer, emb_dim, tokenizer_args)
         with torch.no_grad():
-            x = torch.randn([1, tokenizer_args["channels"], seq_len])
+            x = torch.randn([1, seq_len, tokenizer_args["channels"]])
             out = self.tokenizer(x)
             _, _, l_c = out.shape
             logger.debug("Transformer attention size" + str(l_c))

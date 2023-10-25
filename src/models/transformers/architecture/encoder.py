@@ -31,8 +31,8 @@ class Encoder(nn.Module):
     def forward(self, src: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the encoder.
-        :param src: Input tensor.
-        :return: Output of encoder tensor.
+        :param src: Input tensor. (bs, l, c)
+        :return: Output of encoder tensor. (bs, l_e, e)
         """
         x = self.tokenizer(src)
         x = self.pe(x)

@@ -22,7 +22,7 @@ class EncoderLayer(nn.Module):
         self.norm_1 = BatchNorm1d(emb_dim)
         self.norm_2 = BatchNorm1d(emb_dim)
         self.attn = MultiheadAttention(
-            num_heads=heads, embed_dim=emb_dim, dropout=dropout, batch_first=True)
+            num_heads=heads, embed_dim=emb_dim, batch_first=True)
         self.ff = FeedForward(emb_dim, forward_dim)
         self.dropout_1 = Dropout(dropout)
         self.dropout_2 = Dropout(dropout)

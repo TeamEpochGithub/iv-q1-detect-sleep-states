@@ -32,6 +32,7 @@ class TransformerPool(nn.Module):
         super(TransformerPool, self).__init__()
         self.encoder = EncoderConfig(
             tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len)
+        self.no_head = no_head
         if pooling == "none":
             self.seq_pool = NoPooling(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(

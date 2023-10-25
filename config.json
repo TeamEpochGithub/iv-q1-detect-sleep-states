@@ -1,7 +1,8 @@
 {
     "name": "config",
     "log_to_wandb": false,
-    "pred_with_cpu": true,
+    "pred_with_cpu": false,
+
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -27,20 +28,11 @@
         },
         {
             "kind": "add_segmentation_labels"
-        },
-        {
-            "kind": "add_regression_labels"
         }
+
     ],
     "feature_engineering": [
-        {
-            "kind": "time",
-            "time_features": ["hour", "minute"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [10, 100, 1000]
-        }
+        
     ],
     "pretraining": {
         "window_size": 17280,
@@ -52,13 +44,13 @@
     },
     "models": {
         "Sleep_Critical_model": {
-            "type": "Sleep_Critical_model",
-            "loss": "mse-loss",
+            "type": "sleep_sritical_model",
+            "loss": "mse-torch",
             "epochs": 10,
             "batch_size": 32,
             "lr": 0.001,
-            "optimizer": "adam"
-
+            "optimizer": "adam-torch",
+            "early_stopping": 3
         }
     },
     "ensemble": {

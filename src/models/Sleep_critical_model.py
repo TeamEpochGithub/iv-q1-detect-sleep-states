@@ -15,7 +15,6 @@ from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
-from ..util.state_to_event import find_events, one_hot_to_state
 from torch.utils.data import TensorDataset, DataLoader
 
 
@@ -44,7 +43,7 @@ class CriticalPointGRU(Model):
 
         self.model_type = "segmentation"
         self.input_size = input_size
-        self.model = MultiResidualBiGRU(config, self.input_size[0])
+        self.model = MultiResidualBiGRU(self.input_size[0], hidden_size=64, out_size=2, n_layers=5)
         # Load model
         self.load_config(config)
         # If we log the run to weights and biases, we can
@@ -72,7 +71,7 @@ class CriticalPointGRU(Model):
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
         self.config = config
@@ -82,7 +81,7 @@ class CriticalPointGRU(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 1, "lr": 0.1, "epochs": 20}
+        return {"batch_size": 1, "lr": 0.1, "epochs": 20, "early_stopping": 3}
 
     def get_type(self) -> str:
         """
@@ -119,8 +118,8 @@ class CriticalPointGRU(Model):
 
         # Flatten y_train and y_test so we only get the regression labels
         # TODO get the proper labels from the data
-        y_train = y_train[:, :, -3:]
-        y_test = y_test[:, :, -3:]
+        y_train = y_train[:, :, -2:]
+        y_test = y_test[:, :, -2:]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -170,7 +169,7 @@ class CriticalPointGRU(Model):
                     optimizer.zero_grad()
                     scheduler.step(epoch)
                     # Forward pass
-                    outputs = self.model(x, h)
+                    outputs, _ = self.model(x, h)
                     loss = criterion(outputs, y)
 
                     # Backward and optimize
@@ -193,7 +192,7 @@ class CriticalPointGRU(Model):
                         h = None
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
-                        voutputs = self.model(vx, h)
+                        voutputs, _ = self.model(vx, h)
                         vloss = criterion(voutputs, vy)
                         total_val_loss += vloss.item()
                         avg_val_loss = total_val_loss / (i + 1)
@@ -265,7 +264,7 @@ class CriticalPointGRU(Model):
 
         # Flatten y_train and y_test so we only get the regression labels
         # TODO get the proper labels from the data
-        y_train = y_train[:, :, -3:]
+        y_train = y_train[:, :, -2:]
         y_train = torch.from_numpy(y_train)
 
         # Create a dataset from X and y
@@ -304,7 +303,7 @@ class CriticalPointGRU(Model):
                     optimizer.zero_grad()
                     scheduler.step(epoch)
                     # Forward pass
-                    outputs = self.model(x, h)
+                    outputs, _ = self.model(x, h)
                     loss = criterion(outputs, y)
 
                     # Backward and optimize
@@ -358,7 +357,7 @@ class CriticalPointGRU(Model):
                 batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
-                batch_prediction = self.model(batch_data)
+                batch_prediction, _ = self.model(batch_data)
 
                 if with_cpu:
                     batch_prediction = batch_prediction.numpy()
@@ -377,12 +376,11 @@ class CriticalPointGRU(Model):
             # Each pred is a sequence with 2 channels
             # so just return the index of the max per channel
             events = []
-            for channel in pred:
-                events.append(np.argmax(channel))
+            events.append(np.argmax(pred, axis=0))
             all_predictions.append(tuple(events))
 
         # Return numpy array
-        return np.array(all_predictions)
+        return np.array(all_predictions).squeeze()
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

@@ -15,6 +15,7 @@ from ..models.transformers.transformer import Transformer
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
+from ..models.Sleep_critical_model import CriticalPointGRU
 
 
 class ConfigLoader:
@@ -155,6 +156,8 @@ class ConfigLoader:
                     curr_model = Transformer(model_config, data_shape, model_name)
                 case "seg-unet-1d-cnn":
                     curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
+                case "sleep_sritical_model":
+                    curr_model = CriticalPointGRU(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

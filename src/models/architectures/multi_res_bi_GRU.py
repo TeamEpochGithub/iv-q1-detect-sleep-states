@@ -1,9 +1,9 @@
 from torch import nn
-from res_bi_GRU import ResidualBiGRU
+from src.models.architectures.res_bi_GRU import ResidualBiGRU
 
 
 class MultiResidualBiGRU(nn.Module):
-    def __init__(self, input_size, hidden_size, out_size, n_layers, bidir=True):
+    def __init__(self, input_size, hidden_size, out_size, n_layers, bidir=True, model_name=''):
         super(MultiResidualBiGRU, self).__init__()
 
         self.input_size = input_size

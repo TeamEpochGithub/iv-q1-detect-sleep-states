@@ -16,7 +16,7 @@ class Optimizer:
         pass
 
     @staticmethod
-    def get_optimizer(optimizer_name: str, learning_rate: float, weight_decay: float, model: nn.Module):
+    def get_optimizer(optimizer_name: str, learning_rate: float, weight_decay: float = 0.0, model: nn.Module = None):
         """
         This function returns the correct optimizer function.
         :param optimizer_name: name of the optimizer

@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -25,30 +25,51 @@
             "events_path": "data/raw/train_events.csv"
         },
         {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5
+        },
+        {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
         }
     ],
     "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["day", "hour"]
+        }
     ],
     "pretraining": {
+        "downsample": {
+            "factor": 12,
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median"],
+            "standard": "mean"
+        },
         "test_size": 0.2,
-        "window_size": 17280,
-        "scaler":{
-            "kind": "none"
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
         }
     },
     "models": {
-        "Classic-baseline": {
-            "type": "classic-base-model",
-            "median_window": 100,
-            "threshold": 0.1,
-            "use_nan_similarity": true
-        }
+      "Event-1D-Unet-CNN": {
+        "type": "event-seg-unet-1d-cnn",
+        "loss": "mse-torch",
+        "optimizer": "adam-torch",
+        "epochs": 47,
+        "batch_size": 32,
+        "lr": 0.0005,
+        "hidden_layers": 8,
+        "early_stopping": 7,
+        "threshold": 0.5
+      }
     },
     "ensemble": {
-        "models": ["Classic-baseline"],
+        "models": ["Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },

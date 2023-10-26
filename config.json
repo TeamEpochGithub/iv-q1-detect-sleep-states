@@ -16,6 +16,10 @@
             "id_encoding_path": "series_id_encoding.json"
         },
         {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
             "kind": "add_state_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv"
@@ -35,7 +39,6 @@
     "feature_engineering": [
     ],
     "pretraining": {
-        "window_size": 17280,
         "test_size": 0.2,
         "scaler":{
             "kind": "standard-scaler"
@@ -77,8 +80,9 @@
     "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
-        "n": 5,
-        "browser_plot": true,
+        "n": 10,
+        "browser_plot": false,
         "save": false
     }
 }
+

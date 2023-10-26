@@ -37,6 +37,9 @@ class PP:
             case "add_noise":
                 from .add_noise import AddNoise
                 return AddNoise(**config)
+            case "similarity_nan":
+                from .similarity_nan import SimilarityNan
+                return SimilarityNan(**config)
             case "add_regression_labels":
                 from .add_regression_labels import AddRegressionLabels
                 return AddRegressionLabels(**config)

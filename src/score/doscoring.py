@@ -37,9 +37,10 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
     solution_not_all_nan = (solution
                             .groupby('series_id')
                             .filter(lambda x: not np.isnan(x['step']).all()))
-    solution_ids = solution_not_all_nan['series_id'].unique()
+
+    solution_ids_not_all_nan = solution_not_all_nan['series_id'].unique()
     logger.debug(f'Submission contains predictions for {len(submission_sids)} series')
-    logger.debug(f'solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
+    logger.debug(f'solution has {len(solution_ids_not_all_nan)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
     result = score(solution, submission, tolerances, **column_names)

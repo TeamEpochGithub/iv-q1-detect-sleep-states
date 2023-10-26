@@ -69,21 +69,23 @@ class Trainer:
         lowest_val_loss = np.inf
         best_model = model.state_dict()
         counter = 0
-        max_counter = 5
+        max_counter = 10
         trained_epochs = 0
         for epoch in range(self.n_epochs):
 
+            # Training loss
             train_losses = self.train_one_epoch(
                 dataloader=dataloader, epoch_no=epoch, optimiser=optimiser, model=model)
-            train_loss = sum(train_losses) / len(train_losses)
-            avg_train_losses.append(train_loss.cpu())
+            if len(train_losses) > 0:
+                train_loss = sum(train_losses) / len(train_losses)
+                avg_train_losses.append(train_loss.cpu())
 
             # Validation
-            val_losses = []
             if not full_train:
                 val_losses = self.val_loss(testloader, epoch, model)
-                val_loss = sum(val_losses) / len(val_losses)
-                avg_val_losses.append(val_loss.cpu())
+                if len(val_losses) > 0:
+                    val_loss = sum(val_losses) / len(val_losses)
+                    avg_val_losses.append(val_loss.cpu())
 
             if wandb.run is not None and not full_train:
                 wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
@@ -150,8 +152,7 @@ class Trainer:
         # Retrieve target and output
         optimiser.zero_grad()
         data[0] = data[0].float()
-        padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-        output = model(data[0].to(self.device), padding_mask.to(self.device))
+        output = model(data[0].to(self.device))
 
         # Create mask to ignore nan values
         mask = torch.ones_like(data[1]).to(self.device)
@@ -207,9 +208,7 @@ class Trainer:
         # Use torch.no_grad() to disable gradient calculation and calculate loss
         with torch.no_grad():
             data[0] = data[0].float()
-            padding_mask = torch.ones((data[0].shape[0], data[0].shape[1])) > 0
-            output = model(data[0].to(self.device),
-                           padding_mask.to(self.device))
+            output = model(data[0].to(self.device))
 
             # Create mask to ignore nan values
             mask = torch.ones_like(data[1]).to(self.device)

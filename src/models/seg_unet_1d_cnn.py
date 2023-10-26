@@ -73,6 +73,7 @@ class SegmentationUnet1DCNN(Model):
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
+        config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
         config["hidden_layers"] = config.get("hidden_layers", default_config["hidden_layers"])
         config["kernel_size"] = config.get("kernel_size", default_config["kernel_size"])
         config["depth"] = config.get("depth", default_config["depth"])
@@ -84,14 +85,14 @@ class SegmentationUnet1DCNN(Model):
         Load optimizer function for the model.
         """
         # Load optimizer
-        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"], self.model)
+        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model)
 
     def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1, "weight_decay": 0.0}
 
     def get_type(self) -> str:
         """

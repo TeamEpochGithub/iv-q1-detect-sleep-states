@@ -17,6 +17,10 @@
             "id_encoding_path": "series_id_encoding.json"
         },
         {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
             "kind": "add_state_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv"

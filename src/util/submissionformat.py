@@ -15,7 +15,7 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     window_info['wakeup'] = predictions[:, 1] + window_info['step']
     window_info = window_info.drop('step', axis=1)
 
-    #Drop all nans
+    # Drop all nans
     window_info = window_info.dropna()
 
     # TODO Add confidences to the predictions and use them here

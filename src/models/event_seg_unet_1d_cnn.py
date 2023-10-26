@@ -348,7 +348,7 @@ class EventSegmentationUnet1DCNN(Model):
         else:
             device = torch.device("cuda")
 
-        #Set model to eval for inference
+        # Set model to eval for inference
         self.model.eval()
 
         self.model.to(device)

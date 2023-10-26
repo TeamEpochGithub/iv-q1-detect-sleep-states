@@ -436,6 +436,6 @@ If the proportion of steps that are perfectly similar to another window is above
 
 ```JSON
 "similarity_filter": {
-        "threshold": 0.5
+        "threshold": 0.27
     }
 ```

@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -62,7 +62,7 @@
         "method": "example_cv"
     },
     "similarity_filter": {
-        "threshold": 0.1
+        "threshold": 0.27
     },
     "train_for_submission":true,
     "scoring": true,

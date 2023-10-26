@@ -61,6 +61,9 @@
         "apply": false,
         "method": "example_cv"
     },
+    "similarity_filter": {
+        "threshold": 0.1
+    },
     "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {

@@ -15,6 +15,9 @@ The config file is split up in different sections. Each section has its own conf
 9. [Hyperparameter optimization](#hyperparameter-optimization)
 10. [Cross validation](#cross-validation)
 11. [Scoring](#scoring)
+12. [Train for submission](#train-for-submission)
+13. [Visualize preds](#visualize-preds)
+14. [Similarity filtering](#similarity-filtering)
 
 ## General
 - `name`: `str`
@@ -411,7 +414,7 @@ by setting the following to true:
 "train_for_submission": True
 ```
 
-### Visualize preds
+## Visualize preds
 Configures how plots are generated. 
 - "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
 - "browser_plot": Boolean that if set to True creates plotly plots
@@ -422,5 +425,17 @@ Configures how plots are generated.
         "n": 5,
         "browser_plot": true,
         "save": false
+    }
+```
+
+## Similarity filtering
+Apply a filter to the timestamp predictions, based on similarity to other windows.
+Requires the similarity_nan preprocessing step. Can be removed from the 
+If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to nan.
+- "threshold": Float, if mean of f_similarity_nan is above this, prediction is set to nan
+
+```JSON
+"similarity_filter": {
+        "threshold": 0.5
     }
 ```

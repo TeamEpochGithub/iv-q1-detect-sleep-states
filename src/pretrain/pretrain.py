@@ -43,7 +43,7 @@ class Pretrain:
         if config.get("downsample") is not None:
             downsampler = Downsampler(**config['downsample'])
 
-        window_size = config["window_size"]
+        window_size = config.get("window_size") if config.get("window_size") is not None else 17280
         # Instantiate scaler object from config
         scaler = Scaler(**config['scaler'])
         test_size = config["test_size"]

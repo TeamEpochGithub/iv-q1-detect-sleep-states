@@ -2,9 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
+from src.logger.logger import logger
+import os
+import json
 
 
-def make_histogram(preds: pd.DataFrame, events: pd.DataFrame):
+def make_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str, id_decoding: dict, series_id: int):
 
     tolerances = [0, 12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000, 17280]
     scores = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0, 0]
@@ -13,60 +16,51 @@ def make_histogram(preds: pd.DataFrame, events: pd.DataFrame):
         preds.dropna(inplace=True)
         events.dropna(inplace=True)
     # Get the unique series ids
-    series_ids = preds['series_id'].unique()
     # Loop through the series ids
-    all_errors_onset = None
-    all_errors_wakeup = None
-    for id in series_ids:
-        # for each id get the preds
-        current_preds_onset = preds[(preds['event'] == 'onset') & (preds['series_id'] == id)]['step'].to_numpy()
-        current_preds_wakeup = preds[(preds['event'] == 'wakeup') & (preds['series_id'] == id)]['step'].to_numpy()
-        # and the events
-        current_events_onset = events[(events['event'] == 'onset') & (events['series_id'] == id)]['step'].to_numpy()
-        current_events_wakeup = events[(events['event'] == 'wakeup') & (events['series_id'] == id)]['step'].to_numpy()
-        if not (len(current_preds_onset) == 0 or len(current_events_onset) == 0):
-            current_errors_onset = match_preds(current_preds_onset, current_events_onset)
-            if all_errors_onset is None:
-                all_errors_onset = current_errors_onset
-            else:
-                all_errors_onset = np.concatenate((all_errors_onset, current_errors_onset))
-        # repeate the same process for the wakeups
-        if not (len(current_preds_wakeup) == 0 or len(current_events_wakeup) == 0):
-            current_errors_wakeup = match_preds(current_preds_wakeup, current_events_wakeup)
-            if all_errors_wakeup is None:
-                all_errors_wakeup = current_errors_wakeup
-            else:
-                all_errors_wakeup = np.concatenate((all_errors_wakeup, current_errors_wakeup))
+    current_errors_onset = None
+    current_errors_wakeup = None
+    # the loop is here for running it on the complete data
+    # in visualize preds this will be called once for each series id
+    # for each id get the preds
+    current_preds_onset = preds[(preds['event'] == 'onset')]['step'].to_numpy()
+    current_preds_wakeup = preds[(preds['event'] == 'wakeup')]['step'].to_numpy()
+    # and the events
+    current_events_onset = events[(events['event'] == 'onset')]['step'].to_numpy()
+    current_events_wakeup = events[(events['event'] == 'wakeup')]['step'].to_numpy()
+    if not (len(current_preds_onset) == 0 or len(current_events_onset) == 0):
+        current_errors_onset = match_preds(current_preds_onset, current_events_onset)
+
+    # repeate the same process for the wakeups
+    if not (len(current_preds_wakeup) == 0 or len(current_events_wakeup) == 0):
+        current_errors_wakeup = match_preds(current_preds_wakeup, current_events_wakeup)
 
     # Now make the histogram
-    if all_errors_onset is not None:
-        print(sorted(all_errors_onset, reverse=True)[:100])
-        hist_values, bin_edges = np.histogram(all_errors_onset, bins=tolerances)
+    if current_errors_onset is not None:
+        hist_values, bin_edges = np.histogram(current_errors_onset, bins=tolerances)
         # make the bar names the ranges from the tolerances
         bar_labels = [f'{int(bin_edges[i]):d}-{int(bin_edges[i+1]):d}\n{scores[i]}' for i in range(len(bin_edges) - 1)]
-        fig, ax = plt.subplots()
+        plt.figure(figsize=(20, 10))
         # replace the bin edges to be a range incremented by 10 starting from 0
         bin_edges = np.arange(0, 10*len(tolerances), 10)
         # Calculate the width of each bar
         bar_width = [5] * len(bin_edges[:-1])
 
         # Create a bar chart with custom widths and labels
-        bars_onset = ax.bar(bin_edges[:-1], hist_values, width=bar_width, align='edge', tick_label=bar_labels)
+        bars_onset = plt.bar(bin_edges[:-1], hist_values, width=bar_width, align='edge', tick_label=bar_labels)
         plt.xticks(rotation=45)
         plt.xlabel('Bins')
         plt.ylabel('Frequency')
         plt.title('Histogram of the errors')
         for bar in bars_onset:
             height = bar.get_height()
-            ax.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
+            plt.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
                         ha='center', va='bottom', rotation=45)
 
     # also make the histogram for the wakeups
-    if all_errors_wakeup is not None:
-        print(sorted(all_errors_wakeup, reverse=True)[:100])
-        hist_values, bin_edges = np.histogram(all_errors_wakeup, bins=tolerances)
+    if current_errors_wakeup is not None:
+        hist_values, bin_edges = np.histogram(current_errors_wakeup, bins=tolerances)
         # make the bar names the ranges from the tolerances
         bar_labels = [f'{int(bin_edges[i]):d}-{int(bin_edges[i+1]):d}\n{scores[i]}' for i in range(len(bin_edges) - 1)]
         # replace the bin edges to be a range incremented by 10 starting from 0
@@ -75,15 +69,17 @@ def make_histogram(preds: pd.DataFrame, events: pd.DataFrame):
         bar_width = [5] * len(bin_edges[:-1])
 
         # Create a bar chart with custom widths and labels
-        bars_wakeup = ax.bar(bin_edges[:-1]+5, hist_values, width=bar_width, align='edge', tick_label=bar_labels)
+        bars_wakeup = plt.bar(bin_edges[:-1]+5, hist_values, width=bar_width, align='edge', tick_label=bar_labels)
         for bar in bars_wakeup:
             height = bar.get_height()
-            ax.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
+            plt.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
                         ha='center', va='bottom', rotation=45)
     plt.legend(['onset', 'wakeup'])
-    plt.show()
+    if not os.path.exists(folder_path + "/histograms"):
+        os.makedirs(folder_path + "/histograms")
+    plt.savefig(folder_path + "/histograms" + "/" + "series_id--" + f"{id_decoding[series_id]}-({series_id}).png")
 
 
 def match_preds(preds: np.ndarray, events: np.ndarray):
@@ -104,4 +100,7 @@ def match_preds(preds: np.ndarray, events: np.ndarray):
 if __name__ == '__main__':
     preds = pd.read_csv('submission.csv')
     events = pd.read_csv('data/raw/train_events.csv')
-    make_histogram(preds, events)
+    id_encoding = json.load(open('series_id_encoding.json', 'r'))
+    id_decoding = {v: k for k, v in id_encoding.items()}
+    for id in preds['series_id'].unique():
+        make_histogram(preds, events, id_decoding=id_decoding, series_id=id, folder_path='')

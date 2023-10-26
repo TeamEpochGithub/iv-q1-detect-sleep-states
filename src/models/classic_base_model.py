@@ -1,5 +1,8 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
+from numpy import ndarray, dtype
 from tqdm import tqdm
 
 from ..logger.logger import logger
@@ -34,6 +37,7 @@ class ClassicBaseModel(Model):
 
         config["median_window"] = config.get("median_window", default_config["median_window"])
         config["threshold"] = config.get("threshold", default_config["threshold"])
+        config["use_nan_similarity"] = config.get("use_nan_similarity", default_config["use_nan_similarity"])
         self.config = config
 
     def get_default_config(self) -> dict:
@@ -41,9 +45,9 @@ class ClassicBaseModel(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"median_window": 100, "threshold": .1}
+        return {"median_window": 100, "threshold": .1, "use_nan_similarity": True}
 
-    def pred(self, X_pred: np.ndarray, with_cpu: bool = True) -> list[float, float]:
+    def pred(self, X_pred: np.ndarray, with_cpu: bool = True) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data for a single day window as pandas dataframe
@@ -56,13 +60,16 @@ class ClassicBaseModel(Model):
         # Get the data from the data tuple
         for window in tqdm(X_pred, desc="Converting predictions to events", unit="window"):
             state_pred = self.predict_state_labels(window)
+
+            if self.config["use_nan_similarity"]:
+                state_pred[window[:, 2] == 0] = 2  # Assuming feature 2 is similarity nan
             events = find_events(state_pred)
             predictions.append(events)
 
         return np.array(predictions)
 
     def predict_state_labels(self, data: np.ndarray) -> np.ndarray:
-        anglez = pd.Series(data[:, 1])
+        anglez = pd.Series(data[:, 1])  # Assuming feature 1 is anglez
         slope = abs(anglez.diff()).clip(upper=10)
         movement = pd.Series(slope).rolling(window=100, center=True).median()
         pred = (movement > .1)

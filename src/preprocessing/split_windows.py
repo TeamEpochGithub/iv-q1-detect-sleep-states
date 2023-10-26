@@ -61,7 +61,7 @@ class SplitWindows(PP):
         gc.collect()
 
         # Pad types
-        pad_type = {'step': np.uint32, 'series_id': np.uint16,
+        pad_type = {'step': np.int32, 'series_id': np.uint16,
                     'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
         if 'awake' in group.columns:
             pad_type['awake'] = np.uint8
@@ -144,6 +144,5 @@ class SplitWindows(PP):
         # Concatenate the dfs
         dfs_to_concat = [start_pad_df, group, end_pad_df]
         group = pd.concat(dfs_to_concat, ignore_index=True)
-        group.astype(pad_type)
 
-        return group
+        return group.astype(pad_type)

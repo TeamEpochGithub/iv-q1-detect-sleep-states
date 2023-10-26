@@ -11,6 +11,7 @@ from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean, verify_submission, \
     compute_score_full_from_numpy, make_scorer
+from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -187,8 +188,12 @@ def main(config: ConfigLoader) -> None:
                     .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
-
         log_scores_to_wandb(compute_score_full(submission, solution), compute_score_clean(submission, solution))
+
+        # compute confusion matrix for making predictions or not
+        window_info['series_id'] = window_info['series_id'].map(decoding)
+        compute_nan_confusion_matrix(submission, solution, window_info)
+
         # the plot function applies encoding to the submission
         # we do not want to change the ids on the original submission
         plot_submission = submission.copy()
@@ -199,6 +204,7 @@ def main(config: ConfigLoader) -> None:
                              number_of_series_to_plot=config.get_number_of_plots(),
                              folder_path='prediction_plots/' + config_hash,
                              show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
+
     else:
         logger.info("Not scoring")
 

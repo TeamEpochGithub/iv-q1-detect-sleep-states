@@ -166,6 +166,11 @@ def score(
     assert pd.api.types.is_numeric_dtype(solution[time_column_name]), \
         f"Solution column {time_column_name} must be of numeric type."
 
+    # If the submission is fully NaN, return a score of 0
+    if submission.isna().all().all():
+        return 0
+
+
     # Validate submission format
     for column_name in [
         series_id_column_name,

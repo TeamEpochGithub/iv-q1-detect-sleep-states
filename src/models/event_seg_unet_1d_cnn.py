@@ -166,7 +166,7 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Train the model
         for epoch in range(epochs):
-            self.model.train(True)
+            self.model.train()
             avg_loss = 0
             avg_val_loss = 0
             total_batch_loss = 0
@@ -197,8 +197,8 @@ class EventSegmentationUnet1DCNN(Model):
                     tepoch.set_description(f" Train Epoch {epoch}")
                     tepoch.set_postfix(loss=avg_loss)
 
-            # Calculate the validation loss
-            self.model.train(False)
+            # Calculate the validation loss and set the model to eval
+            self.model.eval()
 
             with torch.no_grad():
                 with tqdm(test_dataloader, unit="batch") as vepoch:
@@ -292,7 +292,7 @@ class EventSegmentationUnet1DCNN(Model):
             wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
         for epoch in range(epochs):
-            self.model.train(True)
+            self.model.train()
             total_batch_loss = 0
             avg_loss = 0
             with tqdm(train_dataloader, unit="batch") as tepoch:
@@ -346,6 +346,9 @@ class EventSegmentationUnet1DCNN(Model):
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
+
+        #Set model to eval for inference
+        self.model.eval()
 
         self.model.to(device)
 
@@ -429,7 +432,7 @@ class EventSegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

@@ -15,9 +15,13 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     window_info['wakeup'] = predictions[:, 1] + window_info['step']
     window_info = window_info.drop('step', axis=1)
 
+    #Drop all nans
+    window_info = window_info.dropna()
+
     # create a new dataframe, by converting every onset and wakeup column values to two rows,
     # one with event='onset' and the other with event='awake'
     # and then sort by series_id and window (ascending)
+
     df = window_info.melt(id_vars=['series_id', 'window'], value_vars=['onset', 'wakeup'], var_name='event', value_name='step').sort_values(['series_id', 'window'])
 
     # Drop the window column

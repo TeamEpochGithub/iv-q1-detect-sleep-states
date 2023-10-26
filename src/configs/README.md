@@ -42,6 +42,9 @@ The following steps are currently implemented:
     - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
       a datetime object.
     - Stores the series ID encoding in the specified path. If there is no path specified, it will not store the encoding.
+- `similarity_nan`
+    - Compute similarity between all windows to detect a repeating pattern indicating NaN. 
+Adds this as a column that is 0 for perfect similarity.
 - `add-noise`
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`
@@ -130,6 +133,8 @@ List of options and their config options:
       - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
+- `similarity_nan`
+  - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
 
 
 Example:
@@ -158,6 +163,10 @@ Example:
             "kind": "time",
             "time_features": ["day", "hour", "minute", "second"]    
         }
+        {
+            "kind": "similarity_nan",
+            "as_feature": true,
+        },
 ]
 ```
 
@@ -256,6 +265,7 @@ This contains all the models and their hyperparameters that are implemented. The
 - classic-base-model
   - median_window=100
   - threshold=.1
+  - use_nan_similarity=True
 
 - transformer
     - epochs (required)
@@ -312,7 +322,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
 "Classic-baseline": {
     "type": "classic-base-model",
     "median_window": 100,
-    "threshold": .1
+    "threshold": 0.1,
+    "use_nan_similarity": true
 }
 
 "1D-Unet-CNN": {

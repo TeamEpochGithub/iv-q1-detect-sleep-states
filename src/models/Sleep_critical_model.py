@@ -118,8 +118,8 @@ class CriticalPointGRU(Model):
 
         # Flatten y_train and y_test so we only get the regression labels
         # TODO get the proper labels from the data
-        y_train = y_train[:, :, -2:]
-        y_test = y_test[:, :, -2:]
+        y_train = y_train[:, :, -3:-1]
+        y_test = y_test[:, :, -3:-1]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -264,7 +264,7 @@ class CriticalPointGRU(Model):
 
         # Flatten y_train and y_test so we only get the regression labels
         # TODO get the proper labels from the data
-        y_train = y_train[:, :, -2:]
+        y_train = y_train[:, :, -3:-1]
         y_train = torch.from_numpy(y_train)
 
         # Create a dataset from X and y

@@ -46,7 +46,7 @@
         "Sleep_Critical_model": {
             "type": "sleep_sritical_model",
             "loss": "mse-torch",
-            "epochs": 10,
+            "epochs": 5,
             "batch_size": 32,
             "lr": 0.001,
             "optimizer": "adam-torch",

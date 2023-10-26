@@ -16,10 +16,6 @@
             "id_encoding_path": "series_id_encoding.json"
         },
         {
-            "kind": "similarity_nan",
-            "as_feature": true
-        },
-        {
             "kind": "add_state_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv"
@@ -28,7 +24,6 @@
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
-<<<<<<< HEAD
         },
         {
             "kind": "add_segmentation_labels"
@@ -54,10 +49,11 @@
         }
     },
     "cv": {
-        "splitter": "k_fold",
+        "splitter": "group_shuffle_split",
         "scoring": "score_full",
         "splitter_params": {
-            "n_splits": 5
+            "n_splits": 1,
+            "test_size": 0.2
         }
     },
     "models": {
@@ -65,7 +61,7 @@
             "type": "seg-unet-1d-cnn",
             "loss": "bce-torch",
             "optimizer": "adam-torch",
-            "epochs": 2,
+            "epochs": 1,
             "batch_size": 32,
             "lr": 0.0005,
             "hidden_layers": 8,
@@ -74,29 +70,6 @@
     },
     "ensemble": {
         "models": ["1D-Unet-CNN"],
-=======
-        }
-    ],
-    "feature_engineering": [
-    ],
-    "pretraining": {
-        "test_size": 0.2,
-        "window_size": 17280,
-        "scaler":{
-            "kind": "none"
-        }
-    },
-    "models": {
-        "Classic-baseline": {
-            "type": "classic-base-model",
-            "median_window": 100,
-            "threshold": 0.1,
-            "use_nan_similarity": true
-        }
-    },
-    "ensemble": {
-        "models": ["Classic-baseline"],
->>>>>>> main
         "weights": [1],
         "comb_method": "addition"
     },

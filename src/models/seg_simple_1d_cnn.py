@@ -21,14 +21,15 @@ class SegmentationSimple1DCNN(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str, pred_with_cpu: bool) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the data (input/output shape, features)
         :param name: name of the model
+        :param pred_with_cpu: whether to make predictions using the CPU or GPU
         """
-        super().__init__(config, name)
+        super().__init__(config, name, pred_with_cpu)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -254,18 +255,17 @@ class SegmentationSimple1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if self.pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -281,7 +281,7 @@ class SegmentationSimple1DCNN(Model):
         with torch.no_grad():
             prediction = self.model(data)
 
-        if with_cpu:
+        if self.pred_with_cpu:
             prediction = prediction.numpy()
         else:
             prediction = prediction.cpu().numpy()

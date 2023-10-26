@@ -15,13 +15,14 @@ class ExampleModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, name: str) -> None:
+    def __init__(self, config: dict, name: str, pred_with_cpu: bool) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param name: name of the model
+        :param pred_with_cpu: (UNUSED) whether to make predictions using the CPU or GPU
         """
-        super().__init__(config)
+        super().__init__(config, name, pred_with_cpu)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():

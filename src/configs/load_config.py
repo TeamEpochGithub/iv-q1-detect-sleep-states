@@ -144,18 +144,19 @@ class ConfigLoader:
         logger.info("Models: " + str(self.config.get("models")))
         for model_name in self.config["models"]:
             model_config = self.config["models"][model_name]
+            pred_with_cpu = self.config["pred_with_cpu"]
             curr_model = None
             match model_config["type"]:
                 case "example-fc-model":
-                    curr_model = ExampleModel(model_config, model_name)
+                    curr_model = ExampleModel(model_config, model_name, pred_with_cpu)
                 case "classic-base-model":
-                    curr_model = ClassicBaseModel(model_config, model_name)
+                    curr_model = ClassicBaseModel(model_config, model_name, pred_with_cpu)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
+                    curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name, pred_with_cpu)
                 case "transformer":
-                    curr_model = Transformer(model_config, data_shape, model_name)
+                    curr_model = Transformer(model_config, data_shape, model_name, pred_with_cpu)
                 case "seg-unet-1d-cnn":
-                    curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
+                    curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name, pred_with_cpu)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])
@@ -233,7 +234,7 @@ class ConfigLoader:
 
         :return: the cross validation method
         """
-        return CV(pred_with_cpu=self.config["pred_with_cpu"], **self.config["cv"])
+        return CV(**self.config["cv"])
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

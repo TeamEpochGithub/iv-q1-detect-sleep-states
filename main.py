@@ -2,6 +2,7 @@
 import json
 import os
 
+import numpy as np
 import pandas as pd
 
 import wandb
@@ -9,13 +10,12 @@ from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
-from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean, verify_submission, \
-    compute_score_full_from_numpy, make_scorer
+from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
 from src.score.nan_confusion import compute_nan_confusion_matrix
+from src.score.visualize_preds import plot_preds_on_series
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
-from src.score.visualize_preds import plot_preds_on_series
 
 
 def main(config: ConfigLoader) -> None:
@@ -57,55 +57,37 @@ def main(config: ConfigLoader) -> None:
 
     featured_data = get_processed_data(config, training=True, save_output=True)
 
+    # ------------------------ #
+    #         Pretrain         #
+    # ------------------------ #
 
-
-    # get number of labels
-
-
-
-    # ------------------------- #
-    #         Pre-train         #
-    # ------------------------- #
-
-    print_section_separator("Pre-train", spacing=0)
+    print_section_separator("Pretrain", spacing=0)
 
     logger.info("Get pretraining parameters from config and initialize pretrain")
     pretrain: Pretrain = config.get_pretraining()
 
     logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
 
-    # Split data into train and test
+    # Split data into train/test and validation
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    logger.info("Splitting data into train and test...")
+    logger.info("Splitting data into train/test and validation sets")
 
-    X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(featured_data)
+    X_train_test, X_validation, y_train_test, y_validation, train_test_idx, validation_idx, groups = pretrain.pretrain_split(
+        featured_data)
 
     # Give data shape in terms of (features (in_channels), window_size))
-    data_shape = (X_train.shape[2], X_train.shape[1])
+    data_shape = (X_train_test.shape[2], X_train_test.shape[1])
 
-    logger.info("X Train data shape (size, window_size, features): " + str(
-        X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
-    logger.info("X Test data shape (size, window_size, features): " + str(
-        X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
-
-    # TODO simplify this
-    # for each window get the series id and step offset
-    window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
-                   .groupby(['series_id', 'window'])
-                   .apply(lambda x: x.iloc[0]))
-    # get only the test series data from the solution
-    test_series_ids = window_info['series_id'].unique()
-    # if visualize is true plot all test series
-    with open('./series_id_encoding.json', 'r') as f:
-        encoding = json.load(f)
-    decoding = {v: k for k, v in encoding.items()}
-    test_series_ids = [decoding[sid] for sid in test_series_ids]
+    logger.info("X train/test data shape (size, window_size, features): " + str(
+        X_train_test.shape) + " and y train/test data shape (size, window_size, features): " + str(y_train_test.shape))
+    logger.info("X validation data shape (size, window_size, features): " + str(
+        X_validation.shape) + " and y validation data shape (size, window_size, features): " + str(y_validation.shape))
 
     # ------------------------- #
-    #          Training         #
+    # Cross Validation Training #
     # ------------------------- #
 
-    print_section_separator("Training", spacing=0)
+    print_section_separator("Cross Validation Training", spacing=0)
 
     # Initialize models
     store_location = config.get_model_store_loc()
@@ -118,8 +100,6 @@ def main(config: ConfigLoader) -> None:
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
-    cv = config.get_cv()
-
     for i, model in enumerate(models):
         # Get filename of model
         model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
@@ -129,12 +109,17 @@ def main(config: ConfigLoader) -> None:
             models[model].load(model_filename, only_hyperparameters=False)
         else:
             logger.info("Training model " + str(i) + ": " + model)
+            cv = config.get_cv()
             # TODO Implement hyperparameter optimization #101
-            # It now only saves the model from the last fold
-            # TODO Figure out how to do grouping without labels
-            scores = cv.cross_validate(models[model], X_train, y_train, groups=None, scoring=make_scorer(compute_score_full_from_numpy, **dict(train_idx_main=train_idx, featured_data=featured_data, downsampling_factor=pretrain.downsampler.factor)))
+            # It now only saves the trained model from the last fold
+            scores: np.ndarray = cv.cross_validate(models[model], X_train_test, y_train_test, groups=groups,
+                                                   scoring_params={"featured_data": featured_data,
+                                                                   "train_test_idx": train_test_idx,
+                                                                   "downsampling_factor": pretrain.downsampler.factor,
+                                                                   "window_size": pretrain.window_size})
             models[model].save(model_filename)
-            logger.info("Done training model " + str(i) + ": " + model + " with CV scores of " + str(scores))
+            logger.info(
+                f"Done training model {i}: {model} with CV scores of {scores} and mean score of {np.round(np.mean(scores))}")
 
     # Store optimal models
     for i, model in enumerate(models):
@@ -177,14 +162,29 @@ def main(config: ConfigLoader) -> None:
     scoring = config.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
-        predictions = ensemble.pred(X_test, pred_cpu)
+        predictions = ensemble.pred(X_validation)
 
         logger.info("Formatting predictions...")
+
+        # TODO simplify this
+        # for each window get the series id and step offset
+        # FIXME window_info for some series starts with a very large step instead of 0, close to the uint32 limit of 4294967295, likely due to integer underflow
+        window_info = (featured_data.iloc[validation_idx][['series_id', 'window', 'step']]
+                       .groupby(['series_id', 'window'])
+                       .apply(lambda x: x.iloc[0]))
+        # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries to access the first step as a negative index which is now a very large integer instead
+        # get only the test series data from the solution
+        validation_series_ids = window_info['series_id'].unique()
+        # if visualize is true plot all test series
+        with open('./series_id_encoding.json', 'r') as f:
+            encoding = json.load(f)
+        decoding = {v: k for k, v in encoding.items()}
+        validation_series_ids = [decoding[sid] for sid in validation_series_ids]
 
         submission = to_submission_format(predictions, window_info)
         solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
-                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
+                    .filter(lambda x: x['series_id'].iloc[0] in validation_series_ids)
                     .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
@@ -200,7 +200,8 @@ def main(config: ConfigLoader) -> None:
         # pass only the test data
         logger.info('Creating plots...')
         plot_preds_on_series(plot_submission,
-                             featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
+                             featured_data[
+                                 featured_data['series_id'].isin(list(encoding[i] for i in validation_series_ids))],
                              number_of_series_to_plot=config.get_number_of_plots(),
                              folder_path='prediction_plots/' + config_hash,
                              show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
@@ -218,7 +219,7 @@ def main(config: ConfigLoader) -> None:
         logger.info("Retraining models for submission")
 
         # Retrain all models with optimal parameters
-        X_train, y_train = pretrain.pretrain_final(featured_data)
+        X_train_test, y_train_test = pretrain.pretrain_final(featured_data)
 
         # Save scaler
         scaler_filename: str = config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
@@ -234,7 +235,7 @@ def main(config: ConfigLoader) -> None:
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(X_train, y_train)
+                models[model].train_full(X_train_test, y_train_test)
                 models[model].save(model_filename_submit)
 
     else:

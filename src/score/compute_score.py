@@ -1,11 +1,10 @@
-from collections.abc import Callable
+import json
+import warnings
 
 import numpy as np
 import pandas as pd
 import wandb
-from tqdm import tqdm
 
-from src.util.state_to_event import one_hot_to_state, find_events
 from src.util.submissionformat import to_submission_format
 from .scoring import score
 from ..logger.logger import logger
@@ -26,7 +25,7 @@ _COLUMN_NAMES = {
 def verify_submission(submission: pd.DataFrame) -> None:
     """Verify that there are no consecutive onsets or wakeups
 
-    :param submission: the submission dataframe of shape (n_events, 5)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :raises ScoringException: if there are consecutive onsets or wakeups
     """
     same_event = submission['event'] == submission['event'].shift(1)
@@ -41,8 +40,8 @@ def verify_submission(submission: pd.DataFrame) -> None:
 def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
     """Compute the score for the entire dataset
 
-    :param submission: the submission dataframe of shape (n_events, 5)
-    :param solution: the solution dataframe of shape (n_events, 5)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :return: the score for the entire dataset
     """
     verify_submission(submission)
@@ -66,8 +65,8 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
 def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
     """Compute the score for the clean series
 
-    :param submission: the submission dataframe of shape (n_events, 5)
-    :param solution: the solution dataframe of shape (n_events, 5)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :return: the score for the clean series or NaN if there are no clean series
     """
     verify_submission(submission)
@@ -93,76 +92,91 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
     return score_clean
 
 
-def one_hot_to_prediction_format(y: np.ndarray, downsampling_factor: int = 1) -> np.array:
-    """ Convert a one-hot encoded array to a state array,
-    where the state is the index of the one-hot encoding. Normally used for predictions.
+def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, featured_data: pd.DataFrame,
+                                    train_test_idx: np.array, test_idx_cv: np.array,
+                                    downsampling_factor: int = 1, window_size: int = 17280) -> (
+        pd.DataFrame, pd.DataFrame):
+    """Tries to turn the numpy y_true and y_pred into a solution and submission dataframes...
 
-    :param y: the one-hot encoded array of shape (n_windows, window_size, 3) with values 0=sleep, 1=awake, 2=non-wear
-    :param downsampling_factor: the downsampling factor required for upsampling
-    :return: an event array of shape (n_windows, 2)
+    ...but it fails.
+
+    Yeah, this is the ugly function I was talking about. The submission and solution aren't even the same length...
+
+    Also, note that the input order is y_true, y_pred, whereas the output order is submission, solution.
+    The order of y_true and y_pred is conventional, but the output is swapped in the output
+    since the compute_score functions expect it that way and I was told not to change those.
+
+    :param y_true: (UNUSED???) the solution numpy array of shape (X_test_cv.shape[0], window_size, n_labels) (may differ based on preprocessing and feature engineering steps)
+    :param y_pred: the submission numpy array of shape (X_test_cv.shape[0], 2)
+    :param featured_data: the entire dataset after preprocessing and feature engineering, but before pretraining of shape (size, n_features)
+    :param train_test_idx: the indices of the entire train and test set of shape (featured_data[0], )
+    :param test_idx_cv: the indices of the selected test set during the cross validation of shape (y_pred[0], )
+    :param downsampling_factor: the factor by which the test data has been downsampled during the pretraining
+    :return: the submission [0] and solution [1] which can be used by compute_score_full & compute_score_clean
     """
-    if downsampling_factor > 1:
-        y = np.repeat(y, downsampling_factor)
-
-    y_res = []
-
-    for y_window in tqdm(y, desc="Converting predictions to events", unit="window"):
-        # Convert to relative window event timestamps
-        y_window = one_hot_to_state(y_window)
-        events = find_events(y_window, median_filter_size=15)
-        y_res.append(events)
-
-    return np.array(y_res)
-
-
-def compute_score_full_from_numpy(solution: np.ndarray, submission: np.ndarray, train_idx_main: np.array,
-                                  test_idx_cv: np.array, featured_data: pd.DataFrame,
-                                  downsampling_factor: int = 1) -> float:
-    """Compute the score for the entire dataset
-
-    :param submission: the submission numpy array of shape (X_test.shape[0], 2)
-    :param solution: the solution numpy array of shape (X_test.shape[0], window_size, n_labels)
-    :return: the score for the entire dataset
-    """
-    # TODO Create window_info
-    train_main = featured_data.iloc[train_idx_main].reset_index()
+    # Get the complete train/test data
+    train_test_main = featured_data.iloc[train_test_idx]
 
     total_arr = []
-    # Reconstruct the orginal indices to access the data from train_main
+    # Reconstruct the original indices to access the data from train_main
     for i in test_idx_cv:
+        # TODO Use the downsampling factor here and don't hardcode the window_size
         arr = np.arange(i * 17280, (i + 1) * 17280)
         total_arr.append(arr)
-    test_idx = np.concatenate(total_arr)
-    test_cv = train_main.iloc[test_idx]
+    test_idx_cv = np.concatenate(total_arr)
 
-    # indices = train_idx[[train_idx[idx] for idx in test_idx]]
+    # Complete labelled data of current test split
+    test_cv = train_test_main.iloc[test_idx_cv]
 
-    window_info = (test_cv[['series_id', 'window', 'step']]
-                   .groupby(['series_id', 'window'])
-                   .apply(lambda x: x.iloc[0]))
-
+    # Prepare submission (prediction of the model)
+    window_info_test_cv = (test_cv[['series_id', 'window', 'step']]
+                           .groupby(['series_id', 'window'])
+                           .apply(lambda x: x.iloc[0]))
+    # FIXME window_info for some series starts with a very large step, instead of 0, close to the uint32 limit of 4294967295, likely due to integer underflow
 
     # Retrieve submission made by the model on the train split in the cv
-    submission = to_submission_format(submission, window_info)
+    submission = to_submission_format(y_pred, window_info_test_cv)
 
-    # TODO Read train CSV and match on series_is and step
-    # Convert to solution format of test
-    solution = to_submission_format(one_hot_to_prediction_format(solution[:, :, -3:], downsampling_factor), window_info)
-    return compute_score_full(submission, solution)
+    # Prepare solution
+    test_series_ids = window_info_test_cv['series_id'].unique()
+    # TODO Get the solution from y_true instead of loading these files
+    # Load the encoding
+    with open('./series_id_encoding.json', 'r') as f:
+        encoding = json.load(f)
+    decoding = {v: k for k, v in encoding.items()}
+    test_series_ids = [decoding[sid] for sid in test_series_ids]
 
+    # Load the train events from file
+    solution_full = (pd.read_csv("data/raw/train_events.csv")
+                     .groupby('series_id')
+                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
+                     .reset_index(drop=True))
 
-def make_scorer(score_func: Callable, **kwargs: dict) -> Callable:
-    """Make a scorer function that can be used in cross validation
+    # Apply the series_id encoding
+    solution_full['series_id'] = solution_full['series_id'].map(encoding).astype('int')
 
-    :param score_func: the scoring function with signature score_func(y_true: np.array, y_pred: np.array, **kwargs: dict) -> float
-    :param kwargs: the key word arguments for the scoring function
-    :return: the scorer function with signature score_func(y_true: np.array, y_pred: np.array) -> float
-    """
-    return lambda y_true, y_pred, **kwargs2: score_func(y_true, y_pred, **(kwargs | kwargs2))
+    # Convert dtypes, because they are fucked for no reason
+    solution_full['step'] = solution_full['step'].astype(float).astype('Int32')
+    # Convert step to int32 and 16
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        test_cv['step'] = test_cv['step'].astype('int32')
+        test_cv['series_id'] = test_cv['series_id'].astype('int16')
+
+    # Get the part from the entire train events that
+    # FIXME This part here deletes NaN steps, resulting in a shorter dataframe
+    solution_match = pd.merge(solution_full[['series_id', 'event', 'step']], test_cv[['series_id', 'step']],
+                              on=['series_id', 'step'], how='inner')
+
+    # Decoding series_id with the encoding object
+    solution_match['series_id'] = solution_match['series_id'].map(decoding)
+
+    # FIXME Something in here causes a warning later in src\score\scoring.py:238: RuntimeWarning: overflow encountered in scalar subtract
+    return submission, solution_match
 
 
 def log_scores_to_wandb(score_full: float, score_clean: float) -> None:
-    """Log the scores to both console and wandb if logging to wandb
+    """Log the scores to wandb
 
     :param score_full: the score for all series
     :param score_clean: the score for the clean series

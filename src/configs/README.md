@@ -10,11 +10,11 @@ The config file is split up in different sections. Each section has its own conf
 5. [Pretraining](#pretraining)
 6. [Models](#models)
 7. [Model store location](#model-store-location)
-7. [Ensemble](#ensemble)
-8. [Loss](#loss)
-9. [Hyperparameter optimization](#hyperparameter-optimization)
-10. [Cross validation](#cross-validation)
-11. [Scoring](#scoring)
+8. [Cross validation](#cross-validation)
+9. [Ensemble](#ensemble)
+10. [Loss](#loss)
+11. [Hyperparameter optimization](#hyperparameter-optimization)
+12. [Scoring](#scoring)
 
 ## General
 - `name`: `str`
@@ -344,6 +344,9 @@ Specify location where models should be stored, furthermore, the config should b
 ```JSON
 "model_store_loc": "./tm",
 ```
+
+## Cross validation
+!!!TODO
 
 ## Ensemble
 For now, we support just an ensemble of 1 function.

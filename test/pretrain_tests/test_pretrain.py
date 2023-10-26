@@ -27,7 +27,7 @@ class TestPretrain(TestCase):
             "awake": np.random.rand(138240) * 2 + 1,
             "f_test": np.random.rand(138240) * 2 + 1})
 
-        X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain_split(df)
+        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(df)
 
         self.assertEqual(X_train.shape, (6, 17280, 3))
         self.assertEqual(X_test.shape, (2, 17280, 3))
@@ -88,7 +88,7 @@ class TestPretrain(TestCase):
                                          "wakeup-NaN": [0, 1]})
         X, y = Pretrain.split_on_labels(df)
         self.assertListEqual(list(X.columns), ["f_enmo", "f_anglez"])
-        self.assertListEqual(list(y.columns), ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN"])
+        self.assertListEqual(list(y.columns), ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN", "series_id"])
 
     def test_to_window_numpy(self):
         df: pd.DataFrame = pd.DataFrame({"series_id": np.repeat(0, 34560),

@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from src.score.scoring import score
 
 
@@ -27,7 +28,7 @@ class Test(TestCase):
         })
 
         result = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False,
-                            plot_precision_recall=False)
+                       plot_precision_recall=False)
 
         self.assertEqual(result, 0.6666666666666666)
 

@@ -1,6 +1,8 @@
+import json
+
 import numpy as np
 import pandas as pd
-import json
+
 
 def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> pd.DataFrame:
     """ Combine predictions with window info to create a dataframe suitable for submission.csv or scoring

@@ -1,6 +1,5 @@
 import json
 
-import pandas as pd
 from torch import nn
 
 from ..cv.cv import CV
@@ -12,8 +11,8 @@ from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.transformers.transformer import Transformer
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
+from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 
@@ -197,7 +196,8 @@ class ConfigLoader:
 
         # Create ensemble
         ensemble = Ensemble(
-            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"], self.config["ensemble"])
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"],
+            self.config["ensemble"])
 
         return ensemble
 

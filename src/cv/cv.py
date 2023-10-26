@@ -67,7 +67,8 @@ class CV:
         """Initialize the CV object
 
         :param splitter: the splitter used to split the data. See [README.md](../README.md) for all options.
-        :param splitter_params: parameters for the splitters. See the [sklearn documentation](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for the parameters that each splitter needs.
+        :param splitter_params: parameters for the splitters.
+        See the [sklearn documentation](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for the parameters that each splitter needs.
         """
         try:
             self.splitter = _SPLITTERS[splitter](**splitter_params)

@@ -168,11 +168,13 @@ def main(config: ConfigLoader) -> None:
 
         # TODO simplify this
         # for each window get the series id and step offset
-        # FIXME window_info for some series starts with a very large step instead of 0, close to the uint32 limit of 4294967295, likely due to integer underflow
+        # FIXME window_info for some series starts with a very large step instead of 0,
+        #  close to the uint32 limit of 4294967295, likely due to integer underflow
         window_info = (featured_data.iloc[validation_idx][['series_id', 'window', 'step']]
                        .groupby(['series_id', 'window'])
                        .apply(lambda x: x.iloc[0]))
-        # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries to access the first step as a negative index which is now a very large integer instead
+        # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
+        #  to access the first step as a negative index which is now a very large integer instead
         # get only the test series data from the solution
         validation_series_ids = window_info['series_id'].unique()
         # if visualize is true plot all test series

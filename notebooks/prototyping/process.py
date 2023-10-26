@@ -23,7 +23,7 @@ first_timestamps = dict()
 pbar = tqdm(data.groupby(['series_id']))
 for series_id, group in pbar:
     pbar.set_description(
-        f"Processing series {sid}, of {len(group) / STEPS_PER_DAY:.1f} days")
+        f"Processing series {series_id}, of {len(group) / STEPS_PER_DAY:.1f} days")
 
     # drop series
     sid = group['series_id'].iloc[0]

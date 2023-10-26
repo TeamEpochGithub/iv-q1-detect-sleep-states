@@ -15,6 +15,7 @@ from notebooks.prototyping.model import TimeSeriesSegmentationModel
 window_length = 17280
 split = 0.7
 
+
 def masked_x(index: pd.Index, mask):
     """where the mask is false, replace the value with NaN, returns a copy"""
     x = index.to_numpy(copy=True, dtype=np.float32)
@@ -45,9 +46,8 @@ def plot_data(series, segment_pred, event_pred, title_id, feature, subsample=1, 
     awake_2_x = masked_x(series.index, series['awake'] == 2)
     awake_3_x = masked_x(series.index, series['awake'] == 3)
 
-
     y = series[feature].values
-    y = (y - np.mean(y))/np.std(y)
+    y = (y - np.mean(y)) / np.std(y)
 
     fig_anglez = px.line()
     fig_anglez.add_scatter(x=awake_0_x, y=y, mode='lines', name='0 (Sleep)', line=dict(color='blue'))
@@ -55,7 +55,8 @@ def plot_data(series, segment_pred, event_pred, title_id, feature, subsample=1, 
     fig_anglez.add_scatter(x=awake_2_x, y=y, mode='lines', name='2 (NaN)', line=dict(color='green'))
     fig_anglez.add_scatter(x=awake_3_x, y=y, mode='lines', name='3 (Unlabeled)', line=dict(color='grey'))
 
-    fig_anglez.add_scatter(x=series.index, y=segment_pred, mode='lines', name='segmentation', line=dict(color='light grey'))
+    fig_anglez.add_scatter(x=series.index, y=segment_pred, mode='lines', name='segmentation',
+                           line=dict(color='light grey'))
     fig_anglez.add_scatter(x=series.index, y=onset_pred, mode='lines', name='onset', line=dict(color='orange'))
     fig_anglez.add_scatter(x=series.index, y=awake_pred, mode='lines', name='awake', line=dict(color='black'))
     fig_anglez.update_xaxes(title='Timestamp')

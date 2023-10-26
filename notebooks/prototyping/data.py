@@ -14,6 +14,7 @@ reduce_factor = 12
 
 split = 0.7
 
+
 class TimeSeriesDataset(Dataset):
     def __init__(self, data, segmentation_labels, event_classification_labels):
         self.data = data
@@ -33,7 +34,6 @@ class TimeSeriesDataset(Dataset):
 
 
 def get_data_loader() -> DataLoader:
-
     # load the arrays from disk
     processed_data = np.load('./data/processed/train/featured/processed_data.npy')
     segmentation_labels = np.load('./data/processed/train/featured/segmentation_labels.npy')
@@ -48,12 +48,12 @@ def get_data_loader() -> DataLoader:
 
 if __name__ == '__main__':
 
-    first_timestamps = json.load(open(f'./data/processed/train/first_timestamps.json'))
+    first_timestamps = json.load(open('./data/processed/train/first_timestamps.json'))
 
     # select the first split of series ids from the keys in first_timestamps
     all_sids = list(first_timestamps.keys())
     all_sids.sort()
-    train_ids = all_sids[:int(len(all_sids)*split)]
+    train_ids = all_sids[:int(len(all_sids) * split)]
 
     series = {}
     for series_id in tqdm(train_ids, desc='Loading data'):
@@ -118,4 +118,3 @@ if __name__ == '__main__':
     np.save('./data/processed/train/featured/processed_data.npy', processed_data)
     np.save('./data/processed/train/featured/segmentation_labels.npy', segmentation_labels)
     np.save('./data/processed/train/featured/event_classification_labels.npy', event_classification_labels)
-

@@ -23,7 +23,8 @@ class SimilarityNan(PP):
         STEPS_PER_DAY = (24 * 60 * 60) // 5
 
         if len(series) < STEPS_PER_DAY:
-            logger.warning("Series %s is shorter than a day, setting similarity to 1. Should never happen...")
+            logger.warning(f"Series {series.iloc[0]['series_id']} is shorter than a day,"
+                           f" setting similarity to 1. Should never happen...")
             series['f_similarity_nan'] = 1
             return series
 

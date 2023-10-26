@@ -21,11 +21,11 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     # Get max of each channel
     maxes = np.max(predictions, axis=1)
 
-    # If onset is above threshhold of making a prediction, set onset
+    # If onset is above threshold of making a prediction, set onset
     if maxes[0] > thresh:
         onset = np.argmax(predictions[0])
 
-    # If awake is above threshhold of making a prediction, set awake
+    # If awake is above threshold of making a prediction, set awake
     if maxes[1] > thresh:
         awake = np.argmax(predictions[1])
 

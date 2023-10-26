@@ -14,20 +14,23 @@ class AddStateLabels(PP):
     The values are 0 for asleep, 1 for awake, and 2 for unlabeled.
     """
 
-    def __init__(self, events_path: str, **kwargs) -> None:
+    def __init__(self, events_path: str, id_encoding_path: str, **kwargs: dict) -> None:
         """Initialize the AddStateLabels class.
 
         :param events_path: the path to the events csv file
-        :raises PPException: If no path to the events csv file is given
+        :param id_encoding_path: the path to the encoding file of the series id
         """
-        super().__init__(**kwargs)
+        super().__init__(**kwargs | {"kind": "add_state_labels"})
 
         self.events_path: str = events_path
         self.events: pd.DataFrame = pd.DataFrame()
 
-        # TODO Don't hardcode the file name, add it as a parameter in the config.json #99
-        self.id_encoding_path: str = "series_id_encoding.json"
+        self.id_encoding_path: str = id_encoding_path
         self.id_encoding: dict = {}
+
+    def __repr__(self) -> str:
+        """Return a string representation of a AddStateLabels object"""
+        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path})"
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.

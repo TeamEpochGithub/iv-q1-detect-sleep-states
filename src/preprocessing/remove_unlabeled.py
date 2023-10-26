@@ -1,7 +1,7 @@
 import pandas as pd
 
-from ..preprocessing.pp import PP, PPException
 from ..logger.logger import logger
+from ..preprocessing.pp import PP, PPException
 
 
 class RemoveUnlabeled(PP):
@@ -12,6 +12,14 @@ class RemoveUnlabeled(PP):
     If the "window" column in present, only drop the windows where all the "awake" values are 2.
     """
 
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize the RemoveUnlabeled class"""
+        super().__init__(**kwargs | {"kind": "remove_unlabeled"})
+
+    def __repr__(self) -> str:
+        """Return a string representation of a RemoveUnlabeled object"""
+        return f"{self.__class__.__name__}()"
+
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Removes all the data points where there is no labeled data
 
@@ -19,6 +27,7 @@ class RemoveUnlabeled(PP):
         :return: The dataframe without the unlabeled data
         :raises PPException: If AddStateLabels wasn't used before
         """
+        # TODO Do this check with the config checker instead #190
         if "awake" not in data.columns:
             logger.critical("No awake column. Did you run AddStateLabels before?")
             raise PPException("No awake column. Did you run AddStateLabels before?")

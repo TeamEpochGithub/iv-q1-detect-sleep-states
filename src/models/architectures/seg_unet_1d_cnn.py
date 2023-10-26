@@ -2,10 +2,13 @@ import torch
 from torch import nn
 
 
-# TODO Make it work with our data
-class conbr_block(nn.Module):
+class ConBrBlock(nn.Module):
+    """
+    Convolution + Batch Normalization + ReLU Block.
+    """
+
     def __init__(self, in_layer, out_layer, kernel_size, stride, dilation):
-        super(conbr_block, self).__init__()
+        super(ConBrBlock, self).__init__()
 
         self.conv1 = nn.Conv1d(in_layer, out_layer, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=3, bias=True)
         self.bn = nn.BatchNorm1d(out_layer)
@@ -19,9 +22,13 @@ class conbr_block(nn.Module):
         return out
 
 
-class se_block(nn.Module):
+class SeBlock(nn.Module):
+    """
+    Squeeze and Excitation Block.
+    """
+
     def __init__(self, in_layer, out_layer):
-        super(se_block, self).__init__()
+        super(SeBlock, self).__init__()
 
         self.conv1 = nn.Conv1d(in_layer, out_layer // 8, kernel_size=1, padding=0)
         self.conv2 = nn.Conv1d(out_layer // 8, in_layer, kernel_size=1, padding=0)
@@ -41,13 +48,17 @@ class se_block(nn.Module):
         return x_out
 
 
-class re_block(nn.Module):
-    def __init__(self, in_layer, out_layer, kernel_size, dilation):
-        super(re_block, self).__init__()
+class ReBlock(nn.Module):
+    """
+    Residual Block.
+    """
 
-        self.cbr1 = conbr_block(in_layer, out_layer, kernel_size, 1, dilation)
-        self.cbr2 = conbr_block(out_layer, out_layer, kernel_size, 1, dilation)
-        self.seblock = se_block(out_layer, out_layer)
+    def __init__(self, in_layer, out_layer, kernel_size, dilation):
+        super(ReBlock, self).__init__()
+
+        self.cbr1 = ConBrBlock(in_layer, out_layer, kernel_size, 1, dilation)
+        self.cbr2 = ConBrBlock(out_layer, out_layer, kernel_size, 1, dilation)
+        self.seblock = SeBlock(out_layer, out_layer)
 
     def forward(self, x):
         x_re = self.cbr1(x)
@@ -57,37 +68,51 @@ class re_block(nn.Module):
         return x_out
 
 
-class seg_unet_id(nn.Module):
-    def __init__(self, input_dim, layer_n, kernel_size, depth):
-        super(seg_unet_id, self).__init__()
-        self.input_dim = input_dim
-        self.layer_n = layer_n
-        self.kernel_size = kernel_size
-        self.depth = depth
+class SegUnet1D(nn.Module):
+    """
+    SegUnetId model. Contains the architecture of the SegUnetId model.
+    """
 
-        self.AvgPool1D1 = nn.AvgPool1d(input_dim, stride=5)
-        self.AvgPool1D2 = nn.AvgPool1d(input_dim, stride=25)
-        self.AvgPool1D3 = nn.AvgPool1d(input_dim, stride=125)
+    def __init__(self, in_channels: int, window_size: int, out_channels: int, config: dict):
+        super(SegUnet1D, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.hidden_layers = config["hidden_layers"]
+        self.kernel_size = config["kernel_size"]
+        self.depth = config["depth"]
+        self.window_size = window_size
 
-        self.layer1 = self.down_layer(self.input_dim, self.layer_n, self.kernel_size, 1, 2)
-        self.layer2 = self.down_layer(self.layer_n, int(self.layer_n * 2), self.kernel_size, 5, 2)
-        self.layer3 = self.down_layer(int(self.layer_n * 2) + int(self.input_dim), int(self.layer_n * 3), self.kernel_size, 5, 2)
-        self.layer4 = self.down_layer(int(self.layer_n * 3) + int(self.input_dim), int(self.layer_n * 4), self.kernel_size, 5, 2)
-        self.layer5 = self.down_layer(int(self.layer_n * 4) + int(self.input_dim), int(self.layer_n * 5), self.kernel_size, 4, 2)
+        self.stride = 4
+        self.padding = 1
 
-        self.cbr_up1 = conbr_block(int(self.layer_n * 7), int(self.layer_n * 3), self.kernel_size, 1, 1)
-        self.cbr_up2 = conbr_block(int(self.layer_n * 5), int(self.layer_n * 2), self.kernel_size, 1, 1)
-        self.cbr_up3 = conbr_block(int(self.layer_n * 3), self.layer_n, self.kernel_size, 1, 1)
-        self.upsample = nn.Upsample(scale_factor=5, mode='nearest')
-        self.upsample1 = nn.Upsample(scale_factor=5, mode='nearest')
+        # If we downsample by 12 (17280/12), we need to have a stride of 2.
+        # TODO Make this work for multiple window sizes
+        if self.window_size == 1440:
+            self.stride = 2
+            self.padding = 2
+        self.AvgPool1D1 = nn.AvgPool1d(kernel_size=5, stride=self.stride, padding=self.padding)
+        self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=self.stride * self.stride, padding=self.padding)
+        self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=self.stride * self.stride * self.stride, padding=self.padding)
 
-        self.outcov = nn.Conv1d(self.layer_n, 1, kernel_size=self.kernel_size, stride=1, padding=3)
+        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth)
+        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, self.depth)
+        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, self.stride, self.depth)
+        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, self.stride, self.depth)
+        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, self.stride, self.depth)
+
+        self.cbr_up1 = ConBrBlock(int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
+        self.cbr_up2 = ConBrBlock(int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
+        self.cbr_up3 = ConBrBlock(int(self.hidden_layers * 3), self.hidden_layers, self.kernel_size, 1, 1)
+        self.upsample = nn.Upsample(scale_factor=self.stride, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=self.stride, mode='nearest')
+        self.softmax = nn.Softmax(dim=1)
+        self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
 
     def down_layer(self, input_layer, out_layer, kernel, stride, depth):
         block = []
-        block.append(conbr_block(input_layer, out_layer, kernel, stride, 1))
+        block.append(ConBrBlock(input_layer, out_layer, kernel, stride, 1))
         for i in range(depth):
-            block.append(re_block(out_layer, out_layer, kernel, 1))
+            block.append(ReBlock(out_layer, out_layer, kernel, 1))
         return nn.Sequential(*block)
 
     def forward(self, x):
@@ -105,7 +130,6 @@ class seg_unet_id(nn.Module):
         x = self.layer4(x)
 
         # Decoder
-
         up = self.upsample1(x)
         up = torch.cat([up, out_2], 1)
         up = self.cbr_up1(up)
@@ -119,6 +143,7 @@ class seg_unet_id(nn.Module):
         up = self.cbr_up3(up)
 
         out = self.outcov(up)
+        out = self.softmax(out)
 
         # out = nn.functional.softmax(out,dim=2)
 

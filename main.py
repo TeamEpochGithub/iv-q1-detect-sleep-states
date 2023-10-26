@@ -8,11 +8,12 @@ import wandb
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
-from src.pre_train.train_test_split import train_test_split, split_on_labels
+from src.pretrain.pretrain import Pretrain
 from src.score.doscoring import compute_scores
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
+from src.score.visualize_preds import plot_preds_on_series
 
 
 def main(config: ConfigLoader) -> None:
@@ -60,17 +61,16 @@ def main(config: ConfigLoader) -> None:
 
     print_section_separator("Pre-train", spacing=0)
 
-    logger.info("Get pretraining parameters from config...")
-    pretrain = config.get_pretraining()
+    logger.info("Get pretraining parameters from config and initialize pretrain")
+    pretrain: Pretrain = config.get_pretraining()
 
-    logger.info("Obtained pretrain parameters from config " + str(pretrain))
+    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
 
     # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
-    X_train, X_test, y_train, y_test, train_idx, test_idx = train_test_split(featured_data,
-                                                                             test_size=pretrain["test_size"],
-                                                                             standardize_method=pretrain["standardize"])
+
+    X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain_split(featured_data)
 
     # Give data shape in terms of (features (in_channels), window_size))
     data_shape = (X_train.shape[2], X_train.shape[1])
@@ -81,9 +81,7 @@ def main(config: ConfigLoader) -> None:
         X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
 
     # TODO Cross validation should be part of each model
-    cv = 0
-    if "cv" in pretrain:
-        cv = config.get_cv()
+    cv = config.get_cv()
 
     # ------------------------- #
     #          Training         #
@@ -121,33 +119,12 @@ def main(config: ConfigLoader) -> None:
         model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
         models[model].save(model_filename_opt)
 
-    # ------------------------------------------------------- #
-    #                    Train for submission                 #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Train for submission", spacing=0)
-
-    if config.get_train_for_submission():
-        logger.info("Retraining models for submission")
-        # Retrain all models with optimal parameters
-        for i, model in enumerate(models):
-            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
-            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
-            if os.path.isfile(model_filename_submit):
-                logger.info("Found existing fully trained optimal model " + str(i) + ": " + model + " with location " + model_filename)
-            else:
-                models[model].load(model_filename_opt, only_hyperparameters=True)
-                logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(*split_on_labels(featured_data))
-                models[model].save(model_filename_submit)
-    else:
-        logger.info("Not training best model for submission")
-
     # ------------------------- #
     #          Ensemble         #
     # ------------------------- #
 
     print_section_separator("Ensemble", spacing=0)
+
     # TODO Add crossvalidation to models #107
     ensemble = config.get_ensemble(models)
 
@@ -185,14 +162,15 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Formatting predictions...")
 
+        # TODO simplify this
         # for each window get the series id and step offset
         window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
                        .groupby(['series_id', 'window'])
                        .apply(lambda x: x.iloc[0]))
         submission = to_submission_format(predictions, window_info)
-
         # get only the test series data from the solution
         test_series_ids = window_info['series_id'].unique()
+        # if visualize is true plot all test series
         with open('./series_id_encoding.json', 'r') as f:
             encoding = json.load(f)
         decoding = {v: k for k, v in encoding.items()}
@@ -205,8 +183,50 @@ def main(config: ConfigLoader) -> None:
 
         logger.info("Start scoring test predictions...")
         compute_scores(submission, solution)
+        # the plot function applies encoding to the submission
+        # we do not want to change the ids on the original submission
+        plot_submission = submission.copy()
+        # pass only the test data
+        logger.info('Creating plots...')
+        plot_preds_on_series(plot_submission,
+                             featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
+                             number_of_series_to_plot=config.get_number_of_plots(),
+                             folder_path='prediction_plots/' + config_hash,
+                             show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
     else:
         logger.info("Not scoring")
+
+    # ------------------------------------------------------- #
+    #                    Train for submission                 #
+    # ------------------------------------------------------- #
+
+    print_section_separator("Train for submission", spacing=0)
+
+    if config.get_train_for_submission():
+        logger.info("Retraining models for submission")
+
+        # Retrain all models with optimal parameters
+        X_train, y_train = pretrain.pretrain_final(featured_data)
+
+        # Save scaler
+        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
+        pretrain.scaler.save(scaler_filename)
+
+        for i, model in enumerate(models):
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
+                model].hash + ".pt"
+            if os.path.isfile(model_filename_submit):
+                logger.info("Found existing fully trained optimal model " + str(
+                    i) + ": " + model + " with location " + model_filename)
+            else:
+                models[model].load(model_filename_opt, only_hyperparameters=True)
+                logger.info("Retraining model " + str(i) + ": " + model)
+                models[model].train_full(X_train, y_train)
+                models[model].save(model_filename_submit)
+
+    else:
+        logger.info("Not training best model for submission")
 
     # [optional] finish the wandb run, necessary in notebooks
     if config.get_log_to_wandb():

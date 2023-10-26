@@ -4,11 +4,13 @@ from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 from src.score.util.plot_with_plotly import plot_w_plotly
 from src.score.util.save_plots import save_plots
+from src.score.util.make_pred_histogram import make_histogram
 
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
                          features_to_plot: list = None, number_of_series_to_plot: int = 1, show_plot: bool = False,
-                         ids_to_plot: list = None, folder_path: str = '', save_figures: bool = True) -> None:
+                         ids_to_plot: list = None, folder_path: str = '', save_figures: bool = True,
+                         save_histogram: bool = True) -> None:
     """ This function plots the predictions on the series data. It also plots the real events on the series data.
         The predictions and the events are vertical lines on the plot. The vertical lines have annotations that show
         the real and predicted values and the timestamps. The annotations are colored according to the event type.
@@ -56,6 +58,8 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
         if save_figures:
             save_plots(current_series, current_events,
                        current_preds, id_decoding, id, features_to_plot, folder_path)
+        if save_histogram:
+            make_histogram(current_preds, current_events)
 
 
 if __name__ == "__main__":
@@ -67,4 +71,4 @@ if __name__ == "__main__":
     featured_data = get_processed_data(config, series_path, save_output=True)
     # Plot the predictions on the series data for the chosen series_ids
     plot_preds_on_series(preds, featured_data,
-                         number_of_series_to_plot=5, show_plot=True)
+                         number_of_series_to_plot=20, show_plot=True, save_figures=False)

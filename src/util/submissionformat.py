@@ -18,6 +18,7 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     #Drop all nans
     window_info = window_info.dropna()
 
+    # TODO Add confidences to the predictions and use them here
     # create a new dataframe, by converting every onset and wakeup column values to two rows,
     # one with event='onset' and the other with event='awake'
     # and then sort by series_id and window (ascending)

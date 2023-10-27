@@ -14,6 +14,7 @@ from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.transformers.transformer import Transformer
+from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 
@@ -154,6 +155,8 @@ class ConfigLoader:
                     curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
                 case "transformer":
                     curr_model = Transformer(model_config, data_shape, model_name)
+                case "segmentation-transformer":
+                    curr_model = SegmentationTransformer(model_config, data_shape, model_name)
                 case "seg-unet-1d-cnn":
                     curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
                 case "event-seg-unet-1d-cnn":

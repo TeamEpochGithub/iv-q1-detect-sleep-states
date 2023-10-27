@@ -11,30 +11,30 @@
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
     "preprocessing": [
-        {
-            "kind": "mem_reduce",
-            "id_encoding_path": "series_id_encoding.json"
-        },
-        {
-            "kind": "similarity_nan",
-            "as_feature": true
-        },
-        {
-            "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv",
-            "use_similarity_nan": true,
-            "fill_limit": 8640
-        },
-          {
-            "kind": "split_windows",
-            "start_hour": 15,
-            "window_size": 17280
-          },
-        {
-          "kind": "add_segmentation_labels"
-        }
-      ],
+      {
+        "kind": "mem_reduce",
+        "id_encoding_path": "series_id_encoding.json"
+      },
+      {
+        "kind": "similarity_nan",
+        "as_feature": true
+      },
+      {
+        "kind": "add_state_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv",
+        "use_similarity_nan": true,
+        "fill_limit": 8640
+      },
+      {
+        "kind": "split_windows",
+        "start_hour": 15,
+        "window_size": 17280
+      },
+      {
+        "kind": "add_segmentation_labels"
+      }
+    ],
     "feature_engineering": {},
     "pretraining": {
       "window_size": 17280,
@@ -60,19 +60,26 @@
       }
     },
     "models": {
-      "1D-Unet-CNN": {
-        "type": "seg-unet-1d-cnn",
-        "loss": "bce-torch",
-        "optimizer": "rmsprop-torch",
-        "epochs": 50,
-        "batch_size": 64,
-        "lr": 0.0005,
-        "hidden_layers": 16,
-        "early_stopping": 7
-      }
+        "SegmentTransformer": {
+            "type": "segmentation-transformer",
+            "epochs": 100,
+            "loss": "bce-torch",
+            "optimizer": "adam-torch",
+            "lr": 0.00035,
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 4
+            },
+            "pe": "other",
+            "emb_dim": 64,
+            "forward_dim": 246,
+            "batch_size": 4,
+            "heads": 8,
+            "pooling": "none"
+        }
     },
     "ensemble": {
-        "models": ["1D-Unet-CNN"],
+        "models": ["SegmentTransformer"],
         "weights": [1],
         "comb_method": "addition"
     },

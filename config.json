@@ -26,6 +26,12 @@
             "events_path": "data/raw/train_events.csv"
         },
         {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5
+        },
+        {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280

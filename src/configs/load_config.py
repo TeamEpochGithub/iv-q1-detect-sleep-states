@@ -9,10 +9,11 @@ from ..hpo.hpo import HPO
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
+from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.transformers.transformer import Transformer
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
+from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 from ..models.Sleep_critical_model import CriticalPointGRU
@@ -158,6 +159,8 @@ class ConfigLoader:
                     curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
                 case "sleep_sritical_model":
                     curr_model = CriticalPointGRU(model_config, data_shape, model_name)
+                case "event-seg-unet-1d-cnn":
+                    curr_model = EventSegmentationUnet1DCNN(model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException("Model not found: " + model_config["type"])

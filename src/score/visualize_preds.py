@@ -67,4 +67,4 @@ if __name__ == "__main__":
     featured_data = get_processed_data(config, series_path, save_output=True)
     # Plot the predictions on the series data for the chosen series_ids
     plot_preds_on_series(preds, featured_data,
-                         number_of_series_to_plot=5, show_plot=True)
+                         number_of_series_to_plot=5, show_plot=True, save_figures=False)

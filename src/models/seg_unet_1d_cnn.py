@@ -283,7 +283,7 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Get only the one hot encoded features
-        y_train = y_train[:, :, -3:]
+        y_train = y_train[:, :, -4:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)

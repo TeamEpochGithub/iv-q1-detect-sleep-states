@@ -68,6 +68,11 @@ Adds this as a column that is 0 for perfect similarity.
         - 0: `hot-asleep`
         - 1: `hot-awake`
         - 2: `hot-NaN`, not labeled
+- `add_event_labels`
+    - Parameters: `id_encoding_path: str`, `smoothing: int`, `events_path: str`
+    - Adds 2 columns, 0 for no event and 1 for event and applies gaussian smoothing over it
+        - 0: `state_onset`
+        - 1: `state_wakeup`
 
 Example for each step:
 ```JSON
@@ -100,7 +105,13 @@ Example for each step:
     },
     {
         "kind": "add_segmentation_labels"
-    }
+    },
+    {
+        "kind": "add_event_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv",
+        "smoothing": 5
+    },
 ]
 ```
 

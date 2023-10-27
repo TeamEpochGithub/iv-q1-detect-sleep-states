@@ -5,7 +5,7 @@ import wandb
 
 from src.logger.logger import logger
 from src.models.transformers.trainers.segmentation_trainer import SegmentationTrainer
-from src.util.state_to_event import find_events, one_hot_to_state
+from src.util.state_to_event import find_events
 
 from ...loss.loss import Loss
 from ..model import Model
@@ -16,7 +16,6 @@ from tqdm import tqdm
 from numpy import ndarray, dtype
 from typing import Any
 from .architecture.transformer_pool import TransformerPool
-import torch.nn.functional as F
 
 
 class SegmentationTransformer(Model):

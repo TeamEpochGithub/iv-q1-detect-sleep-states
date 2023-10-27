@@ -154,7 +154,6 @@ class SegmentationTrainer:
         data[0] = data[0].float()
         output = model(data[0].to(self.device))
 
-
         # Calculate loss
         loss = self.criterion(output, data[1].type(
             torch.FloatTensor).to(self.device))

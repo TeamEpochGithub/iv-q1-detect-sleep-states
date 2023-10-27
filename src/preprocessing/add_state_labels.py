@@ -15,7 +15,7 @@ class AddStateLabels(PP):
     """
 
     def __init__(self, events_path: str, id_encoding_path: str,
-                 use_similarity_nan: bool, fill_limit: int, **kwargs: dict) -> None:
+                 use_similarity_nan: bool, **kwargs) -> None:
         """Initialize the AddStateLabels class.
 
         :param events_path: the path to the events csv file
@@ -30,7 +30,10 @@ class AddStateLabels(PP):
         self.id_encoding: dict = {}
 
         self.use_similarity_nan: bool = use_similarity_nan
-        self.fill_limit = fill_limit
+        if self.use_similarity_nan:
+            self.fill_limit = kwargs.pop("fill_limit")
+            if self.fill_limit is None:
+                raise Exception("fill_limit is required when use_similarity_nan is True")
 
     def __repr__(self) -> str:
         """Return a string representation of a AddStateLabels object"""
@@ -69,16 +72,17 @@ class AddStateLabels(PP):
         weird_series_encoded = [self.id_encoding[sid] for sid in weird_series if sid in self.id_encoding]
 
         # iterate over the series and set the awake column
-        tqdm.pandas()
         if self.use_similarity_nan:
             similarity_cols = [col for col in data.columns if col.endswith('similarity_nan')]
             if len(similarity_cols) == 0:
                 raise Exception("No (f_)similarity_nan column found, but use_similarity_nan is set to True")
+            tqdm.pandas()
             data = (data
                     .groupby('series_id')
-                    .progress_apply(lambda x: self.set_awake_with_similarity(x, ))
+                    .progress_apply(lambda x: self.set_awake_with_similarity(x, similarity_cols[0]))
                     .reset_index(drop=True))
         else:
+            tqdm.pandas()
             data = (data
                     .groupby('series_id')
                     .progress_apply(lambda x: self.set_awake(x, weird_series_encoded))
@@ -165,6 +169,7 @@ class AddStateLabels(PP):
                     self.fill_forward(awake_col, fill_value_after[prev_event], prev_step, series)
                 prev_event = 'nan'
             else:
+                step = int(step)
                 event = row['event']
                 if prev_event == 'nan':
                     # transition from nan to non-nan
@@ -177,7 +182,8 @@ class AddStateLabels(PP):
                 prev_event = event
 
         # fill in the tail of the series after the last event
-        self.fill_forward(awake_col, prev_event, prev_step, series)
+        if prev_event is not None and prev_event != 'nan':
+            self.fill_forward(awake_col, fill_value_after[prev_event], prev_step, series)
         return series
 
     def fill_backward(self, awake_col, fill_value, prev_step, series, step):
@@ -198,6 +204,9 @@ class AddStateLabels(PP):
         search_slice = series.iloc[prev_step:prev_step + self.fill_limit, awake_col]
         slice_similar_mask = (search_slice == 2)
         first_similar = slice_similar_mask.argmax()
-        end_of_fill = prev_step + first_similar
-        end_of_fill = min(end_of_fill, prev_step + self.fill_limit)
+        if slice_similar_mask.any():
+            end_of_fill = prev_step + first_similar
+            end_of_fill = min(end_of_fill, prev_step + self.fill_limit)
+        else:
+            end_of_fill = prev_step + self.fill_limit
         series.iloc[prev_step:end_of_fill, awake_col] = fill_value

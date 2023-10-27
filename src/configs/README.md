@@ -51,11 +51,16 @@ Adds this as a column that is 0 for perfect similarity.
 - `add-noise`
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`
-    - Parameters: `id_encoding_path: str`, `events_path: str`
+    - Parameters: `id_encoding_path: str`, `events_path: str`, `use_similarity_nan: bool`, `fill_limit: int`
     - Labels the data in a way that each timestep gets a label.
         - `0`: asleep.
         - `1`: awake.
         - `2`: `NaN`, not labeled.
+    - If `use_similarity_nan` is set to true, 
+      it will use the similarity_nan column to determine whether something is NaN or unlabeled, 
+      and asleep/awake labelling around those segments will be better.
+    - `fill_limit` is the maximum number of time steps that a state is extended into unlabeled non-nan data,
+      only used if `use_similarity_nan` is set to true.
 - `split_windows`
     - Parameters: `start_hour: int = 15`, `window_size: int = 17280`
     - Splits the data in to 24 hour long windows

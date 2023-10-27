@@ -25,7 +25,8 @@ class TestAddStateLabels(TestCase):
         id_encoding = {'a': 0, 'b': 1}
 
         # run the function
-        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path')
+        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path',
+                            use_similarity_nan=False, fill_limit=2)
         pp.events = events
         pp.id_encoding = id_encoding
 
@@ -57,7 +58,8 @@ class TestAddStateLabels(TestCase):
         id_encoding = {'a': 0}
 
         # run the function
-        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path')
+        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path',
+                            use_similarity_nan=False, fill_limit=2)
         pp.events = events
         pp.id_encoding = id_encoding
 
@@ -88,7 +90,8 @@ class TestAddStateLabels(TestCase):
         id_encoding = {'a': 0}
 
         # run the function
-        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path')
+        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path',
+                            use_similarity_nan=False, fill_limit=2)
         pp.events = events
         pp.id_encoding = id_encoding
 

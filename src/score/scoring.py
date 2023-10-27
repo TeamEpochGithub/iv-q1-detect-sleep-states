@@ -5,11 +5,11 @@ video.
 
 """
 
+from typing import Dict, List, Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pandas.api.types
-from typing import Dict, List, Tuple
-import matplotlib.pyplot as plt
 
 
 # To run the code just run this script
@@ -165,6 +165,10 @@ def score(
          "as defined in tolerances.")
     assert pd.api.types.is_numeric_dtype(solution[time_column_name]), \
         f"Solution column {time_column_name} must be of numeric type."
+
+    # If the submission is fully NaN, return a score of 0
+    if submission.isna().all().all():
+        return 0
 
     # Validate submission format
     for column_name in [

@@ -13,12 +13,12 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-from ..util.state_to_event import find_events, one_hot_to_state
+from ..util.state_to_event import pred_to_event_state
 
 
-class SegmentationUnet1DCNN(Model):
+class EventSegmentationUnet1DCNN(Model):
     """
-    This model is a segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
+    This model is a event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
     def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
@@ -38,12 +38,14 @@ class SegmentationUnet1DCNN(Model):
             self.device = torch.device("cuda")
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-        self.model_type = "state-segmentation"
+        self.model_type = "event-segmentation"
         self.data_shape = data_shape
 
-        # Load config and model
+        # Load config
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
+
+        # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
+        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
@@ -73,11 +75,12 @@ class SegmentationUnet1DCNN(Model):
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
         config["hidden_layers"] = config.get("hidden_layers", default_config["hidden_layers"])
         config["kernel_size"] = config.get("kernel_size", default_config["kernel_size"])
         config["depth"] = config.get("depth", default_config["depth"])
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
+        config["threshold"] = config.get("threshold", default_config["threshold"])
+        config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
         self.config = config
 
     def load_optimizer(self) -> None:
@@ -92,7 +95,7 @@ class SegmentationUnet1DCNN(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1, "weight_decay": 0.0}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1, "threshold": 0.5, "weight_decay": 0.0}
 
     def get_type(self) -> str:
         """
@@ -123,9 +126,9 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
 
-        # Get only the one hot encoded features
-        y_train = y_train[:, :, -3:]
-        y_test = y_test[:, :, -3:]
+        # Get only the 2 event state features
+        y_train = y_train[:, :, -2:]
+        y_test = y_test[:, :, -2:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -164,7 +167,7 @@ class SegmentationUnet1DCNN(Model):
 
         # Train the model
         for epoch in range(epochs):
-            self.model.train(True)
+            self.model.train()
             avg_loss = 0
             avg_val_loss = 0
             total_batch_loss = 0
@@ -195,8 +198,8 @@ class SegmentationUnet1DCNN(Model):
                     tepoch.set_description(f" Train Epoch {epoch}")
                     tepoch.set_postfix(loss=avg_loss)
 
-            # Calculate the validation loss
-            self.model.train(False)
+            # Calculate the validation loss and set the model to eval
+            self.model.eval()
 
             with torch.no_grad():
                 with tqdm(test_dataloader, unit="batch") as vepoch:
@@ -267,8 +270,8 @@ class SegmentationUnet1DCNN(Model):
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-        # Get only the one hot encoded features
-        y_train = y_train[:, :, -3:]
+        # Get only the event state features
+        y_train = y_train[:, :, -2:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -290,7 +293,7 @@ class SegmentationUnet1DCNN(Model):
             wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
         for epoch in range(epochs):
-            self.model.train(True)
+            self.model.train()
             total_batch_loss = 0
             avg_loss = 0
             with tqdm(train_dataloader, unit="batch") as tepoch:
@@ -345,6 +348,9 @@ class SegmentationUnet1DCNN(Model):
         else:
             device = torch.device("cuda")
 
+        # Set model to eval for inference
+        self.model.eval()
+
         self.model.to(device)
 
         # Print data shape
@@ -383,8 +389,7 @@ class SegmentationUnet1DCNN(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            pred = one_hot_to_state(pred)
-            events = find_events(pred, median_filter_size=15)
+            events = pred_to_event_state(pred, thresh=self.config["threshold"])
             all_predictions.append(events)
 
         # Return numpy array
@@ -428,7 +433,7 @@ class SegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

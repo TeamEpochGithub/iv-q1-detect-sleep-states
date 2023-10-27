@@ -11,10 +11,10 @@ from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.doscoring import compute_scores
 from src.score.nan_confusion import compute_nan_confusion_matrix
+from src.score.visualize_preds import plot_preds_on_series
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
-from src.score.visualize_preds import plot_preds_on_series
 
 
 def main(config: ConfigLoader) -> None:

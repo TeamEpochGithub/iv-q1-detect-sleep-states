@@ -154,14 +154,10 @@ class SegmentationTrainer:
         data[0] = data[0].float()
         output = model(data[0].to(self.device))
 
-        # Create mask to ignore nan values
-        mask = torch.ones_like(data[1]).to(self.device)
-        mask[:, 0] = (1 - data[1][:, 2])
-        mask[:, 1] = (1 - data[1][:, 3])
 
         # Calculate loss
         loss = self.criterion(output, data[1].type(
-            torch.FloatTensor).to(self.device), mask)
+            torch.FloatTensor).to(self.device))
 
         # Backpropagate loss if not nan
         if not np.isnan(loss.item()):
@@ -210,13 +206,8 @@ class SegmentationTrainer:
             data[0] = data[0].float()
             output = model(data[0].to(self.device))
 
-            # Create mask to ignore nan values
-            mask = torch.ones_like(data[1]).to(self.device)
-            mask[:, 0] = (1 - data[1][:, 2])
-            mask[:, 1] = (1 - data[1][:, 3])
-
             loss = self.criterion(output, data[1].type(
-                torch.FloatTensor).to(self.device), mask)
+                torch.FloatTensor).to(self.device))
             if not np.isnan(loss.item()):
                 losses.append(loss.detach())
         return losses

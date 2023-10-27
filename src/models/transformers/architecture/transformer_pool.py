@@ -38,11 +38,19 @@ class TransformerPool(nn.Module):
                 self.encoder.get_output_size(), num_class)
         if pooling == "lstm":
             self.seq_pool = LSTMPooling(emb_dim=emb_dim)
-            self.mlp_head = nn.Linear(self.encoder.get_output_size() / emb_dim, num_class)
+            self.mlp_head = nn.Linear(
+                self.encoder.get_output_size() / emb_dim, num_class)
         elif pooling == "softmax":
             self.seq_pool = SeqPool(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(emb_dim, num_class)
         self.no_head = no_head
+        if no_head:
+            self.mlp_head = nn.Linear(emb_dim, num_class)
+            self.untokenize = None
+            if tokenizer == "patch":
+                self.untokenize = nn.Linear(
+                    seq_len // tokenizer_args["patch_size"], seq_len)
+            self.softmax = nn.Softmax(dim=2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -53,14 +61,16 @@ class TransformerPool(nn.Module):
         # Pass x through encoder (bs, l, c) -> (bs, l_e, e)
         x = self.encoder(x)
 
-        # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
-        x = self.seq_pool(x)
-
-        
-
-        # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
         if self.no_head:
-            return x
-        x = self.mlp_head(x)
+            # Perform sequential pooling (bs, l_e, e) -> (bs, len, num_class)
+            x = self.mlp_head(x)
+            if self.untokenize:
+                x = self.untokenize(x.permute(0, 2, 1)).permute(0, 2, 1)
+            x = self.softmax(x)
+        else:
+            # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
+            x = self.seq_pool(x)
+            # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
+            x = self.mlp_head(x)
 
         return x

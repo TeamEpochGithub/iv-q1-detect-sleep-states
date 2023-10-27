@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": false,
 
     "train_series_path": "data/raw/train_series.parquet",
@@ -29,16 +29,14 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 5
+            "smoothing": 20
         },
         {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
-        },
-        {
-            "kind": "add_segmentation_labels"
         }
+
 
     ],
     "feature_engineering": [
@@ -56,9 +54,9 @@
         "Sleep_Critical_model": {
             "type": "sleep_sritical_model",
             "loss": "mse-torch",
-            "epochs": 5,
+            "epochs": 10,
             "batch_size": 32,
-            "lr": 0.001,
+            "lr": 0.01,
             "optimizer": "adam-torch",
             "early_stopping": 3
         }
@@ -81,8 +79,8 @@
     "scoring": true,
     "visualize_preds": {
         "n": 5,
-        "browser_plot": true,
-        "save": false
+        "browser_plot": false,
+        "save": true
     }
 }
 

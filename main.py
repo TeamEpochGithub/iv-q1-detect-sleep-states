@@ -3,7 +3,7 @@ import json
 import os
 
 import pandas as pd
-
+import numpy as np
 import wandb
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
@@ -159,6 +159,9 @@ def main(config: ConfigLoader) -> None:
     scoring = config.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
+        # store the ytest array in a file and read it while making preds
+        np.save('y_test.npy', y_test)
+
         predictions = ensemble.pred(X_test, pred_cpu)
 
         logger.info("Formatting predictions...")

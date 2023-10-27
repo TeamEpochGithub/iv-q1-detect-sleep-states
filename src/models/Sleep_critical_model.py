@@ -7,7 +7,7 @@ import wandb
 from numpy import ndarray, dtype
 from tqdm import tqdm
 from torch import nn
-
+from src.util.state_to_event import pred_to_event_state
 
 from timm.scheduler import CosineLRScheduler
 from ..logger.logger import logger
@@ -226,6 +226,7 @@ class CriticalPointGRU(Model):
                         logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
                             total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
+                        # TODO use the save function to save this model
                         stopped = True
                         break
 
@@ -326,6 +327,8 @@ class CriticalPointGRU(Model):
         logger.info("--- Training of model complete!")
 
     def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+        y_test = np.load('y_test.npy')
+        y_test = y_test[:, :, -2:]
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -375,9 +378,8 @@ class CriticalPointGRU(Model):
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Each pred is a sequence with 2 channels
             # so just return the index of the max per channel
-            events = []
-            events.append(np.argmax(pred, axis=0))
-            all_predictions.append(tuple(events))
+            events = pred_to_event_state(pred, thresh=self.config["threshold"])
+            all_predictions.append(events)
 
         # Return numpy array
         return np.array(all_predictions).squeeze()

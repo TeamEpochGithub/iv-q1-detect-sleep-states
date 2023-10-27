@@ -38,7 +38,7 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["day", "hour"]
+            "time_features": ["day", "hour", "minute", "second"]
         }
     ],
     "pretraining": {

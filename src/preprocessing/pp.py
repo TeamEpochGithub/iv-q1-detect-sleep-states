@@ -37,12 +37,18 @@ class PP:
             case "add_noise":
                 from .add_noise import AddNoise
                 return AddNoise(**config)
+            case "similarity_nan":
+                from .similarity_nan import SimilarityNan
+                return SimilarityNan(**config)
             case "add_regression_labels":
                 from .add_regression_labels import AddRegressionLabels
                 return AddRegressionLabels(**config)
             case "add_segmentation_labels":
                 from .add_segmentation_labels import AddSegmentationLabels
                 return AddSegmentationLabels(**config)
+            case "add_event_labels":
+                from .add_event_labels import AddEventLabels
+                return AddEventLabels(**config)
             case "add_state_labels":
                 from .add_state_labels import AddStateLabels
                 return AddStateLabels(**config)

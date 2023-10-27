@@ -61,10 +61,21 @@ class SplitWindows(PP):
         gc.collect()
 
         # Pad types
-        pad_type = {'step': np.uint32, 'series_id': np.uint16,
+        pad_type = {'step': np.int32, 'series_id': np.uint16,
                     'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
-        if 'awake' in group.columns:
-            pad_type['awake'] = np.uint8
+
+        optionals = {  # (data_type, default_val for padding)
+            'awake': (np.uint8, 2),
+            'state-onset': (np.float32, 0),
+            'state-wakeup': (np.float32, 0),
+            'f_similarity_nan': (np.float32, 0),
+            'similarity_nan': (np.float32, 0),
+        }
+
+        # set the data types for the optional columns
+        for col, (data_type, default_val) in optionals.items():
+            if col in group.columns:
+                pad_type[col] = data_type
 
         # Get current series_id
         curr_series_id = group['series_id'].iloc[0]
@@ -84,10 +95,6 @@ class SplitWindows(PP):
         else:
             amount_of_padding_start += initial_steps - self.steps_before
 
-        # Create numpy arrays of zeros for enmo, anglez, and awake
-        enmo = np.zeros(amount_of_padding_start)
-        anglez = np.zeros(amount_of_padding_start)
-
         # Create a numpy array of step values
         step = (-np.arange(1, amount_of_padding_start + 1))[::-1]
 
@@ -95,19 +102,17 @@ class SplitWindows(PP):
         timestamps = (first_time - np.arange(1, amount_of_padding_start + 1)
                       * pd.Timedelta(seconds=5))[::-1]
 
-        # Create a numpy array of series ids
-        series_id = np.full(amount_of_padding_start, curr_series_id)
-
         # Create the start padding dataframe
         start_pad_df = pd.DataFrame({'timestamp': timestamps,
-                                     'enmo': enmo,
-                                     'anglez': anglez,
+                                     'enmo': np.zeros(amount_of_padding_start),
+                                     'anglez': np.zeros(amount_of_padding_start),
                                      'step': step,
-                                     'series_id': series_id})
+                                     'series_id': np.full(amount_of_padding_start, curr_series_id)})
 
-        # only pad the awake column if it exists
-        if 'awake' in group.columns:
-            start_pad_df['awake'] = np.full(amount_of_padding_start, 2)
+        # only pad the optional columns if they exist
+        for col, (data_type, default_val) in optionals.items():
+            if col in group.columns:
+                start_pad_df[col] = np.full(amount_of_padding_start, default_val)
 
         # Find the timestamp of the last row for each series_id
         last_time = group['timestamp'].iloc[-1]
@@ -117,33 +122,26 @@ class SplitWindows(PP):
 
         last_step = group['step'].iloc[-1]
 
-        # Create numpy arrays of zeros for enmo, anglez, and awake
-        enmo = np.zeros(amount_of_padding_end)
-        anglez = np.zeros(amount_of_padding_end)
-
         # Create a numpy array of step values
         step = np.arange(last_step + 1, last_step + amount_of_padding_end + 1)
 
         # Create a numpy array of timestamps using date range
         timestamps = last_time + np.arange(1, amount_of_padding_end + 1) * pd.Timedelta(seconds=5)
 
-        # Create a numpy array of series ids
-        series_id = np.full(amount_of_padding_end, curr_series_id)
-
         # Create the end padding dataframe
         end_pad_df = pd.DataFrame({'timestamp': timestamps,
-                                   'enmo': enmo,
-                                   'anglez': anglez,
+                                   'enmo': np.zeros(amount_of_padding_end),
+                                   'anglez': np.zeros(amount_of_padding_end),
                                    'step': step,
-                                   'series_id': series_id})
+                                   'series_id': np.full(amount_of_padding_end, curr_series_id)})
 
-        # only pad the awake column if it exists
-        if 'awake' in group.columns:
-            end_pad_df['awake'] = np.full(amount_of_padding_end, 2)
+        # only pad the optional columns if they exist
+        for col, (data_type, default_val) in optionals.items():
+            if col in group.columns:
+                end_pad_df[col] = np.full(amount_of_padding_end, default_val)
 
         # Concatenate the dfs
         dfs_to_concat = [start_pad_df, group, end_pad_df]
         group = pd.concat(dfs_to_concat, ignore_index=True)
-        group.astype(pad_type)
 
-        return group
+        return group.astype(pad_type)

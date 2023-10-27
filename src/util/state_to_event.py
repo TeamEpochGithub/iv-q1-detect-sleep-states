@@ -9,7 +9,30 @@ def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
     return np.argmax(one_hot, axis=0)
 
 
-def find_events(pred: np.ndarray, median_filter_size: int = None):
+def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
+    """Convert an event segmentation prediction to an onset and event. Normally used for predictions.
+    param: 2d numpy array (labels, window_size) of event states for each timestep, 0=no state > 0=state
+    param: thresh float, threshold for the prediction to be considered a state
+    """
+    # Set onset and awake to nan
+    onset = np.nan
+    awake = np.nan
+
+    # Get max of each channel
+    maxes = np.max(predictions, axis=1)
+
+    # If onset is above threshold of making a prediction, set onset
+    if maxes[0] > thresh:
+        onset = np.argmax(predictions[0])
+
+    # If awake is above threshold of making a prediction, set awake
+    if maxes[1] > thresh:
+        awake = np.argmax(predictions[1])
+
+    return onset, awake
+
+
+def find_events(pred: np.ndarray, median_filter_size: int = None) -> tuple:
     """Given a numpy array of integer encoded predictions for a single day window,
      find the onsets and awakes of sleep events.
      param: pred numpy array, 0=sleep, 1=awake, 2=non-wear

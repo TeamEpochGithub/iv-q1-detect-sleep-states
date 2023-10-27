@@ -1,7 +1,7 @@
 {
     "name": "config",
     "log_to_wandb": true,
-    "pred_with_cpu": false,
+    "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -16,9 +16,19 @@
             "id_encoding_path": "series_id_encoding.json"
         },
         {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
             "kind": "add_state_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv"
+        },
+        {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5
         },
         {
             "kind": "split_windows",
@@ -32,11 +42,7 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["hour", "minute"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [10, 100, 1000]
+            "time_features": ["day", "hour"]
         }
     ],
     "pretraining": {
@@ -47,8 +53,7 @@
             "standard": "mean"
         },
         "test_size": 0.2,
-        "window_size": 17280,
-        "scaler":{
+        "scaler": {
             "kind": "standard-scaler",
             "copy": true
         }
@@ -89,7 +94,7 @@
     "train_for_submission":false,
     "scoring": true,
     "visualize_preds": {
-        "n": 1,
+        "n": 10,
         "browser_plot": false,
         "save": false
     }

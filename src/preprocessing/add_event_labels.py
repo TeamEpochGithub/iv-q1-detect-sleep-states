@@ -49,7 +49,7 @@ class AddEventLabels(PP):
             raise PPException("Window column is present, this preprocessing step should be run before SplitWindows")
         if "hot-awake" in data.columns:
             logger.warning(
-                "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep) for state segmentation models. This can cause issues when also adding event labels."
+                "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep, hot-unlabeled) for state segmentation models. This can cause issues when also adding event labels."
                 "Make sure your model takes the correct features.")
         if "onset" in data.columns:
             logger.warning("Onset column is present, for regression models. his can cause issues when also adding event labels."

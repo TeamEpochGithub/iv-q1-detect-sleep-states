@@ -31,9 +31,9 @@ class AddStateLabels(PP):
 
         self.use_similarity_nan: bool = use_similarity_nan
         if self.use_similarity_nan:
-            self.fill_limit = kwargs.pop("fill_limit")
-            if self.fill_limit is None:
+            if "fill_limit" not in kwargs:
                 raise Exception("fill_limit is required when use_similarity_nan is True")
+            self.fill_limit = kwargs.pop("fill_limit")
 
     def __repr__(self) -> str:
         """Return a string representation of a AddStateLabels object"""

@@ -75,7 +75,8 @@ Adds this as a column that is 0 for perfect similarity.
     - Adds 3 columns, hot encoded, for the segmentation labels
         - 0: `hot-asleep`
         - 1: `hot-awake`
-        - 2: `hot-NaN`, not labeled
+        - 2: `hot-NaN`
+        - 3: `hot-unlabeled`
 
 Example for each step:
 ```JSON

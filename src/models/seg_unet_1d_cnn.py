@@ -16,6 +16,21 @@ from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import find_events, one_hot_to_state
 
 
+def masked_loss(criterion, outputs, y):
+    labels = y[:, :3, :]
+
+    unlabeled_mask = y[:, 3, :]
+    unlabeled_mask = 1-unlabeled_mask
+    unlabeled_mask = unlabeled_mask.unsqueeze(1).repeat(1, 3, 1)
+
+    loss_unreduced = criterion(outputs, labels)
+
+    loss_masked = loss_unreduced * unlabeled_mask
+
+    loss = torch.sum(loss_masked) / torch.sum(unlabeled_mask)
+    return loss
+
+
 class SegmentationUnet1DCNN(Model):
     """
     This model is a segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
@@ -69,7 +84,7 @@ class SegmentationUnet1DCNN(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-        config["loss"] = Loss.get_loss(config["loss"])
+        config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
@@ -123,9 +138,9 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
 
-        # Get only the one hot encoded features
-        y_train = y_train[:, :, -3:]
-        y_test = y_test[:, :, -3:]
+        # Get only the one hot encoded labels, this includes a column for unlabeled
+        y_train = y_train[:, :, -4:]
+        y_test = y_test[:, :, -4:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -180,7 +195,7 @@ class SegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs, y)
+                    loss = masked_loss(criterion, outputs, y)
 
                     # Backward and optimize
                     loss.backward()
@@ -203,8 +218,8 @@ class SegmentationUnet1DCNN(Model):
                     for i, (vx, vy) in enumerate(vepoch):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
-                        voutputs = self.model(vx)
-                        vloss = criterion(voutputs, vy)
+                        voutputs = self.model(x)
+                        vloss = masked_loss(criterion, outputs, y)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -303,7 +318,7 @@ class SegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs, y)
+                    loss = masked_loss(criterion, outputs, y)
 
                     # Backward and optimize
                     loss.backward()
@@ -401,7 +416,7 @@ class SegmentationUnet1DCNN(Model):
         logger.info("--- Evaluating model")
         # Calculate the loss of the predictions
         criterion = self.config["loss"]
-        loss = criterion(pred, target)
+        loss = masked_loss(criterion, pred, target)
         return loss
 
     def save(self, path: str) -> None:

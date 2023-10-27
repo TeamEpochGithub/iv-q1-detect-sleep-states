@@ -29,7 +29,7 @@ class AddSegmentationLabels(PP):
         awake = data['awake']
 
         data = pd.get_dummies(data, columns=['awake'], prefix='hot', dtype=np.int8)
-        name_map = {'hot_0': 'hot-asleep', 'hot_1': 'hot-awake', 'hot_2': 'hot-NaN'}
+        name_map = {'hot_0': 'hot-asleep', 'hot_1': 'hot-awake', 'hot_2': 'hot-NaN', 'hot_3': 'hot-unlabeled'}
         data.rename(columns=name_map, inplace=True)
 
         for name in name_map.values():

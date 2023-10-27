@@ -22,7 +22,7 @@ class Loss:
         pass
 
     @staticmethod
-    def get_loss(loss_name: str) -> nn.Module:
+    def get_loss(loss_name: str, **kwargs) -> nn.Module:
         """
         This function looks up the correct loss function and returns it.
         :param loss_name: name of the loss function
@@ -30,15 +30,15 @@ class Loss:
         """
         match loss_name:
             case "mse-torch":
-                return nn.MSELoss()
+                return nn.MSELoss(**kwargs)
             case "mae-torch":
-                return nn.L1Loss()
+                return nn.L1Loss(**kwargs)
             case "ce-torch":
-                return nn.CrossEntropyLoss()
+                return nn.CrossEntropyLoss(**kwargs)
             case "bce-torch":
-                return nn.BCELoss()
+                return nn.BCELoss(**kwargs)
             case "bce-logits-torch":
-                return nn.BCEWithLogitsLoss()
+                return nn.BCEWithLogitsLoss(**kwargs)
             case "regression":
                 return RegressionLoss()
             case "event-regression":

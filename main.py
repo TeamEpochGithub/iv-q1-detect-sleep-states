@@ -114,7 +114,7 @@ def main(config: ConfigLoader) -> None:
             # It now only saves the trained model from the last fold
             scores: np.ndarray = cv.cross_validate(models[model], X_train, y_train, groups=groups,
                                                    scoring_params={"featured_data": featured_data,
-                                                                   "train_test_idx": train_idx,
+                                                                   "train_validate_idx": train_idx,
                                                                    "downsampling_factor": pretrain.downsampler.factor,
                                                                    "window_size": pretrain.window_size})
             models[model].save(model_filename)

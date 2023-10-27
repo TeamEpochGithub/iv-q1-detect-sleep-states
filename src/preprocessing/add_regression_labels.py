@@ -5,6 +5,8 @@ from tqdm import tqdm
 from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
 
+import json
+
 
 class AddRegressionLabels(PP):
     """Preprocessing step that adds the event labels to the data
@@ -12,15 +14,46 @@ class AddRegressionLabels(PP):
     This will add the event labels to the data by using the event data.
     """
 
-    def __init__(self, window_size: int = 17280, **kwargs: dict) -> None:
+    def __init__(self, events_path: str, id_encoding_path: str, window_size: int = 17280, **kwargs: dict) -> None:
         """Initialize the AddRegressionLabels class"""
         super().__init__(**kwargs | {"kind": "add_regression_labels"})
 
+        self.events_path: str = events_path
+        self.events: pd.DataFrame = pd.DataFrame()
+        self.id_encoding_path: str = id_encoding_path
+        self.id_encoding: dict = {}
         self.window_size = window_size
 
     def __repr__(self) -> str:
         """Return a string representation of a AddRegressionLabels object"""
         return f"{self.__class__.__name__}(window_size={self.window_size})"
+
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Run the preprocessing step.
+
+        :param data: the data to preprocess
+        :return: the preprocessed data
+        :raises FileNotFoundError: If the events csv or id_encoding json file is not found
+        """
+
+        # If window column is present, raise an exception
+        NO_WINDOW_COLUMN_ERROR = "No window column. Did you run SplitWindows before?"
+        if "window" not in data.columns:
+            logger.critical(NO_WINDOW_COLUMN_ERROR)
+            raise PPException(NO_WINDOW_COLUMN_ERROR)
+        if "hot-asleep" in data.columns:
+            logger.warning(
+                "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep) for state segmentation models. This can cause issues when also adding regression labels."
+                "Make sure your model takes the correct features.")
+        if "state-onset" in data.columns:
+            logger.warning("State-onset column is present, for state segmentation models. This can cause issues when also adding regression labels."
+                           "Make sure your model takes the correct features.")
+
+        self.events = pd.read_csv(self.events_path)
+        self.id_encoding = json.load(open(self.id_encoding_path))
+        res = self.preprocess(data)
+        del self.events
+        return res
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Adds the event labels to the data.
@@ -34,19 +67,6 @@ class AddRegressionLabels(PP):
         :param data: The dataframe to add the event labels to
         :return: The dataframe with the event labels
         """
-        tqdm.pandas()
-
-        # TODO Do this check with the config checker instead #190
-        if "window" not in data.columns:
-            logger.critical(
-                "No window column. Did you run SplitWindows before?")
-            raise PPException(
-                "No window column. Did you run SplitWindows before?")
-        if "awake" not in data.columns:
-            logger.critical(
-                "No awake column. Did you run AddStateLabels before?")
-            raise PPException(
-                "No awake column. Did you run AddStateLabels before?")
 
         # Set onset and wakeup to -1
         data["onset"] = np.int16(-1)
@@ -54,72 +74,58 @@ class AddRegressionLabels(PP):
         data["onset-NaN"] = np.int8(1)
         data["wakeup-NaN"] = np.int8(1)
 
-        # Create a hashmap to map (window, series_id) to the first index
+        # apply encoding to events
+        self.events['series_id'] = self.events['series_id'].map(
+            self.id_encoding)
 
-        # Group the DataFrame by 'window' and 'series_id' and get the first index of each group
-        first_indices = data.groupby(['series_id', 'window']).apply(
-            lambda group: group.index[0])
-        # Convert the resulting Series to a dictionary
-        window_series_map = first_indices.to_dict()
-
-        # Find transitions from 1 to 0 (excluding 2-1 and 1-2 transitions)
-        onsets = data[(data['awake'].diff() == -1) &
-                      (data['awake'].shift() == 1)]
-
-        # Find transitions from 0 to 1 (excluding 2-1 and 1-2 transitions)
-        awakes = data[(data['awake'].diff() == 1) &
-                      (data['awake'].shift() == 0)]
-
-        # Fill the onset and wakeup columns
-        onsets.groupby([data['series_id'], data['window']]).progress_apply(
-            self.fill_onset, data=data, d=window_series_map, is_onset=True)
-        awakes.groupby([data['series_id'], data['window']]).progress_apply(
-            self.fill_onset, data=data, d=window_series_map, is_onset=False)
-
-        # Set the NaN onset/wakeup to 1
+        # iterate over the series and set the awake column
+        tqdm.pandas()
+        data = (data
+                .groupby('series_id')
+                .progress_apply(lambda x: self.fill_series_labels(x))
+                .reset_index(drop=True))
         return data
 
-    def fill_onset(self, group: pd.DataFrame, data: pd.DataFrame, d: dict, is_onset: bool) -> None:
+    def fill_series_labels(self, series: pd.DataFrame) -> pd.DataFrame:
         """
-        Fill the onset/wakeup column for the group
-        :param group: a series_id and window group
-        :param data: the complete dataframe
-        :param d: a hashmap to map (series_id, window) to the first index
-        :param is_onset: boolean for if it is an onset event
+        Fill the onset/wakeup column for the series
+        :param series: a series_id group
+        :return: the series with the onset/wakeup column filled
         """
-        series_id = group['series_id'].iloc[0]
-        window = group['window'].iloc[0]
-        events = group['step'].tolist()
-        # Get the start
-        id_start = d[(series_id, window)]
+        series_id = series['series_id'].iloc[0]
+        current_events = self.events[self.events["series_id"] == series_id]
 
-        # Get step of start
-        step_start = data.iloc[id_start]['step'] - 1
+        # Only get non-nan values and convert to int
+        current_onsets = current_events[current_events["event"]
+                                        == "onset"]["step"].dropna().astype(int).values
+        current_wakeups = current_events[current_events["event"]
+                                         == "wakeup"]["step"].dropna().astype(int).values
 
-        if id_start + self.window_size > len(data):
-            logger.warn(
-                f"--- Window {window} of series {series_id} is out of bounds. Skipping...")
+        # Step at which the window starts
+        window_start = series["step"].iloc[0]
 
-        events = (events - step_start).tolist()
-        # Get the end
-        id_end = id_start + self.window_size
+        # Update the current_onsets and current_wakeups to be relative to the window
+        current_onsets -= window_start
+        current_wakeups -= window_start
 
-        if is_onset:
-            if len(events) == 1 or len(events) == 2:
-                # Update the 'onset' and 'onset-NaN' columns using NumPy
-                data.iloc[id_start:id_end, data.columns.get_indexer(
-                    ['onset', 'onset-NaN'])] = [np.int16(events[0]), np.int8(0)]
-        else:
-            if len(events) == 1:
-                # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
-                data.iloc[id_start:id_end, data.columns.get_indexer(
-                    ['wakeup', 'wakeup-NaN'])] = [np.int16(events[0]), np.int8(0)]
-            elif len(events) == 2:
-                # Update the 'wakeup' and 'wakeup-NaN' columns using NumPy
-                data.iloc[id_start:id_end, data.columns.get_indexer(
-                    ['wakeup', 'wakeup-NaN'])] = [np.int16(events[1]), np.int8(0)]
-        if len(events) >= 2:
-            message = f"--- Found {len(events)} onsets" if is_onset else f"--- Found {len(events)} awakes"
-            logger.warn(f"{message} in 1 window. This should never happen...")
-            logger.debug(
-                f"--- ERROR: {events} {'onsets' if is_onset else 'awakes'}")
+        # For each onset, fill the respective window with onset value and set the NaN onset to 0
+        for onset in current_onsets:
+            window_no = onset // self.window_size
+            window = series[series["window"] == window_no]
+            window["onset"] = np.int16(onset % self.window_size)
+            window["onset-NaN"] = np.int8(0)
+
+            # Update the window in the series
+            series[series["window"] == window_no] = window
+
+        # Do the same for the wakeups
+        for wakeup in current_wakeups:
+            window_no = wakeup // self.window_size
+            window = series[series["window"] == window_no]
+            window["wakeup"] = np.int16(wakeup % self.window_size)
+            window["wakeup-NaN"] = np.int8(0)
+
+            # Update the window in the series
+            series[series["window"] == window_no] = window
+
+        return series

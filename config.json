@@ -16,24 +16,14 @@
             "id_encoding_path": "series_id_encoding.json"
         },
         {
-            "kind": "similarity_nan",
-            "as_feature": true
-        },
-        {
-            "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv"
-        },
-        {
-            "kind": "add_event_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv",
-            "smoothing": 5
-        },
-        {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
+        },
+        {
+            "kind": "add_regression_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv"
         }
     ],
     "feature_engineering": [

@@ -61,8 +61,13 @@ Adds this as a column that is 0 for perfect similarity.
 - `truncate` (requires `add_state_labels`)
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end
-- `add_regression_labels` (requires `add_state_labels`, `split_windows`)
-    - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
+- `add_regression_labels` (requires `split_windows`)
+    - Parameters: `id_encoding_path: str`
+    - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels
+        - 0: `wakeup`
+        - 1: `onset`
+        - 2: `wakeup-NaN`
+        - 3: `onset-NaN`
 - `add_segmentation_labels` (requires `add_state_labels`)
     - Adds 3 columns, hot encoded, for the segmentation labels
         - 0: `hot-asleep`
@@ -101,7 +106,9 @@ Example for each step:
         "kind": "truncate"
     },
     {
-        "kind": "add_regression_labels"
+        "kind": "add_regression_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv"
     },
     {
         "kind": "add_segmentation_labels"

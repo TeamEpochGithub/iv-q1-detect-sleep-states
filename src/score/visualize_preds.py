@@ -5,6 +5,7 @@ from src.configs.load_config import ConfigLoader
 from src.score.util.plot_with_plotly import plot_w_plotly
 from src.score.util.save_plots import save_plots
 from src.score.util.make_pred_histogram import make_histogram
+from src.score.util.make_global_histogram import make_global_histogram
 
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
@@ -59,7 +60,9 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                        current_preds, id_decoding, id, features_to_plot, folder_path+'/series_plots')
 
             make_histogram(current_preds, current_events, folder_path, id_decoding, id)
-    
+    # now make the global histogram
+    make_global_histogram(preds, real_events, folder_path=folder_path)
+
 
 if __name__ == "__main__":
     # For testing you need a submission.csv file in the main folder

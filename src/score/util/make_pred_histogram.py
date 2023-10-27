@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import warnings
 from src.logger.logger import logger
 import os
-import json
 
 
 def make_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str, id_decoding: dict, series_id: int):
@@ -54,9 +53,9 @@ def make_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str, 
         for bar in bars_onset:
             height = bar.get_height()
             plt.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom', rotation=45)
+                         xytext=(0, 3),  # 3 points vertical offset
+                         textcoords="offset points",
+                         ha='center', va='bottom', rotation=45)
 
     # also make the histogram for the wakeups
     if current_errors_wakeup is not None:
@@ -73,13 +72,15 @@ def make_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str, 
         for bar in bars_wakeup:
             height = bar.get_height()
             plt.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom', rotation=45)
+                         xytext=(0, 3),  # 3 points vertical offset
+                         textcoords="offset points",
+                         ha='center', va='bottom', rotation=45)
     plt.legend(['onset', 'wakeup'])
     if not os.path.exists(folder_path + "/histograms"):
         os.makedirs(folder_path + "/histograms")
     plt.savefig(folder_path + "/histograms" + "/" + "series_id--" + f"{id_decoding[series_id]}-({series_id}).png")
+    logger.info(f"Histogram saved at {folder_path + '/histograms' + '/' + 'series_id--' + f'{id_decoding[series_id]}-({series_id}).png'}")
+    plt.close()
 
 
 def match_preds(preds: np.ndarray, events: np.ndarray):
@@ -95,12 +96,3 @@ def match_preds(preds: np.ndarray, events: np.ndarray):
         errors.append(np.min(np.abs(preds - event)))
 
     return np.array(errors)
-
-
-if __name__ == '__main__':
-    preds = pd.read_csv('submission.csv')
-    events = pd.read_csv('data/raw/train_events.csv')
-    id_encoding = json.load(open('series_id_encoding.json', 'r'))
-    id_decoding = {v: k for k, v in id_encoding.items()}
-    for id in preds['series_id'].unique():
-        make_histogram(preds, events, id_decoding=id_decoding, series_id=id, folder_path='')

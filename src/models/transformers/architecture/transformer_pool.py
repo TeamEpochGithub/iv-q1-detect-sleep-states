@@ -54,7 +54,7 @@ class TransformerPool(nn.Module):
         if no_head:
             self.untokenize = nn.Linear(self.l_e, seq_len)
             self.mlp_head = nn.Linear(self.e, num_class)
-            self.softmax = nn.Softmax(dim=2)
+            self.last_layer = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -72,7 +72,7 @@ class TransformerPool(nn.Module):
             # MLP head used to get logits (bs, l, e) -> (bs, l, num_class)
             x = self.mlp_head(x)
             # Softmax (bs, l, num_class) -> (bs, l, num_class)
-            x = self.softmax(x)
+            x = self.last_layer(x)
         else:
             # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
             x = self.seq_pool(x)

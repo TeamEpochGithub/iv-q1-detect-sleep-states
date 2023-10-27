@@ -54,19 +54,19 @@ class SimpleTokenizer(nn.Module):
     :param depth: Depth of convolutional tokenizer.
     """
 
-    def __init__(self, channels: int = 3, emb_dim: int = 256, hidden_layers: int = 64, kernel_size: int = 7, depth: int = 2) -> None:
+    def __init__(self, channels: int = 3, emb_dim: int = 256, hidden_layers: int = 64, kernel_size: int = 7, depth: int = 2, stride: int = 3) -> None:
         super().__init__()
         self.conv1 = nn.Conv1d(in_channels=channels, out_channels=hidden_layers,
-                               kernel_size=kernel_size, stride=3, padding=1)
+                               kernel_size=kernel_size, stride=stride, padding=1)
         self.act1 = nn.ReLU(inplace=True)
         self.max_pool1 = nn.MaxPool1d(
-            kernel_size=kernel_size, stride=3, padding=0)
+            kernel_size=kernel_size, stride=stride, padding=0)
 
         self.conv2 = nn.Conv1d(in_channels=hidden_layers, out_channels=emb_dim,
-                               kernel_size=kernel_size, stride=3, padding=1)
+                               kernel_size=kernel_size, stride=stride, padding=1)
         self.act2 = nn.ReLU(inplace=True)
         self.max_pool2 = nn.MaxPool1d(
-            kernel_size=kernel_size, stride=3, padding=0)
+            kernel_size=kernel_size, stride=stride, padding=0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

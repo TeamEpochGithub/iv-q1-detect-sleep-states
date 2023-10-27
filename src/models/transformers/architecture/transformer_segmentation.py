@@ -32,29 +32,17 @@ class TransformerPool(nn.Module):
         super(TransformerPool, self).__init__()
         self.encoder = EncoderConfig(
             tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len)
-        with torch.no_grad():
-            x = torch.randn([1, seq_len, tokenizer_args["channels"]])
-            out = self.encoder(x)
-            _, l_e, e = out.shape
-            self.l_e = l_e
-            self.e = e
+        self.no_head = no_head
         if pooling == "none":
             self.seq_pool = NoPooling(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(
                 self.encoder.get_output_size(), num_class)
         if pooling == "lstm":
             self.seq_pool = LSTMPooling(emb_dim=emb_dim)
-            self.mlp_head = nn.Linear(
-                self.encoder.get_output_size() / emb_dim, num_class)
+            self.mlp_head = nn.Linear(self.encoder.get_output_size() / emb_dim, num_class)
         elif pooling == "softmax":
             self.seq_pool = SeqPool(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(emb_dim, num_class)
-        self.no_head = no_head
-        # No head is used for segmentation
-        if no_head:
-            self.untokenize = nn.Linear(self.l_e, seq_len)
-            self.mlp_head = nn.Linear(self.e, num_class)
-            self.last_layer = nn.Sigmoid()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -65,18 +53,12 @@ class TransformerPool(nn.Module):
         # Pass x through encoder (bs, l, c) -> (bs, l_e, e)
         x = self.encoder(x)
 
+        # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
+        x = self.seq_pool(x)
+
+        # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
         if self.no_head:
-            # Perform sequential pooling (bs, l_e, e) -> (bs, len, num_class)
-            # Untokenize (bs, l_e, e) -> (bs, l, e)
-            x = self.untokenize(x.permute(0, 2, 1)).permute(0, 2, 1)
-            # MLP head used to get logits (bs, l, e) -> (bs, l, num_class)
-            x = self.mlp_head(x)
-            # Softmax (bs, l, num_class) -> (bs, l, num_class)
-            x = self.last_layer(x)
-        else:
-            # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
-            x = self.seq_pool(x)
-            # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
-            x = self.mlp_head(x)
+            return x
+        x = self.mlp_head(x)
 
         return x

@@ -267,7 +267,7 @@ This contains all the models and their hyperparameters that are implemented. The
   - threshold=.1
   - use_nan_similarity=True
 
-- transformer
+- transformer / segmentation-transformer
     - epochs (required)
     - loss (required)
     - optimizer (required)
@@ -301,7 +301,7 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "lr": 0.01
 }
 "GeneralTransformer": {
-    "type": "transformer",
+    "type": "transformer" / "segmentation-transformer",
     "epochs": 5,
     "loss": "event-regression-rmse",
     "optimizer": "adam-torch",

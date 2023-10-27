@@ -2,7 +2,8 @@ from collections.abc import Callable
 
 import numpy as np
 from sklearn.model_selection import GroupKFold, StratifiedGroupKFold, GroupShuffleSplit, LeaveOneGroupOut, \
-    LeavePGroupsOut, PredefinedSplit, KFold, LeaveOneOut, LeavePOut
+    LeavePGroupsOut, PredefinedSplit, KFold, LeaveOneOut, LeavePOut, RepeatedKFold, RepeatedStratifiedKFold, \
+    ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit, TimeSeriesSplit
 
 from ..logger.logger import logger
 from ..models.model import Model
@@ -17,7 +18,13 @@ _SPLITTERS: dict[str] = {
     "leave_one_out": LeaveOneOut,
     "leave_p_out": LeavePOut,
     "predefined_split": PredefinedSplit,
+    "repeated_k_fold": RepeatedKFold,
+    "repeated_stratified_k_fold": RepeatedStratifiedKFold,
+    "shuffle_split": ShuffleSplit,
+    "stratified_k_fold": StratifiedKFold,
+    "starified_shuffle_split": StratifiedShuffleSplit,
     "stratified_group_k_fold": StratifiedGroupKFold,
+    "time_series_split": TimeSeriesSplit
 }
 
 _SCORERS: dict[str, Callable[[...], float]] = {
@@ -33,9 +40,6 @@ def _get_scoring(scoring: str | Callable[[...], float] | list[str | Callable[[..
     """Get the scoring method(s)
 
     The input can be either a string, a callable, or a list of strings and/or callables.
-    If it's a string, it will look up the scoring method in the _SCORERS dictionary.
-    If it's a callable, it will return that scoring method directly.
-    If it's a list, it will recursively call this function of each scoring method.
 
     This method makes it easy to configure the scoring method form the config,
     but with the ability to temporarily replace it with a custom method for testing purposes.
@@ -66,7 +70,7 @@ class CV:
                  scoring: str | Callable[[...], float] | list[str | Callable[[...], float]]) -> None:
         """Initialize the CV object
 
-        :param splitter: the splitter used to split the data. See [README.md](../README.md) for all options.
+        :param splitter: the splitter used to split the data. See [README.md](./README.md) for all options.
         :param splitter_params: parameters for the splitters.
         See the [sklearn documentation](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for the parameters that each splitter needs.
         """
@@ -96,21 +100,21 @@ class CV:
         """
         scores = []
 
-        # Split the data in folds with train and test sets
-        for i, (train_idx, test_idx) in enumerate(self.splitter.split(data, labels, groups)):
+        # Split the data in folds with train and validation sets
+        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels, groups)):
             model.reset_optimizer()
 
-            X_train, X_test = data[train_idx], data[test_idx]
-            y_train, y_test = labels[train_idx], labels[test_idx]
+            X_train, X_validate = data[train_idx], data[validate_idx]
+            y_train, y_validate = labels[train_idx], labels[validate_idx]
 
-            model.train(X_train, X_test, y_train, y_test)
-            y_pred: np.array = model.pred(X_test)
+            model.train(X_train, X_validate, y_train, y_validate)
+            y_pred: np.array = model.pred(X_validate)
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(y_test, y_pred, test_idx_cv=test_idx, **scoring_params) for scorer in self.scoring]
+                score = [scorer(y_validate, y_pred, validate_idx=validate_idx, **scoring_params) for scorer in self.scoring]
             else:
-                score = self.scoring(y_test, y_pred, test_idx_cv=test_idx, **scoring_params)
+                score = self.scoring(y_validate, y_pred, validate_idx=validate_idx, **scoring_params)
             scores.append(score)
 
         return np.array(scores)

@@ -70,18 +70,18 @@ def main(config: ConfigLoader) -> None:
 
     # Split data into train/test and validation
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    logger.info("Splitting data into train/test and validation sets")
+    logger.info("Splitting data into train and test sets")
 
-    X_train_test, X_validation, y_train_test, y_validation, train_test_idx, validation_idx, groups = pretrain.pretrain_split(
+    X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
         featured_data)
 
     # Give data shape in terms of (features (in_channels), window_size))
-    data_shape = (X_train_test.shape[2], X_train_test.shape[1])
+    data_shape = (X_train.shape[2], X_train.shape[1])
 
-    logger.info("X train/test data shape (size, window_size, features): " + str(
-        X_train_test.shape) + " and y train/test data shape (size, window_size, features): " + str(y_train_test.shape))
-    logger.info("X validation data shape (size, window_size, features): " + str(
-        X_validation.shape) + " and y validation data shape (size, window_size, features): " + str(y_validation.shape))
+    logger.info("X train data shape (size, window_size, features): " + str(
+        X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
+    logger.info("X test data shape (size, window_size, features): " + str(
+        X_test.shape) + " and y test data shape (size, window_size, features): " + str(y_test.shape))
 
     # ------------------------- #
     # Cross Validation Training #
@@ -112,9 +112,9 @@ def main(config: ConfigLoader) -> None:
             cv = config.get_cv()
             # TODO Implement hyperparameter optimization #101
             # It now only saves the trained model from the last fold
-            scores: np.ndarray = cv.cross_validate(models[model], X_train_test, y_train_test, groups=groups,
+            scores: np.ndarray = cv.cross_validate(models[model], X_train, y_train, groups=groups,
                                                    scoring_params={"featured_data": featured_data,
-                                                                   "train_test_idx": train_test_idx,
+                                                                   "train_test_idx": train_idx,
                                                                    "downsampling_factor": pretrain.downsampler.factor,
                                                                    "window_size": pretrain.window_size})
             models[model].save(model_filename)
@@ -162,7 +162,7 @@ def main(config: ConfigLoader) -> None:
     scoring = config.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
-        predictions = ensemble.pred(X_validation)
+        predictions = ensemble.pred(X_test)
 
         logger.info("Formatting predictions...")
 
@@ -170,7 +170,7 @@ def main(config: ConfigLoader) -> None:
         # for each window get the series id and step offset
         # FIXME window_info for some series starts with a very large step instead of 0,
         #  close to the uint32 limit of 4294967295, likely due to integer underflow
-        window_info = (featured_data.iloc[validation_idx][['series_id', 'window', 'step']]
+        window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
                        .groupby(['series_id', 'window'])
                        .apply(lambda x: x.iloc[0]))
         # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
@@ -221,7 +221,7 @@ def main(config: ConfigLoader) -> None:
         logger.info("Retraining models for submission")
 
         # Retrain all models with optimal parameters
-        X_train_test, y_train_test = pretrain.pretrain_final(featured_data)
+        X_train, y_train = pretrain.pretrain_final(featured_data)
 
         # Save scaler
         scaler_filename: str = config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
@@ -237,7 +237,7 @@ def main(config: ConfigLoader) -> None:
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(X_train_test, y_train_test)
+                models[model].train_full(X_train, y_train)
                 models[model].save(model_filename_submit)
 
     else:

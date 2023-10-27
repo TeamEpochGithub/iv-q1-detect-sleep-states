@@ -2,7 +2,6 @@ from collections.abc import Callable
 from unittest import TestCase
 
 from src.cv.cv import _get_scoring, CV
-from src.score.compute_score import compute_score_full, compute_score_clean
 
 
 class Test(TestCase):

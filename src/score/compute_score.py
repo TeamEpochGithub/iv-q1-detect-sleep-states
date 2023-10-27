@@ -93,14 +93,15 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
 
 
 def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, featured_data: pd.DataFrame,
-                                    train_test_idx: np.array, test_idx_cv: np.array,
+                                    train_validate_idx: np.array, validate_idx: np.array,
                                     downsampling_factor: int = 1, window_size: int = 17280) -> (
         pd.DataFrame, pd.DataFrame):
     """Tries to turn the numpy y_true and y_pred into a solution and submission dataframes...
 
     ...but it fails.
 
-    Yeah, this is the ugly function I was talking about. The submission and solution aren't even the same length...
+    Yeah, this is the ugly function I was talking about.
+    The resulting submission and solution aren't even the same length...
 
     Also, note that the input order is y_true, y_pred, whereas the output order is submission, solution.
     The order of y_true and y_pred is conventional, but the output is swapped in the output
@@ -109,24 +110,24 @@ def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, feat
     :param y_true: (UNUSED???) the solution numpy array of shape (X_test_cv.shape[0], window_size, n_labels) (may differ based on preprocessing and feature engineering steps)
     :param y_pred: the submission numpy array of shape (X_test_cv.shape[0], 2)
     :param featured_data: the entire dataset after preprocessing and feature engineering, but before pretraining of shape (size, n_features)
-    :param train_test_idx: the indices of the entire train and test set of shape (featured_data[0], )
-    :param test_idx_cv: the indices of the selected test set during the cross validation of shape (y_pred[0], )
+    :param train_validate_idx: the indices of the entire train and validation set of shape (featured_data[0], )
+    :param validate_idx: the indices of the selected test set during the cross validation of shape (y_pred[0], )
     :param downsampling_factor: the factor by which the test data has been downsampled during the pretraining
     :return: the submission [0] and solution [1] which can be used by compute_score_full & compute_score_clean
     """
     # Get the complete train/test data
-    train_test_main = featured_data.iloc[train_test_idx]
+    train_test_main = featured_data.iloc[train_validate_idx]
 
     total_arr = []
     # Reconstruct the original indices to access the data from train_main
-    for i in test_idx_cv:
+    for i in validate_idx:
         # TODO Use the downsampling factor here and don't hardcode the window_size
         arr = np.arange(i * 17280, (i + 1) * 17280)
         total_arr.append(arr)
-    test_idx_cv = np.concatenate(total_arr)
+    validate_idx = np.concatenate(total_arr)
 
     # Complete labelled data of current test split
-    test_cv = train_test_main.iloc[test_idx_cv]
+    test_cv = train_test_main.iloc[validate_idx]
 
     # Prepare submission (prediction of the model)
     window_info_test_cv = (test_cv[['series_id', 'window', 'step']]

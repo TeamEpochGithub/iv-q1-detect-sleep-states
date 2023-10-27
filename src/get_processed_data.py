@@ -27,6 +27,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
     step_names: list[str] = pp_step_names + fe_step_names
     steps: list[PP | FE] = pp_steps + fe_steps
 
+    print(step_names)
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()
     for i in range(len(step_names), -1, -1):

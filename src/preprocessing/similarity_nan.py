@@ -2,6 +2,7 @@ from src.preprocessing.pp import PP
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+from src.logger.logger import logger
 
 
 class SimilarityNan(PP):
@@ -23,7 +24,9 @@ class SimilarityNan(PP):
         col_name = 'f_similarity_nan' if self.as_feature else 'similarity_nan'
 
         if len(series) < STEPS_PER_DAY:
-            series[col_name] = np.ones(len(series)).astype(np.float32)
+            logger.warning(f"Series {series.iloc[0]['series_id']} is shorter than a day,"
+                           f" setting similarity to 1. Should never happen...")
+            series['f_similarity_nan'] = 1
             return series
 
         # pad the series to a multiple of steps per day

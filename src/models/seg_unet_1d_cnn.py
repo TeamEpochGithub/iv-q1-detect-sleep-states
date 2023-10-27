@@ -38,12 +38,12 @@ class SegmentationUnet1DCNN(Model):
             self.device = torch.device("cuda")
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-        self.model_type = "segmentation"
+        self.model_type = "state-segmentation"
         self.data_shape = data_shape
 
         # Load config and model
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=3, config=self.config)
+        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
@@ -428,7 +428,7 @@ class SegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=3, config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

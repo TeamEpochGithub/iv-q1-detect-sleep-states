@@ -56,7 +56,7 @@
     "models": {
         "SegmentTransformer": {
             "type": "segmentation-transformer",
-            "epochs": 3,
+            "epochs": 20,
             "loss": "bce-torch",
             "optimizer": "adam-torch",
             "lr": 0.00035,
@@ -85,7 +85,7 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":true,
+    "train_for_submission":false,
     "scoring": true,
     "visualize_preds": {
         "n": 1,

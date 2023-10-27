@@ -16,6 +16,7 @@ from tqdm import tqdm
 from numpy import ndarray, dtype
 from typing import Any
 from .architecture.transformer_pool import TransformerPool
+import torch.nn.functional as F
 
 
 class SegmentationTransformer(Model):
@@ -268,14 +269,14 @@ class SegmentationTransformer(Model):
         # Apply upsampling to the predictions
         downsampling_factor = 17280 // self.data_shape[1]
         if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=2)
+            predictions = np.repeat(predictions, downsampling_factor, axis=1)
 
         all_predictions = []
 
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            pred = one_hot_to_state(pred)
+            pred = np.argmax(pred, axis=1)
             events = find_events(pred, median_filter_size=15)
             all_predictions.append(events)
 

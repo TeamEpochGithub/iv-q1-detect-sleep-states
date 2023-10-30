@@ -19,7 +19,8 @@ class TestPP(TestCase):
         self.assertIsInstance(PP.from_config_single({"kind": "add_segmentation_labels"}), AddSegmentationLabels)
         self.assertIsInstance(PP.from_config_single({"kind": "add_state_labels",
                                                      "id_encoding_path": "e.json",
-                                                     "events_path": "e.csv"}), AddStateLabels)
+                                                     "events_path": "e.csv",
+                                                     "use_similarity_nan": False}), AddStateLabels)
         self.assertIsInstance(PP.from_config_single({"kind": "remove_unlabeled"}), RemoveUnlabeled)
         self.assertIsInstance(PP.from_config_single({"kind": "split_windows"}), SplitWindows)
         self.assertIsInstance(PP.from_config_single({"kind": "truncate"}), Truncate)
@@ -35,7 +36,8 @@ class TestPP(TestCase):
                 {
                     "kind": "add_state_labels",
                     "id_encoding_path": "b.json",
-                    "events_path": "c.csv"
+                    "events_path": "c.csv",
+                    "use_similarity_nan": False
                 },
                 {
                     "kind": "split_windows",

@@ -284,6 +284,13 @@ class ConfigLoader:
         """
         return self.config["visualize_preds"]["save"]
 
+    def get_similarity_filter(self) -> dict | None:
+        """Get the similarity filter from the config
+
+        :return: the similarity filter
+        """
+        return self.config.get("similarity_filter")
+
 
 # ConfigException class
 class ConfigException(Exception):

@@ -17,6 +17,8 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     # Set onset and awake to nan
     onset = np.nan
     awake = np.nan
+    onset_conf = np.nan
+    awake_conf = np.nan
 
     # Get max of each channel
     maxes = np.max(predictions, axis=1)
@@ -24,12 +26,15 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     # If onset is above threshold of making a prediction, set onset
     if maxes[0] > thresh:
         onset = np.argmax(predictions[0])
+        onset_conf = maxes[0]
 
     # If awake is above threshold of making a prediction, set awake
     if maxes[1] > thresh:
         awake = np.argmax(predictions[1])
+        awake_conf = maxes[1]
 
-    return onset, awake
+    # Return onset and awake and the max values of those indices
+    return onset, awake, onset_conf, awake_conf
 
 
 def find_events(pred: np.ndarray, median_filter_size: int = None) -> tuple:

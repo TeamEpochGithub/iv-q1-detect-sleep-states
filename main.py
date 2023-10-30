@@ -168,44 +168,66 @@ def main(config: ConfigLoader) -> None:
 
         # TODO simplify this
         # for each window get the series id and step offset
-        # FIXME window_info for some series starts with a very large step instead of 0,
-        #  close to the uint32 limit of 4294967295, likely due to integer underflow
-        window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
-                       .groupby(['series_id', 'window'])
-                       .apply(lambda x: x.iloc[0]))
-        # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
-        #  to access the first step as a negative index which is now a very large integer instead
+        # # FIXME window_info for some series starts with a very large step instead of 0,
+        # #  close to the uint32 limit of 4294967295, likely due to integer underflow
+        # window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
+        #                .groupby(['series_id', 'window'])
+        #                .apply(lambda x: x.iloc[0]))
+        # # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
+        # #  to access the first step as a negative index which is now a very large integer instead
+        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if 'similarity_nan' in col]
+        grouped = (featured_data.iloc[test_idx][important_cols]
+                   .groupby(['series_id', 'window']))
+        window_offset = grouped.apply(lambda x: x.iloc[0])
+        # TODO Check if the large step is still a problem now that we use the window_offset
+        # TODO Do the window_offset thing in from_numpy_to_submission_format too
+
+        # filter out predictions using a threshold on (f_)similarity_nan
+        filter_cfg = config.get_similarity_filter()
+        if filter_cfg:
+            logger.info(f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
+            col_name = [col for col in featured_data.columns if 'similarity_nan' in col]
+            if len(col_name) == 0:
+                raise ValueError("No (f_)similarity_nan column found in the data for filtering")
+            mean_sim = grouped.apply(lambda x: (x[col_name] == 0).mean())
+            nan_mask = mean_sim > filter_cfg['threshold']
+            nan_mask = np.where(nan_mask, np.nan, 1)
+            predictions = predictions * nan_mask
+
+        submission = to_submission_format(predictions, window_offset)
+
         # get only the test series data from the solution
-        validation_series_ids = window_info['series_id'].unique()
+        test_series_ids = window_offset['series_id'].unique()
+
         # if visualize is true plot all test series
         with open('./series_id_encoding.json', 'r') as f:
             encoding = json.load(f)
         decoding = {v: k for k, v in encoding.items()}
-        validation_series_ids = [decoding[sid] for sid in validation_series_ids]
+        test_series_ids = [decoding[sid] for sid in test_series_ids]
 
-        submission = to_submission_format(predictions, window_info)
+        # load solution for test set and compute score
         solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
-                    .filter(lambda x: x['series_id'].iloc[0] in validation_series_ids)
+                    .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                     .reset_index(drop=True))
-
         logger.info("Start scoring test predictions...")
 
         scores = (compute_score_full(submission, solution), compute_score_clean(submission, solution))
         log_scores_to_wandb(*scores)
 
         # compute confusion matrix for making predictions or not
-        window_info['series_id'] = window_info['series_id'].map(decoding)
-        compute_nan_confusion_matrix(submission, solution, window_info)
+        window_offset['series_id'] = window_offset['series_id'].map(decoding)
+        compute_nan_confusion_matrix(submission, solution, window_offset)
 
         # the plot function applies encoding to the submission
         # we do not want to change the ids on the original submission
         plot_submission = submission.copy()
+
         # pass only the test data
         logger.info('Creating plots...')
         plot_preds_on_series(plot_submission,
                              featured_data[
-                                 featured_data['series_id'].isin(list(encoding[i] for i in validation_series_ids))],
+                                 featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
                              number_of_series_to_plot=config.get_number_of_plots(),
                              folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
                              show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),

@@ -51,7 +51,8 @@ class Pretrain:
 
         return Pretrain(window_size, scaler, downsampler, test_size)
 
-    def pretrain_split(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array, np.array):
+    def pretrain_split(self, df: pd.DataFrame) -> (
+    np.array, np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
@@ -182,7 +183,8 @@ class Pretrain:
         feature_cols = [col for col in df.columns if col.startswith('f_')]
 
         keep_columns: list[str] = ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN",
-                                   "hot-asleep", "hot-awake", "hot-NaN", "state-onset", "state-wakeup", "series_id"]
+                                   "hot-asleep", "hot-awake", "hot-NaN", "hot-unlabeled", "state-onset", "state-wakeup",
+                                   "series_id"]
         keep_y_train_columns: list = [column for column in keep_columns if column in df.columns]
 
         return df[feature_cols], df[keep_y_train_columns]

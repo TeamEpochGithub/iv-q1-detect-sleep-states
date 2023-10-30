@@ -78,6 +78,7 @@ def make_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str, 
     plt.legend(['onset', 'wakeup'])
     if not os.path.exists(folder_path + "/histograms"):
         os.makedirs(folder_path + "/histograms")
+    plt.tight_layout()
     plt.savefig(folder_path + "/histograms" + "/" + "series_id--" + f"{id_decoding[series_id]}-({series_id}).png")
     logger.info(f"Histogram saved at {folder_path + '/histograms' + '/' + 'series_id--' + f'{id_decoding[series_id]}-({series_id}).png'}")
     plt.close()

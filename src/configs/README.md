@@ -61,6 +61,8 @@ Adds this as a column that is 0 for perfect similarity.
       and asleep/awake labelling around those segments will be better.
     - `fill_limit` is the maximum number of time steps that a state is extended into unlabeled non-nan data,
       only used if `use_similarity_nan` is set to true.
+    - `nan_tolerance_window`, labels are extended up to the first nan data point. 
+      This parameter specifies the size of the median filter that is used to ignore lone nan points.
 - `split_windows`
     - Parameters: `start_hour: int = 15`, `window_size: int = 17280`
     - Splits the data in to 24 hour long windows
@@ -91,8 +93,11 @@ Example for each step:
     {
         "kind": "add_state_labels",
         "id_encoding_path": "series_id_encoding.json",
-        "events_path": "data/raw/train_events.csv"
-    },
+        "events_path": "data/raw/train_events.csv",
+        "use_similarity_nan": true,
+        "fill_limit": 8640,
+        "nan_tolerance_window": 5
+      },
     {
         "kind": "split_windows",
         "start_hour": 15,

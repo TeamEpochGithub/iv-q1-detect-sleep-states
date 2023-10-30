@@ -34,6 +34,7 @@ class AddStateLabels(PP):
             if "fill_limit" not in kwargs:
                 raise Exception("fill_limit is required when use_similarity_nan is True")
             self.fill_limit = kwargs.pop("fill_limit")
+            self.nan_tolerance_window = kwargs.pop("nan_tolerance_window", 1)
 
     def __repr__(self) -> str:
         """Return a string representation of a AddStateLabels object"""
@@ -189,7 +190,7 @@ class AddStateLabels(PP):
     def fill_backward(self, awake_col, fill_value, prev_step, series, step):
         """Fill in the awake column backwards from step to the last non-nan similar value, up to a limit"""
         search_slice = series.iloc[prev_step:step, awake_col]
-        slice_similar_mask = (search_slice == 2)
+        slice_similar_mask = (search_slice == 2).rolling(self.nan_tolerance_window).median()
 
         # weird trick, argmax returns the index of the first occurrence of the max value,
         # so we reverse it twice to get the last index where the mask is 1 (the max value)
@@ -202,7 +203,7 @@ class AddStateLabels(PP):
     def fill_forward(self, awake_col, fill_value, prev_step, series):
         """Fill in the awake column forward from prev_step to the first non-nan similar value, up to a limit"""
         search_slice = series.iloc[prev_step:prev_step + self.fill_limit, awake_col]
-        slice_similar_mask = (search_slice == 2)
+        slice_similar_mask = (search_slice == 2).rolling(self.nan_tolerance_window).median()
         first_similar = slice_similar_mask.argmax()
         if slice_similar_mask.any():
             end_of_fill = prev_step + first_similar

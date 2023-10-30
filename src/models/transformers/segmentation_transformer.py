@@ -230,7 +230,7 @@ class SegmentationTransformer(Model):
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -270,17 +270,21 @@ class SegmentationTransformer(Model):
         if downsampling_factor > 1:
             predictions = np.repeat(predictions, downsampling_factor, axis=1)
 
+        #TODO Add custom confidences (now all set to 1)
         all_predictions = []
-
+        all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             pred = np.argmax(pred, axis=1)
             events = find_events(pred, median_filter_size=15)
             all_predictions.append(events)
+            all_confidences.append((1,1))
+
+
 
         # Return numpy array
-        return np.array(all_predictions)
+        return np.array(all_predictions), np.array(all_confidences)
 
     def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
         """

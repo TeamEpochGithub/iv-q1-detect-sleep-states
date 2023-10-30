@@ -269,7 +269,10 @@ class Transformer(Model):
         # Limit predictions from 0 to data.shape[1]
         predictions = np.clip(predictions, 0, window_size)
 
-        return predictions
+        # TODO Set confidences to 1 for now
+        confidences = np.ones(predictions.shape)
+
+        return predictions, confidences
 
     def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
         """

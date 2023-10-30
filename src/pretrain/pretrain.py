@@ -52,7 +52,7 @@ class Pretrain:
         return Pretrain(window_size, scaler, downsampler, test_size)
 
     def pretrain_split(self, df: pd.DataFrame) -> (
-    np.array, np.array, np.array, np.array, np.array, np.array, np.array):
+            np.array, np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,

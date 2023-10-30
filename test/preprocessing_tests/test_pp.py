@@ -15,7 +15,10 @@ class TestPP(TestCase):
     def test_from_config_single(self):
         self.assertIsInstance(PP.from_config_single({"kind": "mem_reduce", "id_encoding_path": "a.json"}), MemReduce)
         self.assertIsInstance(PP.from_config_single({"kind": "add_noise"}), AddNoise)
-        self.assertIsInstance(PP.from_config_single({"kind": "add_regression_labels"}), AddRegressionLabels)
+        self.assertIsInstance(PP.from_config_single({"kind": "add_regression_labels",
+                                                     "id_encoding_path": "series_id_encoding.json",
+                                                     "events_path": "data/raw/train_events.csv"
+                                                     }), AddRegressionLabels)
         self.assertIsInstance(PP.from_config_single({"kind": "add_segmentation_labels"}), AddSegmentationLabels)
         self.assertIsInstance(PP.from_config_single({"kind": "add_state_labels",
                                                      "id_encoding_path": "e.json",

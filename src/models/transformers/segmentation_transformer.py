@@ -1,23 +1,24 @@
 import copy
+from typing import Any
+from typing import List
+
 import numpy as np
 import torch
 import wandb
-
-from src.logger.logger import logger
-from src.models.transformers.trainers.base_trainer import Trainer
-
-from ...loss.loss import Loss
-from ..model import Model
-from ...optimizer.optimizer import Optimizer
-from typing import List
+from numpy import ndarray, dtype
 from torch import nn
 from tqdm import tqdm
-from numpy import ndarray, dtype
-from typing import Any
+
+from src.logger.logger import logger
+from src.models.transformers.trainers.segmentation_trainer import SegmentationTrainer
+from src.util.state_to_event import find_events
 from .architecture.transformer_pool import TransformerPool
+from ..model import Model
+from ...loss.loss import Loss
+from ...optimizer.optimizer import Optimizer
 
 
-class Transformer(Model):
+class SegmentationTransformer(Model):
     """
     This is the model file for the patch pool event regression transformer model.
     """
@@ -34,9 +35,16 @@ class Transformer(Model):
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_shape[1]
+        self.transformer_config["no_head"] = True
         self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
+        self.data_shape = data_shape
+
+        # Initialize weights
+        for p in self.model.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.load_config(**config)
@@ -118,7 +126,7 @@ class Transformer(Model):
             "tokenizer": "patch",
             'tokenizer_args': {},
             'seq_len': 17280,
-            'num_class': 2,
+            'num_class': 3,
             'pooling': 'none'
         }
 
@@ -151,7 +159,7 @@ class Transformer(Model):
         logger.debug(
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
-        # Remove labels
+        # One hot segmentation (Preprocessing steps: 1. Add state labels, 2. One hot encode) -> Remove state labels
         y_train = y_train[:, :, 1:]
         y_test = y_test[:, :, 1:]
 
@@ -159,10 +167,6 @@ class Transformer(Model):
         X_test = torch.from_numpy(X_test)
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
-
-        # Regression
-        y_train = y_train[:, 0]
-        y_test = y_test[:, 0]
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -176,8 +180,8 @@ class Transformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = Trainer(epochs=epochs,
-                          criterion=criterion)
+        trainer = SegmentationTrainer(epochs=epochs,
+                                      criterion=criterion)
         avg_train_loss, avg_val_loss, self.config["trained_epochs"] = trainer.fit(
             train_dataloader, test_dataloader, self.model, optimizer, self.name)
         if wandb.run is not None:
@@ -212,9 +216,6 @@ class Transformer(Model):
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)
 
-        # Regression
-        y_train = y_train[:, 0]
-
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 
@@ -224,12 +225,12 @@ class Transformer(Model):
 
         # Train events
         logger.info("Training events model")
-        trainer = Trainer(epochs=epochs,
-                          criterion=criterion)
+        trainer = SegmentationTrainer(epochs=epochs,
+                                      criterion=criterion)
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -249,9 +250,6 @@ class Transformer(Model):
         # Turn data into numpy array
         data = torch.from_numpy(data).to(device)
 
-        # Get window size
-        window_size = data.shape[1]
-
         test_dataset = torch.utils.data.TensorDataset(
             data, torch.zeros((data.shape[0], data.shape[1])))
 
@@ -260,19 +258,31 @@ class Transformer(Model):
             test_dataset, batch_size=self.config["batch_size"])
 
         # Make predictions
-        predictions = np.empty((0, 2))
+        predictions = np.empty((0, self.data_shape[1], 3))
         with tqdm(test_dataloader, unit="batch", disable=False) as tepoch:
             for _, data in enumerate(tepoch):
                 predictions = self._pred_one_batch(
                     data, predictions, self.model)
 
-        # Limit predictions from 0 to data.shape[1]
-        predictions = np.clip(predictions, 0, window_size)
+        # Prediction shape is (windows, seq_len // downsample_factor, num_class)
+        # Apply upsampling to the predictions
+        downsampling_factor = 17280 // self.data_shape[1]
+        if downsampling_factor > 1:
+            predictions = np.repeat(predictions, downsampling_factor, axis=1)
 
-        # TODO Set confidences to 1 for now
-        confidences = np.ones(predictions.shape)
+        # TODO Add custom confidences (now all set to 1)
+        all_predictions = []
+        # Convert to events
+        for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+            # Convert to relative window event timestamps
+            pred = np.argmax(pred, axis=1)
+            events = find_events(pred, median_filter_size=15)
+            all_predictions.append(events)
 
-        return predictions, confidences
+        all_predictions = np.array(all_predictions)
+        all_confidences = np.ones(all_predictions.shape)
+        # Return numpy array
+        return all_predictions, all_confidences
 
     def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
         """
@@ -313,6 +323,7 @@ class Transformer(Model):
         else:
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
+        self.transformer_config["no_head"] = True
         self.transformer_config['seq_len'] = self.config['seq_len']
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
@@ -327,36 +338,3 @@ class Transformer(Model):
         """
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
-
-
-# Custom adam optimizer
-# Create custom adam optimizer
-        # # save layer names
-        # layer_names = []
-        # for idx, (name, param) in enumerate(self.model.named_parameters()):
-        #     layer_names.append(name)
-
-        # # placeholder
-        # parameters = []
-
-        # # store params & learning rates
-        # for idx, name in enumerate(layer_names):
-
-        #     # Learning rate
-        #     lr = self.config['lr']
-
-        #     # parameter group name
-        #     cur_group_name = name.split('.')[0]
-
-        #     # update learning rate
-        #     if cur_group_name == 'tokenizer':
-        #         lr = self.config['lr_tokenizer']
-
-        #     # display info
-        #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
-
-        #     # append layer parameters
-        #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
-        #                     'lr': lr}]
-
-        # self.config['optimizer'] = type(self.config['optimizer'])(parameters)

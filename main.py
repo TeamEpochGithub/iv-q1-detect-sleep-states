@@ -243,7 +243,7 @@ def main(config: ConfigLoader) -> None:
                 model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
                 logger.info("Found existing fully trained optimal model " + str(
-                    i) + ": " + model + " with location " + model_filename)
+                    i) + ": " + model + " with location " + model_filename_submit)
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)

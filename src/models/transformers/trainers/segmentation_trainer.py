@@ -6,6 +6,21 @@ from typing import List
 import wandb
 
 
+def masked_loss(criterion, outputs, y):
+    labels = y[:, :, :3]
+
+    unlabeled_mask = y[:, :, 3]
+    unlabeled_mask = 1 - unlabeled_mask
+    unlabeled_mask = unlabeled_mask.unsqueeze(1).repeat(1, 1, 3)
+
+    loss_unreduced = criterion(outputs, labels)
+
+    loss_masked = loss_unreduced * unlabeled_mask
+
+    loss = torch.sum(loss_masked) / torch.sum(unlabeled_mask)
+    return loss
+
+
 class SegmentationTrainer:
     """Trainer class for the transformer model.
 
@@ -155,8 +170,9 @@ class SegmentationTrainer:
         output = model(data[0].to(self.device))
 
         # Calculate loss
-        loss = self.criterion(output, data[1].type(
-            torch.FloatTensor).to(self.device))
+        loss = masked_loss(self.criterion,
+                           output,
+                           data[1].type(torch.FloatTensor).to(self.device))
 
         # Backpropagate loss if not nan
         if not np.isnan(loss.item()):
@@ -205,8 +221,10 @@ class SegmentationTrainer:
             data[0] = data[0].float()
             output = model(data[0].to(self.device))
 
-            loss = self.criterion(output, data[1].type(
-                torch.FloatTensor).to(self.device))
+            # Calculate loss
+            loss = masked_loss(self.criterion,
+                               output,
+                               data[1].type(torch.FloatTensor).to(self.device))
             if not np.isnan(loss.item()):
                 losses.append(loss.detach())
         return losses

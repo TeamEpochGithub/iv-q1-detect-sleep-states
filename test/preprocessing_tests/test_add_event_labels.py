@@ -22,4 +22,5 @@ class TestAddEventLabels(TestCase):
 
         with self.assertRaises(PPException) as context:
             self.pp.run(df)
-        self.assertEqual("No window column. Did you run SplitWindows before?", str(context.exception))
+        self.assertEqual(
+            "No window column. Did you run SplitWindows before?", str(context.exception))

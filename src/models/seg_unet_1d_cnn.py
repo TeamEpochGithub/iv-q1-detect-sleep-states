@@ -218,8 +218,8 @@ class SegmentationUnet1DCNN(Model):
                     for i, (vx, vy) in enumerate(vepoch):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
-                        voutputs = self.model(x)
-                        vloss = masked_loss(criterion, outputs, y)
+                        voutputs = self.model(vx)
+                        vloss = masked_loss(criterion, voutputs, vy)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -229,7 +229,8 @@ class SegmentationUnet1DCNN(Model):
                         vepoch.set_postfix(loss=avg_val_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
+            descr = (f"------ Epoch [{epoch + 1}/{epochs}], "
+                     f"Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
             logger.debug(descr)
 
             # Add average losses and epochs to list

@@ -292,7 +292,6 @@ class ConfigLoader:
         return self.config.get("similarity_filter")
 
 
-
 # ConfigException class
 class ConfigException(Exception):
     """

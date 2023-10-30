@@ -20,7 +20,7 @@ from ...optimizer.optimizer import Optimizer
 
 class SegmentationTransformer(Model):
     """
-    This is the model file for the patch pool event regression transformer model.
+    This is the model file for the segmentation transformer model.
     """
 
     def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
@@ -35,7 +35,7 @@ class SegmentationTransformer(Model):
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_shape[1]
-        self.transformer_config["no_head"] = True
+        self.transformer_config["t_type"] = "state"
         self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
@@ -323,7 +323,7 @@ class SegmentationTransformer(Model):
         else:
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
-        self.transformer_config["no_head"] = True
+        self.transformer_config["t_type"] = "state"
         self.transformer_config['seq_len'] = self.config['seq_len']
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))

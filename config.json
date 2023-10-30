@@ -1,7 +1,7 @@
 {
     "name": "config",
-    "log_to_wandb": true,
-    "pred_with_cpu": true,
+    "log_to_wandb": false,
+    "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -18,11 +18,6 @@
         {
             "kind": "similarity_nan",
             "as_feature": true
-        },
-        {
-            "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv"
         },
         {
             "kind": "add_event_labels",
@@ -56,20 +51,26 @@
         }
     },
     "models": {
-      "Event-1D-Unet-CNN": {
-        "type": "event-seg-unet-1d-cnn",
-        "loss": "mse-torch",
-        "optimizer": "adam-torch",
-        "epochs": 47,
-        "batch_size": 32,
-        "lr": 0.0005,
-        "hidden_layers": 8,
-        "early_stopping": 7,
-        "threshold": 0
-      }
+        "EventTransformer": {
+            "type": "event-segmentation-transformer",
+            "epochs": 1000,
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "lr": 0.000035,
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 4
+            },
+            "pe": "other",
+            "emb_dim": 64,
+            "forward_dim": 256,
+            "batch_size": 16,
+            "heads": 8,
+            "pooling": "none"
+        }
     },
     "ensemble": {
-        "models": ["Event-1D-Unet-CNN"],
+        "models": ["EventTransformer"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -82,10 +83,10 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":true,
+    "train_for_submission":false,
     "scoring": true,
     "visualize_preds": {
-        "n": 10,
+        "n": 0,
         "browser_plot": false,
         "save": true
     }

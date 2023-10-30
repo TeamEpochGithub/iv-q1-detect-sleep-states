@@ -62,4 +62,5 @@ def save_plots(current_series, current_events, current_preds, id_decoding, id, f
         os.makedirs(folder_path)
     plt.savefig(folder_path + '/' + 'series_id--' +
                 f'{id_decoding[id]}-({id}).png')
+    plt.close()
     logger.info(f'Plot saved at: {folder_path + "/" + "series_id--" + f"{id_decoding[id]}-({id}).png"}')

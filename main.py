@@ -200,7 +200,7 @@ def main(config: ConfigLoader) -> None:
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                     .reset_index(drop=True))
         logger.info("Start scoring test predictions...")
-        compute_scores(submission, solution)
+        result = compute_scores(submission, solution)
 
         # compute confusion matrix for making predictions or not
         window_offset['series_id'] = window_offset['series_id'].map(decoding)
@@ -215,7 +215,7 @@ def main(config: ConfigLoader) -> None:
         plot_preds_on_series(plot_submission,
                              featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
                              number_of_series_to_plot=config.get_number_of_plots(),
-                             folder_path='prediction_plots/' + config_hash,
+                             folder_path='prediction_plots/' + config_hash + f'-Score--{result:.4f}',
                              show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
 
     else:

@@ -66,7 +66,11 @@ class ClassicBaseModel(Model):
             events = find_events(state_pred)
             predictions.append(events)
 
-        return np.array(predictions)
+        # TODO Set confidences to 1
+        predictions = np.array(predictions)
+        confidences = np.ones(predictions.shape)
+
+        return predictions, confidences
 
     def predict_state_labels(self, data: np.ndarray) -> np.ndarray:
         anglez = pd.Series(data[:, 1])  # Assuming feature 1 is anglez

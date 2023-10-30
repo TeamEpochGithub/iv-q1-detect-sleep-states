@@ -89,7 +89,7 @@
     "visualize_preds": {
         "n": 10,
         "browser_plot": false,
-        "save": false
+        "save": true
     }
 }
 

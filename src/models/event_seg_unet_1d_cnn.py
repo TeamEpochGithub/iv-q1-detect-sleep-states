@@ -334,12 +334,11 @@ class EventSegmentationUnet1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
-        :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
-        :return: the predictions
+        :param data: unlabeled data (step, features)
+        :return: the predictions in format: (predictions, confidences)
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
@@ -387,15 +386,19 @@ class EventSegmentationUnet1DCNN(Model):
             predictions = np.repeat(predictions, downsampling_factor, axis=2)
 
         all_predictions = []
-
+        all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
+            # TODO Add automatic thresholding to the model
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
-            all_predictions.append(events)
+            steps = (events[0], events[1])
+            confidences = (events[2], events[3])
+            all_predictions.append(steps)
+            all_confidences.append(confidences)
 
         # Return numpy array
-        return np.array(all_predictions)
+        return np.array(all_predictions), np.array(all_confidences)
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

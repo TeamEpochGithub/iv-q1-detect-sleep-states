@@ -190,7 +190,9 @@ def main(config: ConfigLoader) -> None:
                     .reset_index(drop=True))
 
         logger.info("Start scoring test predictions...")
-        log_scores_to_wandb(compute_score_full(submission, solution), compute_score_clean(submission, solution))
+
+        scores = (compute_score_full(submission, solution), compute_score_clean(submission, solution))
+        log_scores_to_wandb(*scores)
 
         # compute confusion matrix for making predictions or not
         window_info['series_id'] = window_info['series_id'].map(decoding)
@@ -205,7 +207,7 @@ def main(config: ConfigLoader) -> None:
                              featured_data[
                                  featured_data['series_id'].isin(list(encoding[i] for i in validation_series_ids))],
                              number_of_series_to_plot=config.get_number_of_plots(),
-                             folder_path='prediction_plots/' + config_hash,
+                             folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
                              show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
 
     else:

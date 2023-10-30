@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import wandb
@@ -67,11 +69,11 @@ class Model:
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, X_pred: np.ndarray) -> list[float, float]:
+    def pred(self, X_pred: np.ndarray) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
         """
         Prediction function for mainly pytorch models. This function should be overwritten by the user.
         :param X_pred: unlabeled data (step, features)
-        :return: the predictions
+        :return: the predictions in format: (predictions, confidences)
         """
         logger.critical("--- Prediction of base class called. Did you forget to override it?")
         raise ModelException("Prediction of base class called. Did you forget to override it?")

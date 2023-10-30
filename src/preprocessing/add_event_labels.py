@@ -49,10 +49,12 @@ class AddEventLabels(PP):
             raise PPException("Window column is present, this preprocessing step should be run before SplitWindows")
         if "hot-awake" in data.columns:
             logger.warning(
-                "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep) for state segmentation models. This can cause issues when also adding event labels."
+                "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep, hot-unlabeled)"
+                " for state segmentation models. This can cause issues when also adding event labels."
                 "Make sure your model takes the correct features.")
         if "onset" in data.columns:
-            logger.warning("Onset column is present, for regression models. his can cause issues when also adding event labels."
+            logger.warning("Onset column is present, for regression models. "
+                           "This can cause issues when also adding event labels."
                            "Make sure your model takes the correct features.")
 
         self.events = pd.read_csv(self.events_path)
@@ -131,7 +133,8 @@ class AddEventLabels(PP):
 
         for idx in ones_indices:
             # We fill in from wide to close
-            for ((curr_distance, curr_score), (next_distance, next_score)) in zip(distances_and_scores, distances_and_scores[1:]):
+            for ((curr_distance, curr_score), (next_distance, next_score)) \
+                    in zip(distances_and_scores, distances_and_scores[1:]):
                 # Get the bounds to fill in the scores and make sure they are not out of bounds.
                 lower_bound = max(0, idx - curr_distance)
                 lower_next_bound = max(0, idx - next_distance)

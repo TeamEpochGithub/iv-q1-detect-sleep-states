@@ -37,9 +37,16 @@ def save_plots(current_series, current_events, current_preds, id_decoding, id, f
             plt.plot(x, current_series[feature_to_plot].values, color='red')
 
             mask = current_series['awake'] == 2
-            x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
-            x[~mask] = np.nan
-            plt.plot(x, current_series[feature_to_plot].values, color='green')
+            if mask.any():
+                x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
+                x[~mask] = np.nan
+                plt.plot(x, current_series[feature_to_plot].values, color='green')
+
+            mask = current_series['awake'] == 3
+            if mask.any():
+                x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
+                x[~mask] = np.nan
+                plt.plot(x, current_series[feature_to_plot].values, color='grey')
 
             plt.xlabel('Timestamp')
             plt.ylabel('Feature values')
@@ -55,4 +62,5 @@ def save_plots(current_series, current_events, current_preds, id_decoding, id, f
         os.makedirs(folder_path)
     plt.savefig(folder_path + '/' + 'series_id--' +
                 f'{id_decoding[id]}-({id}).png')
+    plt.close()
     logger.info(f'Plot saved at: {folder_path + "/" + "series_id--" + f"{id_decoding[id]}-({id}).png"}')

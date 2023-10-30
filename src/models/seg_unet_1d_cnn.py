@@ -16,6 +16,21 @@ from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import find_events, one_hot_to_state
 
 
+def masked_loss(criterion, outputs, y):
+    labels = y[:, :3, :]
+
+    unlabeled_mask = y[:, 3, :]
+    unlabeled_mask = 1-unlabeled_mask
+    unlabeled_mask = unlabeled_mask.unsqueeze(1).repeat(1, 3, 1)
+
+    loss_unreduced = criterion(outputs, labels)
+
+    loss_masked = loss_unreduced * unlabeled_mask
+
+    loss = torch.sum(loss_masked) / torch.sum(unlabeled_mask)
+    return loss
+
+
 class SegmentationUnet1DCNN(Model):
     """
     This model is a segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
@@ -69,7 +84,7 @@ class SegmentationUnet1DCNN(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-        config["loss"] = Loss.get_loss(config["loss"])
+        config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
@@ -123,9 +138,9 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
 
-        # Get only the one hot encoded features
-        y_train = y_train[:, :, -3:]
-        y_test = y_test[:, :, -3:]
+        # Get only the one hot encoded labels, this includes a column for unlabeled
+        y_train = y_train[:, :, -4:]
+        y_test = y_test[:, :, -4:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -180,7 +195,7 @@ class SegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs, y)
+                    loss = masked_loss(criterion, outputs, y)
 
                     # Backward and optimize
                     loss.backward()
@@ -204,7 +219,7 @@ class SegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model(vx)
-                        vloss = criterion(voutputs, vy)
+                        vloss = masked_loss(criterion, voutputs, vy)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -214,7 +229,8 @@ class SegmentationUnet1DCNN(Model):
                         vepoch.set_postfix(loss=avg_val_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
+            descr = (f"------ Epoch [{epoch + 1}/{epochs}], "
+                     f"Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
             logger.debug(descr)
 
             # Add average losses and epochs to list
@@ -268,7 +284,7 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Get only the one hot encoded features
-        y_train = y_train[:, :, -3:]
+        y_train = y_train[:, :, -4:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -303,7 +319,7 @@ class SegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs, y)
+                    loss = masked_loss(criterion, outputs, y)
 
                     # Backward and optimize
                     loss.backward()
@@ -405,7 +421,7 @@ class SegmentationUnet1DCNN(Model):
         logger.info("--- Evaluating model")
         # Calculate the loss of the predictions
         criterion = self.config["loss"]
-        loss = criterion(pred, target)
+        loss = masked_loss(criterion, pred, target)
         return loss
 
     def save(self, path: str) -> None:

@@ -345,7 +345,7 @@ class SegmentationUnet1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray, with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -403,8 +403,12 @@ class SegmentationUnet1DCNN(Model):
             events = find_events(pred, median_filter_size=15)
             all_predictions.append(events)
 
+        # TODO Set confidences to 1 for now
+        all_predictions = np.array(all_predictions)
+        all_confidences = np.ones(all_predictions.shape)
+
         # Return numpy array
-        return np.array(all_predictions)
+        return all_predictions, all_confidences
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

@@ -22,7 +22,7 @@ class Ensemble:
 
         self.config = config
 
-    def pred(self, data: np.ndarray, pred_cpu: bool) -> np.ndarray:
+    def pred(self, data: np.ndarray, pred_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -36,6 +36,7 @@ class Ensemble:
         logger.info("Data shape: " + str(data.shape))
         # Run each model
         predictions = []
+        confidences = []
         # model_pred is (onset, wakeup) tuples for each window
         for model in self.models:
             # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
@@ -44,9 +45,10 @@ class Ensemble:
             else:
                 model_pred = model.pred(data)
 
-            # Model_pred is (onset, wakeup) tuples for each window
+            # Model_pred is tuple of np.array(onset, awake), np.array(confidences) for each window
             # Split the series of tuples into two column
-            predictions.append(model_pred)
+            predictions.append(model_pred[0])
+            confidences.append(model_pred[1])
 
         # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 
@@ -55,4 +57,9 @@ class Ensemble:
         aggregate = np.average(
             predictions, axis=0, weights=self.weight_matrix)
 
-        return aggregate
+        # Weight the confidences
+        confidences = np.array(confidences)
+        aggregate_confidences = np.average(
+            confidences, axis=0, weights=self.weight_matrix)
+
+        return aggregate, aggregate_confidences

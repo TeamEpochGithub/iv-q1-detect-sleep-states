@@ -62,7 +62,7 @@ Adds this as a column that is 0 for perfect similarity.
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end
 - `add_regression_labels` (requires `split_windows`)
-    - Parameters: `id_encoding_path: str`
+    - Parameters: `id_encoding_path: str`, `events_path: str`, `window_size: int = 17280`
     - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels
         - 0: `wakeup`
         - 1: `onset`

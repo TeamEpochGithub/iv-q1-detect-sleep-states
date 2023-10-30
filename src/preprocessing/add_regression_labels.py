@@ -15,7 +15,12 @@ class AddRegressionLabels(PP):
     """
 
     def __init__(self, events_path: str, id_encoding_path: str, window_size: int = 17280, **kwargs: dict) -> None:
-        """Initialize the AddRegressionLabels class"""
+        """Initialize the AddRegressionLabels class
+        
+        :param events_path: the path to the events csv file
+        :param id_encoding_path: the path to the encoding file of the series id
+        :param window_size: the size of the window
+        """
         super().__init__(**kwargs | {"kind": "add_regression_labels"})
 
         self.events_path: str = events_path
@@ -26,14 +31,14 @@ class AddRegressionLabels(PP):
 
     def __repr__(self) -> str:
         """Return a string representation of a AddRegressionLabels object"""
-        return f"{self.__class__.__name__}(window_size={self.window_size})"
+        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path}, window_size={self.window_size})"
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.
-
         :param data: the data to preprocess
-        :return: the preprocessed data
+        :return: the preprocessed data with the event labels columns ("onset", "wakeup", "onset-NaN", "wakeup-NaN")
         :raises FileNotFoundError: If the events csv or id_encoding json file is not found
+        :raises PPException: If the window column is not present
         """
 
         # If window column is present, raise an exception
@@ -65,7 +70,7 @@ class AddRegressionLabels(PP):
         This does not happen much < 0.5% of the time.
 
         :param data: The dataframe to add the event labels to
-        :return: The dataframe with the event labels
+        :return: The dataframe with the event labels ("onset", "wakeup", "onset-NaN", "wakeup-NaN")
         """
 
         # Set onset and wakeup to -1
@@ -82,7 +87,7 @@ class AddRegressionLabels(PP):
         tqdm.pandas()
         data = (data
                 .groupby('series_id')
-                .progress_apply(lambda x: self.fill_series_labels(x))
+                .progress_apply(self.fill_series_labels)
                 .reset_index(drop=True))
         return data
 
@@ -90,7 +95,7 @@ class AddRegressionLabels(PP):
         """
         Fill the onset/wakeup column for the series
         :param series: a series_id group
-        :return: the series with the onset/wakeup column filled
+        :return: the series with the onset/wakeup and onset-NaN/wakeup-Nan columns filled
         """
         series_id = series['series_id'].iloc[0]
         current_events = self.events[self.events["series_id"] == series_id]

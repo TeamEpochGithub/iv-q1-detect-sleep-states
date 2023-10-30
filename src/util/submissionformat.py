@@ -33,7 +33,7 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
                           value_name='step').sort_values(['series_id', 'window'])
 
     df_conf = window_info.melt(id_vars=['series_id', 'window'], value_vars=['onset_confidence', 'wakeup_confidence'], var_name='event',
-                          value_name='confidence').sort_values(['series_id', 'window'])
+                               value_name='confidence').sort_values(['series_id', 'window'])
 
     df['score'] = df_conf['confidence']
 

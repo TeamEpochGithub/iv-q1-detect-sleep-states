@@ -46,26 +46,20 @@
         }
     },
     "models": {
-        "SegmentTransformer": {
-            "type": "segmentation-transformer",
-            "epochs": 100,
-            "loss": "bce-torch",
-            "optimizer": "adam-torch",
-            "lr": 0.00035,
-            "tokenizer": "patch",
-            "tokenizer_args": {
-                "patch_size": 4
-            },
-            "pe": "other",
-            "emb_dim": 64,
-            "forward_dim": 246,
-            "batch_size": 4,
-            "heads": 8,
-            "pooling": "none"
-        }
+      "Event-1D-Unet-CNN": {
+        "type": "event-seg-unet-1d-cnn",
+        "loss": "mse-torch",
+        "optimizer": "adam-torch",
+        "epochs": 47,
+        "batch_size": 32,
+        "lr": 0.0005,
+        "hidden_layers": 8,
+        "early_stopping": 7,
+        "threshold": 0
+      }
     },
     "ensemble": {
-        "models": ["SegmentTransformer"],
+        "models": ["Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -78,12 +72,12 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":false,
+    "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
         "n": 10,
         "browser_plot": false,
-        "save": false
+        "save": true
     }
 }
 

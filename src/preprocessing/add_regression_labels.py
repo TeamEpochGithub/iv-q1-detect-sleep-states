@@ -16,7 +16,7 @@ class AddRegressionLabels(PP):
 
     def __init__(self, events_path: str, id_encoding_path: str, window_size: int = 17280, **kwargs: dict) -> None:
         """Initialize the AddRegressionLabels class
-        
+
         :param events_path: the path to the events csv file
         :param id_encoding_path: the path to the encoding file of the series id
         :param window_size: the size of the window

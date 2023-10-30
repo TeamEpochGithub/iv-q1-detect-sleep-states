@@ -1,21 +1,21 @@
 import copy
+from typing import Any
+from typing import List
+
 import numpy as np
 import torch
 import wandb
+from numpy import ndarray, dtype
+from torch import nn
+from tqdm import tqdm
 
 from src.logger.logger import logger
 from src.models.transformers.trainers.segmentation_trainer import SegmentationTrainer
 from src.util.state_to_event import find_events
-
-from ...loss.loss import Loss
-from ..model import Model
-from ...optimizer.optimizer import Optimizer
-from typing import List
-from torch import nn
-from tqdm import tqdm
-from numpy import ndarray, dtype
-from typing import Any
 from .architecture.transformer_pool import TransformerPool
+from ..model import Model
+from ...loss.loss import Loss
+from ...optimizer.optimizer import Optimizer
 
 
 class SegmentationTransformer(Model):
@@ -270,21 +270,19 @@ class SegmentationTransformer(Model):
         if downsampling_factor > 1:
             predictions = np.repeat(predictions, downsampling_factor, axis=1)
 
-        #TODO Add custom confidences (now all set to 1)
+        # TODO Add custom confidences (now all set to 1)
         all_predictions = []
-        all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             pred = np.argmax(pred, axis=1)
             events = find_events(pred, median_filter_size=15)
             all_predictions.append(events)
-            all_confidences.append((1,1))
 
-
-
+        all_predictions = np.array(all_predictions)
+        all_confidences = np.ones(all_predictions.shape)
         # Return numpy array
-        return np.array(all_predictions), np.array(all_confidences)
+        return all_predictions, all_confidences
 
     def _pred_one_batch(self, data: torch.utils.data.DataLoader, preds: List[float], model: nn.Module) -> List[float]:
         """

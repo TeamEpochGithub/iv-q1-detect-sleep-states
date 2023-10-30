@@ -7,7 +7,6 @@ import os
 
 
 def make_global_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str):
-
     tolerances = [0, 12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000, 17280]
     scores = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0, 0, 0]
     with warnings.catch_warnings():
@@ -44,10 +43,11 @@ def make_global_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path
     if all_errors_onset is not None:
         hist_values, bin_edges = np.histogram(all_errors_onset, bins=tolerances)
         # make the bar names the ranges from the tolerances
-        bar_labels = [f'{int(bin_edges[i]):d}-{int(bin_edges[i+1]):d}\n{scores[i]}' for i in range(len(bin_edges) - 1)]
+        bar_labels = [f'{int(bin_edges[i]):d}-{int(bin_edges[i + 1]):d}\n{scores[i]}' for i in
+                      range(len(bin_edges) - 1)]
         plt.figure(figsize=(20, 10))
         # replace the bin edges to be a range incremented by 10 starting from 0
-        bin_edges = np.arange(0, 10*len(tolerances), 10)
+        bin_edges = np.arange(0, 10 * len(tolerances), 10)
         # Calculate the width of each bar
         bar_width = [5] * len(bin_edges[:-1])
 
@@ -60,28 +60,29 @@ def make_global_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path
         for bar in bars_onset:
             height = bar.get_height()
             plt.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom', rotation=45)
+                         xytext=(0, 3),  # 3 points vertical offset
+                         textcoords="offset points",
+                         ha='center', va='bottom', rotation=45)
 
     # also make the histogram for the wakeups
     if all_errors_wakeup is not None:
         hist_values, bin_edges = np.histogram(all_errors_wakeup, bins=tolerances)
         # make the bar names the ranges from the tolerances
-        bar_labels = [f'{int(bin_edges[i]):d}-{int(bin_edges[i+1]):d}\n{scores[i]}' for i in range(len(bin_edges) - 1)]
+        bar_labels = [f'{int(bin_edges[i]):d}-{int(bin_edges[i + 1]):d}\n{scores[i]}' for i in
+                      range(len(bin_edges) - 1)]
         # replace the bin edges to be a range incremented by 10 starting from 0
-        bin_edges = np.arange(0, 10*len(tolerances), 10)
+        bin_edges = np.arange(0, 10 * len(tolerances), 10)
         # Calculate the width of each bar
         bar_width = [5] * len(bin_edges[:-1])
 
         # Create a bar chart with custom widths and labels
-        bars_wakeup = plt.bar(bin_edges[:-1]+5, hist_values, width=bar_width, align='edge', tick_label=bar_labels)
+        bars_wakeup = plt.bar(bin_edges[:-1] + 5, hist_values, width=bar_width, align='edge', tick_label=bar_labels)
         for bar in bars_wakeup:
             height = bar.get_height()
             plt.annotate(f'{height}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom', rotation=45)
+                         xytext=(0, 3),  # 3 points vertical offset
+                         textcoords="offset points",
+                         ha='center', va='bottom', rotation=45)
     plt.legend(['onset', 'wakeup'])
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)

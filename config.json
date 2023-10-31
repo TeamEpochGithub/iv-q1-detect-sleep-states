@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -23,7 +23,7 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 5
+            "smoothing": 40
         },
         {
             "kind": "split_windows",
@@ -34,7 +34,11 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["day", "hour"]
+            "time_features": ["hour", "minute"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [10,100,1000]
         }
     ],
     "pretraining": {
@@ -53,17 +57,17 @@
     "models": {
         "EventTransformer": {
             "type": "event-segmentation-transformer",
-            "epochs": 1000,
+            "epochs": 10000,
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "lr": 0.000035,
+            "lr": 0.00035,
             "tokenizer": "patch",
             "tokenizer_args": {
-                "patch_size": 4
+                "patch_size": 2
             },
             "pe": "other",
-            "emb_dim": 64,
-            "forward_dim": 256,
+            "emb_dim": 128,
+            "forward_dim": 512,
             "batch_size": 16,
             "heads": 8,
             "pooling": "none"

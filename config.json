@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -57,17 +57,17 @@
     "models": {
         "EventTransformer": {
             "type": "event-segmentation-transformer",
-            "epochs": 10,
+            "epochs": 25,
             "loss": "mse-torch",
             "optimizer": "adam-torch",
             "lr": 0.00035,
             "tokenizer": "patch",
             "tokenizer_args": {
-                "patch_size": 2
+                "patch_size": 4
             },
             "pe": "other",
-            "emb_dim": 128,
-            "forward_dim": 512,
+            "emb_dim": 64,
+            "forward_dim": 256,
             "batch_size": 16,
             "heads": 8,
             "pooling": "none"

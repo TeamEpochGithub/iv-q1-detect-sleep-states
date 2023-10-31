@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
+from sklearn.metrics import roc_curve
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -18,7 +19,7 @@ from ..util.state_to_event import pred_to_event_state
 
 class EventSegmentationUnet1DCNN(Model):
     """
-    This model is a event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
+    This model is an event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
     def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
@@ -45,7 +46,8 @@ class EventSegmentationUnet1DCNN(Model):
         self.load_config(config)
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
+        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=2,
+                               model_type=self.model_type, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
@@ -88,14 +90,16 @@ class EventSegmentationUnet1DCNN(Model):
         Load optimizer function for the model.
         """
         # Load optimizer
-        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model)
+        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
+                                                           self.config["weight_decay"], self.model)
 
     def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1, "threshold": 0.5, "weight_decay": 0.0}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
+                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0}
 
     def get_type(self) -> str:
         """
@@ -121,6 +125,9 @@ class EventSegmentationUnet1DCNN(Model):
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
+
+        X_train_start = X_train.copy()
+        Y_train_start = y_train.copy()
 
         # TODO Change
         X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
@@ -227,7 +234,8 @@ class EventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
+                           f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -239,8 +247,10 @@ class EventSegmentationUnet1DCNN(Model):
                 else:
                     counter += 1
                     if counter >= early_stopping:
-                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
+                        logger.info(
+                            "--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
+                                total_epochs) + " Stopping training and loading best model for " + str(
+                                total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
                         stopped = True
                         break
@@ -254,6 +264,14 @@ class EventSegmentationUnet1DCNN(Model):
         if stopped:
             total_epochs -= early_stopping
         self.config["total_epochs"] = total_epochs
+
+        # Find optimal threshold if threshold is negative
+        if self.config["threshold"] < 0:
+            logger.info("--- Finding optimal threshold for model.")
+            self.find_optimal_threshold(X_train_start, Y_train_start)
+            logger.info(f"--- Optimal threshold is {self.config['threshold']:.4f}.")
+        else:
+            logger.info(f"--- Using threshold of {self.config['threshold']:.4f} from the config.")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -389,7 +407,6 @@ class EventSegmentationUnet1DCNN(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            # TODO Add automatic thresholding to the model
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
@@ -440,7 +457,8 @@ class EventSegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
+            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2,
+                                   model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return
@@ -448,11 +466,40 @@ class EventSegmentationUnet1DCNN(Model):
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
-        return
 
     def reset_optimizer(self) -> None:
 
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(),
+                                                                  lr=self.config['optimizer'].param_groups[0]['lr'])
+
+    def find_optimal_threshold(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Finds and sets the optimal threshold for the model.
+
+        :param X: the data with shape (window, window_size, n_features)
+        :param y: the labels with shape (window, window_size, n_features)
+        :return: the optimal threshold ∈ [0, 1]
+        """
+        self.config["threshold"] = -10000
+        y_pred = self.pred(X, False)
+
+        # Get the sum of the confidences
+        confidences_sum = np.sum(y_pred[1], axis=1)
+
+        # Make an array where it is true if awake is 0 or 1 and false if awake is 2
+        make_pred_windowed = np.where(y[:, :, 0] == 2, False, True)
+
+        # Get a single boolean for each window if it should make a prediction or not
+        make_pred = np.any(make_pred_windowed, axis=1)
+
+        # Create ROC curve
+        fpr, tpr, thresholds = roc_curve(make_pred, confidences_sum)
+
+        # Get optimal threshold
+        optimal_idx = np.argmax(tpr - fpr)
+        optimal_threshold = thresholds[optimal_idx]
+
+        self.config["threshold"] = optimal_threshold
+        return self.config["threshold"]

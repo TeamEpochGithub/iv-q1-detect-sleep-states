@@ -155,7 +155,7 @@ class SegmentationTrainer:
         output = model(data[0].to(self.device))
 
         # Calculate loss
-        loss = self.criterion(output, data[1].type(
+        loss = self.criterion(output.squeeze(), data[1].type(
             torch.FloatTensor).to(self.device))
 
         # Backpropagate loss if not nan
@@ -205,7 +205,7 @@ class SegmentationTrainer:
             data[0] = data[0].float()
             output = model(data[0].to(self.device))
 
-            loss = self.criterion(output, data[1].type(
+            loss = self.criterion(output.squeeze(), data[1].type(
                 torch.FloatTensor).to(self.device))
             if not np.isnan(loss.item()):
                 losses.append(loss.detach())

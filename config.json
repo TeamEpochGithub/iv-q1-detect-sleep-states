@@ -20,19 +20,10 @@
             "as_feature": true
         },
         {
-          "kind": "add_state_labels",
-          "id_encoding_path": "series_id_encoding.json",
-          "events_path": "data/raw/train_events.csv",
-          "use_similarity_nan": true,
-          "fill_limit": 8640,
-          "nan_tolerance_window": 5
-
-        },
-        {
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 40
+            "smoothing": 0
         },
         {
             "kind": "split_windows",
@@ -43,7 +34,7 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["day", "hour"]
+            "time_features": ["hour","minute"]
         }
     ],
     "pretraining": {
@@ -64,7 +55,7 @@
         "type": "event-seg-unet-1d-cnn",
         "loss": "mse-torch",
         "optimizer": "adam-torch",
-        "epochs": 44,
+        "epochs": 52,
         "batch_size": 32,
         "lr": 0.0005,
         "hidden_layers": 16,
@@ -91,7 +82,6 @@
     "visualize_preds": {
         "n": 10,
         "browser_plot": false,
-        "save": true
+        "save": false
     }
 }
-

@@ -10,12 +10,12 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
+from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.transformers.transformer import Transformer
 from ..models.transformers.segmentation_transformer import SegmentationTransformer
-from ..models.split_event_seg_unet_1d_cnn  import SplitEventSegmentationUnet1DCNN
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 

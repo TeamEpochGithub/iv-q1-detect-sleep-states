@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -51,20 +51,20 @@
         }
     },
     "models": {
-      "Event-1D-Unet-CNN": {
-        "type": "event-seg-unet-1d-cnn",
+      "SplitEvent-1D-Unet-CNN": {
+        "type": "split-event-seg-unet-1d-cnn",
         "loss": "mse-torch",
         "optimizer": "adam-torch",
-        "epochs": 52,
+        "epochs": 44,
         "batch_size": 32,
-        "lr": 0.0005,
-        "hidden_layers": 16,
+        "lr": 0.001,
+        "hidden_layers": 8,
         "early_stopping": 7,
         "threshold": 0
       }
     },
     "ensemble": {
-        "models": ["Event-1D-Unet-CNN"],
+        "models": ["SplitEvent-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -80,8 +80,8 @@
     "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
-        "n": 10,
+        "n": 0,
         "browser_plot": false,
-        "save": false
+        "save": true
     }
 }

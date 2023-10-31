@@ -68,6 +68,7 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
         if wandb.run is not None:
             wandb.log({'score_clean': result})
         logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {result}')
+        return result
 
 
 if __name__ == '__main__':

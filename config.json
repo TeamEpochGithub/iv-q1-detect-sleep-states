@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -18,14 +18,6 @@
         {
             "kind": "similarity_nan",
             "as_feature": true
-        },
-        {
-          "kind": "add_state_labels",
-          "id_encoding_path": "series_id_encoding.json",
-          "events_path": "data/raw/train_events.csv",
-          "use_similarity_nan": true,
-          "fill_limit": 8640,
-          "nan_tolerance_window": 5
         },
         {
             "kind": "add_event_labels",
@@ -60,8 +52,8 @@
         }
     },
     "models": {
-      "Event-1D-Unet-CNN": {
-        "type": "event-seg-unet-1d-cnn",
+      "SplitEvent-1D-Unet-CNN": {
+        "type": "split-event-seg-unet-1d-cnn",
         "loss": "mse-torch",
         "optimizer": "adam-torch",
         "epochs": 44,
@@ -73,7 +65,7 @@
       }
     },
     "ensemble": {
-        "models": ["Event-1D-Unet-CNN"],
+        "models": ["SplitEvent-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -89,7 +81,7 @@
     "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
-        "n": 10,
+        "n": 0,
         "browser_plot": false,
         "save": false
     }

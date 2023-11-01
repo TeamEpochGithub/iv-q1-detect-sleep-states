@@ -125,9 +125,13 @@ class EventSegmentationUnet1DCNN(Model):
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
+        # Use the optimal threshold when the threshold is set to a negative value
+        use_optimal_threshold = self.config["threshold"] < 0
 
-        X_train_start = X_train.copy()
-        Y_train_start = y_train.copy()
+        # Only copy if we need to find the optimal threshold later
+        if use_optimal_threshold:
+            X_train_start = X_train.copy()
+            Y_train_start = y_train.copy()
 
         # TODO Change
         X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
@@ -265,8 +269,8 @@ class EventSegmentationUnet1DCNN(Model):
             total_epochs -= early_stopping
         self.config["total_epochs"] = total_epochs
 
-        # Find optimal threshold if threshold is negative
-        if self.config["threshold"] < 0:
+        # Find optimal threshold if necessary
+        if use_optimal_threshold:
             logger.info("--- Finding optimal threshold for model.")
             self.find_optimal_threshold(X_train_start, Y_train_start)
             logger.info(f"--- Optimal threshold is {self.config['threshold']:.4f}.")

@@ -28,7 +28,7 @@ class EventSegmentationUnet1DCNN(Model):
         :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
-        super().__init__(config, name)
+        super().__init__(config, name, pred_with_cpu)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -55,7 +55,6 @@ class EventSegmentationUnet1DCNN(Model):
             from torchsummary import summary
             summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
-        self.pred_with_cpu = pred_with_cpu
 
     def load_config(self, config: dict) -> None:
         """

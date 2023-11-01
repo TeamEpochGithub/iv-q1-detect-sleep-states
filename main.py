@@ -105,7 +105,8 @@ def main(config: ConfigLoader) -> None:
         model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename):
-            logger.info("Found existing trained model " + str(i) + ": " + model + " with location " + model_filename)
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
             models[model].load(model_filename, only_hyperparameters=False)
         else:
             logger.info("Training model " + str(i) + ": " + model)
@@ -117,9 +118,8 @@ def main(config: ConfigLoader) -> None:
                                                                    "train_validate_idx": train_idx,
                                                                    "downsampling_factor": pretrain.downsampler.factor,
                                                                    "window_size": pretrain.window_size})
-            models[model].save(model_filename)
             logger.info(
-                f"Done training model {i}: {model} with CV scores of {scores} and mean score of {np.round(np.mean(scores))}")
+                f"Done training model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
 
     # Store optimal models
     for i, model in enumerate(models):
@@ -256,7 +256,7 @@ def main(config: ConfigLoader) -> None:
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
                 model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
-                logger.info("Found existing fully trained optimal model " + str(
+                logger.info("Found existing fully trained submit model " + str(
                     i) + ": " + model + " with location " + model_filename_submit)
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)

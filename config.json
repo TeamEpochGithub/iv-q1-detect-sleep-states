@@ -1,7 +1,7 @@
 {
   "name": "config",
   "log_to_wandb": false,
-  "pred_with_cpu": true,
+  "pred_with_cpu": false,
   "train_series_path": "data/raw/train_series.parquet",
   "train_events_path": "data/raw/train_events.csv",
   "test_series_path": "data/raw/test_series.parquet",
@@ -33,9 +33,6 @@
       "kind": "split_windows",
       "start_hour": 15,
       "window_size": 17280
-    },
-    {
-      "kind": "add_segmentation_labels"
     }
   ],
   "feature_engineering": [
@@ -58,37 +55,35 @@
     }
   },
   "cv": {
-    "splitter": "group_shuffle_split",
+    "splitter": "k_fold",
     "scoring": ["score_full", "score_clean"],
     "splitter_params": {
-      "n_splits": 1,
-      "test_size": 0.2
+      "n_splits": 5
     }
   },
   "models": {
-    "1D-Unet-CNN": {
-      "type": "seg-unet-1d-cnn",
-      "loss": "bce-torch",
+    "Event-1D-Unet-CNN": {
+      "type": "event-seg-unet-1d-cnn",
+      "loss": "mse-torch",
       "optimizer": "adam-torch",
-      "epochs": 1,
+      "pred_with_cpu": true,
+      "epochs": 10,
       "batch_size": 32,
-      "lr": 0.0005,
+      "lr": 0.001,
       "hidden_layers": 8,
-      "early_stopping": 5
+      "early_stopping": 7,
+      "threshold": 0
     }
   },
   "ensemble": {
-    "models": ["1D-Unet-CNN"],
-    "weights": [1],
-    "comb_method": "addition"
+      "models": ["Event-1D-Unet-CNN"],
+      "weights": [1],
+      "comb_method": "addition"
   },
   "ensemble_loss": "mse-torch",
   "hpo": {
     "apply": false,
     "method": "example_hpo"
-  },
-  "similarity_filter": {
-    "threshold": 0.27
   },
   "train_for_submission": true,
   "scoring": true,

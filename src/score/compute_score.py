@@ -1,5 +1,4 @@
 import json
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -56,8 +55,9 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
     logger.debug(f'solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
-    score_full = score(solution, submission, _TOLERANCES, **_COLUMN_NAMES)
+    score_full = score(solution.dropna(), submission, _TOLERANCES, **_COLUMN_NAMES)
     logger.info(f'Score for all {len(solution["series_id"].unique())} series: {score_full}')
+    logger.info(f'Number of predicted events: {len(submission)} and number of true events / no nan: {len(solution)} / {len(solution.dropna())}')
 
     return score_full
 
@@ -88,14 +88,12 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
     else:
         score_clean = score(solution_no_nan, submission_filtered_no_nan, _TOLERANCES, **_COLUMN_NAMES)
         logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {score_clean}')
+        logger.info(f'Number of predicted events: {len(submission_filtered_no_nan)} and number of true events: {len(solution_no_nan)}')
 
     return score_clean
 
 
-def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, featured_data: pd.DataFrame,
-                                    train_validate_idx: np.array, validate_idx: np.array,
-                                    downsampling_factor: int = 1, window_size: int = 17280) -> (
-        pd.DataFrame, pd.DataFrame):
+def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
     """Tries to turn the numpy y_true and y_pred into a solution and submission dataframes...
 
     ...but it fails.
@@ -115,8 +113,6 @@ def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, feat
     :param downsampling_factor: the factor by which the test data has been downsampled during the pretraining
     :return: the submission [0] and solution [1] which can be used by compute_score_full & compute_score_clean
     """
-    # Get the complete train/test data
-    train_test_main = featured_data.iloc[train_validate_idx]
 
     total_arr = []
     # Reconstruct the original indices to access the data from train_main
@@ -124,11 +120,10 @@ def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, feat
         # TODO Use the downsampling factor here and don't hardcode the window_size
         arr = np.arange(i * 17280, (i + 1) * 17280)
         total_arr.append(arr)
-    validate_idx = np.concatenate(total_arr)
+    data_validate_idx = np.concatenate(total_arr)
 
     # Complete labelled data of current test split
-    test_cv = train_test_main.iloc[validate_idx]
-
+    test_cv = data.iloc[data_validate_idx]
     # Prepare submission (prediction of the model)
     window_info_test_cv = (test_cv[['series_id', 'window', 'step']]
                            .groupby(['series_id', 'window'])
@@ -153,27 +148,7 @@ def from_numpy_to_submission_format(y_true: np.ndarray, y_pred: np.ndarray, feat
                      .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                      .reset_index(drop=True))
 
-    # Apply the series_id encoding
-    solution_full['series_id'] = solution_full['series_id'].map(encoding).astype('int')
-
-    # Convert dtypes, because they are fucked for no reason
-    solution_full['step'] = solution_full['step'].astype(float).astype('Int32')
-    # Convert step to int32 and 16
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        test_cv['step'] = test_cv['step'].astype('int32')
-        test_cv['series_id'] = test_cv['series_id'].astype('int16')
-
-    # Get the part from the entire train events that
-    # FIXME This part here deletes NaN steps, resulting in a shorter dataframe
-    solution_match = pd.merge(solution_full[['series_id', 'event', 'step']], test_cv[['series_id', 'step']],
-                              on=['series_id', 'step'], how='inner')
-
-    # Decoding series_id with the encoding object
-    solution_match['series_id'] = solution_match['series_id'].map(decoding)
-
-    # FIXME Something in here causes a warning later in src\score\scoring.py:238: RuntimeWarning: overflow encountered in scalar subtract
-    return submission, solution_match
+    return submission, solution_full
 
 
 def log_scores_to_wandb(score_full: float, score_clean: float) -> None:

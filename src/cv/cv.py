@@ -22,16 +22,16 @@ _SPLITTERS: dict[str] = {
     "repeated_stratified_k_fold": RepeatedStratifiedKFold,
     "shuffle_split": ShuffleSplit,
     "stratified_k_fold": StratifiedKFold,
-    "starified_shuffle_split": StratifiedShuffleSplit,
+    "stratified_shuffle_split": StratifiedShuffleSplit,
     "stratified_group_k_fold": StratifiedGroupKFold,
     "time_series_split": TimeSeriesSplit
 }
 
 _SCORERS: dict[str, Callable[[...], float]] = {
-    "score_full": lambda y_true, y_pred, **kwargs: compute_score_full(
-        *(from_numpy_to_submission_format(y_true, y_pred, **kwargs))),
-    "score_clean": lambda y_true, y_pred, **kwargs: compute_score_clean(
-        *(from_numpy_to_submission_format(y_true, y_pred, **kwargs)))
+    "score_full": lambda data, y_true, y_pred, idx: compute_score_full(
+        *(from_numpy_to_submission_format(data, y_true, y_pred, idx))),
+    "score_clean": lambda data, y_true, y_pred, idx: compute_score_clean(
+        *(from_numpy_to_submission_format(data, y_true, y_pred, idx)))
 }
 
 
@@ -100,8 +100,12 @@ class CV:
         """
         scores = []
 
+
+        # Get all the train data
+        train_test_main = scoring_params["featured_data"].iloc[scoring_params["train_validate_idx"]]
+
         # Split the data in folds with train and validation sets
-        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels, groups)):
+        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:,:,0], groups)):
             model.reset_optimizer()
 
             X_train, X_validate = data[train_idx], data[validate_idx]
@@ -112,9 +116,9 @@ class CV:
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(y_validate, y_pred, validate_idx=validate_idx, **scoring_params) for scorer in self.scoring]
+                score = [scorer(train_test_main, y_validate, y_pred, validate_idx) for scorer in self.scoring]
             else:
-                score = self.scoring(y_validate, y_pred, validate_idx=validate_idx, **scoring_params)
+                score = self.scoring(train_test_main, y_validate, y_pred, validate_idx)
             scores.append(score)
 
         return np.array(scores)

@@ -381,8 +381,10 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Log full train and test plot
         if wandb.run is not None:
-            self.log_train_test(avg_losses_onset, avg_val_losses_onset, total_epochs_onset, "onset")
-            self.log_train_test(avg_losses_awake, avg_val_losses_awake, total_epochs_awake, "awake")
+            self.log_train_test(
+                avg_losses_onset, avg_val_losses_onset, total_epochs_onset, "onset")
+            self.log_train_test(
+                avg_losses_awake, avg_val_losses_awake, total_epochs_awake, "awake")
         logger.info("--- Training of model complete!")
 
         # Set total_epochs in config if broken by the early stopping
@@ -390,7 +392,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             total_epochs_awake -= early_stopping
             total_epochs_onset -= early_stopping
         self.config["total_epochs_onset"] = total_epochs_onset
-        self.config["total_epochs_awake"] = total_epochs_awake 
+        self.config["total_epochs_awake"] = total_epochs_awake
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """

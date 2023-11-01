@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -58,7 +58,7 @@
         "epochs": 44,
         "batch_size": 32,
         "lr": 0.001,
-        "hidden_layers": 8,
+        "hidden_layers": 32,
         "early_stopping": 7,
         "threshold": 0
       }

@@ -20,6 +20,7 @@ _COLUMN_NAMES = {
     'score_column_name': 'score',
 }
 
+_unique_series = []
 
 def verify_submission(submission: pd.DataFrame) -> None:
     """Verify that there are no consecutive onsets or wakeups
@@ -143,12 +144,22 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
     test_series_ids = [decoding[sid] for sid in test_series_ids]
 
     # Load the train events from file
-    solution_full = (pd.read_csv("data/raw/train_events.csv")
+    solution = (pd.read_csv("data/raw/train_events.csv")
                      .groupby('series_id')
                      .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                      .reset_index(drop=True))
 
-    return submission, solution_full
+    # Assert that submission series_id exists in solution
+    submission_series_ids = submission['series_id'].unique()
+    solution_series_ids = solution['series_id'].unique()
+    assert np.all([sid in solution_series_ids for sid in submission_series_ids])
+
+    # Extend unique series ids and assert that there are no duplicates
+    global _unique_series
+    _unique_series.extend(submission_series_ids)
+    assert len(_unique_series) == len(set(_unique_series))
+
+    return submission, solution
 
 
 def log_scores_to_wandb(score_full: float, score_clean: float) -> None:

@@ -157,6 +157,7 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
     # Extend unique series ids and assert that there are no duplicates
     global _unique_series
     _unique_series.extend(submission_series_ids)
+    logger.debug(f'Unique series ids: {_unique_series}')
     assert len(_unique_series) == len(set(_unique_series))
 
     return submission, solution

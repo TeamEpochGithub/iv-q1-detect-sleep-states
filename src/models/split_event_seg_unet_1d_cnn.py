@@ -21,14 +21,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
     This model is a event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str, pred_with_cpu: bool) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
-        super().__init__(config, name)
+        super().__init__(config, name, pred_with_cpu)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -533,21 +533,21 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if self.pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
+
 
         # Set models to eval for inference
         self.model_onset.eval()
@@ -572,7 +572,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model_onset(batch_data)
 
-                if with_cpu:
+                if self.pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
@@ -591,7 +591,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model_awake(batch_data)
 
-                if with_cpu:
+                if self.pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()

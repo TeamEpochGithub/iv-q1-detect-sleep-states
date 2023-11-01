@@ -2,6 +2,7 @@
 import json
 import os
 
+import numpy as np
 import pandas as pd
 import numpy as np
 import wandb
@@ -168,39 +169,56 @@ def main(config: ConfigLoader) -> None:
 
         # TODO simplify this
         # for each window get the series id and step offset
-        window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
-                       .groupby(['series_id', 'window'])
-                       .apply(lambda x: x.iloc[0]))
-        submission = to_submission_format(predictions, window_info)
+        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if 'similarity_nan' in col]
+        grouped = (featured_data.iloc[test_idx][important_cols]
+                   .groupby(['series_id', 'window']))
+        window_offset = grouped.apply(lambda x: x.iloc[0])
+
+        # filter out predictions using a threshold on (f_)similarity_nan
+        filter_cfg = config.get_similarity_filter()
+        if filter_cfg:
+            logger.info(f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
+            col_name = [col for col in featured_data.columns if 'similarity_nan' in col]
+            if len(col_name) == 0:
+                raise ValueError("No (f_)similarity_nan column found in the data for filtering")
+            mean_sim = grouped.apply(lambda x: (x[col_name] == 0).mean())
+            nan_mask = mean_sim > filter_cfg['threshold']
+            nan_mask = np.where(nan_mask, np.nan, 1)
+            predictions = predictions * nan_mask
+
+        submission = to_submission_format(predictions, window_offset)
+
         # get only the test series data from the solution
-        test_series_ids = window_info['series_id'].unique()
+        test_series_ids = window_offset['series_id'].unique()
+
         # if visualize is true plot all test series
         with open('./series_id_encoding.json', 'r') as f:
             encoding = json.load(f)
         decoding = {v: k for k, v in encoding.items()}
         test_series_ids = [decoding[sid] for sid in test_series_ids]
 
+        # load solution for test set and compute score
         solution = (pd.read_csv(config.get_train_events_path())
                     .groupby('series_id')
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                     .reset_index(drop=True))
-
         logger.info("Start scoring test predictions...")
-        compute_scores(submission, solution)
+        result = compute_scores(submission, solution)
 
         # compute confusion matrix for making predictions or not
-        window_info['series_id'] = window_info['series_id'].map(decoding)
-        compute_nan_confusion_matrix(submission, solution, window_info)
+        window_offset['series_id'] = window_offset['series_id'].map(decoding)
+        compute_nan_confusion_matrix(submission, solution, window_offset)
 
         # the plot function applies encoding to the submission
         # we do not want to change the ids on the original submission
         plot_submission = submission.copy()
+
         # pass only the test data
         logger.info('Creating plots...')
         plot_preds_on_series(plot_submission,
                              featured_data[featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
                              number_of_series_to_plot=config.get_number_of_plots(),
-                             folder_path='prediction_plots/' + config_hash,
+                             folder_path='prediction_plots/' + config_hash + f'-Score--{result:.4f}',
                              show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
 
     else:
@@ -228,7 +246,7 @@ def main(config: ConfigLoader) -> None:
                 model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
                 logger.info("Found existing fully trained optimal model " + str(
-                    i) + ": " + model + " with location " + model_filename)
+                    i) + ": " + model + " with location " + model_filename_submit)
             else:
                 models[model].load(model_filename_opt, only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)

@@ -15,6 +15,9 @@ The config file is split up in different sections. Each section has its own conf
 9. [Hyperparameter optimization](#hyperparameter-optimization)
 10. [Cross validation](#cross-validation)
 11. [Scoring](#scoring)
+12. [Train for submission](#train-for-submission)
+13. [Visualize preds](#visualize-preds)
+14. [Similarity filtering](#similarity-filtering)
 
 ## General
 - `name`: `str`
@@ -48,11 +51,18 @@ Adds this as a column that is 0 for perfect similarity.
 - `add-noise`
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`
-    - Parameters: `id_encoding_path: str`, `events_path: str`
+    - Parameters: `id_encoding_path: str`, `events_path: str`, `use_similarity_nan: bool`, `fill_limit: int`
     - Labels the data in a way that each timestep gets a label.
         - `0`: asleep.
         - `1`: awake.
         - `2`: `NaN`, not labeled.
+    - If `use_similarity_nan` is set to true, 
+      it will use the similarity_nan column to determine whether something is NaN or unlabeled, 
+      and asleep/awake labelling around those segments will be better.
+    - `fill_limit` is the maximum number of time steps that a state is extended into unlabeled non-nan data,
+      only used if `use_similarity_nan` is set to true.
+    - `nan_tolerance_window`, labels are extended up to the first nan data point. 
+      This parameter specifies the size of the median filter that is used to ignore lone nan points.
 - `split_windows`
     - Parameters: `start_hour: int = 15`, `window_size: int = 17280`
     - Splits the data in to 24 hour long windows
@@ -61,13 +71,24 @@ Adds this as a column that is 0 for perfect similarity.
 - `truncate` (requires `add_state_labels`)
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end
-- `add_regression_labels` (requires `add_state_labels`, `split_windows`)
-    - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
+- `add_regression_labels` (requires `split_windows`)
+    - Parameters: `id_encoding_path: str`, `events_path: str`, `window_size: int = 17280`
+    - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels
+        - 0: `wakeup`
+        - 1: `onset`
+        - 2: `wakeup-NaN`
+        - 3: `onset-NaN`
 - `add_segmentation_labels` (requires `add_state_labels`)
     - Adds 3 columns, hot encoded, for the segmentation labels
         - 0: `hot-asleep`
         - 1: `hot-awake`
-        - 2: `hot-NaN`, not labeled
+        - 2: `hot-NaN`
+        - 3: `hot-unlabeled`
+- `add_event_labels`
+    - Parameters: `id_encoding_path: str`, `smoothing: int`, `events_path: str`
+    - Adds 2 columns, 0 for no event and 1 for event and applies gaussian smoothing over it
+        - 0: `state_onset`
+        - 1: `state_wakeup`
 
 Example for each step:
 ```JSON
@@ -82,8 +103,11 @@ Example for each step:
     {
         "kind": "add_state_labels",
         "id_encoding_path": "series_id_encoding.json",
-        "events_path": "data/raw/train_events.csv"
-    },
+        "events_path": "data/raw/train_events.csv",
+        "use_similarity_nan": true,
+        "fill_limit": 8640,
+        "nan_tolerance_window": 5
+      },
     {
         "kind": "split_windows",
         "start_hour": 15,
@@ -96,11 +120,19 @@ Example for each step:
         "kind": "truncate"
     },
     {
-        "kind": "add_regression_labels"
+        "kind": "add_regression_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv"
     },
     {
         "kind": "add_segmentation_labels"
-    }
+    },
+    {
+        "kind": "add_event_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv",
+        "smoothing": 5
+    },
 ]
 ```
 
@@ -267,7 +299,7 @@ This contains all the models and their hyperparameters that are implemented. The
   - threshold=.1
   - use_nan_similarity=True
 
-- transformer
+- transformer / segmentation-transformer
     - epochs (required)
     - loss (required)
     - optimizer (required)
@@ -301,7 +333,7 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "lr": 0.01
 }
 "GeneralTransformer": {
-    "type": "transformer",
+    "type": "transformer" / "segmentation-transformer",
     "epochs": 5,
     "loss": "event-regression-rmse",
     "optimizer": "adam-torch",
@@ -411,7 +443,7 @@ by setting the following to true:
 "train_for_submission": True
 ```
 
-### Visualize preds
+## Visualize preds
 Configures how plots are generated. 
 - "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
 - "browser_plot": Boolean that if set to True creates plotly plots
@@ -422,5 +454,17 @@ Configures how plots are generated.
         "n": 5,
         "browser_plot": true,
         "save": false
+    }
+```
+
+## Similarity filtering
+Apply a filter to the timestamp predictions, based on similarity to other windows.
+Requires the similarity_nan preprocessing step. Can be removed from the 
+If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to nan.
+- "threshold": Float, if mean of f_similarity_nan is above this, prediction is set to nan
+
+```JSON
+"similarity_filter": {
+        "threshold": 0.27
     }
 ```

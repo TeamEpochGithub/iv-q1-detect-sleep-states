@@ -332,7 +332,7 @@ class EventSegmentationUnet1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray, with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -385,15 +385,22 @@ class EventSegmentationUnet1DCNN(Model):
             predictions = np.repeat(predictions, downsampling_factor, axis=2)
 
         all_predictions = []
-
+        all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
+            # TODO Add automatic thresholding to the model
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
-            all_predictions.append(events)
+
+            # Add step offset based on repeat factor.
+            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            steps = (events[0] + offset, events[1] + offset)
+            confidences = (events[2], events[3])
+            all_predictions.append(steps)
+            all_confidences.append(confidences)
 
         # Return numpy array
-        return np.array(all_predictions)
+        return np.array(all_predictions), np.array(all_confidences)
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

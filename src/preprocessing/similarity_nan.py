@@ -21,6 +21,7 @@ class SimilarityNan(PP):
     def similarity_nan(self, series):
         """Computes the similarity of each point to that at the same time in the last 24h hours"""
         STEPS_PER_DAY = (24 * 60 * 60) // 5
+        col_name = 'f_similarity_nan' if self.as_feature else 'similarity_nan'
 
         if len(series) < STEPS_PER_DAY:
             logger.warning(f"Series {series.iloc[0]['series_id']} is shorter than a day,"
@@ -48,8 +49,5 @@ class SimilarityNan(PP):
         diff = np.min(comparison, axis=0)
 
         # add the diff to the series as a column of float32
-        if self.as_feature:
-            series['f_similarity_nan'] = diff[:len(feature_np)].astype(np.float32)
-        else:
-            series['similarity_nan'] = diff[:len(feature_np)].astype(np.float32)
+        series[col_name] = diff[:len(feature_np)].astype(np.float32)
         return series

@@ -199,11 +199,18 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
         # Initialize place holder arrays for train and test loss and early stopping
-        total_epochs = 0
-        avg_losses = []
-        avg_val_losses = []
-        counter = 0
-        lowest_val_loss = np.inf
+        total_epochs_onset = 0
+        avg_losses_onset = []
+        avg_val_losses_onset = []
+        counter_onset = 0
+        lowest_val_loss_onset = np.inf
+
+        total_epochs_awake = 0
+        avg_losses_awake = []
+        avg_val_losses_awake = []
+        counter_awake = 0
+        lowest_val_loss_awake = np.inf
+
         best_model_onset = self.model_onset.state_dict()
         best_model_awake = self.model_awake.state_dict()
         stopped = False
@@ -251,7 +258,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model_onset(vx)
-                        vloss = criterion(voutputs, vy)
+                        vloss = criterion(voutputs.squeeze(), vy)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -265,34 +272,33 @@ class SplitEventSegmentationUnet1DCNN(Model):
             logger.debug(descr)
 
             # Add average losses and epochs to list
-            avg_losses.append(avg_loss)
-            avg_val_losses.append(avg_val_loss)
-            total_epochs += 1
+            avg_losses_onset.append(avg_loss)
+            avg_val_losses_onset.append(avg_val_loss)
+            total_epochs_onset += 1
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+                wandb.log({f"Train {str(criterion)} of {self.name}_onset": avg_loss,
+                          f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
                 # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss:
-                    lowest_val_loss = avg_val_loss
+                if avg_val_loss < lowest_val_loss_onset:
+                    lowest_val_loss_onset = avg_val_loss
                     best_model_onset = self.model_onset.state_dict()
-                    counter = 0
+                    counter_onset = 0
                 else:
-                    counter += 1
-                    if counter >= early_stopping:
+                    counter_onset += 1
+                    if counter_onset >= early_stopping:
                         logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
+                            total_epochs_onset) + " Stopping training and loading best model for " + str(total_epochs_onset - early_stopping) + ".")
                         self.model_onset.load_state_dict(best_model_onset)
                         stopped = True
                         break
 
         # Train the awake model
         logger.info("--- Training awake model")
-        early_stopping = 0
         for epoch in range(epochs):
             self.model_awake.train()
             avg_loss = 0
@@ -334,7 +340,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model_awake(vx)
-                        vloss = criterion(voutputs, vy)
+                        vloss = criterion(voutputs.squeeze(), vy)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -348,40 +354,43 @@ class SplitEventSegmentationUnet1DCNN(Model):
             logger.debug(descr)
 
             # Add average losses and epochs to list
-            avg_losses.append(avg_loss)
-            avg_val_losses.append(avg_val_loss)
-            total_epochs += 1
+            avg_losses_awake.append(avg_loss)
+            avg_val_losses_awake.append(avg_val_loss)
+            total_epochs_awake += 1
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+                wandb.log({f"Train {str(criterion)} of {self.name}_awake": avg_loss,
+                          f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
                 # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss:
-                    lowest_val_loss = avg_val_loss
+                if avg_val_loss < lowest_val_loss_awake:
+                    lowest_val_loss_awake = avg_val_loss
                     best_model_awake = self.model_awake.state_dict()
-                    counter = 0
+                    counter_awake = 0
                 else:
-                    counter += 1
-                    if counter >= early_stopping:
+                    counter_awake += 1
+                    if counter_awake >= early_stopping:
                         logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
+                            total_epochs_awake) + " Stopping training and loading best model for " + str(total_epochs_awake - early_stopping) + ".")
                         self.model_awake.load_state_dict(best_model_awake)
                         stopped = True
                         break
 
         # Log full train and test plot
         if wandb.run is not None:
-            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
+            self.log_train_test(avg_losses_onset, avg_val_losses_onset, total_epochs_onset, "onset")
+            self.log_train_test(avg_losses_awake, avg_val_losses_awake, total_epochs_awake, "awake")
         logger.info("--- Training of model complete!")
 
         # Set total_epochs in config if broken by the early stopping
         if stopped:
-            total_epochs -= early_stopping
-        self.config["total_epochs"] = total_epochs
+            total_epochs_awake -= early_stopping
+            total_epochs_onset -= early_stopping
+        self.config["total_epochs_onset"] = total_epochs_onset
+        self.config["total_epochs_awake"] = total_epochs_awake 
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -392,10 +401,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
         criterion = self.config["loss"]
         optimizer_onset = self.config["optimizer_onset"]
         optimizer_awake = self.config["optimizer_awake"]
-        epochs = self.config["total_epochs"]
+        epochs_onset = self.config["total_epochs_onset"]
+        epochs_awake = self.config["total_epochs_awake"]
         batch_size = self.config["batch_size"]
 
-        logger.info("--- Running for " + str(epochs) + " epochs.")
+        logger.info("--- Running for " + str(epochs_onset) + " epochs_onset.")
+        logger.info("--- Running for " + str(epochs_awake) + " epochs_awake.")
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
@@ -428,7 +439,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Train full loop for onset
         logger.info("--- Training onset model on full dataset")
-        for epoch in range(epochs):
+        for epoch in range(epochs_onset):
             self.model_onset.train()
             total_batch_loss = 0
             avg_loss = 0
@@ -458,7 +469,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                     tepoch.set_postfix(loss=avg_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
+            descr = f"------ Epoch [{epoch + 1}/{epochs_onset}], Training Loss: {avg_loss:.4f}"
             logger.debug(descr)
 
             # pbar.set_description(descr)
@@ -470,7 +481,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Train full loop for awake
         logger.info("--- Training awake model on full dataset")
-        for epoch in range(epochs):
+        for epoch in range(epochs_awake):
             self.model_awake.train()
             total_batch_loss = 0
             avg_loss = 0
@@ -500,7 +511,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                     tepoch.set_postfix(loss=avg_loss)
 
             # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
+            descr = f"------ Epoch [{epoch + 1}/{epochs_awake}], Training Loss: {avg_loss:.4f}"
             logger.debug(descr)
 
             # pbar.set_description(descr)

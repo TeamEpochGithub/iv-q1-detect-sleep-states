@@ -2,6 +2,7 @@ import json
 
 from torch import nn
 
+from .. import data_info
 from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
@@ -13,8 +14,8 @@ from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
-from ..models.transformers.transformer import Transformer
 from ..models.transformers.segmentation_transformer import SegmentationTransformer
+from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 
@@ -33,6 +34,8 @@ class ConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+        self.set_globals()
+
     # Get full configuration
     def get_config(self) -> dict:
         """Get the full configuration
@@ -47,6 +50,11 @@ class ConfigLoader:
         :return: whether to log to Weights & Biases
         """
         return self.config["log_to_wandb"]
+
+    def set_globals(self) -> None:
+        """Set the global variables"""
+        data_info.window_size = self.config["data_info"]["window_size"]
+        data_info.downsampling_factor = self.config["data_info"]["downsampling_factor"]
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
@@ -201,7 +209,8 @@ class ConfigLoader:
 
         # Create ensemble
         ensemble = Ensemble(
-            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"], self.config["ensemble"])
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"],
+            self.config["ensemble"])
 
         return ensemble
 

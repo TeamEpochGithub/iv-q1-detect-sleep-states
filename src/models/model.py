@@ -110,7 +110,7 @@ class Model:
         logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
         raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
 
-    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int) -> None:
+    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int, name: str = "") -> None:
         """
         Log the train and test loss to wandb.
         :param avg_losses: list of average train losses
@@ -133,7 +133,7 @@ class Model:
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": "Train and validation loss of model " + self.name}
+            string_fields={"title": "Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
             wandb.log({f"{self.name}": custom_plot})

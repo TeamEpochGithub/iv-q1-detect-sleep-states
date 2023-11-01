@@ -38,7 +38,7 @@
   "feature_engineering": [
     {
       "kind": "time",
-      "time_features": ["day", "hour", "minute", "second"]
+      "time_features": ["hour", "minute"]
     }
   ],
   "pretraining": {
@@ -47,8 +47,8 @@
     "downsample": {
       "factor": 12,
       "features": ["f_enmo", "f_anglez"],
-      "methods": ["min", "max", "mean", "std", "median", "var"],
-      "standard": "median"
+      "methods": ["min", "max", "mean", "std", "median", "var", "range"],
+      "standard": "mean"
     },
     "scaler": {
       "kind": "standard-scaler"
@@ -93,4 +93,3 @@
     "save": true
   }
 }
-

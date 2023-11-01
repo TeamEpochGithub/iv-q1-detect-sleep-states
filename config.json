@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -23,7 +23,8 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 0,
+            "steepness": 1
         },
         {
             "kind": "split_windows",
@@ -41,7 +42,7 @@
         "downsample": {
             "factor": 12,
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
+            "methods": ["min", "max", "mean", "std", "median", "var", "range"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -58,7 +59,7 @@
         "epochs": 44,
         "batch_size": 32,
         "lr": 0.001,
-        "hidden_layers": 32,
+        "hidden_layers": 8,
         "early_stopping": 7,
         "threshold": 0
       }

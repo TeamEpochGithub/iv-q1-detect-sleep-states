@@ -22,6 +22,7 @@ _COLUMN_NAMES = {
 
 _unique_series = []
 
+
 def verify_submission(submission: pd.DataFrame) -> None:
     """Verify that there are no consecutive onsets or wakeups
 
@@ -145,9 +146,9 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
 
     # Load the train events from file
     solution = (pd.read_csv("data/raw/train_events.csv")
-                     .groupby('series_id')
-                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
-                     .reset_index(drop=True))
+                .groupby('series_id')
+                .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
+                .reset_index(drop=True))
 
     # Assert that submission series_id exists in solution
     submission_series_ids = submission['series_id'].unique()
@@ -156,8 +157,18 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
 
     # Extend unique series ids and assert that there are no duplicates
     global _unique_series
+    # Log the duplicate series if they exist
+    duplicates = [sid for sid in _unique_series if sid in solution_series_ids]
+    if len(duplicates) > 0:
+        logger.debug(f'Duplicate series ids: {duplicates}')
+
+    #Extend the unique series ids
     _unique_series.extend(submission_series_ids)
-    logger.debug(f'Unique series ids: {_unique_series}')
+
+    # TODO make sure series id are split correctly
+    logger.debug(len(_unique_series))
+    logger.debug(len(set(_unique_series)))
+
     assert len(_unique_series) == len(set(_unique_series))
 
     return submission, solution

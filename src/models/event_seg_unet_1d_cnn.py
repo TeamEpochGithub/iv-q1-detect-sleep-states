@@ -57,7 +57,6 @@ class EventSegmentationUnet1DCNN(Model):
             from torchsummary import summary
             summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
 
-
     def load_config(self, config: dict) -> None:
         """
         Load config function for the model.

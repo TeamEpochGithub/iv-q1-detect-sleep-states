@@ -9,9 +9,9 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
+from .model import Model, ModelException
 from ..logger.logger import logger
 from ..loss.loss import Loss
-from .model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
 
@@ -279,7 +279,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train test loss to wandb
             if wandb.run is not None:
                 wandb.log({f"Train {str(criterion)} of {self.name}_onset": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
+                           f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -361,7 +361,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train test loss to wandb
             if wandb.run is not None:
                 wandb.log({f"Train {str(criterion)} of {self.name}_awake": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
+                           f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -548,7 +548,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
         else:
             device = torch.device("cuda")
 
-
         # Set models to eval for inference
         self.model_onset.eval()
         self.model_awake.eval()
@@ -619,8 +618,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
-            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor %
-                      2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)

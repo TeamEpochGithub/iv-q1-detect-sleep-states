@@ -100,12 +100,11 @@ class CV:
         """
         scores = []
 
-
         # Get all the train data
         train_test_main = scoring_params["featured_data"].iloc[scoring_params["train_validate_idx"]]
 
         # Split the data in folds with train and validation sets
-        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:,:,0], groups)):
+        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:, :, 0], groups)):
             model.reset_optimizer()
 
             X_train, X_validate = data[train_idx], data[validate_idx]

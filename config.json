@@ -53,17 +53,17 @@
     "models": {
         "EventTransformer": {
             "type": "event-segmentation-transformer",
-            "epochs": 1000,
-            "loss": "focal-loss",
+            "epochs": 25,
+            "loss": "shrinkage-loss",
             "optimizer": "adam-torch",
             "lr": 0.00035,
             "tokenizer": "patch",
             "tokenizer_args": {
-                "patch_size": 4
+                "patch_size": 8
             },
             "pe": "other",
-            "emb_dim": 128,
-            "forward_dim": 512,
+            "emb_dim": 64,
+            "forward_dim": 256,
             "batch_size": 16,
             "heads": 8,
             "pooling": "none"

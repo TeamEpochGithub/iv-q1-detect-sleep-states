@@ -105,7 +105,7 @@ class EventSegmentationTransformer(BaseTransformer):
             train_dataset_onset, batch_size=batch_size)
         test_dataloader_onset = torch.utils.data.DataLoader(
             test_dataset_onset, batch_size=batch_size)
-        
+
         # Create a dataloader from the dataset for awake
         train_dataloader_awake = torch.utils.data.DataLoader(
             train_dataset_awake, batch_size=batch_size)

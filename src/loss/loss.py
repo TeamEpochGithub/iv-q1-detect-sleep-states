@@ -41,6 +41,8 @@ class Loss:
                 return nn.BCELoss(**kwargs)
             case "focal-loss":
                 return FocalLoss(**kwargs)
+            case "shrinkage-loss":
+                return ShrinkageLoss(**kwargs)
             case "bce-logits-torch":
                 return nn.BCEWithLogitsLoss(**kwargs)
             case "regression":
@@ -61,18 +63,21 @@ class FocalLoss(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(FocalLoss, self).__init__()
 
-    def forward(self, inputs, targets, alpha=0.8, gamma=2, smooth=1):
+    def forward(self, inputs, targets, alpha: int = 0.8, gamma: int = 2, c: int = 0.2, smooth=1):
+        l1_loss = torch.abs(inputs - targets)
+        focal_loss = l1_loss ** (2 + gamma)
 
-        # comment out if your model contains a sigmoid or equivalent activation layer
-        # inputs = F.sigmoid(inputs)
+        return focal_loss.mean()
 
-        # flatten label and prediction tensors
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
 
-        # first compute binary cross-entropy
-        BCE = F.binary_cross_entropy(inputs, targets, reduction='mean')
-        BCE_EXP = torch.exp(-BCE)
-        focal_loss = alpha * (1-BCE_EXP)**gamma * BCE
+class ShrinkageLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(ShrinkageLoss, self).__init__()
 
-        return focal_loss
+    def forward(self, inputs, targets, alpha: int = 0.8, gamma: int = 2, c: int = 0.2, smooth=1):
+
+        l1_loss = torch.abs(inputs - targets)
+        shrinkage_loss = ((l1_loss) ** 2) * torch.exp(targets) / \
+            (1 + torch.exp(alpha * (c - l1_loss)))
+
+        return shrinkage_loss.mean()

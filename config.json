@@ -32,7 +32,8 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 40
+            "smoothing": 0,
+            "steepness": 1
         },
         {
             "kind": "split_windows",
@@ -43,14 +44,14 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["day", "hour"]
+            "time_features": ["hour","minute"]
         }
     ],
     "pretraining": {
         "downsample": {
             "factor": 12,
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
+            "methods": ["min", "max", "mean", "std", "median", "var", "range"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -66,8 +67,8 @@
         "optimizer": "adam-torch",
         "epochs": 44,
         "batch_size": 32,
-        "lr": 0.0005,
-        "hidden_layers": 16,
+        "lr": 0.001,
+        "hidden_layers": 8,
         "early_stopping": 7,
         "threshold": 0
       }

@@ -35,10 +35,6 @@
         {
             "kind": "time",
             "time_features": ["hour", "minute"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [10,100,1000]
         }
     ],
     "pretraining": {
@@ -57,13 +53,13 @@
     "models": {
         "EventTransformer": {
             "type": "event-segmentation-transformer",
-            "epochs": 25,
+            "epochs": 1000,
             "loss": "mse-torch",
             "optimizer": "adam-torch",
             "lr": 0.00035,
             "tokenizer": "patch",
             "tokenizer_args": {
-                "patch_size": 4
+                "patch_size": 8
             },
             "pe": "other",
             "emb_dim": 64,

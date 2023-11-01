@@ -1,5 +1,7 @@
 # This is the base class for loss
 from torch import nn
+import torch
+import torch.nn.functional as F
 
 from src.loss.event_regression_loss_rmse import EventRegressionLossRMSE
 from .regression_loss import RegressionLoss
@@ -37,6 +39,8 @@ class Loss:
                 return nn.CrossEntropyLoss(**kwargs)
             case "bce-torch":
                 return nn.BCELoss(**kwargs)
+            case "focal-loss":
+                return FocalLoss(**kwargs)
             case "bce-logits-torch":
                 return nn.BCEWithLogitsLoss(**kwargs)
             case "regression":
@@ -51,3 +55,24 @@ class Loss:
                 return NanRegressionLoss()
             case _:
                 raise LossException("Loss function not found: " + loss_name)
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(FocalLoss, self).__init__()
+
+    def forward(self, inputs, targets, alpha=0.8, gamma=2, smooth=1):
+
+        # comment out if your model contains a sigmoid or equivalent activation layer
+        # inputs = F.sigmoid(inputs)
+
+        # flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+
+        # first compute binary cross-entropy
+        BCE = F.binary_cross_entropy(inputs, targets, reduction='mean')
+        BCE_EXP = torch.exp(-BCE)
+        focal_loss = alpha * (1-BCE_EXP)**gamma * BCE
+
+        return focal_loss

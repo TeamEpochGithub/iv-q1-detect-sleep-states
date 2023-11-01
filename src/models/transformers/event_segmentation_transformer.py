@@ -116,13 +116,13 @@ class EventSegmentationTransformer(BaseTransformer):
         logger.info("Training onset model")
         trainer_onset = SegmentationTrainer(epochs=epochs, criterion=criterion)
         avg_train_loss, avg_val_loss, self.config["trained_epochs_onset"] = trainer_onset.fit(
-            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name)
+            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset")
 
         # Train awake
         logger.info("Training awake model")
         trainer_awake = SegmentationTrainer(epochs=epochs, criterion=criterion)
         avg_train_loss, avg_val_loss, self.config["trained_epochs_awake"] = trainer_awake.fit(
-            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name)
+            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
 
         if wandb.run is not None:
             self.log_train_test(avg_train_loss,
@@ -220,6 +220,8 @@ class EventSegmentationTransformer(BaseTransformer):
         # Concatenate predictions and return (n, seq_len, num_class) + (n, seq_len, num_class) -> (n, seq_len, num_class * 2)
         predictions = np.concatenate(
             (predictions_onset, predictions_awake), axis=2)
+        # Swap axes to (n, num_class * 2, seq_len)
+        predictions = np.swapaxes(predictions, 1, 2)
 
         all_predictions = []
         all_confidences = []

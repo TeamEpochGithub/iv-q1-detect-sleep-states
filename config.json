@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -82,6 +82,6 @@
     "visualize_preds": {
         "n": 0,
         "browser_plot": false,
-        "save": true
+        "save": false
     }
 }

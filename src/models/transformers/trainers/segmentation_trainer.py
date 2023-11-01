@@ -84,7 +84,7 @@ class SegmentationTrainer:
         lowest_val_loss = np.inf
         best_model = model.state_dict()
         counter = 0
-        max_counter = 10
+        max_counter = 15
         trained_epochs = 0
         for epoch in range(self.n_epochs):
 

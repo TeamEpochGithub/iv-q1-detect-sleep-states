@@ -228,7 +228,6 @@ class EventSegmentationTransformer(BaseTransformer):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            # TODO Add automatic thresholding to the model
             events = pred_to_event_state(pred, thresh=0)
             steps = (events[0], events[1])
             confidences = (events[2], events[3])

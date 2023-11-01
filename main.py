@@ -201,6 +201,8 @@ def main(config: ConfigLoader) -> None:
                     .reset_index(drop=True))
         logger.info("Start scoring test predictions...")
         result = compute_scores(submission, solution)
+        if not result:
+            result = 0.0
 
         # compute confusion matrix for making predictions or not
         window_offset['series_id'] = window_offset['series_id'].map(decoding)

@@ -413,20 +413,28 @@ class SplitEventSegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Get only the event state features
-        y_train = y_train[:, :, -2:]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
-        # Create a dataset from X and y
-        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+
+        # Dataset for onset
+        train_dataset_onset = torch.utils.data.TensorDataset(
+            X_train, y_train[:, 0, :])
+
+        # Dataset for awake
+        train_dataset_awake = torch.utils.data.TensorDataset(
+            X_train, y_train[:, 1, :])
+
+        # Create dataloaders for awake and onset
+        train_dataloader_onset = torch.utils.data.DataLoader(
+            train_dataset_onset, batch_size=batch_size)
+
+        train_dataloader_awake = torch.utils.data.DataLoader(
+            train_dataset_awake, batch_size=batch_size)
 
         # Print the shapes and types of train and test
         logger.info(
             f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
         logger.info(
             f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-
-        # Create a dataloader from the dataset
-        train_dataloader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=batch_size)
 
         # Add model and data to device cuda
         # self.model.half()
@@ -445,7 +453,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             self.model_onset.train()
             total_batch_loss = 0
             avg_loss = 0
-            with tqdm(train_dataloader, unit="batch") as tepoch:
+            with tqdm(train_dataloader_onset, unit="batch") as tepoch:
                 for i, (x, y) in enumerate(tepoch):
                     x = x.to(device=self.device)
                     y = y.to(device=self.device)
@@ -455,7 +463,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_onset(x)
-                    loss = criterion(outputs, y)
+                    loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()
@@ -479,7 +487,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+                    {f"Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
 
         # Train full loop for awake
         logger.info("--- Training awake model on full dataset")
@@ -487,7 +495,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             self.model_awake.train()
             total_batch_loss = 0
             avg_loss = 0
-            with tqdm(train_dataloader, unit="batch") as tepoch:
+            with tqdm(train_dataloader_awake, unit="batch") as tepoch:
                 for i, (x, y) in enumerate(tepoch):
                     x = x.to(device=self.device)
                     y = y.to(device=self.device)
@@ -497,7 +505,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_awake(x)
-                    loss = criterion(outputs, y)
+                    loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()
@@ -521,7 +529,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+                    {f"Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
 
         logger.info("--- Full train complete!")
 
@@ -661,9 +669,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model_onset = SegUnet1D(
-                in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
+                in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=1, model_type=self.model_type, config=self.config)
             self.model_awake = SegUnet1D(
-                in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2, model_type=self.model_type, config=self.config)
+                in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=1, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)

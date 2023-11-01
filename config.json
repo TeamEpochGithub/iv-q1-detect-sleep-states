@@ -94,7 +94,7 @@
   "scoring": true,
   "visualize_preds": {
     "n": 10,
-    "browser_plot": true,
+    "browser_plot": false,
     "save": true
   }
 }

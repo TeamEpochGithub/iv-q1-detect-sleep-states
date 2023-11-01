@@ -1,7 +1,6 @@
 # This is the base class for loss
 from torch import nn
 import torch
-import torch.nn.functional as F
 
 from src.loss.event_regression_loss_rmse import EventRegressionLossRMSE
 from .regression_loss import RegressionLoss

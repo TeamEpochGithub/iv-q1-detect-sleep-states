@@ -1,7 +1,6 @@
 import copy
 import numpy as np
 import torch
-import wandb
 
 from src.logger.logger import logger
 

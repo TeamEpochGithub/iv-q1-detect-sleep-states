@@ -5,6 +5,7 @@ import wandb
 
 from src.logger.logger import logger
 from src.models.transformers.trainers.base_trainer import Trainer
+from ... import data_info
 
 from ...loss.loss import Loss
 from ..model import Model
@@ -22,26 +23,25 @@ class Transformer(Model):
     This is the model file for the patch pool event regression transformer model.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
         super().__init__(config, name)
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["seq_len"] = data_shape[1]
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["seq_len"] = data_info.window_size
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
-        self.config["seq_len"] = data_shape[1]
+        self.config["seq_len"] = data_info.window_size
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -152,8 +152,8 @@ class Transformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 1:]
-        y_test = y_test[:, :, 1:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
+        y_test = y_test[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -207,7 +207,7 @@ class Transformer(Model):
             f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 1:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)

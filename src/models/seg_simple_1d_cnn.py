@@ -8,6 +8,7 @@ from numpy import ndarray, dtype
 from tqdm import tqdm
 
 from .architectures.seg_simple_1d_cnn import SegSimple1DCNN
+from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
@@ -21,11 +22,10 @@ class SegmentationSimple1DCNN(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data (input/output shape, features)
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -39,15 +39,14 @@ class SegmentationSimple1DCNN(Model):
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "segmentation"
-        self.data_shape = data_shape
         # Load model
-        self.model = SegSimple1DCNN(window_length=data_shape[1], in_channels=data_shape[0], config=config)
+        self.model = SegSimple1DCNN(window_length=data_info.window_size, in_channels=len(data_info.X_columns), config=config)
         self.load_config(config)
 
         # If we log the run to weights and biases, we can
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+            summary(self.model.cuda(), input_size=(data_info.window_size, len(data_info.X_columns)))
 
     def load_config(self, config: dict) -> None:
         """
@@ -105,8 +104,8 @@ class SegmentationSimple1DCNN(Model):
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
-        y_test = y_test[:, :, 0]
+        y_train = y_train[:, :, data_info.y_columns["awake"]]
+        y_test = y_test[:, :, data_info.y_columns["awake"]]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -202,7 +201,7 @@ class SegmentationSimple1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
+        y_train = y_train[:, :, data_info.y_columns["awake"]]
         y_train = torch.from_numpy(y_train)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -343,7 +342,6 @@ class SegmentationSimple1DCNN(Model):
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
-        return
 
     def reset_optimizer(self) -> None:
 

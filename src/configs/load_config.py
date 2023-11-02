@@ -2,6 +2,7 @@ import json
 
 from torch import nn
 
+from .. import data_info
 from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
@@ -34,6 +35,8 @@ class ConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+        self.set_globals()
+
     # Get full configuration
     def get_config(self) -> dict:
         """Get the full configuration
@@ -48,6 +51,11 @@ class ConfigLoader:
         :return: whether to log to Weights & Biases
         """
         return self.config["log_to_wandb"]
+
+    def set_globals(self) -> None:
+        """Set the global variables"""
+        data_info.window_size = self.config.get("data_info").get("window_size", 17280)
+        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", 1)
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
@@ -135,10 +143,9 @@ class ConfigLoader:
         return Pretrain.from_config(self.config["pretraining"])
 
     # Function to retrieve model data
-    def get_models(self, data_shape: tuple) -> dict:
+    def get_models(self) -> dict:
         """Get the models from the config
 
-        :param data_shape: the shape of the data
         :return: the models
         """
         models: dict = {}
@@ -146,25 +153,23 @@ class ConfigLoader:
         logger.info("Models: " + str(self.config.get("models")))
         for model_name in self.config["models"]:
             model_config = self.config["models"][model_name]
-            pred_with_cpu = self.config["pred_with_cpu"]
-            curr_model = None
             match model_config["type"]:
                 case "example-fc-model":
-                    curr_model = ExampleModel(model_config, model_name, pred_with_cpu)
+                    curr_model = ExampleModel(model_config, model_name)
                 case "classic-base-model":
-                    curr_model = ClassicBaseModel(model_config, model_name, pred_with_cpu)
+                    curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name, pred_with_cpu)
+                    curr_model = SegmentationSimple1DCNN(model_config, model_name)
                 case "transformer":
-                    curr_model = Transformer(model_config, data_shape, model_name, pred_with_cpu)
+                    curr_model = Transformer(model_config, model_name)
                 case "segmentation-transformer":
-                    curr_model = SegmentationTransformer(model_config, data_shape, model_name, pred_with_cpu)
+                    curr_model = SegmentationTransformer(model_config, model_name)
                 case "seg-unet-1d-cnn":
-                    curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name, pred_with_cpu)
+                    curr_model = SegmentationUnet1DCNN(model_config, model_name)
                 case "event-seg-unet-1d-cnn":
-                    curr_model = EventSegmentationUnet1DCNN(model_config, data_shape, model_name, pred_with_cpu)
+                    curr_model = EventSegmentationUnet1DCNN(model_config, model_name)
                 case "split-event-seg-unet-1d-cnn":
-                    curr_model = SplitEventSegmentationUnet1DCNN(model_config, data_shape, model_name, pred_with_cpu)
+                    curr_model = SplitEventSegmentationUnet1DCNN(model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException(

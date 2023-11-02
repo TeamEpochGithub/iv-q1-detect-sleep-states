@@ -33,6 +33,15 @@ The config file is split up in different sections. Each section has its own conf
 - `test_series_path`: `str`
     - Path to the series to test on
 
+## Data Info
+This is where global variables are stored that we want to use across multiple files.
+
+Variables:
+- `window_size`: `int`
+    - The size of the window in steps before donwsampling. Default is 24 * 60 * 12 = 17280
+- `downsampling_factor`: `int`
+  - The factor to downsample the data with. Default is 1, which means no downsampling.
+
 ## Preprocessing steps
 These steps are executed in order placed in the list. 
 The order is important as some steps depend on the output of previous steps.
@@ -64,7 +73,7 @@ Adds this as a column that is 0 for perfect similarity.
     - `nan_tolerance_window`, labels are extended up to the first nan data point. 
       This parameter specifies the size of the median filter that is used to ignore lone nan points.
 - `split_windows`
-    - Parameters: `start_hour: int = 15`, `window_size: int = 17280`
+    - Parameters: `start_hour: int = 15`
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
     - Removes all the data points where there is no labeled data
@@ -72,7 +81,7 @@ Adds this as a column that is 0 for perfect similarity.
     - Truncates the unlabeled end of the data
     - `remove_unlabeled` also removes the unlabeled end
 - `add_regression_labels` (requires `split_windows`)
-    - Parameters: `id_encoding_path: str`, `events_path: str`, `window_size: int = 17280`
+    - Parameters: `id_encoding_path: str`, `events_path: str`,
     - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels
         - 0: `wakeup`
         - 1: `onset`
@@ -110,8 +119,7 @@ Example for each step:
       },
     {
         "kind": "split_windows",
-        "start_hour": 15,
-        "window_size": 17280
+        "start_hour": 15
     },
     {
         "kind": "remove_unlabeled"
@@ -232,7 +240,6 @@ Example:
 ```JSON
 "pretraining": {
     "downsample": {
-        "factor": 12,
         "features": ["anglez", "enmo"],
         "methods": ["min", "max", "mean", "std", "median"],
         "standard": "mean"

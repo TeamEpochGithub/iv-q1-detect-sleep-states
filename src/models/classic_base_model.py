@@ -47,7 +47,7 @@ class ClassicBaseModel(Model):
         """
         return {"median_window": 100, "threshold": .1, "use_nan_similarity": True}
 
-    def pred(self, X_pred: np.ndarray, pred_with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+    def pred(self, X_pred: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data for a single day window as pandas dataframe

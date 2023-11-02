@@ -150,6 +150,7 @@ class CriticalPointGRU(Model):
         total_epochs = 0
         avg_losses = []
         avg_val_losses = []
+        counter = 0
         lowest_val_loss = np.inf
         best_model = self.model.state_dict()
         stopped = False
@@ -211,9 +212,8 @@ class CriticalPointGRU(Model):
             if wandb.run is not None:
                 wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
             total_epochs += 1
-        # Log full train and test plot
 
-        # Early stopping
+            # Early stopping
             if early_stopping > 0:
                 # Save model if validation loss is lower than previous lowest validation loss
                 if avg_val_loss < lowest_val_loss:
@@ -372,14 +372,24 @@ class CriticalPointGRU(Model):
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
-        all_predictions = []
+        # Apply upsampling to the predictions
+        downsampling_factor = 17280 // self.data_shape[1]
+        if downsampling_factor > 1:
+            predictions = np.repeat(predictions, downsampling_factor, axis=2)
 
+        all_predictions = []
+        all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
-            # Each pred is a sequence with 2 channels
-            # so just return the index of the max per channel
+            # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
-            all_predictions.append(events)
+
+            # Add step offset based on repeat factor.
+            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            steps = (events[0] + offset, events[1] + offset)
+            confidences = (events[2], events[3])
+            all_predictions.append(steps)
+            all_confidences.append(confidences)
 
         # Return numpy array
         return np.array(all_predictions).squeeze()

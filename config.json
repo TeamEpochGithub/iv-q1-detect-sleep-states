@@ -18,37 +18,60 @@
         },
         {
             "kind": "similarity_nan",
-            "as_feature": false
-        },
-        {
-            "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv"
+            "as_feature": true
         },
         {
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 20
+            "smoothing": 0
         },
         {
             "kind": "split_windows",
             "start_hour": 15,
             "window_size": 17280
         }
-
-
     ],
-    "feature_engineering": [
-        
+   "feature_engineering": [
+      {
+        "kind": "time",
+        "time_features": [
+          "hour",
+          "minute"
+        ]
+      },
+      {
+        "kind": "rotation",
+        "window_sizes": [
+          10,
+          100,
+          1000
+        ]
+      }
     ],
     "pretraining": {
-        "window_size": 17280,
-        "test_size": 0.2,
-        
-        "scaler": {
-            "kind": "minmax-scaler"
-        }
+      "downsample": {
+        "factor": 12,
+        "features": [
+          "f_anglez",
+          "f_enmo"
+        ],
+        "methods": [
+          "min",
+          "max",
+          "mean",
+          "std",
+          "median",
+          "var",
+          "range"
+        ],
+        "standard": "mean"
+      },
+      "test_size": 0.2,
+      "scaler": {
+        "kind": "standard-scaler",
+        "copy": true
+      }
     },
     "models": {
         "Sleep_Critical_model": {

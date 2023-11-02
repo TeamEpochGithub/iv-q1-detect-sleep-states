@@ -207,11 +207,11 @@ class CriticalPointGRU(Model):
             # Add average losses to list
             avg_losses.append(avg_loss)
             avg_val_losses.append(avg_val_loss)
+            total_epochs += 1
 
             # Log train test loss to wandb
             if wandb.run is not None:
                 wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
-            total_epochs += 1
 
             # Early stopping
             if early_stopping > 0:
@@ -231,7 +231,7 @@ class CriticalPointGRU(Model):
                         break
 
         if wandb.run is not None:
-            self.log_train_test(avg_losses, avg_val_losses, epochs)
+            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
 
         logger.info("--- Training of model complete!")
         if stopped:

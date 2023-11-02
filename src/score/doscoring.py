@@ -43,7 +43,7 @@ def compute_scores(submission: pd.DataFrame, solution: pd.DataFrame):
     logger.debug(f'solution has {len(solution_ids_not_all_nan)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
-    result = score(solution, submission, tolerances, **column_names)
+    result = score(solution.dropna(), submission, tolerances, **column_names)
     logger.info(f'Score for all {len(solution["series_id"].unique())} series: {result}')
 
     # Filter on clean series (series with no nans in the solution)

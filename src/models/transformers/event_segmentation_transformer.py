@@ -229,7 +229,11 @@ class EventSegmentationTransformer(BaseTransformer):
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=0)
-            steps = (events[0], events[1])
+
+            # Add step offset based on repeat factor.
+            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor %
+                      2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)
             all_confidences.append(confidences)

@@ -450,7 +450,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
             self.model_awake = SegUnet1D(
                 in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-            self.reset_optimizer
+            self.reset_optimizer()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return

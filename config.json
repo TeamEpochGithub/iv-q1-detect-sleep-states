@@ -89,7 +89,7 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":false,
+    "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

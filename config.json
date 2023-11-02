@@ -76,14 +76,14 @@
     },
     "models": {
         "Sleep_Critical_model": {
-            "type": "sleep_sritical_model",
-            "loss": "mse-torch",
-            "epochs": 40,
+            "type": "sleep_critical_model",
+            "loss": "shrinkage-loss",
+            "epochs": 100,
             "batch_size": 32,
-            "lr": 0.1,
+            "lr": 0.001,
             "optimizer": "adam-torch",
-            "early_stopping": 1,
-            "threshold": 0
+            "early_stopping": 10,
+            "threshold": 0.001
         }
     },
     "ensemble": {
@@ -103,8 +103,8 @@
     "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
-        "n": 5,
-        "browser_plot": true,
+        "n": 0,
+        "browser_plot": false,
         "save": false
     }
 }

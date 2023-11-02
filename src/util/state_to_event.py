@@ -11,9 +11,11 @@ def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
 
 def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     """Convert an event segmentation prediction to an onset and event. Normally used for predictions.
-    param: 2d numpy array (labels, window_size) of event states for each timestep, 0=no state > 0=state
+    param: 3d numpy array (channel, window_size) of event states for each timestep, 0=no state > 0=state
     param: thresh float, threshold for the prediction to be considered a state
     """
+    assert predictions.shape[0] == 2, "Predictions should be 3d array with shape (2, window_size)"
+
     # Set onset and awake to nan
     onset = np.nan
     awake = np.nan

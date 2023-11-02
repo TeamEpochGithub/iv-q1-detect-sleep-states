@@ -1,5 +1,5 @@
 import copy
-from typing import Any
+from typing import Any, Tuple, List
 
 import numpy as np
 import torch
@@ -107,8 +107,10 @@ class CriticalPointGRU(Model):
         # in the docs for this function it says that t_initial is the number of epochs
         # but in the critical point code it is multiplied by the number of samples
         scheduler = CosineLRScheduler(optimizer, t_initial=epochs,
-                                      warmup_t=int(0.2*epochs),
+                                      warmup_t=int(5),
                                       warmup_lr_init=1e-6, lr_min=2e-8,)
+
+
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -211,7 +213,9 @@ class CriticalPointGRU(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
+                           f"Validation {str(criterion)} of {self.name}": avg_val_loss,
+                           "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -257,10 +261,6 @@ class CriticalPointGRU(Model):
         scheduler = CosineLRScheduler(optimizer, t_initial=epochs,
                                       warmup_t=int(0.2*epochs),
                                       warmup_lr_init=1e-6, lr_min=2e-8,)
-        early_stopping = self.config["early_stopping"]
-        if early_stopping > 0:
-            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
-
         X_train = torch.from_numpy(X_train)
 
         # Flatten y_train and y_test so we only get the regression labels
@@ -326,9 +326,7 @@ class CriticalPointGRU(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Training of model complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
-        y_test = np.load('y_test.npy')
-        y_test = y_test[:, :, -2:]
+    def pred(self, data: np.ndarray, with_cpu: bool):
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -373,26 +371,29 @@ class CriticalPointGRU(Model):
         predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
-        downsampling_factor = 17280 // self.data_shape[1]
+        downsampling_factor = 17280 // data.shape[1]
         if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=2)
+            predictions = np.repeat(predictions, downsampling_factor, axis=1)
 
         all_predictions = []
         all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred, thresh=self.config["threshold"])
+            events = pred_to_event_state(pred.T, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
-            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            if downsampling_factor > 1:
+                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
+            else:
+                offset = 0
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)
             all_confidences.append(confidences)
 
         # Return numpy array
-        return np.array(all_predictions).squeeze()
+        return all_predictions,  all_confidences
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

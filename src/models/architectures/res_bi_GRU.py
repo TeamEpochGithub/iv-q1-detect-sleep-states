@@ -29,11 +29,11 @@ class ResidualBiGRU(nn.Module):
 
         res = self.fc1(res)
         res = self.ln1(res)
-        res = nn.functional.relu(res)
+        res = nn.functional.gelu(res)
 
         res = self.fc2(res)
         res = self.ln2(res)
-        res = nn.functional.relu(res)
+        res = nn.functional.gelu(res)
 
         # skip connection
         res = res + x

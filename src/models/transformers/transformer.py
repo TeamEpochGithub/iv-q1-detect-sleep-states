@@ -1,21 +1,21 @@
 import copy
+from typing import Any
+from typing import List
+
 import numpy as np
 import torch
 import wandb
+from numpy import ndarray, dtype
+from torch import nn
+from tqdm import tqdm
 
 from src.logger.logger import logger
 from src.models.transformers.trainers.base_trainer import Trainer
-from ... import data_info
-
-from ...loss.loss import Loss
-from ..model import Model
-from ...optimizer.optimizer import Optimizer
-from typing import List
-from torch import nn
-from tqdm import tqdm
-from numpy import ndarray, dtype
-from typing import Any
 from .architecture.transformer_pool import TransformerPool
+from ..model import Model
+from ... import data_info
+from ...loss.loss import Loss
+from ...optimizer.optimizer import Optimizer
 
 
 class Transformer(Model):
@@ -328,38 +328,37 @@ class Transformer(Model):
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
 
+    # Custom adam optimizer
+    # Create custom adam optimizer
+    # # save layer names
+    # layer_names = []
+    # for idx, (name, param) in enumerate(self.model.named_parameters()):
+    #     layer_names.append(name)
 
-# Custom adam optimizer
-# Create custom adam optimizer
-        # # save layer names
-        # layer_names = []
-        # for idx, (name, param) in enumerate(self.model.named_parameters()):
-        #     layer_names.append(name)
+    # # placeholder
+    # parameters = []
 
-        # # placeholder
-        # parameters = []
+    # # store params & learning rates
+    # for idx, name in enumerate(layer_names):
 
-        # # store params & learning rates
-        # for idx, name in enumerate(layer_names):
+    #     # Learning rate
+    #     lr = self.config['lr']
 
-        #     # Learning rate
-        #     lr = self.config['lr']
+    #     # parameter group name
+    #     cur_group_name = name.split('.')[0]
 
-        #     # parameter group name
-        #     cur_group_name = name.split('.')[0]
+    #     # update learning rate
+    #     if cur_group_name == 'tokenizer':
+    #         lr = self.config['lr_tokenizer']
 
-        #     # update learning rate
-        #     if cur_group_name == 'tokenizer':
-        #         lr = self.config['lr_tokenizer']
+    #     # display info
+    #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
 
-        #     # display info
-        #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
+    #     # append layer parameters
+    #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
+    #                     'lr': lr}]
 
-        #     # append layer parameters
-        #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
-        #                     'lr': lr}]
-
-        # self.config['optimizer'] = type(self.config['optimizer'])(parameters)
+    # self.config['optimizer'] = type(self.config['optimizer'])(parameters)
 
     def reset_weights(self) -> None:
         """

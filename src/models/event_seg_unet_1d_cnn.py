@@ -22,14 +22,14 @@ class EventSegmentationUnet1DCNN(Model):
     This model is an event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str, pred_with_cpu: bool) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
-        super().__init__(config, name, pred_with_cpu)
+        super().__init__(config, name)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -354,17 +354,18 @@ class EventSegmentationUnet1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabeled data (step, features)
+        :param pred_with_cpu: whether to predict with cpu or gpu
         :return: the predictions in format: (predictions, confidences)
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if self.pred_with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -390,7 +391,7 @@ class EventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model(batch_data)
 
-                if self.pred_with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()

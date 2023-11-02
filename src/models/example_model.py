@@ -15,14 +15,13 @@ class ExampleModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, name: str, pred_with_cpu: bool) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param name: name of the model
-        :param pred_with_cpu: (UNUSED) whether to make predictions using the CPU or GPU
         """
-        super().__init__(config, name, pred_with_cpu)
+        super().__init__(config, name)
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -135,10 +134,11 @@ class ExampleModel(Model):
             logger.info(f"------ Epoch [{epoch + 1}/{epochs}],"
                         f" Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
-    def pred(self, X_pred: pd.DataFrame) -> pd.DataFrame:
+    def pred(self, X_pred: pd.DataFrame, pred_with_cpu: bool) -> pd.DataFrame:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data
+        :param pred_with_cpu: whether to predict with cpu or gpu
         :return: the predictions
         """
         # Prediction function

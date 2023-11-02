@@ -23,7 +23,7 @@ class SegmentationTransformer(Model):
     This is the model file for the patch pool event regression transformer model.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str, pred_with_cpu: bool = False) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -59,8 +59,6 @@ class SegmentationTransformer(Model):
             self.device = torch.device("cuda")
             logger.info(
                 f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
-
-        self.pred_with_cpu = pred_with_cpu
 
     def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
         """
@@ -232,7 +230,7 @@ class SegmentationTransformer(Model):
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]]) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -241,7 +239,7 @@ class SegmentationTransformer(Model):
         """
 
         # Check which device to use
-        if self.pred_with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")

@@ -16,14 +16,13 @@ class ClassicBaseModel(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, name: str, pred_with_cpu: bool) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param name: name of the model
-        :param pred_with_cpu: (UNUSED) whether to make predictions using the CPU or GPU
         """
-        super().__init__(config, name, pred_with_cpu)
+        super().__init__(config, name)
         self.model_type = "classic-base-model"
         self.load_config(config)
 
@@ -48,10 +47,11 @@ class ClassicBaseModel(Model):
         """
         return {"median_window": 100, "threshold": .1, "use_nan_similarity": True}
 
-    def pred(self, X_pred: np.ndarray) -> ndarray[Any, dtype[Any]]:
+    def pred(self, X_pred: np.ndarray, pred_with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data for a single day window as pandas dataframe
+        :param pred_with_cpu: (UNUSED) whether to predict with cpu or gpu
         :return: two timestamps, or NaN if no sleep was detected
         """
 

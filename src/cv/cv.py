@@ -111,7 +111,7 @@ class CV:
             y_train, y_validate = labels[train_idx], labels[validate_idx]
 
             model.train(X_train, X_validate, y_train, y_validate)
-            y_pred: np.array = model.pred(X_validate)
+            y_pred: np.array = model.pred(X_validate, pred_with_cpu=False)
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):

@@ -22,14 +22,14 @@ class Transformer(Model):
     This is the model file for the patch pool event regression transformer model.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str, pred_with_cpu: bool) -> None:
+    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
         :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
-        super().__init__(config, name, pred_with_cpu)
+        super().__init__(config, name)
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
@@ -229,7 +229,7 @@ class Transformer(Model):
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]]) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -238,7 +238,7 @@ class Transformer(Model):
         """
 
         # Check which device to use
-        if self.pred_with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")

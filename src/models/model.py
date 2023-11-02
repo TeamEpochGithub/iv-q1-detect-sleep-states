@@ -13,7 +13,7 @@ class Model:
     Model class with basic methods for training and evaluation. This class should be overwritten by the user.
     """
 
-    def __init__(self, config: dict, name: str, pred_with_cpu: bool) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         self.model_type = "base-model"
         # Init function
         if config is None:
@@ -23,7 +23,6 @@ class Model:
             self.hash = hash_config(config, length=5)
 
         self.name = name
-        self.pred_with_cpu = pred_with_cpu
 
     def get_type(self) -> str:
         """
@@ -69,10 +68,11 @@ class Model:
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, X_pred: np.ndarray) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
+    def pred(self, X_pred: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
         """
         Prediction function for mainly pytorch models. This function should be overwritten by the user.
         :param X_pred: unlabeled data (step, features)
+        :param pred_with_cpu: whether to predict with cpu or gpu
         :return: the predictions in format: (predictions, confidences)
         """
         logger.critical("--- Prediction of base class called. Did you forget to override it?")

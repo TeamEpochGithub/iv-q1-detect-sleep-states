@@ -232,9 +232,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Log full train and test plot
         if wandb.run is not None:
             self.log_train_test(
-                avg_losses_onset, avg_val_losses_onset, total_epochs_onset, "onset")
+                avg_losses_onset[:total_epochs_onset], avg_val_losses_onset[:total_epochs_onset], total_epochs_onset, "onset")
             self.log_train_test(
-                avg_losses_awake, avg_val_losses_awake, total_epochs_awake, "awake")
+                avg_losses_awake[:total_epochs_awake], avg_val_losses_awake[:total_epochs_awake], total_epochs_awake, "awake")
         logger.info("--- Training of model complete!")
 
         self.config["total_epochs_onset"] = total_epochs_onset

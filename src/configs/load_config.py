@@ -10,6 +10,7 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
+from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
@@ -153,20 +154,28 @@ class ConfigLoader:
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, data_shape, model_name)
+                    curr_model = SegmentationSimple1DCNN(
+                        model_config, data_shape, model_name)
                 case "transformer":
-                    curr_model = Transformer(model_config, data_shape, model_name)
+                    curr_model = Transformer(
+                        model_config, data_shape, model_name)
                 case "segmentation-transformer":
-                    curr_model = SegmentationTransformer(model_config, data_shape, model_name)
+                    curr_model = SegmentationTransformer(
+                        model_config, data_shape, model_name)
                 case "seg-unet-1d-cnn":
                     curr_model = SegmentationUnet1DCNN(model_config, data_shape, model_name)
-                case "sleep_sritical_model":
+                case "sleep_critical_model":
                     curr_model = CriticalPointGRU(model_config, data_shape, model_name)
                 case "event-seg-unet-1d-cnn":
-                    curr_model = EventSegmentationUnet1DCNN(model_config, data_shape, model_name)
+                    curr_model = EventSegmentationUnet1DCNN(
+                        model_config, data_shape, model_name)
+                case "split-event-seg-unet-1d-cnn":
+                    curr_model = SplitEventSegmentationUnet1DCNN(
+                        model_config, data_shape, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
-                    raise ConfigException("Model not found: " + model_config["type"])
+                    raise ConfigException(
+                        "Model not found: " + model_config["type"])
 
             models[model_name] = curr_model
 
@@ -194,12 +203,14 @@ class ConfigLoader:
 
         if len(models) < len(self.config["ensemble"]["models"]):
             logger.critical("You cannot have more ensembles than models.")
-            raise ConfigException("You cannot have more ensembles than models.")
+            raise ConfigException(
+                "You cannot have more ensembles than models.")
 
         for model_name in self.config["ensemble"]["models"]:
             if model_name not in models:
                 logger.critical(f"Model {model_name} not found in models.")
-                raise ConfigException(f"Model {model_name} not found in models.")
+                raise ConfigException(
+                    f"Model {model_name} not found in models.")
             curr_models.append(models[model_name])
 
         # Create ensemble
@@ -218,7 +229,8 @@ class ConfigLoader:
             loss_class = Loss().get_loss("example_loss")
         else:
             logger.critical("Loss function not found: " + self.config["loss"])
-            raise ConfigException("Loss function not found: " + self.config["loss"])
+            raise ConfigException(
+                "Loss function not found: " + self.config["loss"])
 
         return loss_class
 

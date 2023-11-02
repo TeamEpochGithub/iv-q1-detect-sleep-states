@@ -14,6 +14,7 @@ _METHODS: dict[str, Callable] = {
     "std": np.std,
     "var": np.var,
     "sum": np.sum,
+    "range": np.ptp,
 }
 
 

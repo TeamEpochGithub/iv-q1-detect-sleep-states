@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": true,
     "data_info": {
         "window_size": 17280,
@@ -24,18 +24,11 @@
             "as_feature": true
         },
         {
-          "kind": "add_state_labels",
-          "id_encoding_path": "series_id_encoding.json",
-          "events_path": "data/raw/train_events.csv",
-          "use_similarity_nan": true,
-          "fill_limit": 8640,
-          "nan_tolerance_window": 5
-        },
-        {
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 0,
+            "steepness": 1
         },
         {
             "kind": "split_windows",
@@ -51,7 +44,7 @@
     "pretraining": {
         "downsample": {
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
+            "methods": ["min", "max", "mean", "std", "median", "var", "range"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -61,20 +54,20 @@
         }
     },
     "models": {
-        "Event-1D-Unet-CNN": {
-            "type": "event-seg-unet-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 25,
-            "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 7,
-            "threshold": 0
-        }
+      "SplitEvent-1D-Unet-CNN": {
+        "type": "split-event-seg-unet-1d-cnn",
+        "loss": "mse-torch",
+        "optimizer": "adam-torch",
+        "epochs": 44,
+        "batch_size": 32,
+        "lr": 0.001,
+        "hidden_layers": 8,
+        "early_stopping": 7,
+        "threshold": 0
+      }
     },
     "ensemble": {
-        "models": ["Event-1D-Unet-CNN"],
+        "models": ["SplitEvent-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -90,7 +83,7 @@
     "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
-        "n": 10,
+        "n": 0,
         "browser_plot": false,
         "save": false
     }

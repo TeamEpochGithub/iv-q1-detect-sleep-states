@@ -21,7 +21,7 @@ def masked_loss(criterion, outputs, y):
     labels = y[:, :3, :]
 
     unlabeled_mask = y[:, 3, :]
-    unlabeled_mask = 1-unlabeled_mask
+    unlabeled_mask = 1 - unlabeled_mask
     unlabeled_mask = unlabeled_mask.unsqueeze(1).repeat(1, 3, 1)
 
     loss_unreduced = criterion(outputs, labels)
@@ -57,7 +57,8 @@ class SegmentationUnet1DCNN(Model):
 
         # Load config and model
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3, model_type=self.model_type, config=self.config)
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3,
+                               model_type=self.model_type, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
@@ -99,14 +100,16 @@ class SegmentationUnet1DCNN(Model):
         Load optimizer function for the model.
         """
         # Load optimizer
-        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model)
+        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
+                                                           self.config["weight_decay"], self.model)
 
     def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1, "weight_decay": 0.0}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
+                "early_stopping": -1, "weight_decay": 0.0}
 
     def get_type(self) -> str:
         """
@@ -239,7 +242,8 @@ class SegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss, f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
+                           f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -251,8 +255,10 @@ class SegmentationUnet1DCNN(Model):
                 else:
                     counter += 1
                     if counter >= early_stopping:
-                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
+                        logger.info(
+                            "--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
+                                total_epochs) + " Stopping training and loading best model for " + str(
+                                total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
                         stopped = True
                         break
@@ -446,7 +452,8 @@ class SegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3, model_type=self.model_type, config=self.config)
+            self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size,
+                                   out_channels=3, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return
@@ -454,11 +461,11 @@ class SegmentationUnet1DCNN(Model):
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
-        return
 
     def reset_optimizer(self) -> None:
 
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(),
+                                                                  lr=self.config['optimizer'].param_groups[0]['lr'])

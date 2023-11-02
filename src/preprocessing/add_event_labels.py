@@ -16,7 +16,7 @@ class AddEventLabels(PP):
     The values are 0 for no event and 1 for event.
     """
 
-    def __init__(self, events_path: str, id_encoding_path: str, smoothing: int = 0, **kwargs: dict) -> None:
+    def __init__(self, events_path: str, id_encoding_path: str, smoothing: int = 0, steepness: int = 1, **kwargs: dict) -> None:
         """Initialize the AddEventLabels class.
 
         :param events_path: the path to the events csv file
@@ -28,6 +28,7 @@ class AddEventLabels(PP):
         self.events_path: str = events_path
         self.events: pd.DataFrame = pd.DataFrame()
         self.smoothing: int = smoothing
+        self.steepness: int = steepness
         self.id_encoding_path: str = id_encoding_path
         self.id_encoding: dict = {}
 
@@ -119,6 +120,10 @@ class AddEventLabels(PP):
     def custom_score_array(self, input_array):
         # Define the maximum distances for different scores
         tolerances = [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]
+        if self.steepness > 0:
+            tolerances = [tolerance // self.steepness for tolerance in tolerances]
+        else:
+            tolerances = [tolerance * -self.steepness for tolerance in tolerances]
         scores = list(np.round(np.linspace(1, 0.1, len(tolerances)), 1))
 
         # Create a list of tuples

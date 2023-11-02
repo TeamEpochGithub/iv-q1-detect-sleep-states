@@ -108,13 +108,15 @@ class CV:
             data_info.substage = "Fold " + str(i)
             logger.info("Fold %d", i)
 
-            model.reset_optimizer()
-
             X_train, X_validate = data[train_idx], data[validate_idx]
             y_train, y_validate = labels[train_idx], labels[validate_idx]
 
             model.train(X_train, X_validate, y_train, y_validate)
             y_pred: np.array = model.pred(X_validate, pred_with_cpu=False)
+
+            #Reset optimizer and weights
+            model.reset_optimizer()
+            model.reset_weights()
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):

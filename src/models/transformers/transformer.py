@@ -360,3 +360,10 @@ class Transformer(Model):
         #                     'lr': lr}]
 
         # self.config['optimizer'] = type(self.config['optimizer'])(parameters)
+
+    def reset_weights(self) -> None:
+        """
+        Reset the weights to the initial state. Useful for retraining the model.
+        """
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))

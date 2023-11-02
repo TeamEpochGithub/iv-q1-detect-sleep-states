@@ -62,7 +62,6 @@ def main(config: ConfigLoader) -> None:
     #         Pretrain         #
     # ------------------------ #
 
-
     print_section_separator("Pretrain", spacing=0)
     data_info.stage = "pretraining"
 
@@ -114,22 +113,30 @@ def main(config: ConfigLoader) -> None:
             logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
             models[model].load(model_filename_opt, only_hyperparameters=False)
         else:
-            logger.info("Training model " + str(i) + ": " + model)
-            cv = config.get_cv()
-            # TODO Implement hyperparameter optimization #101
+            logger.info("Applying cross-validation on model " + str(i) + ": " + model)
             data_info.stage = "cv"
-            # It now only saves the trained model from the last fold
+            cv = config.get_cv()
 
+            # TODO Implement hyperparameter optimization and train optimal model on train split and evaluate on test split. Save that as the optimal model.#101
+            # It now only saves the trained model from the last fold
             train_df = featured_data.iloc[train_idx]
 
-            #Apply CV
+            # Apply CV
             scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
 
             # Log scores to wandb
             mean_scores = np.mean(scores, axis=0)
             log_scores_to_wandb(mean_scores[0], mean_scores[1])
             logger.info(
-                f"Done training model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+                f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+
+            # Enter the optimal training
+            # TODO Train optimal model from hpo train on train split, for now train without hpo
+            data_info.stage = "train"
+            data_info.substage = "optimal"
+
+            logger.info("Training optimal model " + str(i) + ": " + model)
+            models[model].train(X_train, X_test, y_train, y_test)
 
     # Store optimal models
     for i, model in enumerate(models):
@@ -182,8 +189,6 @@ def main(config: ConfigLoader) -> None:
 
         # TODO simplify this
         # for each window get the series id and step offset
-        # # FIXME window_info for some series starts with a very large step instead of 0,
-        # #  close to the uint32 limit of 4294967295, likely due to integer underflow
         # window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
         #                .groupby(['series_id', 'window'])
         #                .apply(lambda x: x.iloc[0]))
@@ -267,7 +272,7 @@ def main(config: ConfigLoader) -> None:
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):
-            data_info.substage = ""
+            data_info.substage = "Full"
 
             model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[

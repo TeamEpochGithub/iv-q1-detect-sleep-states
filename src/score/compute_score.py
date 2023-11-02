@@ -189,9 +189,16 @@ def log_scores_to_wandb(score_full: float, score_clean: float) -> None:
     if wandb.run is None:
         return
 
-    wandb.log({'score': score_full})
+    if data_info.stage == 'cv':
+        wandb.log({'cv_score': score_full})
+    else:
+        wandb.log({'score': score_full})
+
     if score_clean is not np.NaN:
-        wandb.log({'score_clean': score_clean})
+        if data_info.stage == 'cv':
+            wandb.log({'cv_score_clean': score_clean})
+        else:
+            wandb.log({'score_clean': score_clean})
 
 
 class ScoringException(Exception):

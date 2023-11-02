@@ -164,15 +164,15 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Dataset for onset
         train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+            X_train, y_train[:, data_info.y_columns["state-onset"], :])
         test_dataset_onset = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 0, :])
+            X_test, y_test[:, data_info.y_columns["state-onset"], :])
 
         # Dataset for awake
         train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+            X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
         test_dataset_awake = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 1, :])
+            X_test, y_test[:, data_info.y_columns["state-wakeup"], :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -417,11 +417,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Dataset for onset
         train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+            X_train, y_train[:, data_info.y_columns["state-onset"], :])
 
-        # Dataset for awake
+        # Dataset for wakeup
         train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+            X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -690,5 +690,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(
             self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
-        self.config['optimizer_awake'] = type(self.config['optimizer_awake'])(
+        self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
             self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+
+    def reset_weights(self) -> None:
+        """
+            Reset the weights of the model. Useful for retraining the model.
+        """
+        self.model_onset = SegUnet1D(
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+        self.model_awake = SegUnet1D(
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)

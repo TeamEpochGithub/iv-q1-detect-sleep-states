@@ -111,6 +111,13 @@ class Model:
         logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
         raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
 
+    def reset_weights(self) -> None:
+        """
+        Reset the weights of the model. Useful for retraining the model. This function should be overwritten by the user.
+        """
+        logger.critical("--- Resetting weights of base class called. Did you forget to override it?")
+        raise ModelException("Resetting weights of base class called. Did you forget to override it?")
+
     def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int, name: str = "") -> None:
         """
         Log the train and test loss to wandb.

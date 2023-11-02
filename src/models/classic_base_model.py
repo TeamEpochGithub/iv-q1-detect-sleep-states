@@ -78,3 +78,9 @@ class ClassicBaseModel(Model):
         movement = pd.Series(slope).rolling(window=100, center=True).median()
         pred = (movement > .1)
         return pred.to_numpy(dtype='float32')
+
+    def reset_weights(self) -> None:
+        pass
+
+    def reset_optimizer(self) -> None:
+        pass

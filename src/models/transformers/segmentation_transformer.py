@@ -336,3 +336,10 @@ class SegmentationTransformer(Model):
         """
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+
+    def reset_weights(self) -> None:
+        """
+        Reset the weights to the initial state. Useful for retraining the model.
+        """
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))

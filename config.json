@@ -33,6 +33,11 @@
         {
             "kind": "split_windows",
             "start_hour": 15
+        },
+        {
+            "kind": "remove_unlabelled",
+            "remove_only_full_windows": false,
+            "keep_nan": false
         }
     ],
     "feature_engineering": [

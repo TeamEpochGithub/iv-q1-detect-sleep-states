@@ -76,10 +76,8 @@ Adds this as a column that is 0 for perfect similarity.
     - Parameters: `start_hour: int = 15`
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
-    - Removes all the data points where there is no labeled data
-- `truncate` (requires `add_state_labels`)
-    - Truncates the unlabeled end of the data
-    - `remove_unlabeled` also removes the unlabeled end
+    - Parameters: `remove_all: bool`, `keep_nan: bool` 
+    - Removes all the data points where there is no labeled data. 
 - `add_regression_labels` (requires `split_windows`)
     - Parameters: `id_encoding_path: str`, `events_path: str`,
     - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels

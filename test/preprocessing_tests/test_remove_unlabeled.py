@@ -13,7 +13,7 @@ class TestRemoveUnlabeled(TestCase):
     Tests the RemoveUnlabeled class.
     """
 
-    remove_unlabeled = RemoveUnlabeled()
+    remove_unlabeled = RemoveUnlabeled(remove_only_full_windows=True, keep_nan=False)
 
     def test_no_state(self) -> None:
         df: pd.DataFrame = pd.DataFrame({
@@ -36,11 +36,26 @@ class TestRemoveUnlabeled(TestCase):
             "anglez": np.random.uniform(2, 5, 20),
             "enmo": np.random.uniform(0, 1, 20),
             "awake": np.concatenate(
-                (np.repeat(1, 3), np.repeat(0, 2), np.repeat(2, 5), np.repeat(0, 6), np.repeat(2, 4))),
+                (np.repeat(1, 3), np.repeat(0, 2), np.repeat(2, 5), np.repeat(0, 6), np.repeat(3, 4))),
         })
 
         df_test: pd.DataFrame = self.remove_unlabeled.preprocess(df)
         self.assertEqual(11, df_test.shape[0])
+
+    def test_no_window_2(self) -> None:
+        remove_unlabeled = RemoveUnlabeled(remove_only_full_windows=False, keep_nan=True)
+        df: pd.DataFrame = pd.DataFrame({
+            "series_id": np.repeat("test", 20),
+            "step": range(20),
+            "timestamp": pd.date_range(datetime.today(), periods=20, freq="5S"),
+            "anglez": np.random.uniform(2, 5, 20),
+            "enmo": np.random.uniform(0, 1, 20),
+            "awake": np.concatenate(
+                (np.repeat(1, 3), np.repeat(0, 2), np.repeat(2, 5), np.repeat(0, 6), np.repeat(3, 4))),
+        })
+
+        df_test: pd.DataFrame = remove_unlabeled.preprocess(df)
+        self.assertEqual(16, df_test.shape[0])
 
     def test_window(self) -> None:
         df: pd.DataFrame = pd.DataFrame({
@@ -50,7 +65,7 @@ class TestRemoveUnlabeled(TestCase):
             "anglez": np.random.uniform(2, 5, 20),
             "enmo": np.random.uniform(0, 1, 20),
             "awake": np.concatenate(
-                (np.repeat(1, 2), np.repeat(0, 5), np.repeat(2, 8), np.repeat(0, 2), np.repeat(2, 3))),
+                (np.repeat(1, 2), np.repeat(0, 5), np.repeat(2, 8), np.repeat(0, 2), np.repeat(3, 3))),
             "window": np.concatenate(
                 (np.repeat(1, 3), np.repeat(2, 5), np.repeat(3, 5), np.repeat(4, 5), np.repeat(5, 2))),
         })
@@ -66,7 +81,7 @@ class TestRemoveUnlabeled(TestCase):
             "anglez": np.random.uniform(2, 5, 20),
             "enmo": np.random.uniform(0, 1, 20),
             "awake": np.concatenate(
-                (np.repeat(1, 2), np.repeat(0, 5), np.repeat(1, 8), np.repeat(0, 2), np.repeat(1, 3))),
+                (np.repeat(1, 2), np.repeat(0, 5), np.repeat(1, 8), np.repeat(0, 4), np.repeat(3, 1))),
             "window": np.concatenate(
                 (np.repeat(1, 3), np.repeat(2, 5), np.repeat(3, 5), np.repeat(4, 5), np.repeat(5, 2))),
         })

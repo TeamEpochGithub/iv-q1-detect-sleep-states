@@ -111,8 +111,8 @@ class Pretrain:
             y_train = self.downsampler.downsampleY(y_train)
 
         # Store column names
-        data_info.X_columns = {column: i for i, column in X_train.columns}
-        data_info.y_columns = {column: i for i, column in y_train.columns}
+        data_info.X_columns = {column: i for i, column in enumerate(X_train.columns)}
+        data_info.y_columns = {column: i for i, column in enumerate(y_train.columns)}
 
         # Apply scaler
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
@@ -132,6 +132,7 @@ class Pretrain:
         :return: the processed data
         """
         x_data = self.get_features(x_data)
+        data_info.X_columns = {column: i for i, column in enumerate(x_data.columns)}
 
         # Apply downsampling
         if self.downsampler is not None:

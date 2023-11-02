@@ -165,13 +165,9 @@ class ConfigLoader:
                 case "transformer":
                     curr_model = Transformer(model_config, model_name)
                 case "segmentation-transformer":
-<<<<<<< src/configs/load_config.py
-                    curr_model = SegmentationTransformer(model_config, data_shape, model_name)
-                case "event-segmentation-transformer":
-                    curr_model = EventSegmentationTransformer(model_config, data_shape, model_name)
-=======
                     curr_model = SegmentationTransformer(model_config, model_name)
->>>>>>> src/configs/load_config.py
+                case "event-segmentation-transformer":
+                    curr_model = EventSegmentationTransformer(model_config, model_name)
                 case "seg-unet-1d-cnn":
                     curr_model = SegmentationUnet1DCNN(model_config, model_name)
                 case "event-seg-unet-1d-cnn":

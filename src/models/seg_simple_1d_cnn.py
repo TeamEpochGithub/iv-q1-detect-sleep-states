@@ -104,8 +104,8 @@ class SegmentationSimple1DCNN(Model):
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
-        y_test = y_test[:, :, 0]
+        y_train = y_train[:, :, data_info.y_columns["awake"]]
+        y_test = y_test[:, :, data_info.y_columns["awake"]]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -201,7 +201,7 @@ class SegmentationSimple1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Flatten y_train and y_test so we only get the awake label
-        y_train = y_train[:, :, 0]
+        y_train = y_train[:, :, data_info.y_columns["awake"]]
         y_train = torch.from_numpy(y_train)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -343,7 +343,6 @@ class SegmentationSimple1DCNN(Model):
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
-        return
 
     def reset_optimizer(self) -> None:
 

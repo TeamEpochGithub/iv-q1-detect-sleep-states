@@ -74,10 +74,8 @@ class Pretrain:
             y_test = self.downsampler.downsampleY(y_test)
 
         # Store column names
-        data_info.X_columns = X_train.columns
-        data_info.y_columns = y_train.columns
-        data_info.X_test_columns = X_test.columns
-        data_info.y_test_columns = y_test.columns
+        data_info.X_columns = {column: i for i, column in enumerate(X_train.columns)}
+        data_info.y_columns = {column: i for i, column in enumerate(y_train.columns)}
 
         # Apply scaler and convert to numpy
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
@@ -89,12 +87,6 @@ class Pretrain:
         X_test = self.to_windows(X_test)
         y_train = self.to_windows(y_train)
         y_test = self.to_windows(y_test)
-
-        # Store shapes
-        data_info.X_train_shape = X_train.shape
-        data_info.y_train_shape = y_train.shape
-        data_info.X_test_shape = X_test.shape
-        data_info.y_test_shape = y_test.shape
 
         return X_train, X_test, y_train, y_test, train_idx, test_idx
 
@@ -117,6 +109,10 @@ class Pretrain:
             logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
             X_train = self.downsampler.downsampleX(X_train)
             y_train = self.downsampler.downsampleY(y_train)
+
+        # Store column names
+        data_info.X_columns = {column: i for i, column in X_train.columns}
+        data_info.y_columns = {column: i for i, column in y_train.columns}
 
         # Apply scaler
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)

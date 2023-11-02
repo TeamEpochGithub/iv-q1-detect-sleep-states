@@ -1,19 +1,13 @@
 # Config variables
-pred_with_cpu: bool = False  # Whether to use cpu or gpu
+pred_with_cpu: bool = False  # Whether to use CPU or GPU for prediction
 window_size: int = 17280  # The size of the window in steps. Default is 24 * 60 * 12 = 17280
 downsampling_factor: int = 0  # The factor to downsample by
+stage: str = "load_config"  # The stage of the pipeline
+substage: str = "set_globals"  # The substage of the pipeline
 
 # Info about the data
-# train_n: int = 8000  # The number of training series
-# test_n: int = 2000  # The number of testing series
-# X_train_shape: tuple = (train_n, window_size, 3)
-X_columns: dict[str, int] = {}
-# y_train_shape: tuple = (train_n, window_size, 1)
-y_columns: dict[str, int] = {}
-# X_test_shape: tuple = (test_n, window_size, 3)
-# X_test_columns: dict[str, int] = {'enmo': 0, 'anglez': 1}
-# y_test_shape: tuple = (test_n, window_size, 1)
-# y_test_columns: dict[str, int] = {'awake': 0}
+X_columns: dict[str, int] = {}  # The names of the features
+y_columns: dict[str, int] = {}  # The names of the labels
 
 # Cross Validation data
-cv_current_fold: int = 0
+cv_current_fold: int = 0  # The current fold of the cross validation

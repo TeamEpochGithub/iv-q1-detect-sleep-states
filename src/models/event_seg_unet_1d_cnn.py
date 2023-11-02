@@ -496,7 +496,7 @@ class EventSegmentationUnet1DCNN(Model):
         confidences_sum = np.sum(y_pred[1], axis=1)
 
         # Make an array where it is true if awake is 0 or 1 and false if awake is 2
-        make_pred_windowed = np.where(y[:, :, 0] == 2, False, True)
+        make_pred_windowed = np.where(y[:, :, data_info.y_columns['awake']] == 2, False, True)
 
         # Get a single boolean for each window if it should make a prediction or not
         make_pred = np.any(make_pred_windowed, axis=1)

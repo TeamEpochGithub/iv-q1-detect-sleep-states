@@ -90,7 +90,7 @@ class Downsampler:
             raise DownsampleException(f"Data cannot be downsampled by factor {data_info.downsampling_factor}")
         # Print the shape of the data
 
-        logger.info("Shape of X before downsampling: " + str(X.shape))
+        logger.info("Shape of X before down sampling: " + str(X.shape))
 
         new_X = []
         new_X_names = []

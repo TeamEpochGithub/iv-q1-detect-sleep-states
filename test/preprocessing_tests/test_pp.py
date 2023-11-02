@@ -44,8 +44,7 @@ class TestPP(TestCase):
                 },
                 {
                     "kind": "split_windows",
-                    "start_hour": 1,
-                    "window_size": 2
+                    "start_hour": 1
                 }
             ],
         }
@@ -60,7 +59,6 @@ class TestPP(TestCase):
         self.assertEqual(pp_steps[1].events_path, "c.csv")
         self.assertIsInstance(pp_steps[2], SplitWindows)
         self.assertEqual(pp_steps[2].start_hour, 1)
-        self.assertEqual(pp_steps[2].window_size, 2)
 
         pp_steps = PP.from_config(config["preprocessing"], training=False)
 
@@ -68,4 +66,3 @@ class TestPP(TestCase):
         self.assertEqual(pp_steps[0].id_encoding_path, "a.json")
         self.assertIsInstance(pp_steps[1], SplitWindows)
         self.assertEqual(pp_steps[1].start_hour, 1)
-        self.assertEqual(pp_steps[1].window_size, 2)

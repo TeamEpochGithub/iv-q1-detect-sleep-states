@@ -9,6 +9,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
+from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
@@ -36,11 +37,10 @@ class SegmentationUnet1DCNN(Model):
     This model is a segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -54,11 +54,10 @@ class SegmentationUnet1DCNN(Model):
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "state-segmentation"
-        self.data_shape = data_shape
 
         # Load config and model
         self.load_config(config)
-        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3, model_type=self.model_type, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
@@ -66,7 +65,7 @@ class SegmentationUnet1DCNN(Model):
         # Print model summary
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+            summary(self.model.cuda(), input_size=(len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -135,12 +134,12 @@ class SegmentationUnet1DCNN(Model):
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
         # TODO Change
-        X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
-        X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
+        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
+        X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Get only the one hot encoded labels, this includes a column for unlabeled
-        y_train = y_train[:, :, -4:]
-        y_test = y_test[:, :, -4:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]]
+        y_test = y_test[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -284,7 +283,7 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Get only the one hot encoded features
-        y_train = y_train[:, :, -4:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -390,9 +389,8 @@ class SegmentationUnet1DCNN(Model):
         predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
-        downsampling_factor = 17280 // self.data_shape[1]
-        if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=2)
+        if data_info.downsampling_factor > 1:
+            predictions = np.repeat(predictions, data_info.downsampling_factor, axis=2)
 
         all_predictions = []
 
@@ -448,7 +446,7 @@ class SegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=3, model_type=self.model_type, config=self.config)
+            self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

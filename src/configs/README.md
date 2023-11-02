@@ -274,12 +274,14 @@ These models should either be a statistical, regression or state_prediction mode
 This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters that are standard.
 
 
+##### Basic models
 - example-fc-model
     - epochs (required)
     - loss (required)
     - optimizer (required)
     - lr
     - batch_size
+
 
 - seg-simple-1d-cnn
     - loss (required)
@@ -289,6 +291,12 @@ This contains all the models and their hyperparameters that are implemented. The
     - batch_size
 
 
+- classic-base-model
+  - median_window=100
+  - threshold=.1
+  - use_nan_similarity=True
+
+##### State segmentation models
 - seg-unet-1d-cnn (one-hot state segmentation model that predicts awake, asleep, NaN for each timestep)
     - loss (required, ce-torch recommended)
     - optimizer (required)
@@ -301,11 +309,35 @@ This contains all the models and their hyperparameters that are implemented. The
     - early_stopping=-1
     - weight_decay=0.0
 
-- classic-base-model
-  - median_window=100
-  - threshold=.1
-  - use_nan_similarity=True
+##### Event segmentation models
+- event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
+    - loss (required, mse-torch recommended)
+    - optimizer (required)
+    - epochs=10
+    - batch_size=32
+    - lr=0.001
+    - hidden_layers=32
+    - kernel_size=7 (only works on 7 for now)
+    - depth=2
+    - early_stopping=-1
+    - weight_decay=0.0
+    - threshold=0 (threshold for the event prediction, if the prediction is below this, it returns a nan)
 
+- split-event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
+    - loss (required, shrinkage-loss recommended)
+    - optimizer (required)
+    - epochs=10
+    - batch_size=32
+    - lr=0.001
+    - hidden_layers=32
+    - kernel_size=7 (only works on 7 for now)
+    - depth=2
+    - early_stopping=-1
+    - weight_decay=0.0
+    - threshold=0 (threshold for the event prediction, if the prediction is below this, it returns a nan)
+
+
+#### Transformers
 - transformer / segmentation-transformer
     - epochs (required)
     - loss (required)
@@ -373,6 +405,30 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "batch_size": 32,
     "lr": 0.001,
     "hidden_layers": 8
+}
+
+"Event-1D-Unet-CNN": {
+      "type": "event-seg-unet-1d-cnn",
+      "loss": "mse-torch",
+      "optimizer": "adam-torch",
+      "epochs": 10,
+      "batch_size": 32,
+      "lr": 0.001,
+      "hidden_layers": 8,
+      "early_stopping": 7,
+      "threshold": 0
+}
+
+"SplitEvent-1D-Unet-CNN": {
+      "type": "split-event-seg-unet-1d-cnn",
+      "loss": "shrinkage-loss",
+      "optimizer": "adam-torch",
+      "epochs": 44,
+      "batch_size": 32,
+      "lr": 0.001,
+      "hidden_layers": 32,
+      "early_stopping": 7,
+      "threshold": 0
 }
 ```
 

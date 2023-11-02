@@ -277,8 +277,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_onset": avg_loss,
-                           f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}_onset": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -359,8 +359,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_awake": avg_loss,
-                           f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}_awake": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -486,7 +486,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
+                    {f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
 
         # Train full loop for awake
         logger.info("--- Training awake model on full dataset")
@@ -528,7 +528,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
+                    {f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
 
         logger.info("--- Full train complete!")
 

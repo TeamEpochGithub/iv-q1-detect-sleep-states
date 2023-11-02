@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import wandb
 
+from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
 
@@ -127,13 +128,14 @@ class Model:
         long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
 
         table = wandb.Table(dataframe=long_df)
+
         # Field to column in df
         fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
         custom_plot = wandb.plot_table(
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": "Train and validation loss of model " + self.name + "_" + name}
+            string_fields={"title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
             wandb.log({f"{self.name}": custom_plot})

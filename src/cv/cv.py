@@ -5,6 +5,7 @@ from sklearn.model_selection import GroupKFold, StratifiedGroupKFold, GroupShuff
     LeavePGroupsOut, PredefinedSplit, KFold, LeaveOneOut, LeavePOut, RepeatedKFold, RepeatedStratifiedKFold, \
     ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit, TimeSeriesSplit
 
+from .. import data_info
 from ..logger.logger import logger
 from ..models.model import Model
 from ..score.compute_score import compute_score_full, compute_score_clean, from_numpy_to_submission_format
@@ -105,6 +106,10 @@ class CV:
 
         # Split the data in folds with train and validation sets
         for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:, :, 0], groups)):
+
+            #Set substage to the current fold
+            data_info.substage = "Fold " + str(i)
+
             model.reset_optimizer()
 
             X_train, X_validate = data[train_idx], data[validate_idx]

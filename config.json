@@ -53,42 +53,41 @@
             "copy": true
         }
     },
-  "cv": {
-    "splitter": "group_k_fold",
-    "scoring": ["score_full", "score_clean"],
-    "splitter_params": {
-      "n_splits": 5
-    }
-  },
-  "models": {
-    "Event-1D-Unet-CNN": {
-      "type": "event-seg-unet-1d-cnn",
-      "loss": "mse-torch",
-      "optimizer": "adam-torch",
-      "pred_with_cpu": true,
-      "epochs": 10,
-      "batch_size": 32,
-      "lr": 0.001,
-      "hidden_layers": 8,
-      "early_stopping": 7,
-      "threshold": 0
-    }
-  },
+    "cv": {
+        "splitter": "group_k_fold",
+        "scoring": ["score_full", "score_clean"],
+        "splitter_params": {
+            "n_splits": 3
+        }
+    },
+    "models": {
+        "SplitEvent-1D-Unet-CNN": {
+            "type": "split-event-seg-unet-1d-cnn",
+            "loss": "mse-loss",
+            "optimizer": "adam-torch",
+            "epochs": 44,
+            "batch_size": 32,
+            "lr": 0.001,
+            "hidden_layers": 8,
+            "early_stopping": 7,
+            "threshold": 0
+        }
+    },
   "ensemble": {
-      "models": ["Event-1D-Unet-CNN"],
+      "models": ["SplitEvent-1D-Unet-CNN"],
       "weights": [1],
       "comb_method": "addition"
   },
   "ensemble_loss": "mse-torch",
   "hpo": {
-    "apply": false,
-    "method": "example_hpo"
+      "apply": false,
+      "method": "example_hpo"
   },
   "train_for_submission": true,
   "scoring": true,
   "visualize_preds": {
-    "n": 10,
-    "browser_plot": false,
-    "save": true
+      "n": 10,
+      "browser_plot": false,
+      "save": true
   }
 }

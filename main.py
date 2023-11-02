@@ -119,6 +119,7 @@ def main(config: ConfigLoader) -> None:
             logger.info("Training model " + str(i) + ": " + model)
             cv = config.get_cv()
             # TODO Implement hyperparameter optimization #101
+            data_info.stage = "cv"
             # It now only saves the trained model from the last fold
             scores: np.ndarray = cv.cross_validate(models[model], X_train, y_train, groups=groups,
                                                    scoring_params={"featured_data": featured_data,

@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from src.score.compute_score import verify_submission, ScoringException
+from src.score.compute_score import ScoringException, verify_cv
 
 
 class Test(TestCase):
@@ -11,14 +11,22 @@ class Test(TestCase):
             'series_id': [0, 1, 1, 1, 1],
             'event': ['onset', 'onset', 'wakeup', 'onset', 'wakeup'],
         })
-        verify_submission(submission)
+        solution = pd.DataFrame({
+            'series_id': [0, 1, 1, 1, 1],
+            'event': ['onset', 'onset', 'wakeup', 'onset', 'wakeup'],
+        })
+        verify_cv(submission, solution)
 
     def test_verify_submission_fail(self):
         submission = pd.DataFrame({
             'series_id': [0, 1, 1, 1, 1],
             'event': ['onset', 'onset', 'wakeup', 'onset', 'onset'],
         })
-        self.assertRaises(ScoringException, verify_submission, submission)
+        solution = pd.DataFrame({
+            'series_id': [0, 1, 1, 1, 1],
+            'event': ['onset', 'onset', 'wakeup', 'onset', 'wakeup'],
+        })
+        self.assertRaises(ScoringException, verify_cv, submission, solution)
 
     # def test_compute_score_full(self):
     #     submission = pd.DataFrame({

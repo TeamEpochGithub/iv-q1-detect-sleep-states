@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -7,7 +8,6 @@ import wandb
 from src.util.submissionformat import to_submission_format
 from .scoring import score
 from ..logger.logger import logger
-from collections import Counter
 
 _TOLERANCES = {
     'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
@@ -41,13 +41,13 @@ def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
 
     # Extend unique series ids and assert that there are no duplicates
     # Log the duplicate series if they exist
-    duplicates = [k for k,v in Counter(_unique_series).items() if v>1]
+    duplicates = [k for k, v in Counter(_unique_series).items() if v > 1]
     if len(duplicates) > 0:
         logger.warning(f'Duplicate series ids: {duplicates}. This means you used no groups, or there is a bug in our code. Will currently crash')
 
     # Assert that there are no duplicate series ids in the current submission
     if len(_unique_series) != len(set(_unique_series)):
-        logger.critical(f'Current validation fold contains series_id, that were also in the previous fold.')
+        logger.critical('Current validation fold contains series_id, that were also in the previous fold.')
         raise ScoringException('Submission contains duplicate series ids')
 
     same_event = submission['event'] == submission['event'].shift(1)

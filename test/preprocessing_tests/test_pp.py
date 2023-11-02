@@ -8,7 +8,6 @@ from src.preprocessing.mem_reduce import MemReduce
 from src.preprocessing.pp import PP, PPException
 from src.preprocessing.remove_unlabeled import RemoveUnlabeled
 from src.preprocessing.split_windows import SplitWindows
-from src.preprocessing.truncate import Truncate
 
 
 class TestPP(TestCase):
@@ -24,9 +23,8 @@ class TestPP(TestCase):
                                                      "id_encoding_path": "e.json",
                                                      "events_path": "e.csv",
                                                      "use_similarity_nan": False}), AddStateLabels)
-        self.assertIsInstance(PP.from_config_single({"kind": "remove_unlabeled"}), RemoveUnlabeled)
+        self.assertIsInstance(PP.from_config_single({"kind": "remove_unlabeled", "remove_only_full_windows": False, "keep_nan": False}), RemoveUnlabeled)
         self.assertIsInstance(PP.from_config_single({"kind": "split_windows"}), SplitWindows)
-        self.assertIsInstance(PP.from_config_single({"kind": "truncate"}), Truncate)
         self.assertRaises(PPException, PP.from_config_single, {"kind": "e"})
 
     def test_from_config(self):

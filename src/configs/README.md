@@ -40,7 +40,7 @@ Variables:
 - `window_size`: `int`
     - The size of the window in steps before donwsampling. Default is 24 * 60 * 12 = 17280
 - `downsampling_factor`: `int`
-  - The factor to downsample the data with. Default is 0, which means no downsampling.
+  - The factor to downsample the data with. Default is 1, which means no downsampling.
 
 ## Preprocessing steps
 These steps are executed in order placed in the list. 

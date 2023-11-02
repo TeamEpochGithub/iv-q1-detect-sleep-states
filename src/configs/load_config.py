@@ -54,8 +54,8 @@ class ConfigLoader:
 
     def set_globals(self) -> None:
         """Set the global variables"""
-        data_info.window_size = self.config["data_info"]["window_size"]
-        data_info.downsampling_factor = self.config["data_info"]["downsampling_factor"]
+        data_info.window_size = self.config.get("data_info").get("window_size", 17280)
+        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", 1)
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data

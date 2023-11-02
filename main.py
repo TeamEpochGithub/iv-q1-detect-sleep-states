@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 import wandb
+from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
@@ -54,7 +55,7 @@ def main(config: ConfigLoader) -> None:
     # ------------------------------------------- #
 
     print_section_separator("Preprocessing and feature engineering", spacing=0)
-
+    data_info.stage = "preprocessing & feature engineering"
     featured_data = get_processed_data(config, training=True, save_output=True)
 
     # ------------------------- #
@@ -62,6 +63,7 @@ def main(config: ConfigLoader) -> None:
     # ------------------------- #
 
     print_section_separator("Pre-train", spacing=0)
+    data_info.stage = "pretraining"
 
     logger.info("Get pretraining parameters from config and initialize pretrain")
     pretrain: Pretrain = config.get_pretraining()
@@ -71,11 +73,9 @@ def main(config: ConfigLoader) -> None:
     # Split data into train and test
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
+    data_info.substage = "pretrain_split"
 
     X_train, X_test, y_train, y_test, train_idx, test_idx = pretrain.pretrain_split(featured_data)
-
-    # Give data shape in terms of (features (in_channels), window_size))
-    data_shape = (X_train.shape[2], X_train.shape[1])
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         X_train.shape) + " and y train data shape (size, window_size, features): " + str(y_train.shape))
@@ -90,6 +90,7 @@ def main(config: ConfigLoader) -> None:
     # ------------------------- #
 
     print_section_separator("Training", spacing=0)
+    data_info.stage = "training"
 
     # Initialize models
     store_location = config.get_model_store_loc()
@@ -97,13 +98,14 @@ def main(config: ConfigLoader) -> None:
 
     # Initialize models
     logger.info("Initializing models...")
-    models = config.get_models(data_shape)
+    models = config.get_models()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
 
     # TODO Add crossvalidation to models and hyperparameter optimization #107, #101
     for i, model in enumerate(models):
+        data_info.substage = f"training model {i}: {model}"
         # Get filename of model
         model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
@@ -126,6 +128,8 @@ def main(config: ConfigLoader) -> None:
     # ------------------------- #
 
     print_section_separator("Ensemble", spacing=0)
+    data_info.stage = "ensemble"
+    data_info.substage = "TODO"
 
     # TODO Add crossvalidation to models #107
     ensemble = config.get_ensemble(models)
@@ -156,6 +160,8 @@ def main(config: ConfigLoader) -> None:
     # ------------------------------------------------------- #
 
     print_section_separator("Scoring", spacing=0)
+    data_info.stage = "scoring"
+    data_info.substage = ""
 
     scoring = config.get_scoring()
     if scoring:
@@ -228,6 +234,7 @@ def main(config: ConfigLoader) -> None:
     # ------------------------------------------------------- #
 
     print_section_separator("Train for submission", spacing=0)
+    data_info.stage = "train for submission"
 
     if config.get_train_for_submission():
         logger.info("Retraining models for submission")
@@ -240,6 +247,8 @@ def main(config: ConfigLoader) -> None:
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):
+            data_info.substage = f"retraining model {i}: {model}"
+
             model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
                 model].hash + ".pt"

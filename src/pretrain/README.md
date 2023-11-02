@@ -9,7 +9,6 @@ It contains downsampling options, standardization and train-test split.
 List of options:
 
 - `downsample`: Downsamples all features
-    - `factor`: downsampling factor
     - `features`: Any existing numerical features
     - `methods`: ["min", "max", "mean", "std", "median", "var", "sum"]
     - `standard`: "min" | "max" | "mean" | "std" | "median" | "var" | "sum"
@@ -20,7 +19,6 @@ Example:
 ```JSON
 "pretraining": {
     "downsample": {
-        "factor": 12,
         "features": ["anglez", "enmo"],
         "methods": ["min", "max", "mean", "std", "median"],
         "standard": "mean"

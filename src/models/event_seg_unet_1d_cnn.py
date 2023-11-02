@@ -10,6 +10,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
+from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
@@ -22,11 +23,10 @@ class EventSegmentationUnet1DCNN(Model):
     This model is an event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -40,13 +40,12 @@ class EventSegmentationUnet1DCNN(Model):
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "event-segmentation"
-        self.data_shape = data_shape
 
         # Load config
         self.load_config(config)
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model = SegUnet1D(in_channels=data_shape[0], window_size=data_shape[1], out_channels=2,
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
                                model_type=self.model_type, config=self.config)
 
         # Load optimizer
@@ -55,7 +54,7 @@ class EventSegmentationUnet1DCNN(Model):
         # Print model summary
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(data_shape[0], data_shape[1]))
+            summary(self.model.cuda(), input_size=(len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -134,12 +133,12 @@ class EventSegmentationUnet1DCNN(Model):
             Y_train_start = y_train.copy()
 
         # TODO Change
-        X_train = torch.from_numpy(X_train[:, :, :]).permute(0, 2, 1)
-        X_test = torch.from_numpy(X_test[:, :, :]).permute(0, 2, 1)
+        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
+        X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Get only the 2 event state features
-        y_train = y_train[:, :, -2:]
-        y_test = y_test[:, :, -2:]
+        y_train = y_train[:, :, np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        y_test = y_test[:, :, np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -293,7 +292,7 @@ class EventSegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Get only the event state features
-        y_train = y_train[:, :, -2:]
+        y_train = y_train[:, :, np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -402,9 +401,8 @@ class EventSegmentationUnet1DCNN(Model):
         predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
-        downsampling_factor = 17280 // self.data_shape[1]
-        if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=2)
+        if data_info.downsampling_factor > 1:
+            predictions = np.repeat(predictions, data_info.downsampling_factor, axis=2)
 
         all_predictions = []
         all_confidences = []
@@ -414,7 +412,12 @@ class EventSegmentationUnet1DCNN(Model):
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
-            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            if data_info.downsampling_factor <= 1:
+                offset = 0
+            elif data_info.downsampling_factor % 2 == 0:
+                offset = (data_info.downsampling_factor / 2.0) - 0.5
+            else:
+                offset = data_info.downsampling_factor // 2
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)
@@ -461,7 +464,7 @@ class EventSegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=2,
+            self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
                                    model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
@@ -493,7 +496,7 @@ class EventSegmentationUnet1DCNN(Model):
         confidences_sum = np.sum(y_pred[1], axis=1)
 
         # Make an array where it is true if awake is 0 or 1 and false if awake is 2
-        make_pred_windowed = np.where(y[:, :, 0] == 2, False, True)
+        make_pred_windowed = np.where(y[:, :, data_info.y_columns['awake']] == 2, False, True)
 
         # Get a single boolean for each window if it should make a prediction or not
         make_pred = np.any(make_pred_windowed, axis=1)

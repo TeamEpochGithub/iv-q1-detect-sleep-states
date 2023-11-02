@@ -4,6 +4,7 @@ import tracemalloc
 
 import pandas as pd
 
+from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
@@ -57,6 +58,8 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
+        data_info.substage = step_names[i + j]
+
         processed = step.run(processed)
         gc.collect()
 

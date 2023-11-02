@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import pandas as pd
 
+from src import data_info
 from src.pretrain.downsampler import Downsampler
 
 
@@ -10,12 +11,14 @@ class TestDownsampler(TestCase):
     Test the downsampler class.
     """
 
-    downsampler = Downsampler(2, ['x', 'y', 'z'], ['mean', 'median', 'max', 'min', 'std', 'var', 'sum'], 'mean')
+    downsampler = Downsampler(['x', 'y', 'z'], ['mean', 'median', 'max', 'min', 'std', 'var', 'sum'], 'mean')
 
     def test_downsamplerX(self):
         """
         Test the downsampler for the X data.
         """
+        data_info.window_size = 2
+        data_info.downsampling_factor = 2
         # Create a dummy dataframe
         dummy_df = pd.DataFrame({'x': [1, 2, 3, 4, 5, 6, 7, 8], 'y': [1, 2, 3, 4, 5, 6, 7, 8], 'z': [1, 2, 3, 4, 5, 6, 7, 8]})
         # Downsample the dummy dataframe
@@ -45,10 +48,14 @@ class TestDownsampler(TestCase):
         self.assertEqual(dummy_df_downsampled['y_sum'].values.tolist(), [3, 7, 11, 15])
         self.assertEqual(dummy_df_downsampled['z_sum'].values.tolist(), [3, 7, 11, 15])
 
+        data_info.downsampling_factor = 0
+
     def test_downsamplerY(self):
         """
         Test the downsampler for the y data.
         """
+        data_info.window_size = 2
+        data_info.downsampling_factor = 2
         # Create a dummy dataframe
         dummy_df = pd.DataFrame({'x': [1, 2, 3, 4, 5, 6, 7, 8], 'y': [1, 2, 3, 4, 5, 6, 7, 8]})
         # Downsample the dummy dataframe
@@ -58,3 +65,5 @@ class TestDownsampler(TestCase):
         # Check if the values are correct
         self.assertEqual(dummy_df_downsampled['x'].values.tolist(), [1.5, 3.5, 5.5, 7.5])
         self.assertEqual(dummy_df_downsampled['y'].values.tolist(), [1.5, 3.5, 5.5, 7.5])
+
+        data_info.downsampling_factor = 0

@@ -2,11 +2,14 @@ import unittest
 
 import pandas as pd
 import numpy as np
+
+from src import data_info
 from src.preprocessing.split_windows import SplitWindows
 
 
 class MyTestCase(unittest.TestCase):
     def test_split_windows(self):
+        data_info.window_size = 17280
         split_windows = SplitWindows(15)
 
         # Create a two-day long dataframe, with 5 seconds per step
@@ -31,6 +34,7 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue((window1 == 1).all())
 
     def test_split_windows_no_labels(self):
+        data_info.window_size = 17280
         split_windows = SplitWindows(15)
 
         # Create a two-day long dataframe, with 5 seconds per step

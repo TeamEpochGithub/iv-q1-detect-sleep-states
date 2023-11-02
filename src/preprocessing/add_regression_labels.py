@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from .. import data_info
 from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
 
@@ -14,12 +15,11 @@ class AddRegressionLabels(PP):
     This will add the event labels to the data by using the event data.
     """
 
-    def __init__(self, events_path: str, id_encoding_path: str, window_size: int = 17280, **kwargs: dict) -> None:
+    def __init__(self, events_path: str, id_encoding_path: str, **kwargs: dict) -> None:
         """Initialize the AddRegressionLabels class
 
         :param events_path: the path to the events csv file
         :param id_encoding_path: the path to the encoding file of the series id
-        :param window_size: the size of the window
         """
         super().__init__(**kwargs | {"kind": "add_regression_labels"})
 
@@ -27,11 +27,10 @@ class AddRegressionLabels(PP):
         self.events: pd.DataFrame = pd.DataFrame()
         self.id_encoding_path: str = id_encoding_path
         self.id_encoding: dict = {}
-        self.window_size = window_size
 
     def __repr__(self) -> str:
         """Return a string representation of a AddRegressionLabels object"""
-        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path}, window_size={self.window_size})"
+        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path})"
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.
@@ -115,9 +114,9 @@ class AddRegressionLabels(PP):
 
         # For each onset, fill the respective window with onset value and set the NaN onset to 0
         for onset in current_onsets:
-            window_no = onset // self.window_size
+            window_no, window_onset = divmod(onset, data_info.window_size)
             window = series[series["window"] == window_no]
-            window["onset"] = np.int16(onset % self.window_size)
+            window["onset"] = np.int16(window_onset)
             window["onset-NaN"] = np.int8(0)
 
             # Update the window in the series
@@ -125,9 +124,9 @@ class AddRegressionLabels(PP):
 
         # Do the same for the wakeups
         for wakeup in current_wakeups:
-            window_no = wakeup // self.window_size
+            window_no, window_wakeup = divmod(wakeup, data_info.window_size)
             window = series[series["window"] == window_no]
-            window["wakeup"] = np.int16(wakeup % self.window_size)
+            window["wakeup"] = np.int16(window_wakeup)
             window["wakeup-NaN"] = np.int8(0)
 
             # Update the window in the series

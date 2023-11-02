@@ -133,7 +133,7 @@ class Model:
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": "Train and validation loss of model " + self.name + "_" + name}
+            string_fields={"title": "Train and validation loss of model " + self.name + name}
         )
         if wandb.run is not None:
             wandb.log({f"{self.name}": custom_plot})

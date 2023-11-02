@@ -115,18 +115,23 @@ class EventSegmentationTransformer(BaseTransformer):
         # Train events
         logger.info("Training onset model")
         trainer_onset = SegmentationTrainer(epochs=epochs, criterion=criterion)
-        avg_train_loss, avg_val_loss, self.config["trained_epochs_onset"] = trainer_onset.fit(
+        avg_train_loss_onset, avg_val_loss_onset, self.config["trained_epochs_onset"] = trainer_onset.fit(
             train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset")
 
         # Train awake
         logger.info("Training awake model")
         trainer_awake = SegmentationTrainer(epochs=epochs, criterion=criterion)
-        avg_train_loss, avg_val_loss, self.config["trained_epochs_awake"] = trainer_awake.fit(
+        avg_train_loss_awake, avg_val_loss_awake, self.config["trained_epochs_awake"] = trainer_awake.fit(
             train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
 
         if wandb.run is not None:
-            self.log_train_test(avg_train_loss,
-                                avg_val_loss, len(avg_train_loss))
+            # Log onset
+            self.log_train_test(avg_train_loss_onset, avg_val_loss_onset, len(
+                avg_train_loss_onset), "_onset")
+
+            # Log awake
+            self.log_train_test(avg_train_loss_awake, avg_val_loss_awake, len(
+                avg_train_loss_awake), "_onset")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """

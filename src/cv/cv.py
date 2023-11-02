@@ -28,10 +28,10 @@ _SPLITTERS: dict[str] = {
 }
 
 _SCORERS: dict[str, Callable[[...], float]] = {
-    "score_full": lambda data, y_true, y_pred, idx: compute_score_full(
-        *(from_numpy_to_submission_format(data, y_true, y_pred, idx))),
-    "score_clean": lambda data, y_true, y_pred, idx: compute_score_clean(
-        *(from_numpy_to_submission_format(data, y_true, y_pred, idx)))
+    "score_full": lambda data, y_pred, idx: compute_score_full(
+        *(from_numpy_to_submission_format(data, y_pred, idx))),
+    "score_clean": lambda data, y_pred, idx: compute_score_clean(
+        *(from_numpy_to_submission_format(data, y_pred, idx)))
 }
 
 
@@ -87,13 +87,13 @@ class CV:
         """Evaluate the model using the CV method
 
         Run the cross-validation as specified in the config.
-        The data is split into train and test sets using the splitter.
-        The model is trained on the train set and evaluated on the test set.
+        The data is split into train and val sets using the splitter.
+        The model is trained on the train set and evaluated on the val set.
         The scores of all folds for each scorer is returned.
 
         param model: the model to evaluate with methods `train` and `pred`
-        :param data: the data to fit of shape (X_train_test[0], window_size, n_features)
-        :param labels: the labels of shape (X_train_test[0], window_size, features)
+        :param data: the data to fit of shape (X_train[0], window_size, n_features)
+        :param labels: the labels of shape (X_train[0], window_size, features)
         :param groups: the group labels used while splitting the data of shape (size, ) or None for no grouping
         :param scoring_params: the parameters for the scoring function(s)
         :return: the scores of all folds of shape (n_splits, n_scorers)

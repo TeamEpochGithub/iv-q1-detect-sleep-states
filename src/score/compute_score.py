@@ -7,6 +7,7 @@ import wandb
 from src.util.submissionformat import to_submission_format
 from .scoring import score
 from ..logger.logger import logger
+from collections import Counter
 
 _TOLERANCES = {
     'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
@@ -23,12 +24,32 @@ _COLUMN_NAMES = {
 _unique_series = []
 
 
-def verify_submission(submission: pd.DataFrame) -> None:
+def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
     """Verify that there are no consecutive onsets or wakeups
 
-    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, score)
+    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event)
     :raises ScoringException: if there are consecutive onsets or wakeups
     """
+    # Assert that submission series_id exists in solution
+    submission_series_ids = submission['series_id'].unique()
+    solution_series_ids = solution['series_id'].unique()
+
+    if not np.all([sid in solution_series_ids for sid in submission_series_ids]):
+        logger.critical(f'Submission contains series ids that are not in the solution: {submission_series_ids}')
+        raise ScoringException('Submission contains series ids that are not in the solution')
+
+    # Extend unique series ids and assert that there are no duplicates
+    # Log the duplicate series if they exist
+    duplicates = [k for k,v in Counter(_unique_series).items() if v>1]
+    if len(duplicates) > 0:
+        logger.warning(f'Duplicate series ids: {duplicates}. This means you used no groups, or there is a bug in our code. Will currently crash')
+
+    # Assert that there are no duplicate series ids in the current submission
+    if len(_unique_series) != len(set(_unique_series)):
+        logger.critical(f'Current validation fold contains series_id, that were also in the previous fold.')
+        raise ScoringException('Submission contains duplicate series ids')
+
     same_event = submission['event'] == submission['event'].shift(1)
     same_series = submission['series_id'] == submission['series_id'].shift(1)
     same = submission[same_event & same_series]
@@ -41,11 +62,16 @@ def verify_submission(submission: pd.DataFrame) -> None:
 def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
     """Compute the score for the entire dataset
 
-    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event)
     :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :return: the score for the entire dataset
     """
-    verify_submission(submission)
+
+    # Add the series ids to the list of unique series ids
+    solution_series_ids = solution['series_id'].unique()
+    _unique_series.extend(solution_series_ids)
+
+    verify_cv(submission, solution)
 
     # Count the number of labelled series in the submission and solution
     submission_sids = submission['series_id'].unique()
@@ -67,11 +93,11 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
 def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
     """Compute the score for the clean series
 
-    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
-    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, score)
+    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event)
     :return: the score for the clean series or NaN if there are no clean series
     """
-    verify_submission(submission)
+    verify_cv(submission, solution)
 
     # Filter on clean series (series with no nans in the solution)
     solution_no_nan = (solution
@@ -95,7 +121,7 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
     return score_clean
 
 
-def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
+def from_numpy_to_submission_format(data: pd.DataFrame, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
     """Tries to turn the numpy y_true and y_pred into a solution and submission dataframes...
 
     ...but it fails.
@@ -107,7 +133,7 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
     The order of y_true and y_pred is conventional, but the output is swapped in the output
     since the compute_score functions expect it that way and I was told not to change those.
 
-    :param y_true: (UNUSED???) the solution numpy array of shape (X_test_cv.shape[0], window_size, n_labels) (may differ based on preprocessing and feature engineering steps)
+    :param data: the X_train from the main train test split (size, n_features)
     :param y_pred: the submission numpy array of shape (X_test_cv.shape[0], 2)
     :param featured_data: the entire dataset after preprocessing and feature engineering, but before pretraining of shape (size, n_features)
     :param train_validate_idx: the indices of the entire train and validation set of shape (featured_data[0], )
@@ -130,14 +156,12 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
     window_info_test_cv = (test_cv[['series_id', 'window', 'step']]
                            .groupby(['series_id', 'window'])
                            .apply(lambda x: x.iloc[0]))
-    # FIXME window_info for some series starts with a very large step, instead of 0, close to the uint32 limit of 4294967295, likely due to integer underflow
 
     # Retrieve submission made by the model on the train split in the cv
     submission = to_submission_format(y_pred, window_info_test_cv)
 
     # Prepare solution
     test_series_ids = window_info_test_cv['series_id'].unique()
-    # TODO Get the solution from y_true instead of loading these files
     # Load the encoding
     with open('./series_id_encoding.json', 'r') as f:
         encoding = json.load(f)
@@ -150,26 +174,8 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_true: np.ndarray, y_pr
                 .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                 .reset_index(drop=True))
 
-    # Assert that submission series_id exists in solution
-    submission_series_ids = submission['series_id'].unique()
-    solution_series_ids = solution['series_id'].unique()
-    assert np.all([sid in solution_series_ids for sid in submission_series_ids])
-
-    # Extend unique series ids and assert that there are no duplicates
-    global _unique_series
-    # Log the duplicate series if they exist
-    duplicates = [sid for sid in _unique_series if sid in solution_series_ids]
-    if len(duplicates) > 0:
-        logger.debug(f'Duplicate series ids: {duplicates}')
-
-    #Extend the unique series ids
-    _unique_series.extend(submission_series_ids)
-
-    # TODO make sure series id are split correctly
-    logger.debug(len(_unique_series))
-    logger.debug(len(set(_unique_series)))
-
-    assert len(_unique_series) == len(set(_unique_series))
+    # Check if the test series ids from the cv are the same as the solution series ids
+    assert (solution["series_id"].unique() == test_series_ids).all()
 
     return submission, solution
 

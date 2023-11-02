@@ -118,6 +118,9 @@ def main(config: ConfigLoader) -> None:
                                                                    "train_validate_idx": train_idx,
                                                                    "downsampling_factor": pretrain.downsampler.factor,
                                                                    "window_size": pretrain.window_size})
+            # Log scores to wandb
+            mean_scores = np.mean(scores, axis=0)
+            log_scores_to_wandb(mean_scores[0], mean_scores[1])
             logger.info(
                 f"Done training model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
 

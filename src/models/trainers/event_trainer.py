@@ -33,10 +33,10 @@ class EventTrainer:
         self,
         epochs: int = 10,
         criterion: nn.Module = nn.CrossEntropyLoss(),
-        maskUnlabeled: bool = False
+        mask_unlabeled: bool = False
     ):
         self.criterion = criterion
-
+        self.mask_unlabeled = mask_unlabeled
         self.dataset = None
         self.train_data = None
         self.test_data = None

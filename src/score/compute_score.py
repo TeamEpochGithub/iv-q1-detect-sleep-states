@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import wandb
 
+from src import data_info
 from src.util.submissionformat import to_submission_format
 from .scoring import score
 from ..logger.logger import logger
@@ -145,8 +146,7 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_pred: np.ndarray, vali
     total_arr = []
     # Reconstruct the original indices to access the data from train_main
     for i in validate_idx:
-        # TODO Use the downsampling factor here and don't hardcode the window_size
-        arr = np.arange(i * 17280, (i + 1) * 17280)
+        arr = np.arange(i * data_info.window_size_before, (i + 1) * data_info.window_size_before)
         total_arr.append(arr)
     data_validate_idx = np.concatenate(total_arr)
 

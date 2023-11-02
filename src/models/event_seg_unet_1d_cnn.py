@@ -132,7 +132,6 @@ class EventSegmentationUnet1DCNN(Model):
             X_train_start = X_train.copy()
             Y_train_start = y_train.copy()
 
-        # TODO Change
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 

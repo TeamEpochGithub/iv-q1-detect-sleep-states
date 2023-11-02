@@ -92,8 +92,7 @@ def main(config: ConfigLoader) -> None:
     # Cross Validation Training #
     # ------------------------- #
 
-    print_section_separator("Training", spacing=0)
-    data_info.stage = "training"
+    print_section_separator("CV", spacing=0)
 
     # Initialize models
     store_location = config.get_model_store_loc()
@@ -124,8 +123,8 @@ def main(config: ConfigLoader) -> None:
             scores: np.ndarray = cv.cross_validate(models[model], X_train, y_train, groups=groups,
                                                    scoring_params={"featured_data": featured_data,
                                                                    "train_validate_idx": train_idx,
-                                                                   "downsampling_factor": pretrain.downsampler.factor,
-                                                                   "window_size": pretrain.window_size})
+                                                                   "downsampling_factor": data_info.downsampling_factor,
+                                                                   "window_size": data_info.window_size})
             # Log scores to wandb
             mean_scores = np.mean(scores, axis=0)
             log_scores_to_wandb(mean_scores[0], mean_scores[1])

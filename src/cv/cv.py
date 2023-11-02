@@ -120,9 +120,9 @@ class CV:
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(train_test_main, y_validate, y_pred, validate_idx) for scorer in self.scoring]
+                score = [scorer(train_test_main, y_pred, validate_idx) for scorer in self.scoring]
             else:
-                score = self.scoring(train_test_main, y_validate, y_pred, validate_idx)
+                score = self.scoring(train_test_main, y_pred, validate_idx)
             scores.append(score)
 
         return np.array(scores)

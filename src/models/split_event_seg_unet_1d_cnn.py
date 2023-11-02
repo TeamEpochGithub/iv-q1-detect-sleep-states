@@ -193,9 +193,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         if wandb.run is not None:
             wandb.define_metric("epoch")
             wandb.define_metric(
-                f"Train {str(criterion)} of {self.name}", step_metric="epoch")
+                f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
             wandb.define_metric(
-                f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+                f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
         # Initialize place holder arrays for train and test loss and early stopping
         total_epochs_onset = 0
@@ -444,7 +444,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         if wandb.run is not None:
             wandb.define_metric("epoch")
             wandb.define_metric(
-                f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+                f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
         # Train full loop for onset
         logger.info("--- Training onset model on full dataset")

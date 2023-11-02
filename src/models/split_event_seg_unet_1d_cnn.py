@@ -80,7 +80,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-        config["loss"] = Loss.get_loss(config["loss"])
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
+        if config["mask_unlabeled"]:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
+        else:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
@@ -96,8 +101,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
-        config["mask_unlabeled"] = config.get(
-            "mask_unlabeled", default_config["mask_unlabeled"])
+
         self.config = config
 
     def load_optimizer(self) -> None:

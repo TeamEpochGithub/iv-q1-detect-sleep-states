@@ -8,6 +8,8 @@ from numpy import ndarray
 
 
 def masked_loss(criterion, outputs, y):
+    assert y.shape[1] > 1, "Masked loss only works with shape (batch_size, 2 | 3 depending on both awake and onset, seq_len)"
+
     labels = y[:, 1, :]
 
     unlabeled_mask = y[:, 0, :]
@@ -17,7 +19,7 @@ def masked_loss(criterion, outputs, y):
     # Set true to 0 and false to 1
     unlabeled_mask = unlabeled_mask ^ 1
 
-    loss_unreduced = criterion(outputs, labels, reduction="none")
+    loss_unreduced = criterion(outputs, labels)
 
     loss_masked = loss_unreduced * unlabeled_mask
 

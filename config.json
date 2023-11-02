@@ -2,6 +2,10 @@
     "name": "config",
     "log_to_wandb": true,
     "pred_with_cpu": true,
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12
+    },
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -28,8 +32,7 @@
         },
         {
             "kind": "split_windows",
-            "start_hour": 15,
-            "window_size": 17280
+            "start_hour": 15
         }
     ],
     "feature_engineering": [
@@ -40,7 +43,6 @@
     ],
     "pretraining": {
         "downsample": {
-            "factor": 12,
             "features": ["f_anglez", "f_enmo"],
             "methods": ["min", "max", "mean", "std", "median", "var", "range"],
             "standard": "mean"

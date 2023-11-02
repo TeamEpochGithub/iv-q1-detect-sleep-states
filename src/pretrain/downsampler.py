@@ -1,9 +1,12 @@
+from typing import Callable
+
 import numpy as np
 import pandas as pd
 
+from src import data_info
 from src.logger.logger import logger
 
-_METHODS: dict[str, callable] = {
+_METHODS: dict[str, Callable] = {
     "mean": np.mean,
     "median": np.median,
     "max": np.max,
@@ -20,15 +23,13 @@ class Downsampler:
     Downsampler class to downsample the data.
     """
 
-    def __init__(self, factor: int, features: list[str], methods: list[str], standard: str):
+    def __init__(self, features: list[str], methods: list[str], standard: str):
         """Initialize the downsampler.
 
-        :param factor: the factor to downsample by
         :param features: the features to downsample
         :param methods: the methods to downsample with
         :param standard: standard downsampling method
         """
-        self.factor = factor
         self.features = features
         self.methods = methods
         self.standard = standard
@@ -48,14 +49,14 @@ class Downsampler:
         logger.info("Shape of y before downsampling: " + str(y.shape))
 
         # Check if the data can be downsampled and see if it is divisible by the factor
-        if y.shape[0] % self.factor != 0:
-            logger.critical("Data cannot be downsampled by factor %s", str(self.factor))
-            raise DownsampleException("Data cannot be downsampled by factor " + str(self.factor))
+        if y.shape[0] % data_info.downsampling_factor != 0:
+            logger.critical(f"Data cannot be downsampled by factor {data_info.downsampling_factor}")
+            raise DownsampleException(f"Data cannot be downsampled by factor {data_info.downsampling_factor}")
 
         Y_new = []
 
         for i in range(y.shape[1]):
-            y_downsampled = np.median(y[:, i].reshape(-1, self.factor), axis=1)
+            y_downsampled = np.median(y[:, i].reshape(-1, data_info.downsampling_factor), axis=1)
             Y_new.append(y_downsampled)
 
         y = np.array(Y_new).T
@@ -85,12 +86,12 @@ class Downsampler:
         X = X.to_numpy()
 
         # Check if the data can be downsampled and see if it is divisible by the factor
-        if X.shape[0] % self.factor != 0:
-            logger.critical("Data cannot be downsampled by factor %s", str(self.factor))
-            raise DownsampleException("Data cannot be downsampled by factor " + str(self.factor))
+        if X.shape[0] % data_info.downsampling_factor != 0:
+            logger.critical(f"Data cannot be downsampled by factor {data_info.downsampling_factor}")
+            raise DownsampleException(f"Data cannot be downsampled by factor {data_info.downsampling_factor}")
         # Print the shape of the data
 
-        logger.info("Shape of X before downsampling: " + str(X.shape))
+        logger.info("Shape of X before down sampling: " + str(X.shape))
 
         new_X = []
         new_X_names = []
@@ -98,7 +99,7 @@ class Downsampler:
         for i in features_iloc:
             for method in self.methods:
                 try:
-                    f_downsampled = _METHODS[method](X[:, i].reshape(-1, self.factor), axis=1)
+                    f_downsampled = _METHODS[method](X[:, i].reshape(-1, data_info.downsampling_factor), axis=1)
                     new_X.append(f_downsampled)
                     new_X_names.append(X_names[i] + "_" + method)
                 except Exception as exc:
@@ -109,7 +110,7 @@ class Downsampler:
         for i in range(X.shape[1]):
             if i not in features_iloc:
                 try:
-                    f_downsampled = _METHODS[self.standard](X[:, i].reshape(-1, self.factor), axis=1)
+                    f_downsampled = _METHODS[self.standard](X[:, i].reshape(-1, data_info.downsampling_factor), axis=1)
                     new_X.append(f_downsampled)
                     new_X_names.append(X_names[i] + "_" + self.standard)
                 except Exception as exc:

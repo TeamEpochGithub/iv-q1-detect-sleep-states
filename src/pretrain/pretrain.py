@@ -74,8 +74,8 @@ class Pretrain:
             y_test = self.downsampler.downsampleY(y_test)
 
         # Store column names
-        data_info.X_train_columns = X_train.columns
-        data_info.y_train_columns = y_train.columns
+        data_info.X_columns = X_train.columns
+        data_info.y_columns = y_train.columns
         data_info.X_test_columns = X_test.columns
         data_info.y_test_columns = y_test.columns
 

@@ -104,7 +104,7 @@ class CV:
         # Split the data in folds with train and validation sets
         for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:, :, 0], groups)):
 
-            #Set substage to the current fold
+            # Set substage to the current fold
             data_info.substage = "Fold " + str(i)
             logger.info("Fold %d", i)
 
@@ -114,9 +114,9 @@ class CV:
             model.train(X_train, X_validate, y_train, y_validate)
             y_pred: np.array = model.pred(X_validate, pred_with_cpu=False)
 
-            #Reset optimizer and weights
-            model.reset_optimizer()
+            # Reset weights and optimizer for next fold
             model.reset_weights()
+            model.reset_optimizer()
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):

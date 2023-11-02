@@ -516,4 +516,3 @@ class EventSegmentationUnet1DCNN(Model):
         """
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
                                model_type=self.model_type, config=self.config)
-

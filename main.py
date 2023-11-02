@@ -78,9 +78,6 @@ def main(config: ConfigLoader) -> None:
     X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
         featured_data)
 
-    # Give data shape in terms of (features (in_channels), window_size))
-    data_shape = (X_train.shape[2], X_train.shape[1])
-
     logger.info("X Train data shape (size, window_size, features): " + str(
 
         X_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))

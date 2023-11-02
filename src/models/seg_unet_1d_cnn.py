@@ -141,8 +141,10 @@ class SegmentationUnet1DCNN(Model):
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Get only the one hot encoded labels, this includes a column for unlabeled
-        y_train = y_train[:, :, np.array([data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]])]
-        y_test = y_test[:, :, np.array([data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]])]
+        y_train = y_train[:, :,
+                  np.array([data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]])]
+        y_test = y_test[:, :,
+                 np.array([data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -289,7 +291,8 @@ class SegmentationUnet1DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         # Get only the one hot encoded features
-        y_train = y_train[:, :, np.array([data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]])]
+        y_train = y_train[:, :,
+                  np.array([data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-unlabeled"], data_info.y_columns["hot-NaN"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)

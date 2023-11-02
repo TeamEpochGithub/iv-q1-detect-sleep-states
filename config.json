@@ -2,10 +2,6 @@
     "name": "config",
     "log_to_wandb": true,
     "pred_with_cpu": true,
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12
-    },
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -14,6 +10,10 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12
+    },
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -24,15 +24,23 @@
             "as_feature": true
         },
         {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0,
-            "steepness": 1
+            "smoothing": 0
         },
         {
             "kind": "split_windows",
-            "start_hour": 15
+            "start_hour": 15,
+            "window_size": 17280
         }
     ],
     "feature_engineering": [
@@ -44,7 +52,7 @@
     "pretraining": {
         "downsample": {
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median", "var", "range"],
+            "methods": ["min", "max", "mean", "std", "median"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -54,20 +62,21 @@
         }
     },
     "models": {
-      "SplitEvent-1D-Unet-CNN": {
+      "Event-1D-Unet-CNN": {
         "type": "split-event-seg-unet-1d-cnn",
         "loss": "mse-torch",
         "optimizer": "adam-torch",
-        "epochs": 44,
+        "epochs": 5,
         "batch_size": 32,
-        "lr": 0.001,
-        "hidden_layers": 8,
+        "lr": 0.0005,
+        "hidden_layers": 16,
         "early_stopping": 7,
-        "threshold": 0
+        "threshold": 0,
+        "mask_unlabeled": true
       }
     },
     "ensemble": {
-        "models": ["SplitEvent-1D-Unet-CNN"],
+        "models": ["Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -80,7 +89,7 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":true,
+    "train_for_submission":false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

@@ -15,6 +15,7 @@ from ..loss.loss import Loss
 from .model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
+from .trainers.event_trainer import EventTrainer
 
 
 class SplitEventSegmentationUnet1DCNN(Model):
@@ -95,6 +96,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
         self.config = config
 
     def load_optimizer(self) -> None:
@@ -112,7 +115,18 @@ class SplitEventSegmentationUnet1DCNN(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2, "early_stopping": -1, "threshold": 0.5, "weight_decay": 0.0}
+        return {
+            "batch_size": 32,
+            "lr": 0.001,
+            "epochs": 10,
+            "hidden_layers": 32,
+            "kernel_size": 7,
+            "depth": 2,
+            "early_stopping": -1,
+            "threshold": 0.5,
+            "weight_decay": 0.0,
+            "mask_unlabeled": False
+        }
 
     def get_type(self) -> str:
         """
@@ -137,6 +151,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
         early_stopping = self.config["early_stopping"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -162,16 +177,28 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Create dataloaders for awake and onset
 
         # Dataset for onset
-        train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
-        test_dataset_onset = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 0, :])
+        if mask_unlabeled:
+            train_dataset_onset = torch.utils.data.TensorDataset(
+                X_train, y_train[:, (0, 1), :])
+            test_dataset_onset = torch.utils.data.TensorDataset(
+                X_test, y_test[:, (0, 1), :])
+        else:
+            train_dataset_onset = torch.utils.data.TensorDataset(
+                X_train, y_train[:, 0, :])
+            test_dataset_onset = torch.utils.data.TensorDataset(
+                X_test, y_test[:, 0, :])
 
         # Dataset for awake
-        train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
-        test_dataset_awake = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 1, :])
+        if mask_unlabeled:
+            train_dataset_awake = torch.utils.data.TensorDataset(
+                X_train, y_train[:, (0, 2), :])
+            test_dataset_awake = torch.utils.data.TensorDataset(
+                X_test, y_test[:, (0, 2), :])
+        else:
+            train_dataset_awake = torch.utils.data.TensorDataset(
+                X_train, y_train[:, 1, :])
+            test_dataset_awake = torch.utils.data.TensorDataset(
+                X_test, y_test[:, 1, :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -184,199 +211,19 @@ class SplitEventSegmentationUnet1DCNN(Model):
         test_dataloader_awake = torch.utils.data.DataLoader(
             test_dataset_awake, batch_size=batch_size)
 
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model_onset.to(self.device)
-        self.model_awake.to(self.device)
-
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(
-                f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
-
-        # Initialize place holder arrays for train and test loss and early stopping
-        total_epochs_onset = 0
-        avg_losses_onset = []
-        avg_val_losses_onset = []
-        counter_onset = 0
-        lowest_val_loss_onset = np.inf
-
-        total_epochs_awake = 0
-        avg_losses_awake = []
-        avg_val_losses_awake = []
-        counter_awake = 0
-        lowest_val_loss_awake = np.inf
-
-        best_model_onset = self.model_onset.state_dict()
-        best_model_awake = self.model_awake.state_dict()
-        stopped = False
-
         # Train the onset model
         logger.info("--- Training onset model")
-        for epoch in range(epochs):
-            self.model_onset.train()
-            avg_loss = 0
-            avg_val_loss = 0
-            total_batch_loss = 0
-            total_val_batch_loss = 0
-            # Train loop
-            with tqdm(train_dataloader_onset, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer_onset.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model_onset(x)
-                    loss = criterion(outputs.squeeze(), y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer_onset.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f" Train Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Calculate the validation loss and set the model to eval
-            self.model_onset.eval()
-
-            with torch.no_grad():
-                with tqdm(test_dataloader_onset, unit="batch") as vepoch:
-                    for i, (vx, vy) in enumerate(vepoch):
-                        vx = vx.to(self.device)
-                        vy = vy.to(self.device)
-                        voutputs = self.model_onset(vx)
-                        vloss = criterion(voutputs.squeeze(), vy)
-
-                        current_loss = vloss.item()
-                        total_val_batch_loss += current_loss
-                        avg_val_loss = total_val_batch_loss / (i + 1)
-
-                        vepoch.set_description(f" Test  Epoch {epoch}")
-                        vepoch.set_postfix(loss=avg_val_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
-            logger.debug(descr)
-
-            # Add average losses and epochs to list
-            avg_losses_onset.append(avg_loss)
-            avg_val_losses_onset.append(avg_val_loss)
-            total_epochs_onset += 1
-
-            # Log train test loss to wandb
-            if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_onset": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
-
-            # Early stopping
-            if early_stopping > 0:
-                # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss_onset:
-                    lowest_val_loss_onset = avg_val_loss
-                    best_model_onset = self.model_onset.state_dict()
-                    counter_onset = 0
-                else:
-                    counter_onset += 1
-                    if counter_onset >= early_stopping:
-                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs_onset) + " Stopping training and loading best model for " + str(total_epochs_onset - early_stopping) + ".")
-                        self.model_onset.load_state_dict(best_model_onset)
-                        stopped = True
-                        break
+        trainer_onset = EventTrainer(
+            epochs, criterion, mask_unlabeled, early_stopping)
+        avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(
+            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset")
 
         # Train the awake model
         logger.info("--- Training awake model")
-        for epoch in range(epochs):
-            self.model_awake.train()
-            avg_loss = 0
-            avg_val_loss = 0
-            total_batch_loss = 0
-            total_val_batch_loss = 0
-            # Train loop
-            with tqdm(train_dataloader_awake, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer_awake.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model_awake(x)
-                    loss = criterion(outputs.squeeze(), y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer_awake.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f" Train Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Calculate the validation loss and set the model to eval
-            self.model_awake.eval()
-
-            with torch.no_grad():
-                with tqdm(test_dataloader_awake, unit="batch") as vepoch:
-                    for i, (vx, vy) in enumerate(vepoch):
-                        vx = vx.to(self.device)
-                        vy = vy.to(self.device)
-                        voutputs = self.model_awake(vx)
-                        vloss = criterion(voutputs.squeeze(), vy)
-
-                        current_loss = vloss.item()
-                        total_val_batch_loss += current_loss
-                        avg_val_loss = total_val_batch_loss / (i + 1)
-
-                        vepoch.set_description(f" Test  Epoch {epoch}")
-                        vepoch.set_postfix(loss=avg_val_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
-            logger.debug(descr)
-
-            # Add average losses and epochs to list
-            avg_losses_awake.append(avg_loss)
-            avg_val_losses_awake.append(avg_val_loss)
-            total_epochs_awake += 1
-
-            # Log train test loss to wandb
-            if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_awake": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
-
-            # Early stopping
-            if early_stopping > 0:
-                # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss_awake:
-                    lowest_val_loss_awake = avg_val_loss
-                    best_model_awake = self.model_awake.state_dict()
-                    counter_awake = 0
-                else:
-                    counter_awake += 1
-                    if counter_awake >= early_stopping:
-                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs_awake) + " Stopping training and loading best model for " + str(total_epochs_awake - early_stopping) + ".")
-                        self.model_awake.load_state_dict(best_model_awake)
-                        stopped = True
-                        break
+        trainer_awake = EventTrainer(
+            epochs, criterion, mask_unlabeled, early_stopping)
+        avg_losses_awake, avg_val_losses_awake, total_epochs_awake = trainer_awake.fit(
+            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -386,10 +233,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 avg_losses_awake, avg_val_losses_awake, total_epochs_awake, "awake")
         logger.info("--- Training of model complete!")
 
-        # Set total_epochs in config if broken by the early stopping
-        if stopped:
-            total_epochs_awake -= early_stopping
-            total_epochs_onset -= early_stopping
         self.config["total_epochs_onset"] = total_epochs_onset
         self.config["total_epochs_awake"] = total_epochs_awake
 
@@ -405,6 +248,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         epochs_onset = self.config["total_epochs_onset"]
         epochs_awake = self.config["total_epochs_awake"]
         batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
 
         logger.info("--- Running for " + str(epochs_onset) + " epochs_onset.")
         logger.info("--- Running for " + str(epochs_awake) + " epochs_awake.")
@@ -415,12 +259,20 @@ class SplitEventSegmentationUnet1DCNN(Model):
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
 
         # Dataset for onset
-        train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+        if mask_unlabeled:
+            train_dataset_onset = torch.utils.data.TensorDataset(
+                X_train, y_train[:, (0, 1), :])
+        else:
+            train_dataset_onset = torch.utils.data.TensorDataset(
+                X_train, y_train[:, 0, :])
 
         # Dataset for awake
-        train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+        if mask_unlabeled:
+            train_dataset_awake = torch.utils.data.TensorDataset(
+                X_train, y_train[:, (0, 2), :])
+        else:
+            train_dataset_awake = torch.utils.data.TensorDataset(
+                X_train, y_train[:, 1, :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -435,100 +287,19 @@ class SplitEventSegmentationUnet1DCNN(Model):
         logger.info(
             f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model_onset.to(self.device)
-        self.model_awake.to(self.device)
+        # Train the onset model
+        logger.info("--- Training onset model full")
+        trainer_onset = EventTrainer(
+            epochs_onset, criterion, mask_unlabeled, -1)
+        trainer_onset.fit(train_dataloader_onset, None, self.model_onset,
+                          optimizer_onset, self.name + "_onset_full")
 
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
-
-        # Train full loop for onset
-        logger.info("--- Training onset model on full dataset")
-        for epoch in range(epochs_onset):
-            self.model_onset.train()
-            total_batch_loss = 0
-            avg_loss = 0
-            with tqdm(train_dataloader_onset, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer_onset.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model_onset(x)
-                    loss = criterion(outputs.squeeze(), y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer_onset.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs_onset}], Training Loss: {avg_loss:.4f}"
-            logger.debug(descr)
-
-            # pbar.set_description(descr)
-
-            # Log train full
-            if wandb.run is not None:
-                wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
-
-        # Train full loop for awake
-        logger.info("--- Training awake model on full dataset")
-        for epoch in range(epochs_awake):
-            self.model_awake.train()
-            total_batch_loss = 0
-            avg_loss = 0
-            with tqdm(train_dataloader_awake, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer_awake.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model_awake(x)
-                    loss = criterion(outputs.squeeze(), y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer_awake.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs_awake}], Training Loss: {avg_loss:.4f}"
-            logger.debug(descr)
-
-            # pbar.set_description(descr)
-
-            # Log train full
-            if wandb.run is not None:
-                wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
+        # Train the awake model
+        logger.info("--- Training awake model full")
+        trainer_awake = EventTrainer(
+            epochs_awake, criterion, mask_unlabeled, -1)
+        trainer_awake.fit(train_dataloader_awake, None, self.model_awake,
+                          optimizer_awake, self.name + "_awake_full")
 
         logger.info("--- Full train complete!")
 
@@ -606,7 +377,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:
-            predictions = np.repeat(predictions, data_info.downsampling_factor, axis=2)
+            predictions = np.repeat(
+                predictions, data_info.downsampling_factor, axis=2)
 
         all_predictions = []
         all_confidences = []

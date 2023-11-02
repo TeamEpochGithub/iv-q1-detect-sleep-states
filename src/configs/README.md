@@ -300,6 +300,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - depth=2
     - early_stopping=-1
     - weight_decay=0.0
+    - mask_unlabeled=False
 
 - classic-base-model
   - median_window=100

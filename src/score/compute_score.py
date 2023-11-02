@@ -123,12 +123,10 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
 
 
 def from_numpy_to_submission_format(train_df: pd.DataFrame, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
-    """Tries to turn the numpy y_true and y_pred into a solution and submission dataframes...
+    """Turn the numpy y_pred and the train events file into a solution and submission dataframes.
 
-    ...but it fails.
-
-    Yeah, this is the ugly function I was talking about.
-    The resulting submission and solution aren't even the same length...
+    While you probably want to compare y_pred with y_true, it seems that that is not possible in our case.
+    Therefore, have to load the solution file from disk very time again...
 
     Also, note that the input order is y_true, y_pred, whereas the output order is submission, solution.
     The order of y_true and y_pred is conventional, but the output is swapped in the output
@@ -136,10 +134,7 @@ def from_numpy_to_submission_format(train_df: pd.DataFrame, y_pred: np.ndarray, 
 
     :param train_df: the X_train from the main train test split (size, n_features)
     :param y_pred: the submission numpy array of shape (X_test_cv.shape[0], 2)
-    :param featured_data: the entire dataset after preprocessing and feature engineering, but before pretraining of shape (size, n_features)
-    :param train_validate_idx: the indices of the entire train and validation set of shape (featured_data[0], )
     :param validate_idx: the indices of the selected test set during the cross validation of shape (y_pred[0], )
-    :param downsampling_factor: the factor by which the test data has been downsampled during the pretraining
     :return: the submission [0] and solution [1] which can be used by compute_score_full & compute_score_clean
     """
 

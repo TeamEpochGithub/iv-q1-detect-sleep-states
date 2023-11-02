@@ -92,17 +92,17 @@ class CV:
         The model is trained on the train set and evaluated on the val set.
         The scores of all folds for each scorer is returned.
 
-        param model: the model to evaluate with methods `train` and `pred`
+        :param model: the model to evaluate with methods `train` and `pred`
         :param data: the data to fit of shape (X_train[0], window_size, n_features)
         :param labels: the labels of shape (X_train[0], window_size, features)
-        :param train_test_main: the main train dataframe
+        :param train_df: the full train dataframe
         :param groups: the group labels used while splitting the data of shape (size, ) or None for no grouping
         :return: the scores of all folds of shape (n_splits, n_scorers)
         """
         scores = []
 
         # Split the data in folds with train and validation sets
-        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:, :, 0], groups)):
+        for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels, groups)):
 
             # Set substage to the current fold
             data_info.substage = "Fold " + str(i)

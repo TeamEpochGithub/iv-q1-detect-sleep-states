@@ -55,11 +55,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Print model summary
         if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model_onset.cuda(), input_size=(
-                len(data_info.X_columns), data_info.window_size))
-            summary(self.model_awake.cuda(), input_size=(
-                len(data_info.X_columns), data_info.window_size))
+            if data_info.plot_summary:
+                from torchsummary import summary
+                summary(self.model_onset.cuda(), input_size=(
+                    len(data_info.X_columns), data_info.window_size))
+                summary(self.model_awake.cuda(), input_size=(
+                    len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -192,10 +193,10 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(
-                f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}_awake", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}_awake", step_metric="epoch")
 
         # Initialize place holder arrays for train and test loss and early stopping
         total_epochs_onset = 0
@@ -443,8 +444,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_awake", step_metric="epoch")
 
         # Train full loop for onset
         logger.info("--- Training onset model on full dataset")

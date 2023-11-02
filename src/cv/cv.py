@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import GroupKFold, StratifiedGroupKFold, GroupShuffleSplit, LeaveOneGroupOut, \
     LeavePGroupsOut, PredefinedSplit, KFold, LeaveOneOut, LeavePOut, RepeatedKFold, RepeatedStratifiedKFold, \
     ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit, TimeSeriesSplit
@@ -83,8 +84,7 @@ class CV:
 
         self.scoring = _get_scoring(scoring)
 
-    def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, groups: np.ndarray = None,
-                       scoring_params: dict = {}) -> np.ndarray:
+    def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, train_df: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
         """Evaluate the model using the CV method
 
         Run the cross-validation as specified in the config.
@@ -95,20 +95,18 @@ class CV:
         param model: the model to evaluate with methods `train` and `pred`
         :param data: the data to fit of shape (X_train[0], window_size, n_features)
         :param labels: the labels of shape (X_train[0], window_size, features)
+        :param train_test_main: the main train dataframe
         :param groups: the group labels used while splitting the data of shape (size, ) or None for no grouping
-        :param scoring_params: the parameters for the scoring function(s)
         :return: the scores of all folds of shape (n_splits, n_scorers)
         """
         scores = []
-
-        # Get all the train data
-        train_test_main = scoring_params["featured_data"].iloc[scoring_params["train_validate_idx"]]
 
         # Split the data in folds with train and validation sets
         for i, (train_idx, validate_idx) in enumerate(self.splitter.split(data, labels[:, :, 0], groups)):
 
             #Set substage to the current fold
             data_info.substage = "Fold " + str(i)
+            logger.info("Fold %d", i)
 
             model.reset_optimizer()
 
@@ -120,9 +118,9 @@ class CV:
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(train_test_main, y_pred, validate_idx) for scorer in self.scoring]
+                score = [scorer(train_df, y_pred, validate_idx) for scorer in self.scoring]
             else:
-                score = self.scoring(train_test_main, y_pred, validate_idx)
+                score = self.scoring(train_df, y_pred, validate_idx)
             scores.append(score)
 
         return np.array(scores)

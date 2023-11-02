@@ -108,23 +108,23 @@ def main(config: ConfigLoader) -> None:
     for i, model in enumerate(models):
         data_info.substage = f"training model {i}: {model}"
         # Get filename of model
-        model_filename = store_location + "/" + model + "-" + initial_hash + models[model].hash + ".pt"
+        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
-        if os.path.isfile(model_filename):
-            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+        if os.path.isfile(model_filename_opt):
             logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
-            models[model].load(model_filename, only_hyperparameters=False)
+            models[model].load(model_filename_opt, only_hyperparameters=False)
         else:
             logger.info("Training model " + str(i) + ": " + model)
             cv = config.get_cv()
             # TODO Implement hyperparameter optimization #101
             data_info.stage = "cv"
             # It now only saves the trained model from the last fold
-            scores: np.ndarray = cv.cross_validate(models[model], X_train, y_train, groups=groups,
-                                                   scoring_params={"featured_data": featured_data,
-                                                                   "train_validate_idx": train_idx,
-                                                                   "downsampling_factor": data_info.downsampling_factor,
-                                                                   "window_size": data_info.window_size})
+
+            train_df = featured_data.iloc[train_idx]
+
+            #Apply CV
+            scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+
             # Log scores to wandb
             mean_scores = np.mean(scores, axis=0)
             log_scores_to_wandb(mean_scores[0], mean_scores[1])
@@ -267,7 +267,7 @@ def main(config: ConfigLoader) -> None:
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):
-            data_info.substage = f"retraining model {i}: {model}"
+            data_info.substage = ""
 
             model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[

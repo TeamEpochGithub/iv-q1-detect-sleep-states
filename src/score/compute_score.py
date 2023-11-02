@@ -122,7 +122,7 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
     return score_clean
 
 
-def from_numpy_to_submission_format(data: pd.DataFrame, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
+def from_numpy_to_submission_format(train_df: pd.DataFrame, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
     """Tries to turn the numpy y_true and y_pred into a solution and submission dataframes...
 
     ...but it fails.
@@ -134,7 +134,7 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_pred: np.ndarray, vali
     The order of y_true and y_pred is conventional, but the output is swapped in the output
     since the compute_score functions expect it that way and I was told not to change those.
 
-    :param data: the X_train from the main train test split (size, n_features)
+    :param train_df: the X_train from the main train test split (size, n_features)
     :param y_pred: the submission numpy array of shape (X_test_cv.shape[0], 2)
     :param featured_data: the entire dataset after preprocessing and feature engineering, but before pretraining of shape (size, n_features)
     :param train_validate_idx: the indices of the entire train and validation set of shape (featured_data[0], )
@@ -151,7 +151,7 @@ def from_numpy_to_submission_format(data: pd.DataFrame, y_pred: np.ndarray, vali
     data_validate_idx = np.concatenate(total_arr)
 
     # Complete labelled data of current test split
-    test_cv = data.iloc[data_validate_idx]
+    test_cv = train_df.iloc[data_validate_idx]
     # Prepare submission (prediction of the model)
     window_info_test_cv = (test_cv[['series_id', 'window', 'step']]
                            .groupby(['series_id', 'window'])

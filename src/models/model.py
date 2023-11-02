@@ -138,7 +138,7 @@ class Model:
             string_fields={"title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
-            wandb.log({f"{data_info.substage, self.name}": custom_plot})
+            wandb.log({f"{data_info.substage, name}": custom_plot})
 
 
 class ModelException(Exception):

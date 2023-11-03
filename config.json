@@ -94,7 +94,7 @@
         "apply": false,
         "method": "example_hpo"
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

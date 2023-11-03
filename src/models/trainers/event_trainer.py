@@ -5,6 +5,7 @@ from tqdm import tqdm
 from typing import List
 import wandb
 from numpy import ndarray
+from ... import data_info
 
 
 def masked_loss(criterion, outputs, y):
@@ -79,9 +80,9 @@ class EventTrainer:
         if wandb.run is not None:
             wandb.define_metric("epoch")
             wandb.define_metric(
-                f"Train {str(self.criterion)} of {name}", step_metric="epoch")
+                f"{data_info.substage} - Train {str(self.criterion)} of {name}", step_metric="epoch")
             wandb.define_metric(
-                f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+                f"{data_info.substage} - Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         # Check if full training or not
         full_train = False

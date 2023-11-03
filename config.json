@@ -63,19 +63,26 @@
             "copy": true
         }
     },
+    "cv": {
+        "splitter": "group_k_fold",
+        "scoring": ["score_full", "score_clean"],
+        "splitter_params": {
+            "n_splits": 3
+        }
+    },
     "models": {
-      "Masked-Split-Event-1D-Unet-CNN": {
-        "type": "split-event-seg-unet-1d-cnn",
-        "loss": "shrinkage-loss",
-        "optimizer": "adam-torch",
-        "epochs": 44,
-        "batch_size": 32,
-        "lr": 0.001,
-        "hidden_layers": 8,
-        "early_stopping": 7,
-        "threshold": 0,
-        "mask_unlabeled": true
-      }
+        "Masked-Split-Event-1D-Unet-CNN": {
+            "type": "split-event-seg-unet-1d-cnn",
+            "loss": "shrinkage-loss",
+            "optimiser": "adam-torch",
+            "epochs": 44,
+            "batch_size": 32,
+            "lr": 0.001,
+            "hidden_layers": 8,
+            "early_stopping": 7,
+            "threshold": 0,
+            "mask_unlabeled": true
+        }
     },
     "ensemble": {
         "models": ["Masked-Split-Event-1D-Unet-CNN"],
@@ -87,42 +94,11 @@
         "apply": false,
         "method": "example_hpo"
     },
-    "cv": {
-        "splitter": "group_k_fold",
-        "scoring": ["score_full", "score_clean"],
-        "splitter_params": {
-            "n_splits": 3
-        }
-    },
-    "models": {
-        "Masked-Split-Event-1D-Unet-CNN": {
-          "type": "split-event-seg-unet-1d-cnn",
-          "loss": "shrinkage-loss",
-          "optimizer": "adam-torch",
-          "epochs": 44,
-          "batch_size": 32,
-          "lr": 0.001,
-          "hidden_layers": 8,
-          "early_stopping": 7,
-          "threshold": 0,
-          "mask_unlabeled": true
-        }
-      },
-    "ensemble": {
-        "models": ["Masked-Split-Event-1D-Unet-CNN"],
-        "weights": [1],
-        "comb_method": "addition"
-    },
-  "ensemble_loss": "mse-torch",
-  "hpo": {
-      "apply": false,
-      "method": "example_hpo"
-  },
-  "train_for_submission": true,
-  "scoring": true,
-  "visualize_preds": {
-      "n": 0,
-      "browser_plot": false,
-      "save": true
-  }
+    "train_for_submission": true,
+    "scoring": true,
+    "visualize_preds": {
+        "n": 0,
+        "browser_plot": false,
+        "save": true
+    }
 }

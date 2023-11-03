@@ -16,6 +16,7 @@ from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
+from .trainers.event_trainer import EventTrainer
 
 
 class EventSegmentationUnet1DCNN(Model):
@@ -72,7 +73,10 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-        config["loss"] = Loss.get_loss(config["loss"])
+        if config["mask_unlabeled"]:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
+        else:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
@@ -98,7 +102,7 @@ class EventSegmentationUnet1DCNN(Model):
         :return: default config
         """
         return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
-                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0}
+                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0, "mask_unlabeled": False}
 
     def get_type(self) -> str:
         """
@@ -121,6 +125,7 @@ class EventSegmentationUnet1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -155,107 +160,10 @@ class EventSegmentationUnet1DCNN(Model):
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
         test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
 
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model.to(self.device)
-
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
-
-        # Initialize place holder arrays for train and test loss and early stopping
-        total_epochs = 0
-        avg_losses = []
-        avg_val_losses = []
-        counter = 0
-        lowest_val_loss = np.inf
-        best_model = self.model.state_dict()
-        stopped = False
-
         # Train the model
-        for epoch in range(epochs):
-            self.model.train()
-            avg_loss = 0
-            avg_val_loss = 0
-            total_batch_loss = 0
-            total_val_batch_loss = 0
-            # Train loop
-            with tqdm(train_dataloader, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model(x)
-                    loss = criterion(outputs, y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f" Train Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Calculate the validation loss and set the model to eval
-            self.model.eval()
-
-            with torch.no_grad():
-                with tqdm(test_dataloader, unit="batch") as vepoch:
-                    for i, (vx, vy) in enumerate(vepoch):
-                        vx = vx.to(self.device)
-                        vy = vy.to(self.device)
-                        voutputs = self.model(vx)
-                        vloss = criterion(voutputs, vy)
-
-                        current_loss = vloss.item()
-                        total_val_batch_loss += current_loss
-                        avg_val_loss = total_val_batch_loss / (i + 1)
-
-                        vepoch.set_description(f" Test  Epoch {epoch}")
-                        vepoch.set_postfix(loss=avg_val_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
-            logger.debug(descr)
-
-            # Add average losses and epochs to list
-            avg_losses.append(avg_loss)
-            avg_val_losses.append(avg_val_loss)
-            total_epochs += 1
-
-            # Log train test loss to wandb
-            if wandb.run is not None:
-                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}": avg_loss,
-                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
-
-            # Early stopping
-            if early_stopping > 0:
-                # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss:
-                    lowest_val_loss = avg_val_loss
-                    best_model = self.model.state_dict()
-                    counter = 0
-                else:
-                    counter += 1
-                    if counter >= early_stopping:
-                        logger.info(
-                            "--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                                total_epochs) + " Stopping training and loading best model for " + str(
-                                total_epochs - early_stopping) + ".")
-                        self.model.load_state_dict(best_model)
-                        stopped = True
-                        break
+        logger.info("--- Training model " + self.name)
+        trainer = EventTrainer(epochs, criterion, mask_unlabeled, early_stopping)
+        avg_losses, avg_val_losses, total_epochs = trainer.fit(trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimiser=optimizer, device=self.device)
 
         # Log full train and test plot
         if wandb.run is not None:

@@ -11,9 +11,16 @@ from ... import data_info
 def masked_loss(criterion, outputs, y):
     assert y.shape[1] > 1, "Masked loss only works with shape (batch_size, 2 | 3 depending on both awake and onset, seq_len)"
 
-    labels = y[:, 1, :]
+    labels = y[:, 1:, :]
 
-    unlabeled_mask = y[:, 0, :]
+    # Get the mask from y (shape (batch_size, 2, seq_len)) if y.shape[1] == 3 else (batch_size, 1, seq_len)
+    if y.shape[1] == 3:
+        # Mask is should be two times y[:,0,:] so shape is (batch_size, 2, seq_len)
+        unlabeled_mask = torch.stack([y[:, 0, :], y[:, 0, :]], dim=1)
+    else:
+        # Mask is should be one time y[:,0,:] so shape is (batch_size, 1, seq_len)
+        unlabeled_mask = y[:, 0, :]
+
     # If the mask is 1, keep data, else set to 0
     # Do this if value is 3 (unlabeled), else set to 1
     unlabeled_mask = unlabeled_mask == 3
@@ -112,8 +119,8 @@ class EventTrainer:
                 avg_val_losses.append(val_loss.cpu())
 
             if wandb.run is not None and not full_train:
-                wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
-                           f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss,
+                           f"{data_info.substage} - Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
             # Save model if validation loss is lower than previous lowest validation loss
             if not full_train and val_loss < lowest_val_loss:

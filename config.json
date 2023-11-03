@@ -72,7 +72,7 @@
     },
     "models": {
         "213-Split-Event-1D-Unet-CNN": {
-            "type": "split-event-seg-unet-1d-cnn",
+            "type": "event-seg-unet-1d-cnn",
             "loss": "shrinkage-loss",
             "optimizer": "adam-torch",
             "epochs": 44,
@@ -94,7 +94,7 @@
         "apply": false,
         "method": "example_hpo"
     },
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

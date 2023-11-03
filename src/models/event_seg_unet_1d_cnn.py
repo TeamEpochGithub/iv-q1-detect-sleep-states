@@ -152,10 +152,16 @@ class EventSegmentationUnet1DCNN(Model):
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Get only the 2 event state features
-        y_train = y_train[:, :, np.array(
-            [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        y_test = y_test[:, :, np.array(
-            [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        if mask_unlabeled:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        else:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -184,11 +190,11 @@ class EventSegmentationUnet1DCNN(Model):
         trainer = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, device=self.device)
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name)
 
         # Log full train and test plot
         if wandb.run is not None:
-            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
+            self.log_train_test(avg_losses, avg_val_losses, len(avg_losses))
         logger.info("--- Training of model complete!")
 
         # Set total_epochs in config if broken by the early stopping
@@ -220,9 +226,12 @@ class EventSegmentationUnet1DCNN(Model):
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-        # Get only the event state features
-        y_train = y_train[:, :, np.array(
-            [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        if mask_unlabeled:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        else:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
 
         # Create a dataset from X and y
@@ -242,7 +251,7 @@ class EventSegmentationUnet1DCNN(Model):
         logger.info("--- Training model full " + self.name)
         trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
         trainer.fit(trainloader=train_dataloader, testloader=None,
-                    model=self.model, optimizer=optimizer, device=self.device)
+                    model=self.model, optimizer=optimizer, name=self.name)
 
         logger.info("--- Full train complete!")
 

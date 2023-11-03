@@ -49,7 +49,7 @@
         },
         {
             "kind": "rotation",
-            "window_sizes": [12, 24, 48, 96, 192, 384, 768, 1536]
+            "window_sizes": [12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000]
         }
     ],
     "pretraining": {
@@ -72,7 +72,7 @@
         "epochs": 44,
         "batch_size": 32,
         "lr": 0.001,
-        "hidden_layers": 16,
+        "hidden_layers": 8,
         "early_stopping": 7,
         "threshold": 0,
         "mask_unlabeled": true

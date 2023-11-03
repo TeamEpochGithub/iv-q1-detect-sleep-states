@@ -47,12 +47,16 @@
         {
             "kind": "time",
             "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 24, 48, 96, 192, 384, 768, 1536]
         }
     ],
     "pretraining": {
         "downsample": {
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -69,7 +73,7 @@
         "epochs": 44,
         "batch_size": 32,
         "lr": 0.001,
-        "hidden_layers": 32,
+        "hidden_layers": 16,
         "early_stopping": 7,
         "threshold": 0,
         "mask_unlabeled": true
@@ -89,7 +93,7 @@
         "apply": false,
         "method": "example_cv"
     },
-    "train_for_submission":true,
+    "train_for_submission":false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

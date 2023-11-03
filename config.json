@@ -75,8 +75,8 @@
       }
     },
     "models": {
-        "Sleep_Critical_model": {
-            "type": "sleep_critical_model",
+        "EventResGRU": {
+            "type": "event-res-gru",
             "loss": "shrinkage-loss",
             "epochs": 100,
             "batch_size": 32,
@@ -90,17 +90,16 @@
             "activation_delay": 15,
             "lr": 0.001,
             "lr_schedule": {
-              "t_initial": 20,
+              "t_initial": 100,
               "warmup_t": 5,
               "warmup_lr_init": 1e-6,
-              "lr_min": 2e-8,
-              "cycle_limit": 3
+              "lr_min": 2e-8
             },
             "threshold": 0
         }
     },
     "ensemble": {
-        "models": ["Sleep_Critical_model"],
+        "models": ["EventResGRU"],
         "weights": [1],
         "comb_method": "addition"
     },

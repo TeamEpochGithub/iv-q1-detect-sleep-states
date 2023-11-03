@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
+from torch import log_softmax, softmax
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -234,7 +235,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_onset(x)
-                    loss = criterion(outputs.squeeze(), y)
+                    loss = criterion(softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
 
                     # Backward and optimize
                     loss.backward()
@@ -258,7 +259,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model_onset(vx)
-                        vloss = criterion(voutputs.squeeze(), vy)
+                        vloss = criterion(softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -316,7 +317,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_awake(x)
-                    loss = criterion(outputs.squeeze(), y)
+                    loss = criterion(softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
 
                     # Backward and optimize
                     loss.backward()
@@ -340,7 +341,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model_awake(vx)
-                        vloss = criterion(voutputs.squeeze(), vy)
+                        vloss = criterion(softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss

@@ -14,6 +14,7 @@ from src.models.transformers.trainers.segmentation_trainer import SegmentationTr
 from src.util.state_to_event import find_events
 from .architecture.transformer_pool import TransformerPool
 from ..model import Model
+from ... import data_info
 from ...loss.loss import Loss
 from ...optimizer.optimizer import Optimizer
 
@@ -23,33 +24,31 @@ class SegmentationTransformer(Model):
     This is the model file for the patch pool event regression transformer model.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
         super().__init__(config, name)
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["seq_len"] = data_shape[1]
+        self.transformer_config["seq_len"] = data_info.window_size
         self.transformer_config["no_head"] = True
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
-        self.data_shape = data_shape
 
         # Initialize weights
         for p in self.model.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
-        self.config["seq_len"] = data_shape[1]
+        self.config["seq_len"] = data_info.window_size
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -160,8 +159,8 @@ class SegmentationTransformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # One hot segmentation (Preprocessing steps: 1. Add state labels, 2. One hot encode) -> Remove state labels
-        y_train = y_train[:, :, 1:]
-        y_test = y_test[:, :, 1:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
+        y_test = y_test[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -211,7 +210,7 @@ class SegmentationTransformer(Model):
             f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 1:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)
@@ -230,7 +229,7 @@ class SegmentationTransformer(Model):
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -239,7 +238,7 @@ class SegmentationTransformer(Model):
         """
 
         # Check which device to use
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -266,9 +265,8 @@ class SegmentationTransformer(Model):
 
         # Prediction shape is (windows, seq_len // downsample_factor, num_class)
         # Apply upsampling to the predictions
-        downsampling_factor = 17280 // self.data_shape[1]
-        if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=1)
+        if data_info.downsampling_factor > 1:
+            predictions = np.repeat(predictions, data_info.downsampling_factor, axis=1)
 
         # TODO Add custom confidences (now all set to 1)
         all_predictions = []
@@ -338,3 +336,10 @@ class SegmentationTransformer(Model):
         """
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+
+    def reset_weights(self) -> None:
+        """
+        Reset the weights to the initial state. Useful for retraining the model.
+        """
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))

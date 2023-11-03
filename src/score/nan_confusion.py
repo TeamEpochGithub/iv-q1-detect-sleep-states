@@ -37,8 +37,8 @@ def compute_nan_confusion_matrix(submission: pd.DataFrame, solution: pd.DataFram
     logger.info(f'False negatives: {false_negatives} ({false_negatives / len(window_info) *100:.2f}%)')
     if wandb.run is not None:
         wandb.log({
-            'make_predictions_TP': true_positives / len(window_info),
-            'make_predictions_TN': true_negatives / len(window_info),
-            'make_predictions_FP': false_positives / len(window_info),
-            'make_predictions_FN': false_negatives / len(window_info),
+            'TP': true_positives / len(window_info),
+            'TN': true_negatives / len(window_info),
+            'FP': false_positives / len(window_info),
+            'FN': false_negatives / len(window_info),
         })

@@ -17,7 +17,7 @@ The following steps are currently implemented:
         - `1`: awake.
         - `2`: `NaN`, not labeled.
 - `split_windows`
-    - Parameters: `start_hour: int = 15`, `window_size: int = 17280`
+    - Parameters: `start_hour: int = 15`
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
     - Removes all the data points where there is no labeled data
@@ -51,8 +51,7 @@ Example:
     },
     {
       "kind": "split_windows",
-      "start_hour": 15,
-      "window_size": 17280
+      "start_hour": 15
     },
     {
       "kind": "remove_unlabeled"

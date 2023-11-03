@@ -1,20 +1,21 @@
 import copy
+from typing import Any
+from typing import List
+
 import numpy as np
 import torch
 import wandb
+from numpy import ndarray, dtype
+from torch import nn
+from tqdm import tqdm
 
 from src.logger.logger import logger
 from src.models.transformers.trainers.base_trainer import Trainer
-
-from ...loss.loss import Loss
-from ..model import Model
-from ...optimizer.optimizer import Optimizer
-from typing import List
-from torch import nn
-from tqdm import tqdm
-from numpy import ndarray, dtype
-from typing import Any
 from .architecture.transformer_pool import TransformerPool
+from ..model import Model
+from ... import data_info
+from ...loss.loss import Loss
+from ...optimizer.optimizer import Optimizer
 
 
 class Transformer(Model):
@@ -22,26 +23,25 @@ class Transformer(Model):
     This is the model file for the patch pool event regression transformer model.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
         super().__init__(config, name)
         # Init model
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["seq_len"] = data_shape[1]
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["seq_len"] = data_info.window_size
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
-        self.config["seq_len"] = data_shape[1]
+        self.config["seq_len"] = data_info.window_size
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -152,8 +152,8 @@ class Transformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 1:]
-        y_test = y_test[:, :, 1:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
+        y_test = y_test[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -207,7 +207,7 @@ class Transformer(Model):
             f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, 1:]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)
@@ -229,7 +229,7 @@ class Transformer(Model):
         trainer.fit(
             train_dataloader, None, self.model, optimizer, self.name)
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -238,7 +238,7 @@ class Transformer(Model):
         """
 
         # Check which device to use
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -328,35 +328,41 @@ class Transformer(Model):
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
 
+    # Custom adam optimizer
+    # Create custom adam optimizer
+    # # save layer names
+    # layer_names = []
+    # for idx, (name, param) in enumerate(self.model.named_parameters()):
+    #     layer_names.append(name)
 
-# Custom adam optimizer
-# Create custom adam optimizer
-        # # save layer names
-        # layer_names = []
-        # for idx, (name, param) in enumerate(self.model.named_parameters()):
-        #     layer_names.append(name)
+    # # placeholder
+    # parameters = []
 
-        # # placeholder
-        # parameters = []
+    # # store params & learning rates
+    # for idx, name in enumerate(layer_names):
 
-        # # store params & learning rates
-        # for idx, name in enumerate(layer_names):
+    #     # Learning rate
+    #     lr = self.config['lr']
 
-        #     # Learning rate
-        #     lr = self.config['lr']
+    #     # parameter group name
+    #     cur_group_name = name.split('.')[0]
 
-        #     # parameter group name
-        #     cur_group_name = name.split('.')[0]
+    #     # update learning rate
+    #     if cur_group_name == 'tokenizer':
+    #         lr = self.config['lr_tokenizer']
 
-        #     # update learning rate
-        #     if cur_group_name == 'tokenizer':
-        #         lr = self.config['lr_tokenizer']
+    #     # display info
+    #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
 
-        #     # display info
-        #     logger.debug(f'{idx}: lr = {lr:.6f}, {name}')
+    #     # append layer parameters
+    #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
+    #                     'lr': lr}]
 
-        #     # append layer parameters
-        #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
-        #                     'lr': lr}]
+    # self.config['optimizer'] = type(self.config['optimizer'])(parameters)
 
-        # self.config['optimizer'] = type(self.config['optimizer'])(parameters)
+    def reset_weights(self) -> None:
+        """
+        Reset the weights to the initial state. Useful for retraining the model.
+        """
+        self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
+                                     **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))

@@ -9,23 +9,23 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
+from .model import Model, ModelException
+from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
-from .model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
 
 
 class SplitEventSegmentationUnet1DCNN(Model):
     """
-    This model is a event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
+    This model is an event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
-        :param data_shape: shape of the X data (channels, window_size)
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -40,27 +40,27 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "event-segmentation"
-        self.data_shape = data_shape
 
         # Load config
         self.load_config(config)
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         self.model_onset = SegUnet1D(
-            in_channels=data_shape[0], window_size=data_shape[1], out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
         self.model_awake = SegUnet1D(
-            in_channels=data_shape[0], window_size=data_shape[1], out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
 
         # Load optimizer
         self.load_optimizer()
 
         # Print model summary
         if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model_onset.cuda(), input_size=(
-                data_shape[0], data_shape[1]))
-            summary(self.model_awake.cuda(), input_size=(
-                data_shape[0], data_shape[1]))
+            if data_info.plot_summary:
+                from torchsummary import summary
+                summary(self.model_onset.cuda(), input_size=(
+                    len(data_info.X_columns), data_info.window_size))
+                summary(self.model_awake.cuda(), input_size=(
+                    len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -164,15 +164,15 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Dataset for onset
         train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+            X_train, y_train[:, data_info.y_columns["state-onset"], :])
         test_dataset_onset = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 0, :])
+            X_test, y_test[:, data_info.y_columns["state-onset"], :])
 
         # Dataset for awake
         train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+            X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
         test_dataset_awake = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 1, :])
+            X_test, y_test[:, data_info.y_columns["state-wakeup"], :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -193,10 +193,10 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(
-                f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}_awake", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}_awake", step_metric="epoch")
 
         # Initialize place holder arrays for train and test loss and early stopping
         total_epochs_onset = 0
@@ -278,8 +278,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_onset": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}_onset": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -360,8 +360,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_awake": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}_awake": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -417,11 +417,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Dataset for onset
         train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+            X_train, y_train[:, data_info.y_columns["state-onset"], :])
 
-        # Dataset for awake
+        # Dataset for wakeup
         train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+            X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -444,8 +444,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_awake", step_metric="epoch")
 
         # Train full loop for onset
         logger.info("--- Training onset model on full dataset")
@@ -487,7 +487,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
+                    {f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
 
         # Train full loop for awake
         logger.info("--- Training awake model on full dataset")
@@ -529,22 +529,21 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
+                    {f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
 
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -572,7 +571,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model_onset(batch_data)
 
-                if with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
@@ -591,7 +590,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model_awake(batch_data)
 
-                if with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
@@ -606,9 +605,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
             (predictions_onset, predictions_awake), axis=1)
 
         # Apply upsampling to the predictions
-        downsampling_factor = 17280 // self.data_shape[1]
-        if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=2)
+        if data_info.downsampling_factor > 1:
+            predictions = np.repeat(predictions, data_info.downsampling_factor, axis=2)
 
         all_predictions = []
         all_confidences = []
@@ -619,8 +617,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
-            offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor %
-                      2 == 0 else downsampling_factor // 2) if downsampling_factor > 1 else 0
+            if data_info.downsampling_factor <= 1:
+                offset = 0
+            elif data_info.downsampling_factor % 2 == 0:
+                offset = (data_info.downsampling_factor / 2.0) - 0.5
+            else:
+                offset = data_info.downsampling_factor // 2
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)
@@ -669,9 +671,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model_onset = SegUnet1D(
-                in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=1, model_type=self.model_type, config=self.config)
+                in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
             self.model_awake = SegUnet1D(
-                in_channels=self.data_shape[0], window_size=self.data_shape[1], out_channels=1, model_type=self.model_type, config=self.config)
+                in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
             self.reset_optimizer()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
@@ -688,5 +690,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(
             self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
-        self.config['optimizer_awake'] = type(self.config['optimizer_awake'])(
+        self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
             self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+
+    def reset_weights(self) -> None:
+        """
+            Reset the weights of the model. Useful for retraining the model.
+        """
+        self.model_onset = SegUnet1D(
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+        self.model_awake = SegUnet1D(
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)

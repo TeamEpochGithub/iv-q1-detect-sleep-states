@@ -22,14 +22,14 @@ class Ensemble:
 
         self.config = config
 
-    def pred(self, data: np.ndarray, pred_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
         and converts the window-relative steps to absolute steps since the start of the series
 
         :param data: 3D tensor with shape (window, n_timesteps, n_features)
-        :param pred_cpu: whether to predict on cpu
+        :param pred_with_cpu: whether to use the cpu for prediction
         :return: 3D array with shape (window, 2), with onset and wakeup steps (nan if no detection)
         """
         logger.info("Predicting with ensemble")
@@ -41,7 +41,7 @@ class Ensemble:
         for model in self.models:
             # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
             if hasattr(model, 'device'):
-                model_pred = model.pred(data, pred_cpu)
+                model_pred = model.pred(data, pred_with_cpu=pred_with_cpu)
             else:
                 model_pred = model.pred(data)
 

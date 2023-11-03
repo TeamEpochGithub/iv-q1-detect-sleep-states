@@ -1,21 +1,20 @@
 import copy
-from typing import Any, Tuple, List
 
 import numpy as np
 import torch
 import wandb
-from numpy import ndarray, dtype
-from tqdm import tqdm
-from torch import nn
-from src.util.state_to_event import pred_to_event_state
-
 from timm.scheduler import CosineLRScheduler
+from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
+from tqdm import tqdm
+
+from src.util.state_to_event import pred_to_event_state
+from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
+from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
-from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
-from torch.utils.data import TensorDataset, DataLoader
 
 
 class EventResGRU(Model):
@@ -24,7 +23,7 @@ class EventResGRU(Model):
     The model file should contain a class that inherits from the Model class.
     """
 
-    def __init__(self, config: dict, input_size: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -42,13 +41,13 @@ class EventResGRU(Model):
             logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "segmentation"
-        self.input_size = input_size
+        self.num_features = len(data_info.X_columns)
 
         # Create model
-        self.model = MultiResidualBiGRU(self.input_size[0], **config['network_params'])
+        self.model = MultiResidualBiGRU(self.num_features, **config['network_params'])
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(input_size[1], input_size[0]))
+            summary(self.model.cuda(), input_size=(data_info.window_size, self.num_features))
 
         self.load_config(config)
 
@@ -426,7 +425,7 @@ class EventResGRU(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = MultiResidualBiGRU(self.input_size[0], **self.config['network_params'])
+            self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

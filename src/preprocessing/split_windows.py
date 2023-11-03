@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from .. import data_info
 from ..preprocessing.pp import PP
 
 
@@ -13,7 +14,7 @@ class SplitWindows(PP):
     A new column named window will be added that contains the window number for each row.
     """
 
-    def __init__(self, start_hour: float = 15, window_size: int = 17280, **kwargs: dict) -> None:
+    def __init__(self, start_hour: float = 15, **kwargs: dict) -> None:
         """Initialize the SplitWindows class.
 
         :param start_hour: the hour of the day to start the window at. Default is 15:00.
@@ -22,12 +23,11 @@ class SplitWindows(PP):
         super().__init__(**kwargs | {"kind": "split_windows"})
 
         self.start_hour = start_hour
-        self.window_size = window_size
         self.steps_before = (start_hour * 60 * 12)
 
     def __repr__(self) -> str:
         """Return a string representation of a SplitWindows object"""
-        return f"{self.__class__.__name__}(start_hour={self.start_hour}, window_size={self.window_size})"
+        return f"{self.__class__.__name__}(start_hour={self.start_hour})"
 
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by splitting it into 24h windows.
@@ -51,7 +51,7 @@ class SplitWindows(PP):
 
     def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:
         series['window'] = series.reset_index(
-            0, drop=True).index // self.window_size
+            0, drop=True).index // data_info.window_size
         series.astype({'window': np.uint8})
         return series
 
@@ -90,7 +90,7 @@ class SplitWindows(PP):
         # If index is negative, time is before 15:00:00 and after 00:00:00 so add initial seconds and 9 hours
         amount_of_padding_start = 0
         if initial_steps < self.steps_before:
-            amount_of_padding_start += (self.window_size -
+            amount_of_padding_start += (data_info.window_size -
                                         self.steps_before) + initial_steps
         else:
             amount_of_padding_start += initial_steps - self.steps_before
@@ -118,7 +118,7 @@ class SplitWindows(PP):
         last_time = group['timestamp'].iloc[-1]
 
         # Pad the end with enmo = 0 and anglez = 0 and steps being relative to the last step until timestamp is 15:00:00
-        amount_of_padding_end = self.window_size - ((len(start_pad_df) + len(group)) % self.window_size)
+        amount_of_padding_end = data_info.window_size - ((len(start_pad_df) + len(group)) % data_info.window_size)
 
         last_step = group['step'].iloc[-1]
 

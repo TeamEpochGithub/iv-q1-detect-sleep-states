@@ -48,14 +48,15 @@ class Pretrain:
 
         return Pretrain(scaler, downsampler, test_size)
 
-    def pretrain_split(self, df: pd.DataFrame) -> (np.array, np.array, np.array, np.array, np.array, np.array):
+    def pretrain_split(self, df: pd.DataFrame) -> (
+            np.array, np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
         splits the data into features and labels, and converts the data to a numpy array of shape (window, window_size, n_features).
 
         :param df: the dataframe to pretrain on
-        :return: the train data, test data, train labels, test labels, train indices and test indices
+        :return: the train data, test data, train labels, test labels, train indices, test indices, and groups
         """
 
         train_data, test_data, train_idx, test_idx = self.train_test_split(df, test_size=self.test_size)
@@ -88,9 +89,13 @@ class Pretrain:
         y_train = self.to_windows(y_train)
         y_test = self.to_windows(y_test)
 
-        return X_train, X_test, y_train, y_test, train_idx, test_idx
+        groups = y_train[:, 0, -1]
+        y_train = y_train[:, :, :-1]
+        y_test = y_test[:, :, :-1]
 
-    def pretrain_final(self, df: pd.DataFrame) -> (np.array, np.array):
+        return X_train, X_test, y_train, y_test, train_idx, test_idx, groups
+
+    def pretrain_final(self, df: pd.DataFrame) -> (np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
@@ -121,7 +126,10 @@ class Pretrain:
         X_train = self.to_windows(X_train)
         y_train = self.to_windows(y_train)
 
-        return X_train, y_train
+        groups = y_train[:, 0, -1]
+        y_train = y_train[:, :, :-1]
+
+        return X_train, y_train, groups
 
     def preprocess(self, x_data: pd.DataFrame) -> np.array:
         """Prepare the data for submission
@@ -174,7 +182,7 @@ class Pretrain:
         return df[feature_cols]
 
     @staticmethod
-    def split_on_labels(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+    def split_on_labels(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         """Split the data from the labels
 
         :param df: the dataframe to split
@@ -185,7 +193,8 @@ class Pretrain:
         feature_cols = [col for col in df.columns if col.startswith('f_')]
 
         keep_columns: list[str] = ["awake", "onset", "wakeup", "onset-NaN", "wakeup-NaN",
-                                   "hot-asleep", "hot-awake", "hot-NaN", "hot-unlabeled", "state-onset", "state-wakeup"]
+                                   "hot-asleep", "hot-awake", "hot-NaN", "hot-unlabeled", "state-onset", "state-wakeup",
+                                   "series_id"]
         keep_y_train_columns: list = [column for column in keep_columns if column in df.columns]
 
         return df[feature_cols], df[keep_y_train_columns]

@@ -10,14 +10,14 @@ The config file is split up in different sections. Each section has its own conf
 5. [Pretraining](#pretraining)
 6. [Models](#models)
 7. [Model store location](#model-store-location)
-7. [Ensemble](#ensemble)
-8. [Loss](#loss)
-9. [Hyperparameter optimization](#hyperparameter-optimization)
-10. [Cross validation](#cross-validation)
-11. [Scoring](#scoring)
-12. [Train for submission](#train-for-submission)
-13. [Visualize preds](#visualize-preds)
-14. [Similarity filtering](#similarity-filtering)
+8. [Cross validation](#cross-validation)
+9. [Ensemble](#ensemble)
+10. [Loss](#loss)
+11. [Hyperparameter optimization](#hyperparameter-optimization)
+12. [Scoring](#scoring)
+13. [Train for submission](#train-for-submission)
+14. [Visualize preds](#visualize-preds)
+15. [Similarity filtering](#similarity-filtering)
 
 ## General
 - `name`: `str`
@@ -61,7 +61,7 @@ Adds this as a column that is 0 for perfect similarity.
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`
     - Parameters: `id_encoding_path: str`, `events_path: str`, `use_similarity_nan: bool`, `fill_limit: int`
-    - Labels the data in a way that each timestep gets a label.
+    - Labels the data in a way that each timestep gets a label. (Column name: awake)
         - `0`: asleep.
         - `1`: awake.
         - `2`: `NaN`, not labeled.
@@ -274,12 +274,14 @@ These models should either be a statistical, regression or state_prediction mode
 This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters that are standard.
 
 
+##### Basic models
 - example-fc-model
     - epochs (required)
     - loss (required)
     - optimizer (required)
     - lr
     - batch_size
+
 
 - seg-simple-1d-cnn
     - loss (required)
@@ -289,6 +291,12 @@ This contains all the models and their hyperparameters that are implemented. The
     - batch_size
 
 
+- classic-base-model
+  - median_window=100
+  - threshold=.1
+  - use_nan_similarity=True
+
+##### State segmentation models
 - seg-unet-1d-cnn (one-hot state segmentation model that predicts awake, asleep, NaN for each timestep)
     - loss (required, ce-torch recommended)
     - optimizer (required)
@@ -302,11 +310,22 @@ This contains all the models and their hyperparameters that are implemented. The
     - weight_decay=0.0
     - mask_unlabeled=False
 
-- classic-base-model
-  - median_window=100
-  - threshold=.1
-  - use_nan_similarity=True
+##### Event segmentation models
+- event-seg-unet-1d-cnn / split-event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
+    - loss (required, shrinkage-loss recommended)
+    - optimizer (required)
+    - epochs=10
+    - batch_size=32
+    - lr=0.001
+    - hidden_layers=32
+    - kernel_size=7 (only works on 7 for now)
+    - depth=2
+    - early_stopping=-1
+    - weight_decay=0.0
+    - threshold=0 (threshold for the event prediction, if the prediction is below this, it returns a nan)
+    - mask_unlabeled=false
 
+#### Transformers
 - transformer / segmentation-transformer
     - epochs (required)
     - loss (required)
@@ -375,6 +394,19 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "lr": 0.001,
     "hidden_layers": 8
 }
+
+"Event-1D-Unet-CNN": {
+      "type": "event-seg-unet-1d-cnn" / "SplitEvent-1D-Unet-CNN",
+      "loss": "mse-torch",
+      "optimizer": "adam-torch",
+      "epochs": 10,
+      "batch_size": 32,
+      "lr": 0.001,
+      "hidden_layers": 8,
+      "early_stopping": 7,
+      "threshold": 0,
+      "mask_unlabeled": false
+}
 ```
 
 ## Model store location
@@ -383,6 +415,75 @@ Specify location where models should be stored, furthermore, the config should b
 
 ```JSON
 "model_store_loc": "./tm",
+```
+
+## Cross validation
+### Splitters
+A splitter splits the data into train and test sets. 
+The splitters for groups are likely most relevant for our data.
+
+List of splitter options with parameters (see [sklearn.model_selection](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for more details): 
+- `group_k_fold`
+  - `n_splits: int`, default = 5
+- `group_shuffle_split`
+  - `n_splits: int`, default = 5
+  - `test_size: float`, default = 0.2
+  - `train_size: float | int`, default = None
+  - `random_state: int`, default = None
+- `k_fold`
+  - `n_splits: int`, default = 5
+  - `shuffle: bool`, default = False
+  - `random_state: int`, default = None
+- `leave_one_group_out`
+- `leave_p_group_out`
+  - `n_groups: int`, default = 2
+- `leave_one_out`
+- `leave_p_out`
+  - `p: int`
+- `predefined_split`
+  - `test_fold: array-like` of shape `(n_samples,)`
+- `shuffle_split`
+  - `n_splits: int`, default = 5
+  - `test_size: float`, default = 0.2
+  - `train_size: float | int`, default = None
+  - `random_state: int`, default = None
+- `stratified_k_fold`
+  - `n_splits: int`, default = 5
+  - `shuffle: bool`, default = False
+  - `random_state: int`, default = None
+- `stratified_shuffle_split`
+  - `n_splits: int`, default = 10
+  - `test_size: float | int`, default = None
+  - `train_size: float | int`, default = None
+  - `random_state: int`, default = None
+- `stratified_group_k_fold`
+  - `n_splits: int`, default = 5
+  - `shuffle: bool`, default = False
+  - `random_state: int`, default = None
+- `time_series_split`
+  - `n_splits: int`, default = 5
+  - `max_train_size: int`, default = None
+  - `test_size: int`, default = None
+  - `gap: int`, default = 0
+
+### Scorers
+List of scorer options:
+- `score_full`: computes the score for the full dataset
+- `score_clean` computes the score for the clean dataset
+
+Currently, the scorers have only been tested with the `seg-unet-1d-cnn`.
+
+### Usage
+Example:
+```JSON
+"cv": {
+    "splitter": "group_shuffle_split",
+    "scoring": ["score_full", "score_clean"],
+    "splitter_params": {
+        "n_splits": 1,
+        "test_size": 0.2
+    }
+}
 ```
 
 ## Ensemble

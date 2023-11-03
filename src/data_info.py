@@ -5,6 +5,8 @@ window_size: int = 17280  # The size of the window in steps, potentially after d
 downsampling_factor: int = 1  # The factor to downsample by
 stage: str = "load_config"  # The stage of the pipeline
 substage: str = "set_globals"  # The substage of the pipeline
+plot_summary: bool = False  # Whether to plot the summary of the model
+
 
 # Info about the data
 X_columns: dict[str, int] = {}  # The names of the features

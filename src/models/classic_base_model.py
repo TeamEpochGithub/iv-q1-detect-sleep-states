@@ -82,5 +82,5 @@ class ClassicBaseModel(Model):
     def reset_weights(self) -> None:
         pass
 
-    def reset_optimizer(self) -> None:
+    def reset_optimizser(self) -> None:
         pass

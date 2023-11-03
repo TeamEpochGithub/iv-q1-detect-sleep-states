@@ -24,8 +24,8 @@ if __name__ == '__main__':
     # Instantiate the model
     model = TimeSeriesSegmentationModel().double().to(device)
 
-    # Define your optimizer
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # Define your optimiser
+    optimiser = optim.Adam(model.parameters(), lr=0.001)
 
     # Load data
     dataloader = get_data_loader()
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         event_losses = []
 
         for batch in pbar:  # Replace dataloader with your data loading logic
-            optimizer.zero_grad()
+            optimiser.zero_grad()
             data = batch['data'].to(device)
             segmentation_target = batch['segmentation_label'].unsqueeze(1).to(device)
             event_classification_target = batch['event_classification_label'].to(device)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             total_loss = segmentation_loss + event_loss_weight*event_classification_loss
 
             total_loss.backward()
-            optimizer.step()
+            optimiser.step()
 
             seg_losses.append(segmentation_loss.item())
             event_losses.append(event_classification_loss.item())

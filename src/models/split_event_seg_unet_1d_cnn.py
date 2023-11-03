@@ -13,7 +13,7 @@ from .model import Model, ModelException
 from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
-from ..optimizer.optimizer import Optimizer
+from ..optimiser.optimiser import Optimiser
 from ..util.state_to_event import pred_to_event_state
 from .trainers.event_trainer import EventTrainer
 
@@ -51,8 +51,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.model_awake = SegUnet1D(
             in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
 
-        # Load optimizer
-        self.load_optimizer()
+        # Load optimiser
+        self.load_optimiser()
 
         # Print model summary
         if wandb.run is not None:
@@ -71,7 +71,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         config = copy.deepcopy(config)
 
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "optimizer"]
+        required = ["loss", "optimiser"]
         for req in required:
             if req not in config:
                 logger.critical(
@@ -105,15 +105,15 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         self.config = config
 
-    def load_optimizer(self) -> None:
+    def load_optimiser(self) -> None:
         """
-        Load optimizer function for the model.
+        Load optimiser function for the model.
         """
-        # Load optimizer
-        self.config["optimizer_onset"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_onset)
-        self.config["optimizer_awake"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_awake)
+        # Load optimiser
+        self.config["optimiser_onset"] = Optimiser.get_optimiser(
+            self.config["optimiser"], self.config["lr"], self.config["weight_decay"], self.model_onset)
+        self.config["optimiser_awake"] = Optimiser.get_optimiser(
+            self.config["optimiser"], self.config["lr"], self.config["weight_decay"], self.model_awake)
 
     def get_default_config(self) -> dict:
         """
@@ -148,11 +148,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
         :param y_train: the training labels
         :param y_test: the test labels
         """
-        # Get hyperparameters from config (epochs, lr, optimizer)
+        # Get hyperparameters from config (epochs, lr, optimiser)
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimizer_onset = self.config["optimizer_onset"]
-        optimizer_awake = self.config["optimizer_awake"]
+        optimiser_onset = self.config["optimiser_onset"]
+        optimiser_awake = self.config["optimiser_awake"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
         early_stopping = self.config["early_stopping"]
@@ -221,14 +221,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(
-            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset")
+            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimiser_onset, self.name + "_onset")
 
         # Train the awake model
         logger.info("--- Training awake model")
         trainer_awake = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_awake, avg_val_losses_awake, total_epochs_awake = trainer_awake.fit(
-            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
+            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimiser_awake, self.name + "_awake")
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -248,8 +248,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         :param y_train: the training labels
         """
         criterion = self.config["loss"]
-        optimizer_onset = self.config["optimizer_onset"]
-        optimizer_awake = self.config["optimizer_awake"]
+        optimiser_onset = self.config["optimiser_onset"]
+        optimiser_awake = self.config["optimiser_awake"]
         epochs_onset = self.config["total_epochs_onset"]
         epochs_awake = self.config["total_epochs_awake"]
         batch_size = self.config["batch_size"]
@@ -297,14 +297,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs_onset, criterion, mask_unlabeled, -1)
         trainer_onset.fit(train_dataloader_onset, None, self.model_onset,
-                          optimizer_onset, self.name + "_onset_full")
+                          optimiser_onset, self.name + "_onset_full")
 
         # Train the awake model
         logger.info("--- Training awake model full")
         trainer_awake = EventTrainer(
             epochs_awake, criterion, mask_unlabeled, -1)
         trainer_awake.fit(train_dataloader_awake, None, self.model_awake,
-                          optimizer_awake, self.name + "_awake_full")
+                          optimiser_awake, self.name + "_awake_full")
 
         logger.info("--- Full train complete!")
 
@@ -449,24 +449,24 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
             self.model_awake = SegUnet1D(
                 in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-            self.reset_optimizer()
+            self.reset_optimiser()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model_onset.load_state_dict(checkpoint['onset_model_state_dict'])
         self.model_awake.load_state_dict(checkpoint['awake_model_state_dict'])
-        self.reset_optimizer()
+        self.reset_optimiser()
         logger.info("Model fully loaded from: " + path)
 
-    def reset_optimizer(self) -> None:
+    def reset_optimiser(self) -> None:
         """
-        Reset the optimizer to the initial state. Useful for retraining the model.
+        Reset the optimiser to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(
-            self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
-        self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
-            self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+        self.config['optimiser_onset'] = type(self.config['optimiser_onset'])(
+            self.model_onset.parameters(), lr=self.config['optimiser_onset'].param_groups[0]['lr'])
+        self.config[('optimiser_awake')] = type(self.config['optimiser_awake'])(
+            self.model_awake.parameters(), lr=self.config['optimiser_awake'].param_groups[0]['lr'])
 
     def reset_weights(self) -> None:
         """

@@ -15,7 +15,7 @@ from .architecture.transformer_pool import TransformerPool
 from ..model import Model
 from ... import data_info
 from ...loss.loss import Loss
-from ...optimizer.optimizer import Optimizer
+from ...optimiser.optimiser import Optimiser
 
 
 class Transformer(Model):
@@ -52,12 +52,12 @@ class Transformer(Model):
             logger.info(
                 f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-    def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
+    def load_config(self, loss: str, epochs: int, optimiser: str, **kwargs: dict) -> None:
         """
         Load config function for the model.
         :param loss: loss function
         :param epochs: number of epochs
-        :param optimizer: optimizer
+        :param optimiser: optimiser
         :param kwargs: other parameters
         """
 
@@ -74,10 +74,10 @@ class Transformer(Model):
         config["patch_size"] = config.get(
             "patch_size", default_config["patch_size"])
 
-        # Add loss, epochs and optimizer to config
+        # Add loss, epochs and optimiser to config
         config["loss"] = Loss.get_loss(loss)
-        config["optimizer"] = Optimizer.get_optimizer(
-            optimizer, config["lr"], model=self.model)
+        config["optimiser"] = Optimiser.get_optimiser(
+            optimiser, config["lr"], model=self.model)
         config["epochs"] = epochs
 
         self.config = config
@@ -131,13 +131,13 @@ class Transformer(Model):
         :param y_test: the test labels
         """
 
-        # Get hyperparameters from config (epochs, lr, optimizer)
+        # Get hyperparameters from config (epochs, lr, optimiser)
         logger.info(f"Training model: {type(self).__name__}")
         logger.info(f"Hyperparameters: {self.config}")
 
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimizer = self.config["optimizer"]
+        optimiser = self.config["optimiser"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
@@ -179,7 +179,7 @@ class Transformer(Model):
         trainer = Trainer(epochs=epochs,
                           criterion=criterion)
         avg_train_loss, avg_val_loss, self.config["trained_epochs"] = trainer.fit(
-            train_dataloader, test_dataloader, self.model, optimizer, self.name)
+            train_dataloader, test_dataloader, self.model, optimiser, self.name)
         if wandb.run is not None:
             self.log_train_test(avg_train_loss,
                                 avg_val_loss, len(avg_train_loss))
@@ -190,13 +190,13 @@ class Transformer(Model):
         :param X_train: the training data
         :param y_train: the training labels
         """
-        # Get hyperparameters from config (epochs, lr, optimizer)
+        # Get hyperparameters from config (epochs, lr, optimiser)
         logger.info(f"Training model: {type(self).__name__}")
         logger.info(f"Hyperparameters: {self.config}")
 
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimizer = self.config["optimizer"]
+        optimiser = self.config["optimiser"]
         epochs = self.config["trained_epochs"]
         batch_size = self.config["batch_size"]
 
@@ -227,7 +227,7 @@ class Transformer(Model):
         trainer = Trainer(epochs=epochs,
                           criterion=criterion)
         trainer.fit(
-            train_dataloader, None, self.model, optimizer, self.name)
+            train_dataloader, None, self.model, optimiser, self.name)
 
     def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
@@ -319,17 +319,17 @@ class Transformer(Model):
         if not only_hyperparameters:
             self.model.load_state_dict(checkpoint['model_state_dict'])
         else:
-            self.reset_optimizer()
+            self.reset_optimiser()
 
-    def reset_optimizer(self) -> None:
+    def reset_optimiser(self) -> None:
         """
-        Reset the optimizer to the initial state. Useful for retraining the model.
+        Reset the optimiser to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(
-            self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+        self.config['optimiser'] = type(self.config['optimiser'])(
+            self.model.parameters(), lr=self.config['optimiser'].param_groups[0]['lr'])
 
-    # Custom adam optimizer
-    # Create custom adam optimizer
+    # Custom adam optimiser
+    # Create custom adam optimiser
     # # save layer names
     # layer_names = []
     # for idx, (name, param) in enumerate(self.model.named_parameters()):
@@ -358,7 +358,7 @@ class Transformer(Model):
     #     parameters += [{'params': [p for n, p in self.model.named_parameters() if n == name and p.requires_grad],
     #                     'lr': lr}]
 
-    # self.config['optimizer'] = type(self.config['optimizer'])(parameters)
+    # self.config['optimiser'] = type(self.config['optimiser'])(parameters)
 
     def reset_weights(self) -> None:
         """

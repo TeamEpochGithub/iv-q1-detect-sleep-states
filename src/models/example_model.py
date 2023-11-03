@@ -5,7 +5,7 @@ from .architectures.simple_model import SimpleModel
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
-from ..optimiser.optimiser import Optimiser
+from ..optimizer.optimizer import Optimizer
 
 
 # TODO This model is currently outdated...
@@ -42,7 +42,7 @@ class ExampleModel(Model):
         :param config: configuration to set up the model
         """
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "epochs", "optimiser"]
+        required = ["loss", "epochs", "optimizer"]
         for req in required:
             if req not in config:
                 logger.critical("------ Config is missing required parameter: " + req)
@@ -54,7 +54,7 @@ class ExampleModel(Model):
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimiser"] = Optimiser.get_optimiser(config["optimiser"], config["lr"], self.model)
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
         self.config = config
 
     def get_default_config(self) -> dict:
@@ -73,10 +73,10 @@ class ExampleModel(Model):
         :param Y_test: the test labels
         """
 
-        # Get hyperparameters from config (epochs, lr, optimiser)
+        # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimiser = self.config["optimiser"]
+        optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
@@ -106,7 +106,7 @@ class ExampleModel(Model):
                 y = y.to(self.device)
 
                 # Clear gradients
-                optimiser.zero_grad()
+                optimizer.zero_grad()
 
                 # Forward pass
                 outputs = self.model(x)
@@ -114,7 +114,7 @@ class ExampleModel(Model):
 
                 # Backward and optimize
                 loss.backward()
-                optimiser.step()
+                optimizer.step()
 
                 # Calculate the avg loss for 1 epoch
                 avg_loss += loss.item() / len(train_dataloader)

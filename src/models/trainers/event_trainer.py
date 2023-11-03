@@ -59,7 +59,7 @@ class EventTrainer:
         trainloader: torch.utils.data.DataLoader,
         testloader: torch.utils.data.DataLoader,
         model: nn.Module,
-        optimiser: torch.optim.Optimizer,
+        optimizer: torch.optim.Optimizer,
         name: str
     ) -> tuple[ndarray[float], ndarray[float], int]:
         """
@@ -67,7 +67,7 @@ class EventTrainer:
         :param trainloader: The training set.
         :param testloader: The test set.
         :param model: The model to train.
-        :param optimiser: The optimiser to use.
+        :param optimizer: The optimizer to use.
         :param name: The name of the model.
         """
 
@@ -101,7 +101,7 @@ class EventTrainer:
 
             # Training loss
             train_losses = self.train_one_epoch(
-                dataloader=trainloader, epoch_no=epoch, optimiser=optimiser, model=model)
+                dataloader=trainloader, epoch_no=epoch, optimizer=optimizer, model=model)
             train_loss = sum(train_losses) / (len(train_losses) + 1)
             avg_train_losses.append(train_loss.cpu())
 
@@ -138,7 +138,7 @@ class EventTrainer:
     def train_one_epoch(
         self, dataloader: torch.utils.data.DataLoader,
         epoch_no: int,
-        optimiser: torch.optim.Optimizer,
+        optimizer: torch.optim.Optimizer,
         model: nn.Module,
         disable_tqdm=False
     ) -> ndarray[float]:
@@ -146,7 +146,7 @@ class EventTrainer:
         Train the model on the training set for one epoch and return training losses
         :param dataloader: The training set.
         :param epoch_no: The epoch number.
-        :param optimiser: The optimiser to use.
+        :param optimizer: The optimizer to use.
         :param model: The model to train.
         """
 
@@ -155,25 +155,25 @@ class EventTrainer:
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
             for _, data in enumerate(tepoch):
                 losses = self._train_one_loop(
-                    data=data, losses=losses, model=model, optimiser=optimiser)
+                    data=data, losses=losses, model=model, optimizer=optimizer)
                 tepoch.set_description(f"Epoch {epoch_no}")
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
         return losses
 
     def _train_one_loop(
-        self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimiser: torch.optim.Optimizer
+        self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer
     ) -> List[float]:
         """
         Train the model on one batch and return the loss.
         :param data: The batch to train on.
         :param losses: The list of losses.
         :param model: The model to train.
-        :param optimiser: The optimiser to use.
+        :param optimizer: The optimizer to use.
         :return: The updated list of losses.
         """
 
         # Retrieve target and output
-        optimiser.zero_grad()
+        optimizer.zero_grad()
         data[0] = data[0].to(self.device).float()
         data[1] = data[1].to(self.device).float()
         output = model(data[0].to(self.device))
@@ -189,7 +189,7 @@ class EventTrainer:
 
         # Backpropagate loss and update weights
         loss.backward()
-        optimiser.step()
+        optimizer.step()
         losses.append(loss.detach())
 
         return losses

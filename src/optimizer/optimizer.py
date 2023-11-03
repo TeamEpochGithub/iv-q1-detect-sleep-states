@@ -2,13 +2,13 @@ import torch.optim as optim
 from torch import nn
 
 
-class OptimiserException(Exception):
+class OptimizerException(Exception):
     pass
 
 
-class Optimiser:
+class Optimizer:
     """
-    This is a static class for optimiser functions.
+    This is a static class for optimizer functions.
     """
 
     def __init__(self) -> None:
@@ -16,15 +16,15 @@ class Optimiser:
         pass
 
     @staticmethod
-    def get_optimiser(optimiser_name: str, learning_rate: float, weight_decay: float = 0.0, model: nn.Module = None):
+    def get_optimizer(optimizer_name: str, learning_rate: float, weight_decay: float = 0.0, model: nn.Module = None):
         """
-        This function returns the correct optimiser function.
-        :param optimiser_name: name of the optimiser
-        :param learning_rate: learning rate for the optimiser
+        This function returns the correct optimizer function.
+        :param optimizer_name: name of the optimizer
+        :param learning_rate: learning rate for the optimizer
         :param model: model to optimize
-        :return: optimiser function
+        :return: optimizer function
         """
-        match optimiser_name:
+        match optimizer_name:
             case "adam-torch":
                 return optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
             case "sgd-torch":
@@ -36,4 +36,4 @@ class Optimiser:
             case "rmsprop-torch":
                 return optim.RMSprop(model.parameters(), lr=learning_rate)
             case _:
-                raise OptimiserException("Optimiser function not found: " + optimiser_name)
+                raise OptimizerException("Optimizer function not found: " + optimizer_name)

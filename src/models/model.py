@@ -55,7 +55,7 @@ class Model:
         :param y_train: the training labels
         :param y_test: the test labels
         """
-        # Get hyperparameters from config (epochs, lr, optimiser)
+        # Get hyperparameters from config (epochs, lr, optimizer)
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
 
@@ -65,7 +65,7 @@ class Model:
         :param X_train: the training data
         :param y_train: the training labels
         """
-        # Get hyperparameters from config (epochs, lr, optimiser)
+        # Get hyperparameters from config (epochs, lr, optimizer)
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
 
@@ -104,12 +104,12 @@ class Model:
         """
         logger.info("--- Nothing to load or not implemented")
 
-    def reset_optimiser(self) -> None:
+    def reset_optimizer(self) -> None:
         """
-        Reset the optimiser to the initial state. Useful for retraining the model. This function should be overwritten by the user.
+        Reset the optimizer to the initial state. Useful for retraining the model. This function should be overwritten by the user.
         """
-        logger.critical("--- Resetting optimiser of base class called. Did you forget to override it?")
-        raise ModelException("Resetting optimiser of base class called. Did you forget to override it?")
+        logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
+        raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
 
     def reset_weights(self) -> None:
         """

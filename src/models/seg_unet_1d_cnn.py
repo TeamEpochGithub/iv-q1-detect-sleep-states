@@ -13,7 +13,7 @@ from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
-from ..optimiser.optimiser import Optimiser
+from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import find_events, one_hot_to_state
 
 
@@ -60,8 +60,8 @@ class SegmentationUnet1DCNN(Model):
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3,
                                model_type=self.model_type, config=self.config)
 
-        # Load optimiser
-        self.load_optimiser()
+        # Load optimizer
+        self.load_optimizer()
 
         # Print model summary
         if wandb.run is not None:
@@ -76,7 +76,7 @@ class SegmentationUnet1DCNN(Model):
         config = copy.deepcopy(config)
 
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "optimiser"]
+        required = ["loss", "optimizer"]
         for req in required:
             if req not in config:
                 logger.critical("------ Config is missing required parameter: " + req)
@@ -95,12 +95,12 @@ class SegmentationUnet1DCNN(Model):
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
         self.config = config
 
-    def load_optimiser(self) -> None:
+    def load_optimizer(self) -> None:
         """
-        Load optimiser function for the model.
+        Load optimizer function for the model.
         """
-        # Load optimiser
-        self.config["optimiser"] = Optimiser.get_optimiser(self.config["optimiser"], self.config["lr"],
+        # Load optimizer
+        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
                                                            self.config["weight_decay"], self.model)
 
     def get_default_config(self) -> dict:
@@ -126,10 +126,10 @@ class SegmentationUnet1DCNN(Model):
         :param y_train: the training labels
         :param y_test: the test labels
         """
-        # Get hyperparameters from config (epochs, lr, optimiser)
+        # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimiser = self.config["optimiser"]
+        optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
         early_stopping = self.config["early_stopping"]
@@ -194,7 +194,7 @@ class SegmentationUnet1DCNN(Model):
                     y = y.to(device=self.device)
 
                     # Clear gradients
-                    optimiser.zero_grad()
+                    optimizer.zero_grad()
 
                     # Forward pass
                     outputs = self.model(x)
@@ -202,7 +202,7 @@ class SegmentationUnet1DCNN(Model):
 
                     # Backward and optimize
                     loss.backward()
-                    optimiser.step()
+                    optimizer.step()
 
                     # Get the current loss
                     current_loss = loss.item()
@@ -281,7 +281,7 @@ class SegmentationUnet1DCNN(Model):
         :param y_train: the training labels
         """
         criterion = self.config["loss"]
-        optimiser = self.config["optimiser"]
+        optimizer = self.config["optimizer"]
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
 
@@ -322,7 +322,7 @@ class SegmentationUnet1DCNN(Model):
                     y = y.to(device=self.device)
 
                     # Clear gradients
-                    optimiser.zero_grad()
+                    optimizer.zero_grad()
 
                     # Forward pass
                     outputs = self.model(x)
@@ -330,7 +330,7 @@ class SegmentationUnet1DCNN(Model):
 
                     # Backward and optimize
                     loss.backward()
-                    optimiser.step()
+                    optimizer.step()
 
                     # Get the current loss
                     current_loss = loss.item()
@@ -456,21 +456,21 @@ class SegmentationUnet1DCNN(Model):
         if only_hyperparameters:
             self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size,
                                    out_channels=3, model_type=self.model_type, config=self.config)
-            self.reset_optimiser()
+            self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.reset_optimiser()
+        self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
 
-    def reset_optimiser(self) -> None:
+    def reset_optimizer(self) -> None:
 
         """
-        Reset the optimiser to the initial state. Useful for retraining the model.
+        Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimiser'] = type(self.config['optimiser'])(self.model.parameters(),
-                                                                  lr=self.config['optimiser'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(),
+                                                                  lr=self.config['optimizer'].param_groups[0]['lr'])
 
     def reset_weights(self) -> None:
         """

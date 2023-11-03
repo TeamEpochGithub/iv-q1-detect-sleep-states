@@ -12,7 +12,7 @@ from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
-from ..optimiser.optimiser import Optimiser
+from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import find_events
 
 
@@ -56,7 +56,7 @@ class SegmentationSimple1DCNN(Model):
         config = copy.deepcopy(config)
 
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "optimiser"]
+        required = ["loss", "optimizer"]
         for req in required:
             if req not in config:
                 logger.critical("------ Config is missing required parameter: " + req)
@@ -67,7 +67,7 @@ class SegmentationSimple1DCNN(Model):
         config["loss"] = Loss.get_loss(config["loss"])
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimiser"] = Optimiser.get_optimiser(config["optimiser"], config["lr"], self.model)
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], self.model)
         config["epochs"] = config.get("epochs", default_config["epochs"])
         self.config = config
 
@@ -93,10 +93,10 @@ class SegmentationSimple1DCNN(Model):
         :param y_train: the training labels
         :param y_test: the test labels
         """
-        # Get hyperparameters from config (epochs, lr, optimiser)
+        # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimiser = self.config["optimiser"]
+        optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
@@ -145,7 +145,7 @@ class SegmentationSimple1DCNN(Model):
                 y = y.to(device=self.device)
 
                 # Clear gradients
-                optimiser.zero_grad()
+                optimizer.zero_grad()
 
                 # Forward pass
                 outputs = self.model(x)
@@ -153,7 +153,7 @@ class SegmentationSimple1DCNN(Model):
 
                 # Backward and optimize
                 loss.backward()
-                optimiser.step()
+                optimizer.step()
 
                 # Calculate the avg loss for 1 epoch
                 avg_loss += loss.item() / len(train_dataloader)
@@ -194,7 +194,7 @@ class SegmentationSimple1DCNN(Model):
         :param y_train: the training labels
         """
         criterion = self.config["loss"]
-        optimiser = self.config["optimiser"]
+        optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
 
@@ -230,7 +230,7 @@ class SegmentationSimple1DCNN(Model):
                 y = y.to(device=self.device)
 
                 # Clear gradients
-                optimiser.zero_grad()
+                optimizer.zero_grad()
 
                 # Forward pass
                 outputs = self.model(x)
@@ -238,7 +238,7 @@ class SegmentationSimple1DCNN(Model):
 
                 # Backward and optimize
                 loss.backward()
-                optimiser.step()
+                optimizer.step()
 
                 # Calculate the avg loss for 1 epoch
                 avg_loss += loss.item() / len(train_dataloader)
@@ -335,20 +335,20 @@ class SegmentationSimple1DCNN(Model):
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)
-            self.reset_optimiser()
+            self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.reset_optimiser()
+        self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
 
-    def reset_optimiser(self) -> None:
+    def reset_optimizer(self) -> None:
 
         """
-        Reset the optimiser to the initial state. Useful for retraining the model.
+        Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimiser'] = type(self.config['optimiser'])(self.model.parameters(), lr=self.config['optimiser'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
 
     def reset_weights(self) -> None:
         """

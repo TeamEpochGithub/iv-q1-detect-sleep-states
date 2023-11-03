@@ -74,7 +74,7 @@
         "Masked-Split-Event-1D-Unet-CNN": {
             "type": "split-event-seg-unet-1d-cnn",
             "loss": "shrinkage-loss",
-            "optimiser": "adam-torch",
+            "optimizer": "adam-torch",
             "epochs": 44,
             "batch_size": 32,
             "lr": 0.001,

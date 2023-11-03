@@ -318,18 +318,18 @@ class EventResGRU(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Training of model complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool):
+    def pred(self, data: np.ndarray, pred_with_cpu: bool):
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
+        :param pred_with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -352,7 +352,7 @@ class EventResGRU(Model):
                 # Make a batch prediction
                 batch_prediction, _ = self.model(batch_data)
 
-                if with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()

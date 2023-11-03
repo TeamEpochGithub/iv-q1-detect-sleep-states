@@ -3,7 +3,7 @@ from src.models.architectures.res_bi_GRU import ResidualBiGRU
 
 
 class MultiResidualBiGRU(nn.Module):
-    def __init__(self, input_size, hidden_size, out_size, n_layers, bidir=True, model_name=''):
+    def __init__(self, input_size, hidden_size=64, out_size=2, n_layers=5, bidir=True, activation: str = None, model_name=''):
         super(MultiResidualBiGRU, self).__init__()
 
         self.input_size = input_size
@@ -21,7 +21,12 @@ class MultiResidualBiGRU(nn.Module):
         )
         self.fc_out = nn.Linear(hidden_size, out_size)
 
-    def forward(self, x, h=None):
+        if activation is None:
+            self.activation = nn.Identity
+        else:
+            self.activation = nn.functional.__dict__[activation]
+
+    def forward(self, x, h=None, use_activation=True):
         # if we are at the beginning of a sequence (no hidden state)
         if h is None:
             # (re)initialize the hidden state
@@ -37,5 +42,6 @@ class MultiResidualBiGRU(nn.Module):
             new_h.append(new_hi)
 
         x = self.fc_out(x)
-#         x = F.normalize(x,dim=0)
+        if use_activation:
+            x = self.activation(x)
         return x, new_h  # log probabilities + hidden states

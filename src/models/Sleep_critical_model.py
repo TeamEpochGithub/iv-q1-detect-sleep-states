@@ -18,6 +18,8 @@ from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
 from torch.utils.data import TensorDataset, DataLoader
 
 
+RELU_AFTER_EPOCHS = 15
+
 class CriticalPointGRU(Model):
     """
     This is a sample model file. You can use this as a template for your own models.
@@ -43,14 +45,14 @@ class CriticalPointGRU(Model):
 
         self.model_type = "segmentation"
         self.input_size = input_size
-        self.model = MultiResidualBiGRU(self.input_size[0], hidden_size=64, out_size=2, n_layers=5)
-        # Load model
+
+        # Create model
+        self.model = MultiResidualBiGRU(self.input_size[0], **config['network_params'])
+        if wandb.run is not None:
+            from torchsummary import summary
+            summary(self.model.cuda(), input_size=(input_size[1], input_size[0]))
+
         self.load_config(config)
-        # If we log the run to weights and biases, we can
-        # if wandb.run is not None:
-        #     from torchsummary import summary
-        #     summary(self.model.cuda(), input_size=(input_size[1], input_size[0]))
-        #     # pass
 
     def load_config(self, config: dict) -> None:
         """
@@ -60,7 +62,7 @@ class CriticalPointGRU(Model):
         config = copy.deepcopy(config)
 
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "optimizer"]
+        required = ["loss", "optimizer", "lr_schedule"]
         for req in required:
             if req not in config:
                 logger.critical("------ Config is missing required parameter: " + req)
@@ -69,19 +71,17 @@ class CriticalPointGRU(Model):
         # Get default_config
         default_config = self.get_default_config()
         config["loss"] = Loss.get_loss(config["loss"])
-        config["batch_size"] = config.get("batch_size", default_config["batch_size"])
-        config["lr"] = config.get("lr", default_config["lr"])
+        config["batch_size"] = config.get("batch_size", 1)
+        config["lr"] = config.get("lr", 0.1)
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
-        config["epochs"] = config.get("epochs", default_config["epochs"])
-        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
+        config["lr_schedule"] = config.get("lr_schedule")
+        config["epochs"] = config.get("epochs", 20)
+        config["early_stopping"] = config.get("early_stopping", 3)
+        config["activation_delay"] = config.get("activation_delay", 0)
+        config["network_params"] = config.get("network_params", dict())
+        config["threshold"] = config.get("threshold", 0.0)
         self.config = config
 
-    def get_default_config(self) -> dict:
-        """
-        Get default config function for the model.
-        :return: default config
-        """
-        return {"batch_size": 1, "lr": 0.1, "epochs": 20, "early_stopping": 3}
 
     def get_type(self) -> str:
         """
@@ -106,10 +106,7 @@ class CriticalPointGRU(Model):
         batch_size = self.config["batch_size"]
         # in the docs for this function it says that t_initial is the number of epochs
         # but in the critical point code it is multiplied by the number of samples
-        scheduler = CosineLRScheduler(optimizer, t_initial=epochs,
-                                      warmup_t=int(5),
-                                      warmup_lr_init=1e-6, lr_min=2e-8,)
-
+        scheduler = CosineLRScheduler(optimizer, **self.config["lr_schedule"])
 
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
@@ -161,6 +158,7 @@ class CriticalPointGRU(Model):
         for epoch in range(epochs):
             self.model.train(True)
             total_loss = 0
+            use_activation = epoch > self.config["activation_delay"]
             with tqdm(train_dataloader, unit="batch") as pbar:
                 for i, (x, y) in enumerate(pbar):
                     h = None
@@ -172,7 +170,7 @@ class CriticalPointGRU(Model):
                     optimizer.zero_grad()
                     scheduler.step(epoch)
                     # Forward pass
-                    outputs, _ = self.model(x, h)
+                    outputs, _ = self.model(x, h, use_activation=use_activation)
                     loss = criterion(outputs, y)
 
                     # Backward and optimize
@@ -258,9 +256,7 @@ class CriticalPointGRU(Model):
         batch_size = self.config["batch_size"]
         # in the docs for this function it says that t_initial is the number of epochs
         # but in the critical point code it is multiplied by the number of samples
-        scheduler = CosineLRScheduler(optimizer, t_initial=epochs,
-                                      warmup_t=int(0.2*epochs),
-                                      warmup_lr_init=1e-6, lr_min=2e-8,)
+        scheduler = CosineLRScheduler(optimizer, **self.config["lr_schedule"])
         X_train = torch.from_numpy(X_train)
 
         # Flatten y_train and y_test so we only get the regression labels
@@ -274,7 +270,6 @@ class CriticalPointGRU(Model):
         # Print the shapes and types of train and test
         logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
         logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
 
@@ -293,6 +288,7 @@ class CriticalPointGRU(Model):
         for epoch in range(epochs):
             self.model.train(True)
             total_loss = 0
+            use_activation = epoch > self.config["activation_delay"]
             with tqdm(train_dataloader, unit="batch") as pbar:
                 for i, (x, y) in enumerate(pbar):
                     h = None
@@ -304,7 +300,7 @@ class CriticalPointGRU(Model):
                     optimizer.zero_grad()
                     scheduler.step(epoch)
                     # Forward pass
-                    outputs, _ = self.model(x, h)
+                    outputs, _ = self.model(x, h, use_activation=use_activation)
                     loss = criterion(outputs, y)
 
                     # Backward and optimize
@@ -433,7 +429,7 @@ class CriticalPointGRU(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = MultiResidualBiGRU(self.input_size[0], hidden_size=64, out_size=2, n_layers=5)
+            self.model = MultiResidualBiGRU(self.input_size[0], **self.config['network_params'])
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

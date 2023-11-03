@@ -161,7 +161,6 @@ def main(config: ConfigLoader) -> None:
     if scoring:
         logger.info("Making predictions with ensemble on test data")
         # store the ytest array in a file and read it while making preds
-        np.save('y_test.npy', y_test)
 
         predictions = ensemble.pred(X_test, pred_cpu)
 

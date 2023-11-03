@@ -470,7 +470,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
     def reset_weights(self) -> None:
         """
-            Reset the weights of the model. Useful for retraining the model.
+        Reset the weights of the model. Useful for retraining the model.
         """
         self.model_onset = SegUnet1D(
             in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)

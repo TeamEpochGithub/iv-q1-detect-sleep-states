@@ -18,9 +18,7 @@ from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
 from torch.utils.data import TensorDataset, DataLoader
 
 
-RELU_AFTER_EPOCHS = 15
-
-class CriticalPointGRU(Model):
+class EventResGRU(Model):
     """
     This is a sample model file. You can use this as a template for your own models.
     The model file should contain a class that inherits from the Model class.
@@ -81,7 +79,6 @@ class CriticalPointGRU(Model):
         config["network_params"] = config.get("network_params", dict())
         config["threshold"] = config.get("threshold", 0.0)
         self.config = config
-
 
     def get_type(self) -> str:
         """

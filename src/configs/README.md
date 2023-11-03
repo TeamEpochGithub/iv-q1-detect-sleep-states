@@ -313,6 +313,17 @@ This contains all the models and their hyperparameters that are implemented. The
     - pooling
     - n_layers
     - heads
+
+- event_res_gru
+    - epochs (required) 
+    - loss (required)
+    - optimizer (required)
+    - early_stopping
+    - network_params (hidden_size, n_layers, activation)
+    - activation_delay (number of epochs to wait before applying activation to last layer)
+    - lr
+    - lr_schedule (config for learning rate schedule, see CosineLRWithRestarts)
+    - threshold
   
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
@@ -366,6 +377,29 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "batch_size": 32,
     "lr": 0.001,
     "hidden_layers": 8
+}
+
+"EventResGRU": {
+    "type": "event_res_gru",
+    "loss": "shrinkage-loss",
+    "epochs": 100,
+    "batch_size": 32,
+    "optimizer": "adam-torch",
+    "early_stopping": 10,
+    "network_params": {
+      "hidden_size": 64,
+      "n_layers": 5,
+      "activation": "relu"
+    },
+    "activation_delay": 15,
+    "lr": 0.001,
+    "lr_schedule": {
+      "t_initial": 100,
+      "warmup_t": 5,
+      "warmup_lr_init": 1e-6,
+      "lr_min": 2e-8
+    },
+    "threshold": 0
 }
 ```
 

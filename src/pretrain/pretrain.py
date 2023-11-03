@@ -140,7 +140,6 @@ class Pretrain:
         :return: the processed data
         """
         x_data = self.get_features(x_data)
-        data_info.X_columns = {column: i for i, column in enumerate(x_data.columns)}
 
         # Apply downsampling
         if self.downsampler is not None:
@@ -148,6 +147,8 @@ class Pretrain:
             data_info.window_size_before = data_info.window_size
             data_info.window_size = data_info.window_size // data_info.downsampling_factor
             x_data = self.downsampler.downsampleX(x_data)
+
+        data_info.X_columns = {column: i for i, column in enumerate(x_data.columns)}
 
         x_data = self.scaler.transform(x_data).astype(np.float32)
         return self.to_windows(x_data)

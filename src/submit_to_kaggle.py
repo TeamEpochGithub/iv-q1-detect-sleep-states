@@ -52,8 +52,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
 
     # get models
     store_location = config.get_model_store_loc()
-    data_shape = (x_data.shape[2], x_data.shape[1])
-    models = config.get_models(data_shape)
+    models = config.get_models()
     for i, model in enumerate(models):
         model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[model].hash + ".pt"
         logger.info(f"Loading model {i}: {model} from {model_filename_submit}")

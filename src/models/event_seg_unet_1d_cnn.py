@@ -132,7 +132,6 @@ class EventSegmentationUnet1DCNN(Model):
             X_train_start = X_train.copy()
             Y_train_start = y_train.copy()
 
-        # TODO Change
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
@@ -163,8 +162,8 @@ class EventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
         # Initialize place holder arrays for train and test loss and early stopping
         total_epochs = 0
@@ -237,8 +236,8 @@ class EventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
-                           f"Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -311,7 +310,7 @@ class EventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
 
         for epoch in range(epochs):
             self.model.train()
@@ -350,21 +349,21 @@ class EventSegmentationUnet1DCNN(Model):
 
             # Log train full
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
-        :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
-        :return: the predictions
+        :param data: unlabeled data (step, features)
+        :param pred_with_cpu: whether to predict with cpu or gpu
+        :return: the predictions in format: (predictions, confidences)
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -390,7 +389,7 @@ class EventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model(batch_data)
 
-                if with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
@@ -510,3 +509,10 @@ class EventSegmentationUnet1DCNN(Model):
 
         self.config["threshold"] = optimal_threshold
         return self.config["threshold"]
+
+    def reset_weights(self) -> None:
+        """
+        Reset the weights of the model.
+        """
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
+                               model_type=self.model_type, config=self.config)

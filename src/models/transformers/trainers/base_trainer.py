@@ -5,6 +5,8 @@ from tqdm import tqdm
 from typing import List
 import wandb
 
+from src import data_info
+
 
 class Trainer:
     """Trainer class for the transformer model.
@@ -54,9 +56,9 @@ class Trainer:
         if wandb.run is not None:
             wandb.define_metric("epoch")
             wandb.define_metric(
-                f"Train {str(self.criterion)} of {name}", step_metric="epoch")
+                f"{data_info.substage} - Train {str(self.criterion)} of {name}", step_metric="epoch")
             wandb.define_metric(
-                f"Validation {str(self.criterion)} of {name}", step_metric="epoch")
+                f"{data_info.substage} - Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         # Check if full training or not
         full_train = False
@@ -88,8 +90,8 @@ class Trainer:
                     avg_val_losses.append(val_loss.cpu())
 
             if wandb.run is not None and not full_train:
-                wandb.log({f"Train {str(self.criterion)} of {name}": train_loss,
-                           f"Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss,
+                           f"{data_info.substage} - Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
 
             # Save model if validation loss is lower than previous lowest validation loss
             if not full_train and val_loss < lowest_val_loss:

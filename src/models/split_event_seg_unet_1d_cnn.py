@@ -9,10 +9,10 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
+from .model import Model, ModelException
 from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
-from .model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
 
@@ -55,11 +55,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Print model summary
         if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model_onset.cuda(), input_size=(
-                len(data_info.X_columns), data_info.window_size))
-            summary(self.model_awake.cuda(), input_size=(
-                len(data_info.X_columns), data_info.window_size))
+            if data_info.plot_summary:
+                from torchsummary import summary
+                summary(self.model_onset.cuda(), input_size=(
+                    len(data_info.X_columns), data_info.window_size))
+                summary(self.model_awake.cuda(), input_size=(
+                    len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -163,15 +164,15 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Dataset for onset
         train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+            X_train, y_train[:, data_info.y_columns["state-onset"], :])
         test_dataset_onset = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 0, :])
+            X_test, y_test[:, data_info.y_columns["state-onset"], :])
 
         # Dataset for awake
         train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+            X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
         test_dataset_awake = torch.utils.data.TensorDataset(
-            X_test, y_test[:, 1, :])
+            X_test, y_test[:, data_info.y_columns["state-wakeup"], :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -192,10 +193,10 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(
-                f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}_awake", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}_awake", step_metric="epoch")
 
         # Initialize place holder arrays for train and test loss and early stopping
         total_epochs_onset = 0
@@ -277,8 +278,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_onset": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}_onset": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}_onset": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -359,8 +360,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}_awake": avg_loss,
-                          f"Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}_awake": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}_awake": avg_val_loss, "epoch": epoch})
 
             # Early stopping
             if early_stopping > 0:
@@ -416,11 +417,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Dataset for onset
         train_dataset_onset = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 0, :])
+            X_train, y_train[:, data_info.y_columns["state-onset"], :])
 
-        # Dataset for awake
+        # Dataset for wakeup
         train_dataset_awake = torch.utils.data.TensorDataset(
-            X_train, y_train[:, 1, :])
+            X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
 
         # Create dataloaders for awake and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
@@ -443,8 +444,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(
-                f"Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_onset", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_awake", step_metric="epoch")
 
         # Train full loop for onset
         logger.info("--- Training onset model on full dataset")
@@ -486,7 +487,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
+                    {f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_onset": avg_loss, "epoch": epoch})
 
         # Train full loop for awake
         logger.info("--- Training awake model on full dataset")
@@ -528,22 +529,21 @@ class SplitEventSegmentationUnet1DCNN(Model):
             # Log train full
             if wandb.run is not None:
                 wandb.log(
-                    {f"Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
+                    {f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}_awake": avg_loss, "epoch": epoch})
 
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -571,7 +571,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model_onset(batch_data)
 
-                if with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
@@ -590,7 +590,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 # Make a batch prediction
                 batch_prediction = self.model_awake(batch_data)
 
-                if with_cpu:
+                if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
@@ -674,7 +674,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
                 in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
             self.model_awake = SegUnet1D(
                 in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-            self.reset_optimizer
+            self.reset_optimizer()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
@@ -690,5 +690,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(
             self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
-        self.config['optimizer_awake'] = type(self.config['optimizer_awake'])(
+        self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
             self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+
+    def reset_weights(self) -> None:
+        """
+            Reset the weights of the model. Useful for retraining the model.
+        """
+        self.model_onset = SegUnet1D(
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+        self.model_awake = SegUnet1D(
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)

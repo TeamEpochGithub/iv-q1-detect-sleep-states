@@ -253,18 +253,17 @@ class SegmentationSimple1DCNN(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, with_cpu: bool) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :param with_cpu: whether to use cpu or gpu
         :return: the predictions
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
 
-        if with_cpu:
+        if pred_with_cpu:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda")
@@ -280,7 +279,7 @@ class SegmentationSimple1DCNN(Model):
         with torch.no_grad():
             prediction = self.model(data)
 
-        if with_cpu:
+        if pred_with_cpu:
             prediction = prediction.numpy()
         else:
             prediction = prediction.cpu().numpy()
@@ -350,3 +349,9 @@ class SegmentationSimple1DCNN(Model):
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
         self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+
+    def reset_weights(self) -> None:
+        """
+        Reset the weights of the model. Useful for retraining the model.
+        """
+        self.model = SegSimple1DCNN(window_length=self.data_shape[1], in_channels=self.data_shape[0], config=self.config)

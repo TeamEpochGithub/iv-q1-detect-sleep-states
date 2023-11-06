@@ -47,11 +47,11 @@ class ClassicBaseModel(Model):
         """
         return {"median_window": 100, "threshold": .1, "use_nan_similarity": True}
 
-    def pred(self, X_pred: np.ndarray, with_cpu: bool = True) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, X_pred: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param X_pred: unlabeled data for a single day window as pandas dataframe
-        :param with_cpu: whether to use cpu or gpu
+        :param pred_with_cpu: (UNUSED) whether to predict with cpu or gpu
         :return: two timestamps, or NaN if no sleep was detected
         """
 
@@ -78,3 +78,9 @@ class ClassicBaseModel(Model):
         movement = pd.Series(slope).rolling(window=100, center=True).median()
         pred = (movement > .1)
         return pred.to_numpy(dtype='float32')
+
+    def reset_weights(self) -> None:
+        pass
+
+    def reset_optimizer(self) -> None:
+        pass

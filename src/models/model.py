@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import wandb
 
+from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
 
@@ -68,11 +69,11 @@ class Model:
         # TODO Raise an explicit error if the user does not overwrite this function, should be abstract
         logger.info("--- Training of model not necessary or not implemented")
 
-    def pred(self, X_pred: np.ndarray, with_cpu: bool) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
+    def pred(self, X_pred: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
         """
         Prediction function for mainly pytorch models. This function should be overwritten by the user.
         :param X_pred: unlabeled data (step, features)
-        :param with_cpu: whether to use cpu
+        :param pred_with_cpu: whether to predict with cpu or gpu
         :return: the predictions in format: (predictions, confidences)
         """
         logger.critical("--- Prediction of base class called. Did you forget to override it?")
@@ -110,6 +111,13 @@ class Model:
         logger.critical("--- Resetting optimizer of base class called. Did you forget to override it?")
         raise ModelException("Resetting optimizer of base class called. Did you forget to override it?")
 
+    def reset_weights(self) -> None:
+        """
+        Reset the weights of the model. Useful for retraining the model. This function should be overwritten by the user.
+        """
+        logger.critical("--- Resetting weights of base class called. Did you forget to override it?")
+        raise ModelException("Resetting weights of base class called. Did you forget to override it?")
+
     def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int, name: str = "") -> None:
         """
         Log the train and test loss to wandb.
@@ -127,16 +135,17 @@ class Model:
         long_df = pd.melt(log_df, id_vars=['epoch'], var_name='loss_type', value_name='loss')
 
         table = wandb.Table(dataframe=long_df)
+
         # Field to column in df
         fields = {"step": "epoch", "lineVal": "loss", "lineKey": "loss_type"}
         custom_plot = wandb.plot_table(
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": "Train and validation loss of model " + self.name + name}
+            string_fields={"title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
-            wandb.log({f"{self.name}": custom_plot})
+            wandb.log({f"{data_info.substage, name}": custom_plot})
 
 
 class ModelException(Exception):

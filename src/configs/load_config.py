@@ -11,10 +11,10 @@ from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
 from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
-from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
+from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
 from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
 from ..models.transformers.transformer import Transformer
@@ -55,8 +55,9 @@ class ConfigLoader:
 
     def set_globals(self) -> None:
         """Set the global variables"""
-        data_info.window_size = self.config.get("data_info").get("window_size", 17280)
-        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", 1)
+        data_info.window_size = self.config.get("data_info").get("window_size", data_info.window_size)
+        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", data_info.downsampling_factor)
+        data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
@@ -154,7 +155,6 @@ class ConfigLoader:
         logger.info("Models: " + str(self.config.get("models")))
         for model_name in self.config["models"]:
             model_config = self.config["models"][model_name]
-            curr_model = None
             match model_config["type"]:
                 case "example-fc-model":
                     curr_model = ExampleModel(model_config, model_name)
@@ -256,14 +256,7 @@ class ConfigLoader:
 
         :return: the cross validation method
         """
-        cv_class = None
-        if self.config["cv"]["method"] == "example_cv":
-            cv_class = CV()
-        else:
-            raise ConfigException("Cross validation method not found: " +
-                                  self.config["cv"]["method"])
-
-        return cv_class
+        return CV(**self.config["cv"])
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

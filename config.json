@@ -1,7 +1,7 @@
 {
   "name": "config",
   "log_to_wandb": true,
-  "pred_with_cpu": false,
+  "pred_with_cpu": true,
   "train_series_path": "data/raw/train_series.parquet",
   "train_events_path": "data/raw/train_events.csv",
   "test_series_path": "data/raw/test_series.parquet",
@@ -31,7 +31,9 @@
       "steepness": 1
     },
     {
-      "kind": "split_windows"
+      "kind": "split_windows",
+      "start_hour": 15,
+      "window_size": 17280
     }
   ],
   "feature_engineering": [
@@ -53,6 +55,7 @@
   ],
   "pretraining": {
     "downsample": {
+      "factor": 12,
       "features": [
         "f_anglez",
         "f_enmo"
@@ -92,7 +95,7 @@
       "lr_schedule": {
         "t_initial": 100,
         "warmup_t": 5,
-        "warmup_lr_init": 1e-6,
+        "warmup_lr_init": 0.000001,
         "lr_min": 2e-8
       },
       "threshold": 0
@@ -108,16 +111,6 @@
     "comb_method": "addition"
   },
   "ensemble_loss": "mse-torch",
-  "cv": {
-    "splitter": "group_k_fold",
-    "scoring": [
-      "score_full",
-      "score_clean"
-    ],
-    "splitter_params": {
-      "n_splits": 3
-    }
-  },
   "hpo": {
     "apply": false,
     "method": "example_hpo"
@@ -127,6 +120,6 @@
   "visualize_preds": {
     "n": 0,
     "browser_plot": false,
-    "save": false
+    "save": true
   }
 }

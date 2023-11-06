@@ -16,6 +16,7 @@ from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
+from .trainers.event_trainer import EventTrainer
 
 
 class EventSegmentationUnet1DCNN(Model):
@@ -37,7 +38,8 @@ class EventSegmentationUnet1DCNN(Model):
             self.device = torch.device("cpu")
         else:
             self.device = torch.device("cuda")
-            logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
+            logger.info(
+                f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "event-segmentation"
 
@@ -54,7 +56,8 @@ class EventSegmentationUnet1DCNN(Model):
         # Print model summary
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(len(data_info.X_columns), data_info.window_size))
+            summary(self.model.cuda(), input_size=(
+                len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -67,21 +70,32 @@ class EventSegmentationUnet1DCNN(Model):
         required = ["loss", "optimizer"]
         for req in required:
             if req not in config:
-                logger.critical("------ Config is missing required parameter: " + req)
-                raise ModelException("Config is missing required parameter: " + req)
+                logger.critical(
+                    "------ Config is missing required parameter: " + req)
+                raise ModelException(
+                    "Config is missing required parameter: " + req)
 
         # Get default_config
         default_config = self.get_default_config()
-        config["loss"] = Loss.get_loss(config["loss"])
-        config["batch_size"] = config.get("batch_size", default_config["batch_size"])
+        if config["mask_unlabeled"]:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
+        else:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+        config["batch_size"] = config.get(
+            "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["hidden_layers"] = config.get("hidden_layers", default_config["hidden_layers"])
-        config["kernel_size"] = config.get("kernel_size", default_config["kernel_size"])
+        config["hidden_layers"] = config.get(
+            "hidden_layers", default_config["hidden_layers"])
+        config["kernel_size"] = config.get(
+            "kernel_size", default_config["kernel_size"])
         config["depth"] = config.get("depth", default_config["depth"])
-        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
-        config["threshold"] = config.get("threshold", default_config["threshold"])
-        config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
+        config["early_stopping"] = config.get(
+            "early_stopping", default_config["early_stopping"])
+        config["threshold"] = config.get(
+            "threshold", default_config["threshold"])
+        config["weight_decay"] = config.get(
+            "weight_decay", default_config["weight_decay"])
         self.config = config
 
     def load_optimizer(self) -> None:
@@ -98,7 +112,7 @@ class EventSegmentationUnet1DCNN(Model):
         :return: default config
         """
         return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
-                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0}
+                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0, "mask_unlabeled": False}
 
     def get_type(self) -> str:
         """
@@ -121,9 +135,11 @@ class EventSegmentationUnet1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
-            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
+            logger.info(
+                f"--- Early stopping enabled with patience of {early_stopping} epochs.")
         # Use the optimal threshold when the threshold is set to a negative value
         use_optimal_threshold = self.config["threshold"] < 0
 
@@ -136,8 +152,16 @@ class EventSegmentationUnet1DCNN(Model):
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
         # Get only the 2 event state features
-        y_train = y_train[:, :, np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        y_test = y_test[:, :, np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        if mask_unlabeled:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        else:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
         y_test = torch.from_numpy(y_test).permute(0, 2, 1)
 
@@ -146,134 +170,45 @@ class EventSegmentationUnet1DCNN(Model):
         test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
 
         # Print the shapes and types of train and test
-        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        logger.info(
+            f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(
+            f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.info(
+            f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(
+            f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Create a dataloader from the dataset
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
-        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
-
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model.to(self.device)
-
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
-
-        # Initialize place holder arrays for train and test loss and early stopping
-        total_epochs = 0
-        avg_losses = []
-        avg_val_losses = []
-        counter = 0
-        lowest_val_loss = np.inf
-        best_model = self.model.state_dict()
-        stopped = False
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=batch_size)
 
         # Train the model
-        for epoch in range(epochs):
-            self.model.train()
-            avg_loss = 0
-            avg_val_loss = 0
-            total_batch_loss = 0
-            total_val_batch_loss = 0
-            # Train loop
-            with tqdm(train_dataloader, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model(x)
-                    loss = criterion(outputs, y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f" Train Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Calculate the validation loss and set the model to eval
-            self.model.eval()
-
-            with torch.no_grad():
-                with tqdm(test_dataloader, unit="batch") as vepoch:
-                    for i, (vx, vy) in enumerate(vepoch):
-                        vx = vx.to(self.device)
-                        vy = vy.to(self.device)
-                        voutputs = self.model(vx)
-                        vloss = criterion(voutputs, vy)
-
-                        current_loss = vloss.item()
-                        total_val_batch_loss += current_loss
-                        avg_val_loss = total_val_batch_loss / (i + 1)
-
-                        vepoch.set_description(f" Test  Epoch {epoch}")
-                        vepoch.set_postfix(loss=avg_val_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
-            logger.debug(descr)
-
-            # Add average losses and epochs to list
-            avg_losses.append(avg_loss)
-            avg_val_losses.append(avg_val_loss)
-            total_epochs += 1
-
-            # Log train test loss to wandb
-            if wandb.run is not None:
-                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}": avg_loss,
-                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}": avg_val_loss, "epoch": epoch})
-
-            # Early stopping
-            if early_stopping > 0:
-                # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss:
-                    lowest_val_loss = avg_val_loss
-                    best_model = self.model.state_dict()
-                    counter = 0
-                else:
-                    counter += 1
-                    if counter >= early_stopping:
-                        logger.info(
-                            "--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                                total_epochs) + " Stopping training and loading best model for " + str(
-                                total_epochs - early_stopping) + ".")
-                        self.model.load_state_dict(best_model)
-                        stopped = True
-                        break
+        logger.info("--- Training model " + self.name)
+        trainer = EventTrainer(
+            epochs, criterion, mask_unlabeled, early_stopping)
+        avg_losses, avg_val_losses, total_epochs = trainer.fit(
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name)
 
         # Log full train and test plot
         if wandb.run is not None:
-            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
+            self.log_train_test(avg_losses, avg_val_losses, len(avg_losses))
         logger.info("--- Training of model complete!")
 
         # Set total_epochs in config if broken by the early stopping
-        if stopped:
-            total_epochs -= early_stopping
         self.config["total_epochs"] = total_epochs
 
         # Find optimal threshold if necessary
         if use_optimal_threshold:
             logger.info("--- Finding optimal threshold for model.")
             self.find_optimal_threshold(X_train_start, Y_train_start)
-            logger.info(f"--- Optimal threshold is {self.config['threshold']:.4f}.")
+            logger.info(
+                f"--- Optimal threshold is {self.config['threshold']:.4f}.")
         else:
-            logger.info(f"--- Using threshold of {self.config['threshold']:.4f} from the config.")
+            logger.info(
+                f"--- Using threshold of {self.config['threshold']:.4f} from the config.")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -285,71 +220,39 @@ class EventSegmentationUnet1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
 
         logger.info("--- Running for " + str(epochs) + " epochs.")
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
-        # Get only the event state features
-        y_train = y_train[:, :, np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        if mask_unlabeled:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        else:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
         y_train = torch.from_numpy(y_train).permute(0, 2, 1)
+
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 
         # Print the shapes and types of train and test
-        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(
+            f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(
+            f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
         # Create a dataloader from the dataset
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
 
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model.to(self.device)
+        # Train the model
+        logger.info("--- Training model full " + self.name)
+        trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
+        trainer.fit(trainloader=train_dataloader, testloader=None,
+                    model=self.model, optimizer=optimizer, name=self.name)
 
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}", step_metric="epoch")
-
-        for epoch in range(epochs):
-            self.model.train()
-            total_batch_loss = 0
-            avg_loss = 0
-            with tqdm(train_dataloader, unit="batch") as tepoch:
-                for i, (x, y) in enumerate(tepoch):
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer.zero_grad()
-
-                    # Forward pass
-                    outputs = self.model(x)
-                    loss = criterion(outputs, y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    optimizer.step()
-
-                    # Get the current loss
-                    current_loss = loss.item()
-                    total_batch_loss += current_loss
-                    avg_loss = total_batch_loss / (i + 1)
-
-                    # Log to console
-                    tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=avg_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
-            logger.debug(descr)
-
-            # pbar.set_description(descr)
-
-            # Log train full
-            if wandb.run is not None:
-                wandb.log({f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Full train complete!")
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
@@ -401,7 +304,8 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:
-            predictions = np.repeat(predictions, data_info.downsampling_factor, axis=2)
+            predictions = np.repeat(
+                predictions, data_info.downsampling_factor, axis=2)
 
         all_predictions = []
         all_confidences = []
@@ -466,7 +370,8 @@ class EventSegmentationUnet1DCNN(Model):
             self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
                                    model_type=self.model_type, config=self.config)
             self.reset_optimizer()
-            logger.info("Loading hyperparameters and instantiate new model from: " + path)
+            logger.info(
+                "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -474,7 +379,6 @@ class EventSegmentationUnet1DCNN(Model):
         logger.info("Model fully loaded from: " + path)
 
     def reset_optimizer(self) -> None:
-
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
@@ -495,7 +399,8 @@ class EventSegmentationUnet1DCNN(Model):
         confidences_sum = np.sum(y_pred[1], axis=1)
 
         # Make an array where it is true if awake is 0 or 1 and false if awake is 2
-        make_pred_windowed = np.where(y[:, :, data_info.y_columns['awake']] == 2, False, True)
+        make_pred_windowed = np.where(
+            y[:, :, data_info.y_columns['awake']] == 2, False, True)
 
         # Get a single boolean for each window if it should make a prediction or not
         make_pred = np.any(make_pred_windowed, axis=1)

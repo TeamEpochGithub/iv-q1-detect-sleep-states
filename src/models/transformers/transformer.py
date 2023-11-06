@@ -75,7 +75,12 @@ class Transformer(Model):
             "patch_size", default_config["patch_size"])
 
         # Add loss, epochs and optimizer to config
-        config["loss"] = Loss.get_loss(loss)
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
+        if config["mask_unlabeled"]:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
+        else:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["optimizer"] = Optimizer.get_optimizer(
             optimizer, config["lr"], model=self.model)
         config["epochs"] = epochs
@@ -87,7 +92,7 @@ class Transformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.000035, 'patch_size': 36}
+        return {"batch_size": 32, "lr": 0.000035, 'patch_size': 36, "mask_unlabeled": False, "early_stopping": 10}
 
     def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """

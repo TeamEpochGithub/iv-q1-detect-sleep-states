@@ -46,9 +46,6 @@ class RemoveUnlabeled(PP):
 
         logger.info(f"------ Data shape before: {data.shape}")
 
-        # TODO Remove this
-        data_before = data.copy()
-
         if self.remove_entire_series:
             data = data.groupby(["series_id"]).filter(lambda x: (x['awake'] != 3).all()).reset_index(drop=True)
             if self.remove_nan:
@@ -60,18 +57,22 @@ class RemoveUnlabeled(PP):
         if "window" in data.columns:
             logger.info("------ Removing unlabeled data with windowing")
             if self.remove_partially_unlabeled_windows:
-                data = data.groupby(["series_id", "window"]).filter(lambda x: not (x['awake'] == 3).any()).reset_index(drop=True)
+                data = data.groupby(["series_id", "window"]).filter(lambda x: not (x['awake'] == 3).any()).reset_index(
+                    drop=True)
             else:
-                data = data.groupby(["series_id", "window"]).filter(lambda x: (x['awake'] != 3).any()).reset_index(drop=True)
+                data = data.groupby(["series_id", "window"]).filter(lambda x: (x['awake'] != 3).any()).reset_index(
+                    drop=True)
 
             if self.remove_nan:
                 if self.remove_partially_unlabeled_windows:
-                    data = data.groupby(["series_id", "window"]).filter(lambda x: not (x['awake'] == 2).any()).reset_index(drop=True)
+                    data = data.groupby(["series_id", "window"]).filter(
+                        lambda x: not (x['awake'] == 2).any()).reset_index(drop=True)
                 else:
-                    data = data.groupby(["series_id", "window"]).filter(lambda x: (x['awake'] != 2).any()).reset_index(drop=True)
+                    data = data.groupby(["series_id", "window"]).filter(lambda x: (x['awake'] != 2).any()).reset_index(
+                        drop=True)
 
             logger.info(f"------ Data shape after: {data.shape}")
-            return data
+            return self.reset_windows_indices(data)
 
         logger.info("------ Removing unlabeled data without windowing")
         data = data[(data["awake"] != 3)].reset_index(drop=True)
@@ -79,4 +80,14 @@ class RemoveUnlabeled(PP):
             data = data[(data["awake"] != 2)].reset_index(drop=True)
 
         logger.info(f"------ Data shape after: {data.shape}")
+        return data
+
+    @staticmethod
+    def reset_windows_indices(data: pd.DataFrame) -> pd.DataFrame:
+        """Reset the window number after removing unlabeled data
+
+        :param data: The dataframe to reset the window number with columns "series_id" and "window"
+        """
+        data["window"] = (data.groupby("series_id")["window"].rank(method="dense").sub(1).astype(int)
+                          .reset_index(drop=True))
         return data

@@ -45,7 +45,8 @@ class TestRemoveUnlabeled(TestCase):
         self.assertEqual(16, df_test.shape[0])
 
     def test_no_window_2(self) -> None:
-        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=False, remove_nan=True, remove_entire_series=False)
+        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=False, remove_nan=True,
+                                           remove_entire_series=False)
         df: pd.DataFrame = pd.DataFrame({
             "series_id": np.repeat("test", 20),
             "step": range(20),
@@ -60,7 +61,8 @@ class TestRemoveUnlabeled(TestCase):
         self.assertEqual(11, df_test.shape[0])
 
     def test_no_window_3(self) -> None:
-        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=False, remove_nan=True, remove_entire_series=True)
+        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=False, remove_nan=True,
+                                           remove_entire_series=True)
         df: pd.DataFrame = pd.DataFrame({
             "series_id": np.concatenate((np.repeat("test", 10), np.repeat("test2", 10))),
             "step": range(20),
@@ -93,7 +95,8 @@ class TestRemoveUnlabeled(TestCase):
         self.assertEqual(3, df_test.shape[0])
 
     def test_window_2(self) -> None:
-        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=False, remove_nan=True, remove_entire_series=False)
+        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=False, remove_nan=True,
+                                           remove_entire_series=False)
         df: pd.DataFrame = pd.DataFrame({
             "series_id": np.repeat("test", 20),
             "step": range(20),
@@ -144,3 +147,12 @@ class TestRemoveUnlabeled(TestCase):
 
         df_test: pd.DataFrame = remove_unlabeled.preprocess(df)
         self.assertEqual(20, df_test.shape[0])
+
+    def test_reset_window(self) -> None:
+        df: pd.DataFrame = pd.DataFrame({
+            "series_id": np.concatenate((np.repeat("test", 9), np.repeat("test2", 9))),
+            "window": [0, 0, 0, 2, 2, 2, 4, 4, 4, 0, 0, 0, 2, 2, 2, 4, 4, 4],
+        })
+
+        df_test: pd.DataFrame = RemoveUnlabeled.reset_windows_indices(df)
+        self.assertListEqual([0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2], df_test["window"].tolist())

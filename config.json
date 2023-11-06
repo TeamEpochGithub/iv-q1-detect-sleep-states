@@ -55,7 +55,6 @@
   ],
   "pretraining": {
     "downsample": {
-      "factor": 12,
       "features": [
         "f_anglez",
         "f_enmo"
@@ -76,6 +75,13 @@
       "kind": "standard-scaler",
       "copy": true
     }
+  },
+  "cv": {
+        "splitter": "group_k_fold",
+        "scoring": ["score_full", "score_clean"],
+        "splitter_params": {
+            "n_splits": 3
+        }
   },
   "models": {
     "EventResGRU": {

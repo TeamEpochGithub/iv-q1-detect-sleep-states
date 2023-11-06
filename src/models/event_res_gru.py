@@ -385,7 +385,7 @@ class EventResGRU(Model):
             all_confidences.append(confidences)
 
         # Return numpy array
-        return all_predictions,  all_confidences
+        return np.array(all_predictions), np.array(all_confidences)
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """

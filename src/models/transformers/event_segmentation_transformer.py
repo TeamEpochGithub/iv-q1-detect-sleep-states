@@ -415,7 +415,7 @@ class EventSegmentationTransformer(BaseTransformer):
             self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
         self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
             self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
-        
+
     def reset_weights(self) -> None:
         """
         Reset the weights of the model. Useful for retraining the model.

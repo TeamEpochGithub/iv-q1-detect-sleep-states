@@ -15,8 +15,8 @@ class Trainer:
         model: The model to train.
         batch_size: The batch size.
         lr: The learning rate.
-        betas: The betas for the Adam optimiser.
-        eps: The epsilon for the Adam optimiser.
+        betas: The betas for the Adam optimizer.
+        eps: The epsilon for the Adam optimizer.
         epochs: The number of epochs to train for.
     """
 
@@ -35,7 +35,7 @@ class Trainer:
         use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda:" + cuda_dev if use_cuda else "cpu")
 
-    def fit(self, dataloader: torch.utils.data.DataLoader, testloader: torch.utils.data.DataLoader, model: nn.Module, optimiser: torch.optim.Optimizer, name: str):
+    def fit(self, dataloader: torch.utils.data.DataLoader, testloader: torch.utils.data.DataLoader, model: nn.Module, optimizer: torch.optim.Optimizer, name: str):
         """
         Train the model on the training set and validate on the test set.
 
@@ -43,7 +43,7 @@ class Trainer:
             dataloader: The training set.
             testloader: The test set.
             model: The model to train.
-            optimiser: The optimiser to use.
+            optimizer: The optimizer to use.
             name: The name of the model.
         """
 
@@ -77,7 +77,7 @@ class Trainer:
 
             # Training loss
             train_losses = self.train_one_epoch(
-                dataloader=dataloader, epoch_no=epoch, optimiser=optimiser, model=model)
+                dataloader=dataloader, epoch_no=epoch, optimizer=optimizer, model=model)
             if len(train_losses) > 0:
                 train_loss = sum(train_losses) / len(train_losses)
                 avg_train_losses.append(train_loss.cpu())
@@ -113,14 +113,14 @@ class Trainer:
 
         return avg_train_losses, avg_val_losses, trained_epochs
 
-    def train_one_epoch(self, dataloader, epoch_no, optimiser, model, disable_tqdm=False) -> List[float]:
+    def train_one_epoch(self, dataloader, epoch_no, optimizer, model, disable_tqdm=False) -> List[float]:
         """
         Train the model on the training set for one epoch and return training losses
 
         Args:
             dataloader: The training set.
             epoch_no: The epoch number.
-            optimiser: The optimiser to use.
+            optimizer: The optimizer to use.
             model: The model to train.
             disable_tqdm: Disable tqdm.
         """
@@ -130,7 +130,7 @@ class Trainer:
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
             for _, data in enumerate(tepoch):
                 losses = self._train_one_loop(
-                    data=data, losses=losses, model=model, optimiser=optimiser)
+                    data=data, losses=losses, model=model, optimizer=optimizer)
                 tepoch.set_description(f"Epoch {epoch_no}")
                 if len(losses) > 0:
                     tepoch.set_postfix(loss=sum(losses) / len(losses))
@@ -139,7 +139,7 @@ class Trainer:
         return losses
 
     def _train_one_loop(
-        self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimiser: torch.optim.Optimizer
+        self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer
     ) -> List[float]:
         """
         Train the model on one batch and return the loss.
@@ -148,11 +148,11 @@ class Trainer:
             data: The batch to train on.
             losses: The list of losses.
             model: The model to train.
-            optimiser: The optimiser to use.
+            optimizer: The optimizer to use.
         """
 
         # Retrieve target and output
-        optimiser.zero_grad()
+        optimizer.zero_grad()
         data[0] = data[0].float()
         output = model(data[0].to(self.device))
 
@@ -168,7 +168,7 @@ class Trainer:
         # Backpropagate loss if not nan
         if not np.isnan(loss.item()):
             loss.backward()
-            optimiser.step()
+            optimizer.step()
             losses.append(loss.detach())
 
         return losses

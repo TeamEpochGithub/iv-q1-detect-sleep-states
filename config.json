@@ -24,20 +24,18 @@
             "as_feature": true
         },
         {
-          "kind": "add_state_labels",
-          "id_encoding_path": "series_id_encoding.json",
-          "events_path": "data/raw/train_events.csv",
-          "use_similarity_nan": true,
-          "fill_limit": 8640,
-          "nan_tolerance_window": 5
-
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
         },
         {
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0,
-            "steepness": 1
+            "smoothing": 0
         },
         {
             "kind": "split_windows"
@@ -53,12 +51,16 @@
         {
             "kind": "time",
             "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000]
         }
     ],
     "pretraining": {
         "downsample": {
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median", "var", "range"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -75,33 +77,34 @@
         }
     },
     "models": {
-        "SplitEvent-1D-Unet-CNN": {
-            "type": "split-event-seg-unet-1d-cnn",
-            "loss": "mse-torch",
+        "213-Split-Event-1D-Unet-CNN": {
+            "type": "event-seg-unet-1d-cnn",
+            "loss": "shrinkage-loss",
             "optimizer": "adam-torch",
             "epochs": 44,
             "batch_size": 32,
             "lr": 0.001,
-            "hidden_layers": 8,
+            "hidden_layers": 16,
             "early_stopping": 7,
-            "threshold": 0
+            "threshold": 0,
+            "mask_unlabeled": true
         }
     },
-  "ensemble": {
-      "models": ["SplitEvent-1D-Unet-CNN"],
-      "weights": [1],
-      "comb_method": "addition"
-  },
-  "ensemble_loss": "mse-torch",
-  "hpo": {
-      "apply": false,
-      "method": "example_hpo"
-  },
-  "train_for_submission": true,
-  "scoring": true,
-  "visualize_preds": {
-      "n": 0,
-      "browser_plot": false,
-      "save": true
-  }
+    "ensemble": {
+        "models": ["213-Split-Event-1D-Unet-CNN"],
+        "weights": [1],
+        "comb_method": "addition"
+    },
+    "ensemble_loss": "mse-torch",
+    "hpo": {
+        "apply": false,
+        "method": "example_hpo"
+    },
+    "train_for_submission": true,
+    "scoring": true,
+    "visualize_preds": {
+        "n": 0,
+        "browser_plot": false,
+        "save": true
+    }
 }

@@ -62,7 +62,7 @@ class SplitWindows(PP):
 
         # Pad types
         pad_type = {'step': np.int32, 'series_id': np.uint16,
-                    'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
+                    'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
 
         optionals = {  # (data_type, default_val for padding)
             'awake': (np.uint8, 2),
@@ -70,6 +70,7 @@ class SplitWindows(PP):
             'state-wakeup': (np.float32, 0),
             'f_similarity_nan': (np.float32, 0),
             'similarity_nan': (np.float32, 0),
+            'utc': (np.uint16, 0),
         }
 
         # set the data types for the optional columns
@@ -106,6 +107,7 @@ class SplitWindows(PP):
         start_pad_df = pd.DataFrame({'timestamp': timestamps,
                                      'enmo': np.zeros(amount_of_padding_start),
                                      'anglez': np.zeros(amount_of_padding_start),
+                                     'utc': np.zeros(amount_of_padding_start),
                                      'step': step,
                                      'series_id': np.full(amount_of_padding_start, curr_series_id)})
 
@@ -132,6 +134,7 @@ class SplitWindows(PP):
         end_pad_df = pd.DataFrame({'timestamp': timestamps,
                                    'enmo': np.zeros(amount_of_padding_end),
                                    'anglez': np.zeros(amount_of_padding_end),
+                                   'utc': np.zeros(amount_of_padding_end),
                                    'step': step,
                                    'series_id': np.full(amount_of_padding_end, curr_series_id)})
 

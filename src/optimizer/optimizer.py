@@ -27,6 +27,8 @@ class Optimizer:
         match optimizer_name:
             case "adam-torch":
                 return optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+            case "adamw-torch":
+                return optim.AdamW(model.parameters(), lr=learning_rate)
             case "sgd-torch":
                 return optim.SGD(model.parameters(), lr=learning_rate)
             case "adagrad-torch":

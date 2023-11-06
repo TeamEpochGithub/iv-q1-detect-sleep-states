@@ -71,10 +71,10 @@
         }
     },
     "models": {
-        "213-Split-Event-1D-Unet-CNN": {
-            "type": "event-seg-unet-1d-cnn",
+        "221-Split-Event-1D-Unet-CNN": {
+            "type": "split-event-seg-unet-1d-cnn",
             "loss": "shrinkage-loss",
-            "optimizer": "adam-torch",
+            "optimizer": "adamw-torch",
             "epochs": 44,
             "batch_size": 32,
             "lr": 0.001,
@@ -85,7 +85,7 @@
         }
     },
     "ensemble": {
-        "models": ["213-Split-Event-1D-Unet-CNN"],
+        "models": ["221-Split-Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -94,7 +94,7 @@
         "apply": false,
         "method": "example_hpo"
     },
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

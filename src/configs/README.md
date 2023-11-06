@@ -61,7 +61,7 @@ Adds this as a column that is 0 for perfect similarity.
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`
     - Parameters: `id_encoding_path: str`, `events_path: str`, `use_similarity_nan: bool`, `fill_limit: int`
-    - Labels the data in a way that each timestep gets a label.
+    - Labels the data in a way that each timestep gets a label. (Column name: awake)
         - `0`: asleep.
         - `1`: awake.
         - `2`: `NaN`, not labeled.
@@ -308,22 +308,10 @@ This contains all the models and their hyperparameters that are implemented. The
     - depth=2
     - early_stopping=-1
     - weight_decay=0.0
+    - mask_unlabeled=False
 
 ##### Event segmentation models
-- event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
-    - loss (required, mse-torch recommended)
-    - optimizer (required)
-    - epochs=10
-    - batch_size=32
-    - lr=0.001
-    - hidden_layers=32
-    - kernel_size=7 (only works on 7 for now)
-    - depth=2
-    - early_stopping=-1
-    - weight_decay=0.0
-    - threshold=0 (threshold for the event prediction, if the prediction is below this, it returns a nan)
-
-- split-event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
+- event-seg-unet-1d-cnn / split-event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
     - loss (required, shrinkage-loss recommended)
     - optimizer (required)
     - epochs=10
@@ -335,7 +323,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - early_stopping=-1
     - weight_decay=0.0
     - threshold=0 (threshold for the event prediction, if the prediction is below this, it returns a nan)
-
+    - mask_unlabeled=false
 
 #### Transformers
 - transformer / segmentation-transformer / event-segmentation-transformer
@@ -408,7 +396,7 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
 }
 
 "Event-1D-Unet-CNN": {
-      "type": "event-seg-unet-1d-cnn",
+      "type": "event-seg-unet-1d-cnn" / "SplitEvent-1D-Unet-CNN",
       "loss": "mse-torch",
       "optimizer": "adam-torch",
       "epochs": 10,
@@ -416,19 +404,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
       "lr": 0.001,
       "hidden_layers": 8,
       "early_stopping": 7,
-      "threshold": 0
-}
-
-"SplitEvent-1D-Unet-CNN": {
-      "type": "split-event-seg-unet-1d-cnn",
-      "loss": "shrinkage-loss",
-      "optimizer": "adam-torch",
-      "epochs": 44,
-      "batch_size": 32,
-      "lr": 0.001,
-      "hidden_layers": 32,
-      "early_stopping": 7,
-      "threshold": 0
+      "threshold": 0,
+      "mask_unlabeled": false
 }
 ```
 

@@ -24,19 +24,18 @@
             "as_feature": true
         },
         {
-          "kind": "add_state_labels",
-          "id_encoding_path": "series_id_encoding.json",
-          "events_path": "data/raw/train_events.csv",
-          "use_similarity_nan": true,
-          "fill_limit": 8640,
-          "nan_tolerance_window": 5
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
         },
         {
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0,
-            "steepness": 1
+            "smoothing": 0
         },
         {
             "kind": "split_windows"
@@ -45,13 +44,17 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["hour", "minute"]
+            "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000]
         }
     ],
     "pretraining": {
         "downsample": {
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median", "var", "range"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -68,7 +71,7 @@
         }
     },
     "models": {
-        "EventTransformer": {
+        "200-EventTransformer": {
             "type": "event-segmentation-transformer",
             "epochs": 25,
             "loss": "shrinkage-loss",
@@ -87,7 +90,7 @@
         }
     },
     "ensemble": {
-        "models": ["EventTransformer"],
+        "models": ["200-EventTransformer"],
         "weights": [1],
         "comb_method": "addition"
     },

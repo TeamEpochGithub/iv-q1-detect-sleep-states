@@ -276,6 +276,7 @@ class EventSegmentationTransformer(BaseTransformer):
 
         # Concatenate the predictions from all batches for onset
         predictions_onset = np.concatenate(predictions_onset, axis=0)
+        predictions_onset = predictions_onset.permute(0,2,1)
 
         # Awake predictions
         predictions_awake = []
@@ -295,6 +296,7 @@ class EventSegmentationTransformer(BaseTransformer):
 
         # Concatenate the predictions from all batches for awake
         predictions_awake = np.concatenate(predictions_awake, axis=0)
+        predictions_awake = predictions_awake.permute(0,2,1)
 
         # Concatenate the predictions from awake and onset (batch, steps, 1) + (batch, steps, 1) = (batch, steps, 2)
         predictions = np.concatenate(
@@ -352,8 +354,7 @@ class EventSegmentationTransformer(BaseTransformer):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model_onset = TransformerPool(**self.transformer_config)
-            self.model_awake = TransformerPool(**self.transformer_config)
+            self.reset_weights()
             self.reset_optimizer()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
@@ -385,6 +386,8 @@ class EventSegmentationTransformer(BaseTransformer):
         config["lr"] = config.get("lr", default_config["lr"])
         config["early_stopping"] = config.get(
             "early_stopping", default_config["early_stopping"])
+        config["threshold"] = config.get(
+            "threshold", default_config["threshold"])
 
         # Add loss, epochs and optimizer to config
         config["mask_unlabeled"] = config.get(
@@ -411,3 +414,10 @@ class EventSegmentationTransformer(BaseTransformer):
             self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
         self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
             self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+        
+    def reset_weights(self) -> None:
+        """
+        Reset the weights of the model. Useful for retraining the model.
+        """
+        self.model_onset = TransformerPool(**self.transformer_config)
+        self.model_awake = TransformerPool(**self.transformer_config)

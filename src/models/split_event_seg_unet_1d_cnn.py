@@ -445,10 +445,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model_onset = SegUnet1D(
-                in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-            self.model_awake = SegUnet1D(
-                in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            self.reset_weights()
             self.reset_optimizer()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)

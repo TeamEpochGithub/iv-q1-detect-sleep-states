@@ -40,7 +40,7 @@ class Loss:
             case "bce-logits-torch":
                 return nn.BCEWithLogitsLoss(**kwargs)
             case "kldiv-torch":
-                return nn.KLDivLoss(**kwargs, reduction="mean")
+                return nn.KLDivLoss(**kwargs, reduction="batchmean")
             case "regression":
                 return RegressionLoss()
             case "event-regression":

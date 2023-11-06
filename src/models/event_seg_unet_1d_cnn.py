@@ -6,6 +6,7 @@ import torch
 import wandb
 from numpy import ndarray, dtype
 from sklearn.metrics import roc_curve
+from torch import log_softmax, softmax
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -192,7 +193,11 @@ class EventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs, y)
+
+                    if str(criterion) == "KLDivLoss()":
+                        loss = criterion(log_softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    else:
+                        loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()
@@ -216,7 +221,10 @@ class EventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model(vx)
-                        vloss = criterion(voutputs, vy)
+                        if str(criterion) == "KLDivLoss()":
+                            vloss = criterion(log_softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
+                        else:
+                            vloss = criterion(voutputs.squeeze(), vy)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -326,7 +334,10 @@ class EventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model(x)
-                    loss = criterion(outputs, y)
+                    if str(criterion) == "KLDivLoss()":
+                        loss = criterion(log_softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    else:
+                        loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()

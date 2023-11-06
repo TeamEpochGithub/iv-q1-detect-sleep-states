@@ -235,7 +235,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_onset(x)
-                    loss = criterion(softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+
+                    # Apply softmax if loss is KlDivergenceLoss
+                    if str(criterion) == "KLDivLoss()":
+                        loss = criterion(log_softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    else:
+                        loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()
@@ -259,7 +264,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model_onset(vx)
-                        vloss = criterion(softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
+                        # Apply softmax if loss is KlDivergenceLoss
+                        if str(criterion) == "KLDivLoss()":
+                            vloss = criterion(log_softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
+                        else:
+                            vloss = criterion(voutputs.squeeze(), y)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -317,7 +326,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_awake(x)
-                    loss = criterion(softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    # Apply softmax if loss is KlDivergenceLoss
+                    if str(criterion) == "KLDivLoss()":
+                        loss = criterion(log_softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    else:
+                        loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()
@@ -341,7 +354,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
                         vx = vx.to(self.device)
                         vy = vy.to(self.device)
                         voutputs = self.model_awake(vx)
-                        vloss = criterion(softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
+                        # Apply softmax if loss is KlDivergenceLoss
+                        if str(criterion) == "KLDivLoss()":
+                            vloss = criterion(log_softmax(voutputs.squeeze(), dim=1), softmax(vy, dim=1))
+                        else:
+                            vloss = criterion(outputs.squeeze(), y)
 
                         current_loss = vloss.item()
                         total_val_batch_loss += current_loss
@@ -464,7 +481,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_onset(x)
-                    loss = criterion(outputs.squeeze(), y)
+
+                    # Apply softmax if loss is KlDivergenceLoss
+                    if str(criterion) == "KLDivLoss()":
+                        loss = criterion(log_softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    else:
+                        loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()
@@ -506,7 +528,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
                     # Forward pass
                     outputs = self.model_awake(x)
-                    loss = criterion(outputs.squeeze(), y)
+                    # Apply softmax if loss is KlDivergenceLoss
+                    if str(criterion) == "KLDivLoss()":
+                        loss = criterion(log_softmax(outputs.squeeze(), dim=1), softmax(y, dim=1))
+                    else:
+                        loss = criterion(outputs.squeeze(), y)
 
                     # Backward and optimize
                     loss.backward()

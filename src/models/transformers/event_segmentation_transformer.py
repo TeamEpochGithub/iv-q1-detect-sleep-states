@@ -276,7 +276,8 @@ class EventSegmentationTransformer(BaseTransformer):
 
         # Concatenate the predictions from all batches for onset
         predictions_onset = np.concatenate(predictions_onset, axis=0)
-        predictions_onset = predictions_onset.permute(0,2,1)
+        # Permute np array to (batch, 1, steps)
+        predictions_onset = predictions_onset.transpose(0, 2, 1)
 
         # Awake predictions
         predictions_awake = []
@@ -296,7 +297,7 @@ class EventSegmentationTransformer(BaseTransformer):
 
         # Concatenate the predictions from all batches for awake
         predictions_awake = np.concatenate(predictions_awake, axis=0)
-        predictions_awake = predictions_awake.permute(0,2,1)
+        predictions_awake = predictions_awake.transpose(0, 2, 1)
 
         # Concatenate the predictions from awake and onset (batch, steps, 1) + (batch, steps, 1) = (batch, steps, 2)
         predictions = np.concatenate(

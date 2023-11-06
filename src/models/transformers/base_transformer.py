@@ -69,6 +69,8 @@ class BaseTransformer(Model):
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
+        config["threshold"] = config.get(
+            "threshold", default_config["threshold"])
 
         # Add loss, epochs and optimizer to config
         config["loss"] = Loss.get_loss(loss)
@@ -84,7 +86,7 @@ class BaseTransformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.000035, "mask_unlabeled": False, "early_stopping": 10}
+        return {"batch_size": 32, "lr": 0.000035, "mask_unlabeled": False, "early_stopping": 10, "threshold": 0}
 
     def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """

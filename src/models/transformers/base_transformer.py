@@ -36,7 +36,7 @@ class BaseTransformer(Model):
         # Config for the transformer architecture
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_info.window_size
-        self.transformer_config["tokenizer_args"]["channels"] = 2
+        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
 
         # Config for the model class
         self.config["seq_len"] = data_info.window_size

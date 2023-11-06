@@ -73,7 +73,7 @@
     "models": {
         "200-EventTransformer": {
             "type": "event-segmentation-transformer",
-            "epochs": 25,
+            "epochs": 50,
             "loss": "shrinkage-loss",
             "optimizer": "adam-torch",
             "lr": 0.00035,

@@ -87,9 +87,6 @@ class EventSegmentationTransformer(BaseTransformer):
         logger.debug(
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
-        # Y should have all  (Preprocessing steps: 1. Add event labels)
-        assert y_train.shape[2] == 2
-
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
         y_train = torch.from_numpy(y_train)
@@ -393,9 +390,9 @@ class EventSegmentationTransformer(BaseTransformer):
         config["mask_unlabeled"] = config.get(
             "mask_unlabeled", default_config["mask_unlabeled"])
         if config["mask_unlabeled"]:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
+            config["loss"] = Loss.get_loss(loss, reduction="none")
         else:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+            config["loss"] = Loss.get_loss(loss, reduction="mean")
         config["optimizer_onset"] = Optimizer.get_optimizer(
             optimizer, config["lr"], model=self.model_onset)
         config["optimizer_awake"] = Optimizer.get_optimizer(

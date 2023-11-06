@@ -11,7 +11,10 @@ from ... import data_info
 def masked_loss(criterion, outputs, y):
     assert y.shape[1] > 1, "Masked loss only works with shape (batch_size, 2 | 3 depending on both awake and onset, seq_len)"
 
+    if y.shape[1] == data_info.window_size:
+        y = y.permute(0, 2, 1)
     labels = y[:, 1:, :]
+    labels = labels.squeeze()
 
     # Get the mask from y (shape (batch_size, 2, seq_len)) if y.shape[1] == 3 else (batch_size, 1, seq_len)
     if y.shape[1] == 3:
@@ -184,9 +187,7 @@ class EventTrainer:
         data[0] = data[0].to(self.device).float()
         data[1] = data[1].to(self.device).float()
         output = model(data[0].to(self.device))
-
-        if output.shape[1] == 1:
-            output = output.squeeze()
+        output = output.squeeze()
 
         # Calculate loss
         if self.mask_unlabeled:

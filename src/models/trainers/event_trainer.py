@@ -247,9 +247,7 @@ class EventTrainer:
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
             output = model(data[0].to(self.device))
-
-            if output.shape[1] == 1:
-                output = output.squeeze()
+            output = output.squeeze()
 
             # Calculate loss
             if self.mask_unlabeled:

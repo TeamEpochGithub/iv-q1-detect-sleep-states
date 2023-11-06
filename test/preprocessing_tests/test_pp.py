@@ -23,7 +23,9 @@ class TestPP(TestCase):
                                                      "id_encoding_path": "e.json",
                                                      "events_path": "e.csv",
                                                      "use_similarity_nan": False}), AddStateLabels)
-        self.assertIsInstance(PP.from_config_single({"kind": "remove_unlabeled", "remove_only_full_windows": False, "keep_nan": False}), RemoveUnlabeled)
+        self.assertIsInstance(PP.from_config_single(
+            {"kind": "remove_unlabeled", "remove_partially_unlabeled_windows": True, "remove_nan": False,
+             "remove_entire_series": False}), RemoveUnlabeled)
         self.assertIsInstance(PP.from_config_single({"kind": "split_windows"}), SplitWindows)
         self.assertRaises(PPException, PP.from_config_single, {"kind": "e"})
 

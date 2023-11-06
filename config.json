@@ -44,8 +44,8 @@
         },
         {
             "kind": "remove_unlabeled",
-            "remove_series": false,
-            "remove_only_fully_unlabeled_windows": false,
+            "remove_entire_series": false,
+            "remove_partially_unlabeled_windows": true,
             "remove_nan": true
         }
     ],

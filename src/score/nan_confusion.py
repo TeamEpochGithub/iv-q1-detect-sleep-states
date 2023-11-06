@@ -19,6 +19,7 @@ def compute_nan_confusion_matrix(submission: pd.DataFrame, solution: pd.DataFram
     for index, row in submission.dropna().iterrows():
         sid = row['series_id']
         window = (row['step'] - first_offsets[sid]) // window_size
+        # TODO Fix crash with remove_unlabeled
         window_info.loc[(sid, window), 'submissions'] += 1
 
     for index, row in solution.dropna().iterrows():

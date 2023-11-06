@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 import torch
+from src import data_info
 
 from src.logger.logger import logger
 
@@ -20,7 +21,7 @@ class BaseTransformer(Model):
     This is the model file for a base implementation of the transformer, individual architectures and training can be implemented on top of this.
     """
 
-    def __init__(self, config: dict, data_shape: tuple, name: str) -> None:
+    def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the example model
         :param config: configuration to set up the model
@@ -31,15 +32,14 @@ class BaseTransformer(Model):
 
         # Init model
         self.name = name
-        self.data_shape = data_shape
 
         # Config for the transformer architecture
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["seq_len"] = data_shape[1]
-        self.transformer_config["tokenizer_args"]["channels"] = data_shape[0]
+        self.transformer_config["seq_len"] = data_info.window_size
+        self.transformer_config["tokenizer_args"]["channels"] = 2
 
         # Config for the model class
-        self.config["seq_len"] = data_shape[1]
+        self.config["seq_len"] = data_info.window_size
 
         # Check if gpu is available, else return an exception
         if not torch.cuda.is_available():
@@ -84,7 +84,7 @@ class BaseTransformer(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.000035}
+        return {"batch_size": 32, "lr": 0.000035, "mask_unlabeled": False, "early_stopping": 10}
 
     def load_transformer_config(self, config: dict[str, int | float | str]) -> dict[str, int | float | str]:
         """

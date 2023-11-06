@@ -86,7 +86,8 @@
             "forward_dim": 256,
             "batch_size": 16,
             "heads": 8,
-            "pooling": "none"
+            "pooling": "none",
+            "mask_unlabeled": true
         }
     },
     "ensemble": {

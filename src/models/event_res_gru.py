@@ -68,16 +68,26 @@ class EventResGRU(Model):
         # Get default_config
         default_config = self.get_default_config()
         config["loss"] = Loss.get_loss(config["loss"])
-        config["batch_size"] = config.get("batch_size", 1)
-        config["lr"] = config.get("lr", 0.1)
+        config["batch_size"] = config.get("batch_size", default_config["batch_size"])
+        config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
         config["lr_schedule"] = config.get("lr_schedule")
-        config["epochs"] = config.get("epochs", 20)
-        config["early_stopping"] = config.get("early_stopping", 3)
-        config["activation_delay"] = config.get("activation_delay", 0)
+        config["epochs"] = config.get("epochs", default_config["epochs"])
+        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
+        config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
         config["network_params"] = config.get("network_params", dict())
-        config["threshold"] = config.get("threshold", 0.0)
+        config["threshold"] = config.get("threshold", default_config["threshold"])
         self.config = config
+
+    def get_default_config(self) -> dict:
+        return {
+            "batch_size": 1,
+            "lr": 0.1,
+            "epochs": 100,
+            "early_stopping": 3,
+            "activation_delay": 0,
+            "threshold": 0.0
+        }
 
     def get_type(self) -> str:
         """

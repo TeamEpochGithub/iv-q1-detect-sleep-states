@@ -35,7 +35,8 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 5,
+            "steepness": 2
         },
         {
             "kind": "split_windows"
@@ -51,10 +52,6 @@
         {
             "kind": "time",
             "time_features": ["hour","minute"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000]
         }
     ],
     "pretraining": {
@@ -77,27 +74,20 @@
         }
     },
     "models": {
-        "200-EventTransformer": {
-            "type": "event-segmentation-transformer",
-            "epochs": 25,
-            "loss": "shrinkage-loss",
+        "SplitEvent-1D-Unet-CNN": {
+            "type": "split-event-seg-unet-1d-cnn",
+            "loss": "kldiv-torch",
             "optimizer": "adam-torch",
-            "lr": 0.00035,
-            "tokenizer": "patch",
-            "tokenizer_args": {
-                "patch_size": 8
-            },
-            "pe": "other",
-            "emb_dim": 64,
-            "forward_dim": 256,
-            "batch_size": 16,
-            "heads": 8,
-            "pooling": "none",
-            "mask_unlabeled": true
+            "epochs": 200,
+            "batch_size": 32,
+            "lr": 0.0005,
+            "hidden_layers": 8,
+            "early_stopping": 7,
+            "threshold": 0
         }
     },
     "ensemble": {
-        "models": ["200-EventTransformer"],
+        "models": ["SplitEvent-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },

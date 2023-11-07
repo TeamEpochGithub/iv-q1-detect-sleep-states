@@ -1,5 +1,5 @@
 import numpy as np
-from torch import nn
+from torch import nn, log_softmax, softmax
 import torch
 from tqdm import tqdm
 from typing import List
@@ -30,7 +30,10 @@ def masked_loss(criterion, outputs, y):
     # Set true to 0 and false to 1
     unlabeled_mask = unlabeled_mask ^ 1
 
-    loss_unreduced = criterion(outputs, labels)
+    if str(criterion) == "KLDivLoss()":
+        loss_unreduced = criterion(log_softmax(outputs, dim=1), softmax(labels, dim=1))
+    else:
+        loss_unreduced = criterion(outputs, labels)
 
     loss_masked = loss_unreduced * unlabeled_mask
 
@@ -193,7 +196,10 @@ class EventTrainer:
         if self.mask_unlabeled:
             loss = masked_loss(self.criterion, output, data[1])
         else:
-            loss = self.criterion(output, data[1])
+            if str(self.criterion) == "KLDivLoss()":
+                loss = self.criterion(log_softmax(output, dim=1), softmax(data[1], dim=1))
+            else:
+                loss = self.criterion(output, data[1])
 
         # Backpropagate loss and update weights
         loss.backward()
@@ -253,6 +259,9 @@ class EventTrainer:
             if self.mask_unlabeled:
                 loss = masked_loss(self.criterion, output, data[1])
             else:
-                loss = self.criterion(output, data[1])
+                if str(self.criterion) == "KLDivLoss()":
+                    loss = self.criterion(log_softmax(output, dim=1), softmax(data[1], dim=1))
+                else:
+                    loss = self.criterion(output, data[1])
             losses.append(loss.detach())
         return losses

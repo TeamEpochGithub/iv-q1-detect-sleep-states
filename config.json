@@ -37,7 +37,8 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 5,
+            "steepness": 2
         },
         {
             "kind": "split_windows"

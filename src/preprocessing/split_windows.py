@@ -47,7 +47,7 @@ class SplitWindows(PP):
         df = df.groupby('series_id').progress_apply(
             self.preprocess_series).reset_index(0, drop=True)
 
-        df = self.clip_enmo_df(df)
+        # df = self.clip_enmo_df(df)
         return df
 
     def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:

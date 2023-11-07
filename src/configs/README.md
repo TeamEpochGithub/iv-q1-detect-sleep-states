@@ -176,7 +176,8 @@ List of options and their config options:
 - `similarity_nan`
   - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
 - `sun`
-    -  `sun_features`: a list of sun features to include based on hardcoded NYC location
+    -  `sun_features`: a list of sun features to include based the longitude and latitude that should be specified in the data_info.
+    Currently, NYC location is used.
     - Options: `elevation`, `azimuth`
 
 

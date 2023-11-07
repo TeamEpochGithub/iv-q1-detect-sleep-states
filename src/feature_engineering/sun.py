@@ -15,7 +15,7 @@ class Sun(FE):
     """
 
     def __init__(self, sun_features: str | list[str], **kwargs: dict) -> None:
-        """Initialize the Time class
+        """Initialize the Sun class
 
         :param sun_features: the time features to add
         """
@@ -30,7 +30,7 @@ class Sun(FE):
             raise FEException(f"Unknown sun features: {sun_features}")
 
     def __repr__(self) -> str:
-        """Return a string representation of a Time object"""
+        """Return a string representation of a Sun object"""
         return f"{self.__class__.__name__}(sun_features={self.sun_features})"
 
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:

@@ -40,6 +40,12 @@
         },
         {
             "kind": "split_windows"
+        },
+        {
+            "kind": "remove_unlabeled",
+            "remove_entire_series": false,
+            "remove_partially_unlabeled_windows": true,
+            "remove_nan": true
         }
     ],
     "feature_engineering": [

@@ -46,10 +46,6 @@
         {
             "kind": "time",
             "time_features": ["hour","minute"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000]
         }
     ],
     "pretraining": {
@@ -85,7 +81,7 @@
         }
     },
     "ensemble": {
-        "models": ["200-EventTransformer"],
+        "models": ["SplitEvent-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },

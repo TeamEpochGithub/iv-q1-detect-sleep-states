@@ -86,7 +86,10 @@ class SplitEventSegmentationUnet1DCNN(Model):
         if config["mask_unlabeled"]:
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+            if config["loss"] == "kldiv-torch":
+                config["loss"] = Loss.get_loss(config["loss"], reduction="batchmean")
+            else:
+                config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])

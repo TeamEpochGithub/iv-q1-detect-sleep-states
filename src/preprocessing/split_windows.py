@@ -59,8 +59,7 @@ class SplitWindows(PP):
     def clip_enmo_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df['enmo'] = df['enmo'].clip(upper=df['enmo'].mean() + 5 * df['enmo'].std())
         return df
-        
-    
+
     def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 
         # Garbage collect

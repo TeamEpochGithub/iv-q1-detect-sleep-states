@@ -7,10 +7,10 @@ class ConBrBlock(nn.Module):
     Convolution + Batch Normalization + ReLU Block.
     """
 
-    def __init__(self, in_layer, out_layer, kernel_size, stride, dilation):
+    def __init__(self, in_layer, out_layer, kernel_size, stride, dilation, padding: int = 3):
         super(ConBrBlock, self).__init__()
 
-        self.conv1 = nn.Conv1d(in_layer, out_layer, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=3, bias=True)
+        self.conv1 = nn.Conv1d(in_layer, out_layer, kernel_size=kernel_size, stride=stride, dilation=dilation, padding=padding, bias=True)
         self.bn = nn.BatchNorm1d(out_layer)
         self.relu = nn.ReLU()
 

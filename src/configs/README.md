@@ -176,6 +176,10 @@ List of options and their config options:
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 - `similarity_nan`
   - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
+- `sun`
+    -  `sun_features`: a list of sun features to include based the longitude and latitude that should be specified in the data_info.
+    Currently, NYC location is used.
+    - Options: `elevation`, `azimuth`
 
 
 Example:
@@ -208,6 +212,10 @@ Example:
             "kind": "similarity_nan",
             "as_feature": true,
         },
+        {
+            "kind": "sun",
+            "sun_features": ["elevation", "azimuth"]
+        }
 ]
 ```
 

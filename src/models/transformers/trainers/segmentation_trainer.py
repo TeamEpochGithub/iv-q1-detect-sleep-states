@@ -86,7 +86,7 @@ class SegmentationTrainer:
         lowest_val_loss = np.inf
         best_model = model.state_dict()
         counter = 0
-        max_counter = 10
+        max_counter = 15
         trained_epochs = 0
         for epoch in range(self.n_epochs):
 
@@ -172,9 +172,8 @@ class SegmentationTrainer:
         output = model(data[0].to(self.device))
 
         # Calculate loss
-        loss = masked_loss(self.criterion,
-                           output,
-                           data[1].type(torch.FloatTensor).to(self.device))
+        loss = self.criterion(output.squeeze(), data[1].type(
+            torch.FloatTensor).to(self.device))
 
         # Backpropagate loss if not nan
         if not np.isnan(loss.item()):
@@ -223,10 +222,8 @@ class SegmentationTrainer:
             data[0] = data[0].float()
             output = model(data[0].to(self.device))
 
-            # Calculate loss
-            loss = masked_loss(self.criterion,
-                               output,
-                               data[1].type(torch.FloatTensor).to(self.device))
+            loss = self.criterion(output.squeeze(), data[1].type(
+                torch.FloatTensor).to(self.device))
             if not np.isnan(loss.item()):
                 losses.append(loss.detach())
         return losses

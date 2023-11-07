@@ -1,7 +1,11 @@
 {
     "name": "config",
     "log_to_wandb": true,
-    "pred_with_cpu": true,
+    "pred_with_cpu": false,
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12
+    },
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -10,10 +14,6 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12
-    },
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -70,28 +70,34 @@
         }
     },
     "cv": {
-        "splitter": "group_k_fold",
+        "splitter": "group_shuffle_split",
         "scoring": ["score_full", "score_clean"],
         "splitter_params": {
-            "n_splits": 3
+            "n_splits": 1
         }
     },
     "models": {
-        "213-Split-Event-1D-Unet-CNN": {
-            "type": "event-seg-unet-1d-cnn",
+        "200-EventTransformer": {
+            "type": "event-segmentation-transformer",
+            "epochs": 25,
             "loss": "shrinkage-loss",
             "optimizer": "adam-torch",
-            "epochs": 44,
-            "batch_size": 32,
-            "lr": 0.001,
-            "hidden_layers": 16,
-            "early_stopping": 7,
-            "threshold": 0,
+            "lr": 0.00035,
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 8
+            },
+            "pe": "other",
+            "emb_dim": 64,
+            "forward_dim": 256,
+            "batch_size": 16,
+            "heads": 8,
+            "pooling": "none",
             "mask_unlabeled": true
         }
     },
     "ensemble": {
-        "models": ["213-Split-Event-1D-Unet-CNN"],
+        "models": ["200-EventTransformer"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -100,7 +106,7 @@
         "apply": false,
         "method": "example_hpo"
     },
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

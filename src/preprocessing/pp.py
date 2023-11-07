@@ -58,9 +58,6 @@ class PP:
             case "split_windows":
                 from .split_windows import SplitWindows
                 return SplitWindows(**config)
-            case "truncate":
-                from .truncate import Truncate
-                return Truncate(**config)
             case _:
                 logger.critical(f"Unknown preprocessing step: {kind}")
                 raise PPException(f"Unknown preprocessing step: {kind}")

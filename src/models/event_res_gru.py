@@ -147,8 +147,8 @@ class EventResGRU(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
 
         total_epochs = 0
         avg_losses = []
@@ -215,8 +215,8 @@ class EventResGRU(Model):
 
             # Log train test loss to wandb
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} of {self.name}": avg_loss,
-                           f"Validation {str(criterion)} of {self.name}": avg_val_loss,
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}": avg_loss,
+                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}": avg_val_loss,
                            "epoch": epoch})
 
             # Early stopping
@@ -232,7 +232,6 @@ class EventResGRU(Model):
                         logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
                             total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
                         self.model.load_state_dict(best_model)
-                        # TODO use the save function to save this model
                         stopped = True
                         break
 
@@ -283,8 +282,7 @@ class EventResGRU(Model):
         # Define wandb metrics
         if wandb.run is not None:
             wandb.define_metric("epoch")
-            wandb.define_metric(f"Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(f"Validation {str(criterion)} of {self.name}", step_metric="epoch")
+            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
 
         # Train the model
 
@@ -322,7 +320,7 @@ class EventResGRU(Model):
             pbar.set_description(descr)
 
             if wandb.run is not None:
-                wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
+                wandb.log({f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Training of model complete!")
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:

@@ -57,17 +57,21 @@ class RemoveUnlabeled(PP):
         if "window" in data.columns:
             logger.info("------ Removing unlabeled data with windowing")
             if self.remove_partially_unlabeled_windows:
+                # Remove windows that have at least one 3
                 data = data.groupby(["series_id", "window"]).filter(lambda x: not (x['awake'] == 3).any()).reset_index(
                     drop=True)
             else:
+                # Remove windows that are completely 3
                 data = data.groupby(["series_id", "window"]).filter(lambda x: (x['awake'] != 3).any()).reset_index(
                     drop=True)
 
             if self.remove_nan:
                 if self.remove_partially_unlabeled_windows:
+                    # Remove windows that have at least one 2
                     data = data.groupby(["series_id", "window"]).filter(
                         lambda x: not (x['awake'] == 2).any()).reset_index(drop=True)
                 else:
+                    # Remove windows that are completely 2
                     data = data.groupby(["series_id", "window"]).filter(lambda x: (x['awake'] != 2).any()).reset_index(
                         drop=True)
 

@@ -72,7 +72,7 @@ class RemoveUnlabeled(PP):
                         drop=True)
 
             logger.info(f"------ Data shape after: {data.shape}")
-            return self.reset_windows_indices(data)
+            return data
 
         logger.info("------ Removing unlabeled data without windowing")
         data = data[(data["awake"] != 3)].reset_index(drop=True)

@@ -74,7 +74,7 @@ class MemReduce(PP):
 
         timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))
 
-        utc = timestamp_pl.str.slice(21, 1).cast(pl.Int32)
+        utc = timestamp_pl.str.slice(21, 1).cast(pl.UInt16)
         timestamp_pl = timestamp_pl.str.slice(0, 19)
 
         timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S", time_unit='ms')

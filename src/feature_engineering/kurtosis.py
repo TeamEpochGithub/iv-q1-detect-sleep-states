@@ -37,7 +37,7 @@ class Kurtosis(RollingWindow):
         data["f_kurtosis_" + feature + "_" + str(window_size)] = data[
             "f_kurtosis_" + feature + "_" + str(window_size)].fillna(0.0)
 
-        # Clip karthosis
+        # Clip kurtosis
         data["f_kurtosis_" + feature + "_" + str(window_size)] = data[
             "f_kurtosis_" + feature + "_" + str(window_size)].clip(
             lower=data["f_kurtosis_" + feature + "_" + str(window_size)].mean() - 5 * data[

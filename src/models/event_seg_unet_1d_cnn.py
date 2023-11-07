@@ -10,13 +10,13 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
+from .trainers.event_trainer import EventTrainer
 from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.model import Model, ModelException
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
-from .trainers.event_trainer import EventTrainer
 
 
 class EventSegmentationUnet1DCNN(Model):
@@ -80,7 +80,10 @@ class EventSegmentationUnet1DCNN(Model):
         if config["mask_unlabeled"]:
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+            if config["loss"] == "kldiv-torch":
+                config["loss"] = Loss.get_loss(config["loss"], reduction="batchmean")
+            else:
+                config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])

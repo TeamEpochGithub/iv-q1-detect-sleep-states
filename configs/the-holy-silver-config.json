@@ -1,7 +1,7 @@
 {
     "name": "config",
     "log_to_wandb": true,
-    "pred_with_cpu": false,
+    "pred_with_cpu": true,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -10,12 +10,6 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12,
-        "latitude": 40.730610,
-        "longitude": -73.935242
-    },
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -26,12 +20,13 @@
             "as_feature": true
         },
         {
-            "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv",
-            "use_similarity_nan": true,
-            "fill_limit": 8640,
-            "nan_tolerance_window": 5
+          "kind": "add_state_labels",
+          "id_encoding_path": "series_id_encoding.json",
+          "events_path": "data/raw/train_events.csv",
+          "use_similarity_nan": true,
+          "fill_limit": 8640,
+          "nan_tolerance_window": 5
+
         },
         {
             "kind": "add_event_labels",
@@ -40,14 +35,12 @@
             "smoothing": 0
         },
         {
-            "kind": "split_windows"
+            "kind": "split_windows",
+            "start_hour": 15,
+            "window_size": 17280
         }
     ],
     "feature_engineering": [
-        {
-            "kind": "sun",
-            "sun_features": ["azimuth", "altitude"]
-        },
         {
             "kind": "time",
             "time_features": ["hour","minute"]
@@ -55,8 +48,9 @@
     ],
     "pretraining": {
         "downsample": {
+            "factor": 12,
             "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "methods": ["min", "max", "mean", "std", "median"],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -65,35 +59,21 @@
             "copy": true
         }
     },
-    "cv": {
-        "splitter": "group_shuffle_split",
-        "scoring": ["score_full", "score_clean"],
-        "splitter_params": {
-            "n_splits": 1
-        }
-    },
     "models": {
-        "200-EventTransformer": {
-            "type": "event-segmentation-transformer",
-            "epochs": 25,
-            "loss": "shrinkage-loss",
-            "optimizer": "adam-torch",
-            "lr": 0.00035,
-            "tokenizer": "patch",
-            "tokenizer_args": {
-                "patch_size": 8
-            },
-            "pe": "other",
-            "emb_dim": 64,
-            "forward_dim": 256,
-            "batch_size": 16,
-            "heads": 8,
-            "pooling": "none",
-            "mask_unlabeled": true
-        }
+      "Event-1D-Unet-CNN": {
+        "type": "event-seg-unet-1d-cnn",
+        "loss": "mse-torch",
+        "optimizer": "adam-torch",
+        "epochs": 52,
+        "batch_size": 32,
+        "lr": 0.0005,
+        "hidden_layers": 16,
+        "early_stopping": 7,
+        "threshold": 0
+      }
     },
     "ensemble": {
-        "models": ["200-EventTransformer"],
+        "models": ["Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
@@ -102,11 +82,16 @@
         "apply": false,
         "method": "example_hpo"
     },
-    "train_for_submission": false,
+    "cv": {
+        "apply": false,
+        "method": "example_cv"
+    },
+    "train_for_submission":true,
     "scoring": true,
     "visualize_preds": {
-        "n": 0,
+        "n": 10,
         "browser_plot": false,
-        "save": true
+        "save": false
     }
 }
+

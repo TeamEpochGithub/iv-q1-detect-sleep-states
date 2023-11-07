@@ -1,0 +1,81 @@
+{
+    "name": "config",
+    "log_to_wandb": true,
+    "pred_with_cpu": true,
+    "train_series_path": "data/raw/train_series.parquet",
+    "train_events_path": "data/raw/train_events.csv",
+    "test_series_path": "data/raw/test_series.parquet",
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "model_store_loc": "tm",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
+    "preprocessing": [
+        {
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
+        },
+        {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv"
+        },
+        {
+            "kind": "split_windows",
+            "start_hour": 15,
+            "window_size": 17280
+        },
+        {
+            "kind": "add_segmentation_labels"
+        },
+        {
+            "kind": "remove_unlabeled"
+        }
+    ],
+    "feature_engineering": {
+    },
+    "pretraining": {
+        "window_size": 17280,
+        "test_size": 0.2,
+        "downsample": {
+            "factor": 12,
+            "features": ["f_enmo", "f_anglez"],
+            "methods": ["min", "max", "mean", "median", "var", "std"],
+            "standard": "median"
+        },
+        "scaler": {
+            "kind": "standard-scaler"
+        }
+    },
+    "models": {
+        "1D-Unet-CNN": {
+            "type": "seg-unet-1d-cnn",
+            "loss": "bce-torch",
+            "optimizer": "adam-torch",
+            "epochs": 75,
+            "batch_size": 32,
+            "lr": 0.0005,
+            "hidden_layers": 128,
+            "early_stopping": 7
+        }
+    },
+    "ensemble": {
+        "models": ["1D-Unet-CNN"],
+        "weights": [1],
+        "comb_method": "addition"
+    },
+    "ensemble_loss": "mse-torch",
+    "hpo": {
+        "apply": false,
+        "method": "example_hpo"
+    },
+    "cv": {
+        "apply": false,
+        "method": "example_cv"
+    },
+    "scoring": true,
+    "train_for_submission": true,
+
+
+
+}

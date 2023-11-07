@@ -1,7 +1,6 @@
 series_id_encoding.json
 test_encoding.json
 plots/
-.gitignore
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -192,17 +191,11 @@ submission_zip/
 tm/
 tm.zip
 
-#Ignore configs
-configs/
-
 #Ignore prediction plots
 prediction_plots/
 
 #Ignore submissions
 submissions/
-sleep-critical-point-prepare-data.ipynb
-train_data.pkl
-history.json
-loss_evo.png
-lr_evo.png
-model_best.pth
+
+#Ignore config.json
+config.json

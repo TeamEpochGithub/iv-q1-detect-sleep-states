@@ -22,7 +22,6 @@ from src.util.submissionformat import to_submission_format
 def main(config: ConfigLoader) -> None:
     """
     Main function for training the model
-
     :param config: loaded config
     """
     print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
@@ -50,13 +49,23 @@ def main(config: ConfigLoader) -> None:
         logger.info("Predicting with CPU for inference")
     else:
         logger.info("Predicting with GPU for inference")
+
+    # ------------------------------------------- #
+    #                 Ensemble                    #
+    # ------------------------------------------- #
+    ensemble = config.get_ensemble()
+
+    # TODO: Remove model0Config and use loop
+    model0Config = ensemble.get_models()[0]
+
     # ------------------------------------------- #
     #    Preprocessing and feature Engineering    #
     # ------------------------------------------- #
 
     print_section_separator("Preprocessing and feature engineering", spacing=0)
     data_info.stage = "preprocessing & feature engineering"
-    featured_data = get_processed_data(config, training=True, save_output=True)
+    featured_data = get_processed_data(
+        model0Config, training=True, save_output=True)
 
     # ------------------------ #
     #         Pretrain         #
@@ -66,22 +75,23 @@ def main(config: ConfigLoader) -> None:
     data_info.stage = "pretraining"
 
     logger.info("Get pretraining parameters from config and initialize pretrain")
-    pretrain: Pretrain = config.get_pretraining()
+    pretrain: Pretrain = model0Config.get_pretraining()
 
-    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
+    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
+                " and test size of " + str(pretrain.test_size))
 
     # Split data into train/test and validation
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
     logger.info("Splitting data into train and test...")
     data_info.substage = "pretrain_split"
 
-    X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
+    x_train, x_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
         featured_data)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
-        X_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
+        x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
     logger.info("X Test data shape (size, window_size, features): " + str(
-        X_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
+        x_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
 
     # ------------------------- #
     # Cross Validation Training #
@@ -95,30 +105,36 @@ def main(config: ConfigLoader) -> None:
 
     # Initialize models
     logger.info("Initializing models...")
-    models = config.get_models()
+    models = ensemble.get_models()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
-    initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
+    initial_hash = hash_config(model0Config.get_pp_fe_pretrain(), length=5)
 
-    for i, model in enumerate(models):
-        data_info.substage = f"training model {i}: {model}"
+    for i, model_config in enumerate(models):
+        model_name = model_config.get_name()
+        model = model_config.set_model()
+        data_info.substage = f"training model {i}: {model_name}"
         # Get filename of model
-        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+        model_filename_opt = store_location + "/optimal_" + \
+            model_name + "-" + initial_hash + model.hash + ".pt"
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename_opt):
-            logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
-            models[model].load(model_filename_opt, only_hyperparameters=False)
+            logger.info("Found existing trained optimal model " + str(i) +
+                        ": " + model + " with location " + model_filename_opt)
+            model.load(model_filename_opt, only_hyperparameters=False)
         else:
-            logger.info("Applying cross-validation on model " + str(i) + ": " + model)
+            logger.info("Applying cross-validation on model " +
+                        str(i) + ": " + model_name)
             data_info.stage = "cv"
-            cv = config.get_cv()
+            cv = model_config.get_cv()
 
             # TODO Implement hyperparameter optimization and train optimal model on train split and evaluate on test split. Save that as the optimal model.#101
             # It now only saves the trained model from the last fold
             train_df = featured_data.iloc[train_idx]
 
             # Apply CV
-            scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+            scores = cv.cross_validate(
+                model, x_train, y_train, train_df=train_df, groups=groups)
 
             # Log scores to wandb
             mean_scores = np.mean(scores, axis=0)
@@ -131,13 +147,16 @@ def main(config: ConfigLoader) -> None:
             data_info.stage = "train"
             data_info.substage = "optimal"
 
-            logger.info("Training optimal model " + str(i) + ": " + model)
-            models[model].train(X_train, X_test, y_train, y_test)
+            logger.info("Training optimal model " + str(i) + ": " + model_name)
+            model.train(x_train, x_test, y_train, y_test)
 
     # Store optimal models
-    for i, model in enumerate(models):
-        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
-        models[model].save(model_filename_opt)
+    for i, model_config in enumerate(models):
+        model_name = model_config.get_name()
+        model = model_config.get_model()
+        model_filename_opt = store_location + "/optimal_" + \
+            model_name + "-" + initial_hash + model.hash + ".pt"
+        model.save(model_filename_opt)
 
     # ------------------------- #
     #          Ensemble         #
@@ -179,7 +198,7 @@ def main(config: ConfigLoader) -> None:
     scoring = config.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
-        predictions = ensemble.pred(X_test, pred_with_cpu=pred_cpu)
+        predictions = ensemble.pred(x_test, pred_with_cpu=pred_cpu)
 
         logger.info("Formatting predictions...")
 
@@ -190,7 +209,8 @@ def main(config: ConfigLoader) -> None:
         #                .apply(lambda x: x.iloc[0]))
         # # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
         # #  to access the first step as a negative index which is now a very large integer instead
-        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if 'similarity_nan' in col]
+        important_cols = ['series_id', 'window', 'step'] + \
+            [col for col in featured_data.columns if 'similarity_nan' in col]
         grouped = (featured_data.iloc[test_idx][important_cols]
                    .groupby(['series_id', 'window']))
         window_offset = grouped.apply(lambda x: x.iloc[0])
@@ -200,10 +220,13 @@ def main(config: ConfigLoader) -> None:
         # filter out predictions using a threshold on (f_)similarity_nan
         filter_cfg = config.get_similarity_filter()
         if filter_cfg:
-            logger.info(f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
-            col_name = [col for col in featured_data.columns if 'similarity_nan' in col]
+            logger.info(
+                f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
+            col_name = [
+                col for col in featured_data.columns if 'similarity_nan' in col]
             if len(col_name) == 0:
-                raise ValueError("No (f_)similarity_nan column found in the data for filtering")
+                raise ValueError(
+                    "No (f_)similarity_nan column found in the data for filtering")
             mean_sim = grouped.apply(lambda x: (x[col_name] == 0).mean())
             nan_mask = mean_sim > filter_cfg['threshold']
             nan_mask = np.where(nan_mask, np.nan, 1)
@@ -227,7 +250,8 @@ def main(config: ConfigLoader) -> None:
                     .reset_index(drop=True))
         logger.info("Start scoring test predictions...")
 
-        scores = (compute_score_full(submission, solution), compute_score_clean(submission, solution))
+        scores = (compute_score_full(submission, solution),
+                  compute_score_clean(submission, solution))
         log_scores_to_wandb(*scores)
 
         # compute confusion matrix for making predictions or not
@@ -261,25 +285,28 @@ def main(config: ConfigLoader) -> None:
         logger.info("Retraining models for submission")
 
         # Retrain all models with optimal parameters
-        X_train, y_train, groups = pretrain.pretrain_final(featured_data)
+        x_train, y_train, groups = pretrain.pretrain_final(featured_data)
 
         # Save scaler
-        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
+        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + \
+            initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):
             data_info.substage = "Full"
 
-            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_opt = store_location + "/optimal_" + \
+                model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
                 model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
                 logger.info("Found existing fully trained submit model " + str(
                     i) + ": " + model + " with location " + model_filename_submit)
             else:
-                models[model].load(model_filename_opt, only_hyperparameters=True)
+                models[model].load(model_filename_opt,
+                                   only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(X_train, y_train)
+                models[model].train_full(x_train, y_train)
                 models[model].save(model_filename_submit)
 
     else:

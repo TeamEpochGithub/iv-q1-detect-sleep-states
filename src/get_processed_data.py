@@ -6,6 +6,7 @@ import pandas as pd
 
 from src import data_info
 from src.configs.load_config import ConfigLoader
+from src.configs.load_model_config import ModelConfigLoader
 from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
 from src.preprocessing.pp import PP
@@ -17,7 +18,7 @@ def log_memory():
     tracemalloc.reset_peak()
 
 
-def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
+def get_processed_data(config: ModelConfigLoader, training=True, save_output=True) -> pd.DataFrame:
     # TODO Use the a hash of the string representations of each PP and FE step
     pp_steps: list[PP] = config.get_pp_steps(training=training)
     pp_step_names: list[str] = [pp_step.kind for pp_step in pp_steps]
@@ -32,7 +33,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()
     for i in range(len(step_names), -1, -1):
-        path = config.get_pp_out() + '/' + '_'.join(step_names[:i]) + '.parquet'
+        path = config.get_processed_out() + '/' + '_'.join(step_names[:i]) + '.parquet'
         # check if the final result of the preprocessing exists
         if os.path.exists(path):
             logger.info(f'Reading existing file at: {path}')

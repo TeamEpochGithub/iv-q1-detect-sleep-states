@@ -4,23 +4,30 @@
 import numpy as np
 
 from ..logger.logger import logger
+from typing import List
+from ..configs.load_model_config import ModelConfigLoader
 
 
 class Ensemble:
 
     # Init function
-    def __init__(self, models=None, weight_matrix=None, combination_method="addition", config=None):
-        if models is None:
+    def __init__(self, model_configs: List[ModelConfigLoader] = None, weight_matrix: List[int] = None, combination_method: str = "addition"):
+        if model_configs is None:
             self.models = []
         else:
-            self.models = models
+            self.models = model_configs
 
         if weight_matrix is None:
             self.weight_matrix = np.ones(len(self.models))
         else:
             self.weight_matrix = weight_matrix
 
-        self.config = config
+    def get_models(self):
+        """
+        Get the models from the ensemble
+        :return: the models
+        """
+        return self.models
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """

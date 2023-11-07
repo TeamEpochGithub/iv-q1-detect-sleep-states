@@ -186,15 +186,11 @@ class EventResGRU(Model):
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
 
         # Train the model
-        logger.info("--- Training model full " + self.name)
+        logger.info("--- Training model full " + self.name + " for " + str(epochs) + " epochs")
         trainer = EventTrainer(epochs, criterion)
-        avg_losses, avg_val_losses, total_epochs = trainer.fit(trainloader=train_dataloader, testloader=None,
-                                                               model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler, activation_delay=activation_delay)
+        trainer.fit(trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+                    activation_delay=activation_delay)
         logger.info(f"--- Full train complete!")
-
-        # Log the results to wandb
-        if wandb.run is not None:
-            self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """

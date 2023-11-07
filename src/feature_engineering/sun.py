@@ -40,7 +40,7 @@ class Sun(FE):
         :return: the data with the selected time data added
         """
 
-        #Group by series_id and window and if 4 in data['utc'] replace 0 with 4
+        # Group by series_id and window and if 4 in data['utc'] replace 0 with 4
         tqdm.pandas()
         data = data.groupby(['series_id', 'window']).progress_apply(lambda x: self.fill_padding(x)).reset_index(drop=True)
 
@@ -57,7 +57,6 @@ class Sun(FE):
             data = data.rename(columns={'altitude': 'f_altitude'})
 
         return data
-
 
     def fill_padding(self, x: pd.DataFrame) -> pd.DataFrame:
         """

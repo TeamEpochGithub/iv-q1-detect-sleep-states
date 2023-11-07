@@ -53,7 +53,7 @@ DEFAULT_TIMES = [
     (-12, 'nautical_dawn', 'nautical_dusk'),
     (-18, 'night_end', 'night'),
     (6, 'golden_hour_end', 'golden_hour')
-] # yapf: disable
+]  # yapf: disable
 
 # date/time constants and conversions
 dayMs = 1000 * 60 * 60 * 24
@@ -127,12 +127,12 @@ def to_days(date):
 e = rad * 23.4397
 
 
-def right_ascension(l, b):
-    return atan(sin(l) * cos(e) - tan(b) * sin(e), cos(l))
+def right_ascension(li, b):
+    return atan(sin(li) * cos(e) - tan(b) * sin(e), cos(li))
 
 
-def declination(l, b):
-    return asin(sin(b) * cos(e) + cos(b) * sin(e) * sin(l))
+def declination(li, b):
+    return asin(sin(b) * cos(e) + cos(b) * sin(e) * sin(li))
 
 
 def azimuth(H, phi, dec):
@@ -313,17 +313,16 @@ def moon_coords(d):
     F = rad * (93.272 + 13.229350 * d)
 
     # longitude
-    l = L + rad * 6.289 * sin(M)
+    li = L + rad * 6.289 * sin(M)
     # latitude
     b = rad * 5.128 * sin(F)
     # distance to the moon in km
     dt = 385001 - 20905 * cos(M)
 
-    return {'ra': right_ascension(l, b), 'dec': declination(l, b), 'dist': dt}
+    return {'ra': right_ascension(li, b), 'dec': declination(li, b), 'dist': dt}
 
 
 def getMoonPosition(date, lat, lng):
-
     lw = rad * -lng
     phi = rad * lat
     d = to_days(date)
@@ -353,7 +352,6 @@ def getMoonPosition(date, lat, lng):
 
 
 def getMoonIllumination(date):
-
     d = to_days(date)
     s = sun_coords(d)
     m = moon_coords(d)
@@ -374,7 +372,6 @@ def getMoonIllumination(date):
         'fraction': (1 + cos(inc)) / 2,
         'phase': 0.5 + 0.5 * inc * np.sign(angle) / PI,
         'angle': angle}
-
 
 # def hoursLater(date, h):
 #     # TODO: pythonize

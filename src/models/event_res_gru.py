@@ -330,7 +330,7 @@ class EventResGRU(Model):
         Prediction function for the model.
         :param data: unlabelled data
         :param pred_with_cpu: whether to use cpu or gpu
-        :return: the predictions
+        :return: the predictions and confidences, as numpy arrays
         """
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")

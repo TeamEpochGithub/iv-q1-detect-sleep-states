@@ -47,6 +47,7 @@ class SplitWindows(PP):
         df = df.groupby('series_id').progress_apply(
             self.preprocess_series).reset_index(0, drop=True)
 
+        df = self.clip_enmo_df(df)
         return df
 
     def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:
@@ -55,6 +56,11 @@ class SplitWindows(PP):
         series.astype({'window': np.uint8})
         return series
 
+    def clip_enmo_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        df['enmo'] = df['enmo'].clip(upper=df['enmo'].mean() + 5 * df['enmo'].std())
+        return df
+        
+    
     def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 
         # Garbage collect

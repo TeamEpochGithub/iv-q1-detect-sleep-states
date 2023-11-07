@@ -75,7 +75,7 @@
     "models": {
         "SplitEvent-1D-Unet-CNN": {
             "type": "split-event-seg-unet-1d-cnn",
-            "loss": "mse-loss",
+            "loss": "mse-torch",
             "optimizer": "adam-torch",
             "epochs": 200,
             "batch_size": 32,

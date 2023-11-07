@@ -19,15 +19,13 @@ from ..optimizer.optimizer import Optimizer
 
 class EventResGRU(Model):
     """
-    This is a sample model file. You can use this as a template for your own models.
-    The model file should contain a class that inherits from the Model class.
+    Event segmentation residual-GRU model.
     """
 
     def __init__(self, config: dict, name: str) -> None:
         """
-        Init function of the example model
+        Init function of the Event segmentation residual-GRU model.
         :param config: configuration to set up the model
-        :param input_size: the number of features in the data
         :param name: name of the model
         """
         super().__init__(config, name)
@@ -121,10 +119,10 @@ class EventResGRU(Model):
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
 
-        # Flatten y_train and y_test so we only get the regression labels
-        # TODO get the proper labels from the data
-        y_train = y_train[:, :, -2:]
-        y_test = y_test[:, :, -2:]
+        cols = data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]
+        cols = np.array(cols)
+        y_train = y_train[:, :, cols]
+        y_test = y_test[:, :, cols]
         y_train = torch.from_numpy(y_train)
         y_test = torch.from_numpy(y_test)
 
@@ -265,10 +263,9 @@ class EventResGRU(Model):
         scheduler = CosineLRScheduler(optimizer, **self.config["lr_schedule"])
         X_train = torch.from_numpy(X_train)
 
-        # Flatten y_train and y_test so we only get the regression labels
-        # TODO get the proper labels from the data
-        y_train = y_train[:, :, -2:]
-        y_train = torch.from_numpy(y_train)
+        cols = data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]
+        cols = np.array(cols)
+        y_train = y_train[:, :, cols]
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -328,7 +325,7 @@ class EventResGRU(Model):
                 wandb.log({f"Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
         logger.info("--- Training of model complete!")
 
-    def pred(self, data: np.ndarray, pred_with_cpu: bool):
+    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -373,7 +370,7 @@ class EventResGRU(Model):
         predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
-        downsampling_factor = 17280 // data.shape[1]
+        downsampling_factor = data_info.downsampling_factor
         if downsampling_factor > 1:
             predictions = np.repeat(predictions, downsampling_factor, axis=1)
 

@@ -56,9 +56,10 @@ class SplitWindows(PP):
         series.astype({'window': np.uint8})
         return series
 
-    def clip_enmo_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        df['enmo'] = df['enmo'].clip(upper=df['enmo'].mean() + 5 * df['enmo'].std())
-        return df
+    # Adding clipping makes the score worse after some testing, but we can keep it here for now
+    # def clip_enmo_df(self, df: pd.DataFrame) -> pd.DataFrame:
+    #     df['enmo'] = df['enmo'].clip(upper=df['enmo'].mean() + 5 * df['enmo'].std())
+    #     return df
 
     def pad_series(self, group: pd.DataFrame) -> pd.DataFrame:
 

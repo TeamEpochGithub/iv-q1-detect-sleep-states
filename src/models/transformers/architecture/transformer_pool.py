@@ -4,6 +4,7 @@ import torch
 # Base imports
 from .pooling import SeqPool, LSTMPooling, NoPooling
 from .encoder_config import EncoderConfig
+from ...architectures.seg_unet_1d_cnn import ConBrBlock
 
 
 class TransformerPool(nn.Module):
@@ -27,7 +28,7 @@ class TransformerPool(nn.Module):
         self, heads: int = 8, emb_dim: int = 92, forward_dim: int = 2048,
         n_layers: int = 6,
         seq_len: int = 17280, num_class: int = 2, pooling: str = "none", tokenizer: str = "patch", tokenizer_args: dict = {},
-        pe: str = "fixed", dropout: float = 0.1, no_head: bool = False
+        pe: str = "fixed", dropout: float = 0.1, t_type: str = "regression"
     ) -> None:
         super(TransformerPool, self).__init__()
         self.encoder = EncoderConfig(
@@ -49,12 +50,18 @@ class TransformerPool(nn.Module):
         elif pooling == "softmax":
             self.seq_pool = SeqPool(emb_dim=emb_dim)
             self.mlp_head = nn.Linear(emb_dim, num_class)
-        self.no_head = no_head
+        self.t_type = t_type
         # No head is used for segmentation
-        if no_head:
+        if t_type == "state":
             self.untokenize = nn.Linear(self.l_e, seq_len)
             self.mlp_head = nn.Linear(self.e, num_class)
             self.last_layer = nn.Sigmoid()
+        elif t_type == "event":
+            self.conbr_1 = ConBrBlock(emb_dim, emb_dim // 2, 3, 1, 1, padding=1)
+            self.conbr_2 = ConBrBlock(emb_dim // 2, emb_dim // 4, 3, 1, 1, padding=1)
+            self.upsample = nn.Upsample(scale_factor=(seq_len // self.l_e), mode='nearest')
+            self.outcov = nn.Conv1d(emb_dim // 4, num_class, kernel_size=3, stride=1, padding=1)
+            self.last_layer = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -65,7 +72,7 @@ class TransformerPool(nn.Module):
         # Pass x through encoder (bs, l, c) -> (bs, l_e, e)
         x = self.encoder(x)
 
-        if self.no_head:
+        if self.t_type == "state":
             # Perform sequential pooling (bs, l_e, e) -> (bs, len, num_class)
             # Untokenize (bs, l_e, e) -> (bs, l, e)
             x = self.untokenize(x.permute(0, 2, 1)).permute(0, 2, 1)
@@ -73,6 +80,17 @@ class TransformerPool(nn.Module):
             x = self.mlp_head(x)
             # Softmax (bs, l, num_class) -> (bs, l, num_class)
             x = self.last_layer(x)
+        elif self.t_type == "event":
+            # Perform conbr_1 (bs, l_e, e) -> (bs, e // 2, l_e)
+            x = self.conbr_1(x.permute(0, 2, 1))
+            # Upsample (bs, e_pool, l_e) -> (bs, e_pool, l)
+            x = self.upsample(x)
+            # Perform conbr_2 (bs, e_pool, l) -> (bs, e_pool // 2, l)
+            x = self.conbr_2(x)
+            # Perform outcov (bs, e_pool // 2, l) -> (bs, num_class, l)
+            x = self.outcov(x)
+            # Last layer (bs, num_class, l) -> (bs, l, num_class)
+            x = self.last_layer(x.permute(0, 2, 1))
         else:
             # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
             x = self.seq_pool(x)

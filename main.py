@@ -78,7 +78,6 @@ def main(config: ConfigLoader) -> None:
         featured_data)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
-
         X_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
     logger.info("X Test data shape (size, window_size, features): " + str(
         X_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))

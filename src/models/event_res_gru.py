@@ -4,12 +4,12 @@ import numpy as np
 import torch
 import wandb
 from timm.scheduler import CosineLRScheduler
-from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from src.util.state_to_event import pred_to_event_state
 from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
+from .trainers.event_trainer import EventTrainer
 from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
@@ -69,7 +69,8 @@ class EventResGRU(Model):
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
-        config["lr_schedule"] = config.get("lr_schedule")
+        config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+        config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
         config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
@@ -80,11 +81,17 @@ class EventResGRU(Model):
     def get_default_config(self) -> dict:
         return {
             "batch_size": 1,
-            "lr": 0.1,
+            "lr": 0.001,
             "epochs": 100,
             "early_stopping": 3,
             "activation_delay": 0,
-            "threshold": 0.0
+            "threshold": 0.0,
+            "lr_schedule": {
+                "t_initial": 100,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.000001,
+                "lr_min": 2e-8
+            },
         }
 
     def get_type(self) -> str:
@@ -108,23 +115,18 @@ class EventResGRU(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
-        # in the docs for this function it says that t_initial is the number of epochs
-        # but in the critical point code it is multiplied by the number of samples
-        scheduler = CosineLRScheduler(optimizer, **self.config["lr_schedule"])
-
+        scheduler = self.config["scheduler"]
         early_stopping = self.config["early_stopping"]
+        activation_delay = self.config["activation_delay"]
         if early_stopping > 0:
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
 
-        cols = data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]
-        cols = np.array(cols)
-        y_train = y_train[:, :, cols]
-        y_test = y_test[:, :, cols]
-        y_train = torch.from_numpy(y_train)
-        y_test = torch.from_numpy(y_test)
+        cols = np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])
+        y_train = torch.from_numpy(y_train[:, :, cols])
+        y_test = torch.from_numpy(y_test[:, :, cols])
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -140,107 +142,16 @@ class EventResGRU(Model):
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
         test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
 
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model.to(self.device)
-
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
-            wandb.define_metric(f"{data_info.substage} - Validation {str(criterion)} of {self.name}", step_metric="epoch")
-
-        total_epochs = 0
-        avg_losses = []
-        avg_val_losses = []
-        counter = 0
-        lowest_val_loss = np.inf
-        best_model = self.model.state_dict()
-        stopped = False
-        # Train the model
-
-        for epoch in range(epochs):
-            self.model.train(True)
-            total_loss = 0
-            use_activation = epoch > self.config["activation_delay"]
-            with tqdm(train_dataloader, unit="batch") as pbar:
-                for i, (x, y) in enumerate(pbar):
-                    h = None
-                    pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer.zero_grad()
-                    scheduler.step(epoch)
-                    # Forward pass
-                    outputs, _ = self.model(x, h, use_activation=use_activation)
-                    loss = criterion(outputs, y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1e-1)
-                    optimizer.step()
-
-                    # Calculate the avg loss for 1 epoch
-                    total_loss += loss.item()
-                    avg_loss = total_loss / (i + 1)
-                    pbar.set_postfix(loss=avg_loss)
-
-            # Calculate the validation loss
-            self.model.train(False)
-            total_val_loss = 0
-            with torch.no_grad():
-                with tqdm(test_dataloader, unit="batch") as pbar:
-                    for i, (vx, vy) in enumerate(pbar):
-                        pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
-                        h = None
-                        vx = vx.to(self.device)
-                        vy = vy.to(self.device)
-                        voutputs, _ = self.model(vx, h)
-                        vloss = criterion(voutputs, vy)
-                        total_val_loss += vloss.item()
-                        avg_val_loss = total_val_loss / (i + 1)
-                        pbar.set_postfix(loss=avg_val_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}"
-            logger.debug(descr)
-            pbar.set_description(descr)
-
-            # Add average losses to list
-            avg_losses.append(avg_loss)
-            avg_val_losses.append(avg_val_loss)
-            total_epochs += 1
-
-            # Log train test loss to wandb
-            if wandb.run is not None:
-                wandb.log({f"{data_info.substage} - Train {str(criterion)} of {self.name}": avg_loss,
-                           f"{data_info.substage} - Validation {str(criterion)} of {self.name}": avg_val_loss,
-                           "epoch": epoch})
-
-            # Early stopping
-            if early_stopping > 0:
-                # Save model if validation loss is lower than previous lowest validation loss
-                if avg_val_loss < lowest_val_loss:
-                    lowest_val_loss = avg_val_loss
-                    best_model = self.model.state_dict()
-                    counter = 0
-                else:
-                    counter += 1
-                    if counter >= early_stopping:
-                        logger.info("--- Patience reached of " + str(early_stopping) + " epochs. Current epochs run = " + str(
-                            total_epochs) + " Stopping training and loading best model for " + str(total_epochs - early_stopping) + ".")
-                        self.model.load_state_dict(best_model)
-                        stopped = True
-                        break
+        trainer = EventTrainer(
+            epochs, criterion, early_stopping=early_stopping)
+        avg_losses, avg_val_losses, total_epochs = trainer.fit(
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            activation_delay=activation_delay)
 
         if wandb.run is not None:
-            self.log_train_test(avg_losses, avg_val_losses, total_epochs)
+            self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
         logger.info("--- Training of model complete!")
-        if stopped:
-            total_epochs -= early_stopping
         self.config["total_epochs"] = total_epochs
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
@@ -254,17 +165,16 @@ class EventResGRU(Model):
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
-        optimizer = self.config["optimizer"]
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
-        # in the docs for this function it says that t_initial is the number of epochs
-        # but in the critical point code it is multiplied by the number of samples
-        scheduler = CosineLRScheduler(optimizer, **self.config["lr_schedule"])
-        X_train = torch.from_numpy(X_train)
+        optimizer = self.config["optimizer"]
+        scheduler = self.config["scheduler"]
+        activation_delay = self.config["activation_delay"]
 
-        cols = data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]
-        cols = np.array(cols)
-        y_train = y_train[:, :, cols]
+        # Create a dataset from X and y
+        X_train = torch.from_numpy(X_train)
+        cols = np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])
+        y_train = torch.from_numpy(y_train[:, :, cols])
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -275,53 +185,16 @@ class EventResGRU(Model):
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
 
-        # Add model and data to device cuda
-        # self.model.half()
-        self.model.to(self.device)
-
-        # Define wandb metrics
-        if wandb.run is not None:
-            wandb.define_metric("epoch")
-            wandb.define_metric(f"{data_info.substage} - Train {str(criterion)} of {self.name}", step_metric="epoch")
-
         # Train the model
+        logger.info("--- Training model full " + self.name)
+        trainer = EventTrainer(epochs, criterion)
+        avg_losses, avg_val_losses, total_epochs = trainer.fit(trainloader=train_dataloader, testloader=None,
+                                                               model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler, activation_delay=activation_delay)
+        logger.info(f"--- Full train complete!")
 
-        for epoch in range(epochs):
-            self.model.train(True)
-            total_loss = 0
-            use_activation = epoch > self.config["activation_delay"]
-            with tqdm(train_dataloader, unit="batch") as pbar:
-                for i, (x, y) in enumerate(pbar):
-                    h = None
-                    pbar.set_description(f"------ Epoch [{epoch + 1}/{epochs}]")
-                    x = x.to(device=self.device)
-                    y = y.to(device=self.device)
-
-                    # Clear gradients
-                    optimizer.zero_grad()
-                    scheduler.step(epoch)
-                    # Forward pass
-                    outputs, _ = self.model(x, h, use_activation=use_activation)
-                    loss = criterion(outputs, y)
-
-                    # Backward and optimize
-                    loss.backward()
-                    nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1e-1)
-                    optimizer.step()
-
-                    # Calculate the avg loss for 1 epoch
-                    total_loss += loss.item()
-                    avg_loss = total_loss / (i + 1)
-                    pbar.set_postfix(loss=avg_loss)
-
-            # Print the avg training and validation loss of 1 epoch in a clean way.
-            descr = f"------ Epoch [{epoch + 1}/{epochs}], Training Loss: {avg_loss:.4f}"
-            logger.debug(descr)
-            pbar.set_description(descr)
-
-            if wandb.run is not None:
-                wandb.log({f"{data_info.substage} - Train {str(criterion)} on whole dataset of {self.name}": avg_loss, "epoch": epoch})
-        logger.info("--- Training of model complete!")
+        # Log the results to wandb
+        if wandb.run is not None:
+            self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """

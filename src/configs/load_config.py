@@ -16,8 +16,8 @@ from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
-from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
+from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
@@ -259,7 +259,9 @@ class ConfigLoader:
 
         :return: the cross validation method
         """
-        return CV(**self.config["cv"])
+        if "cv" in self.config:
+            return CV(**self.config["cv"])
+        return None
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

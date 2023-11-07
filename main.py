@@ -116,14 +116,17 @@ def main(config: ConfigLoader) -> None:
             # It now only saves the trained model from the last fold
             train_df = featured_data.iloc[train_idx]
 
-            # Apply CV
-            scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+            # Apply CV if in the config
 
-            # Log scores to wandb
-            mean_scores = np.mean(scores, axis=0)
-            log_scores_to_wandb(mean_scores[0], mean_scores[1])
-            logger.info(
-                f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+            if cv is not None:
+                scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+
+                # Log scores to wandb
+                mean_scores = np.mean(scores, axis=0)
+                log_scores_to_wandb(mean_scores[0], mean_scores[1])
+                logger.info(
+                    f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+
 
             # Enter the optimal training
             # TODO Train optimal model from hpo train on train split, for now train without hpo

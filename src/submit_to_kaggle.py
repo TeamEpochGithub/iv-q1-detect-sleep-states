@@ -60,7 +60,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
 
     # make predictions
     ensemble = config.get_ensemble(models)
-    predictions = ensemble.pred(x_data, pred_cpu=pred_cpu)
+    predictions = ensemble.pred(x_data, pred_with_cpu=pred_cpu)
     if nan_mask is not None:
         predictions = predictions * nan_mask
 

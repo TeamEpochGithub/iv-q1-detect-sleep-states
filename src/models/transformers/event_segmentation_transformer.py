@@ -1,146 +1,58 @@
 import copy
-from typing import Any
-
 import numpy as np
 import torch
 import wandb
-from numpy import ndarray, dtype
-from torch.utils.data import TensorDataset, DataLoader
+
+from src.logger.logger import logger
+from src.loss.loss import Loss
+from src.models.trainers.event_trainer import EventTrainer
+from src.optimizer.optimizer import Optimizer
+from src.util.state_to_event import pred_to_event_state
+
+from torch import nn
 from tqdm import tqdm
-
-from .architectures.seg_unet_1d_cnn import SegUnet1D
-from .model import Model, ModelException
-from .trainers.event_trainer import EventTrainer
-from .. import data_info
-from ..logger.logger import logger
-from ..loss.loss import Loss
-from ..optimizer.optimizer import Optimizer
-from ..util.state_to_event import pred_to_event_state
+from numpy import ndarray, dtype
+from typing import Any
+from .architecture.transformer_pool import TransformerPool
+from .base_transformer import BaseTransformer
+from ... import data_info
+from torch.utils.data import TensorDataset, DataLoader
 
 
-class SplitEventSegmentationUnet1DCNN(Model):
+class EventSegmentationTransformer(BaseTransformer):
     """
-    This model is an event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
+    This is the model file for the event segmentation transformer model.
     """
 
     def __init__(self, config: dict, name: str) -> None:
         """
-        Init function of the example model
+        Init function of the event segmentation transformer model
         :param config: configuration to set up the model
+        :param data_shape: shape of the data (channels, sequence_size)
         :param name: name of the model
         """
-        super().__init__(config, name)
+        super().__init__(config=config, name=name)
+        # Init model
+        self.model_type = "event-segmentation-transformer"
 
-        # Check if gpu is available, else return an exception
-        if not torch.cuda.is_available():
-            logger.warning("GPU not available - using CPU")
-            self.device = torch.device("cpu")
-        else:
-            self.device = torch.device("cuda")
-            logger.info(
-                f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
+        # Load transformer config and model
+        self.transformer_config["t_type"] = "event"
+        self.transformer_config["num_class"] = 1
+        self.model_onset = TransformerPool(**self.transformer_config)
+        self.model_awake = TransformerPool(**self.transformer_config)
 
-        self.model_type = "event-segmentation"
+        # Load model class config
+        self.load_config(**self.config)
 
-        # Load config
-        self.load_config(config)
+        # Initialize weights
+        for p in self.model_onset.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+        for p in self.model_awake.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
 
-        # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-        self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-
-        # Load optimizer
-        self.load_optimizer()
-
-        # Print model summary
-        if wandb.run is not None:
-            if data_info.plot_summary:
-                from torchsummary import summary
-                summary(self.model_onset.cuda(), input_size=(
-                    len(data_info.X_columns), data_info.window_size))
-                summary(self.model_awake.cuda(), input_size=(
-                    len(data_info.X_columns), data_info.window_size))
-
-    def load_config(self, config: dict) -> None:
-        """
-        Load config function for the model.
-        :param config: configuration to set up the model
-        """
-        config = copy.deepcopy(config)
-
-        # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "optimizer"]
-        for req in required:
-            if req not in config:
-                logger.critical(
-                    "------ Config is missing required parameter: " + req)
-                raise ModelException(
-                    "Config is missing required parameter: " + req)
-
-        # Get default_config
-        default_config = self.get_default_config()
-        config["mask_unlabeled"] = config.get(
-            "mask_unlabeled", default_config["mask_unlabeled"])
-        if config["mask_unlabeled"]:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
-        else:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
-        config["batch_size"] = config.get(
-            "batch_size", default_config["batch_size"])
-        config["epochs"] = config.get("epochs", default_config["epochs"])
-        config["lr"] = config.get("lr", default_config["lr"])
-        config["hidden_layers"] = config.get(
-            "hidden_layers", default_config["hidden_layers"])
-        config["kernel_size"] = config.get(
-            "kernel_size", default_config["kernel_size"])
-        config["depth"] = config.get("depth", default_config["depth"])
-        config["early_stopping"] = config.get(
-            "early_stopping", default_config["early_stopping"])
-        config["threshold"] = config.get(
-            "threshold", default_config["threshold"])
-        config["weight_decay"] = config.get(
-            "weight_decay", default_config["weight_decay"])
-
-        self.config = config
-
-    def load_optimizer(self) -> None:
-        """
-        Load optimizer function for the model.
-        """
-        # Load optimizer
-        self.config["optimizer_onset"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_onset)
-        self.config["optimizer_awake"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_awake)
-
-    def get_default_config(self) -> dict:
-        """
-        Get default config function for the model.
-        :return: default config
-        """
-        return {
-            "batch_size": 32,
-            "lr": 0.001,
-            "epochs": 10,
-            "hidden_layers": 32,
-            "kernel_size": 7,
-            "depth": 2,
-            "early_stopping": -1,
-            "threshold": 0.5,
-            "weight_decay": 0.0,
-            "mask_unlabeled": False
-        }
-
-    def get_type(self) -> str:
-        """
-        Get type function for the model.
-        :return: the type of the model
-        """
-        return self.model_type
-
-    def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> None:
+    def train(self, X_train: np.array, X_test: np.array, y_train: np.array, y_test: np.array) -> None:
         """
         Train function for the model.
         :param X_train: the training data
@@ -148,77 +60,76 @@ class SplitEventSegmentationUnet1DCNN(Model):
         :param y_train: the training labels
         :param y_test: the test labels
         """
+
         # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info(f"Training model: {type(self).__name__}")
+        logger.info(f"Hyperparameters: {self.config}")
+
         # Load hyperparameters
         criterion = self.config["loss"]
         optimizer_onset = self.config["optimizer_onset"]
         optimizer_awake = self.config["optimizer_awake"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
-        early_stopping = self.config["early_stopping"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
-        # X_train and X_test are of shape (n, channels, window_size)
-        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
-        X_test = torch.from_numpy(X_test).permute(0, 2, 1)
-
-        # Get only the 2 event state features
-        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
-        y_test = torch.from_numpy(y_test).permute(0, 2, 1)
-
         # Print the shapes and types of train and test
-        logger.info(
-            f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(
-            f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(
-            f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(
-            f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        logger.debug(
+            f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.debug(
+            f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.debug(
+            f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.debug(
+            f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
-        # Create dataloaders for awake and onset
+        X_train = torch.from_numpy(X_train)
+        X_test = torch.from_numpy(X_test)
+        y_train = torch.from_numpy(y_train)
+        y_test = torch.from_numpy(y_test)
 
         # Dataset for onset
         if mask_unlabeled:
-            train_dataset_onset = torch.utils.data.TensorDataset(
-                X_train, y_train[:, (data_info.y_columns["awake"], data_info.y_columns["state-onset"]), :])
-            test_dataset_onset = torch.utils.data.TensorDataset(
-                X_test, y_test[:, (data_info.y_columns["awake"], data_info.y_columns["state-onset"]), :])
+            train_dataset_onset = TensorDataset(
+                X_train, y_train[:, :, (data_info.y_columns["awake"], data_info.y_columns["state-onset"])])
+            test_dataset_onset = TensorDataset(
+                X_test, y_test[:, :, (data_info.y_columns["awake"], data_info.y_columns["state-onset"])])
         else:
-            train_dataset_onset = torch.utils.data.TensorDataset(
-                X_train, y_train[:, data_info.y_columns["state-onset"], :])
-            test_dataset_onset = torch.utils.data.TensorDataset(
-                X_test, y_test[:, data_info.y_columns["state-onset"], :])
+            train_dataset_onset = TensorDataset(
+                X_train, y_train[:, :, data_info.y_columns["state-onset"]])
+            test_dataset_onset = TensorDataset(
+                X_test, y_test[:, :, data_info.y_columns["state-onset"]])
 
         # Dataset for awake
         if mask_unlabeled:
-            train_dataset_awake = torch.utils.data.TensorDataset(
-                X_train, y_train[:, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"]), :])
-            test_dataset_awake = torch.utils.data.TensorDataset(
-                X_test, y_test[:, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"]), :])
+            train_dataset_awake = TensorDataset(
+                X_train, y_train[:, :, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"])])
+            test_dataset_awake = TensorDataset(
+                X_test, y_test[:, :, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"])])
         else:
-            train_dataset_awake = torch.utils.data.TensorDataset(
-                X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
-            test_dataset_awake = torch.utils.data.TensorDataset(
-                X_test, y_test[:, data_info.y_columns["state-wakeup"], :])
+            train_dataset_awake = TensorDataset(
+                X_train, y_train[:, :, data_info.y_columns["state-wakeup"]])
+            test_dataset_awake = TensorDataset(
+                X_test, y_test[:, :, data_info.y_columns["state-wakeup"]])
 
-        # Create dataloaders for awake and onset
-        train_dataloader_onset = torch.utils.data.DataLoader(
+        # Create a dataloader from the dataset for onset
+        train_dataloader_onset = DataLoader(
             train_dataset_onset, batch_size=batch_size)
-        test_dataloader_onset = torch.utils.data.DataLoader(
+        test_dataloader_onset = DataLoader(
             test_dataset_onset, batch_size=batch_size)
 
-        train_dataloader_awake = torch.utils.data.DataLoader(
+        # Create a dataloader from the dataset for awake
+        train_dataloader_awake = DataLoader(
             train_dataset_awake, batch_size=batch_size)
-        test_dataloader_awake = torch.utils.data.DataLoader(
+        test_dataloader_awake = DataLoader(
             test_dataset_awake, batch_size=batch_size)
 
         # Train the onset model
         logger.info("--- Training onset model")
-
         trainer_onset = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(
@@ -231,16 +142,19 @@ class SplitEventSegmentationUnet1DCNN(Model):
         avg_losses_awake, avg_val_losses_awake, total_epochs_awake = trainer_awake.fit(
             train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
 
-        # Log full train and test plot
-        if wandb.run is not None:
-            self.log_train_test(
-                avg_losses_onset[:total_epochs_onset], avg_val_losses_onset[:total_epochs_onset], total_epochs_onset, "onset")
-            self.log_train_test(
-                avg_losses_awake[:total_epochs_awake], avg_val_losses_awake[:total_epochs_awake], total_epochs_awake, "awake")
-        logger.info("--- Training of model complete!")
-
         self.config["total_epochs_onset"] = total_epochs_onset
         self.config["total_epochs_awake"] = total_epochs_awake
+
+        if wandb.run is not None:
+            # Log onset
+            self.log_train_test(avg_losses_onset, avg_val_losses_onset, len(
+                avg_losses_onset), "_onset")
+
+            # Log awake
+            self.log_train_test(avg_losses_awake, avg_val_losses_awake, len(
+                avg_losses_awake), "_awake")
+
+        logger.info("--- Train complete!")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -248,6 +162,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
         :param X_train: the training data
         :param y_train: the training labels
         """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        logger.info(f"Training model: {type(self).__name__}")
+        logger.info(f"Hyperparameters: {self.config}")
+
+        # Load hyperparameters
         criterion = self.config["loss"]
         optimizer_onset = self.config["optimizer_onset"]
         optimizer_awake = self.config["optimizer_awake"]
@@ -256,35 +175,34 @@ class SplitEventSegmentationUnet1DCNN(Model):
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
 
+        # Print the shapes and types of train and test
         logger.info("--- Running for " + str(epochs_onset) + " epochs_onset.")
         logger.info("--- Running for " + str(epochs_awake) + " epochs_awake.")
 
-        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
-
-        # Get only the event state features
-        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
+        X_train = torch.from_numpy(X_train)
+        y_train = torch.from_numpy(y_train)
 
         # Dataset for onset
         if mask_unlabeled:
-            train_dataset_onset = torch.utils.data.TensorDataset(
-                X_train, y_train[:, (data_info.y_columns["awake"], data_info.y_columns["state-onset"]), :])
+            train_dataset_onset = TensorDataset(
+                X_train, y_train[:, :, (data_info.y_columns["awake"], data_info.y_columns["state-onset"])])
         else:
-            train_dataset_onset = torch.utils.data.TensorDataset(
-                X_train, y_train[:, data_info.y_columns["state-onset"], :])
+            train_dataset_onset = TensorDataset(
+                X_train, y_train[:, :, data_info.y_columns["state-onset"]])
 
         # Dataset for awake
         if mask_unlabeled:
-            train_dataset_awake = torch.utils.data.TensorDataset(
-                X_train, y_train[:, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"]), :])
+            train_dataset_awake = TensorDataset(
+                X_train, y_train[:, :, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"])])
         else:
-            train_dataset_awake = torch.utils.data.TensorDataset(
-                X_train, y_train[:, data_info.y_columns["state-wakeup"], :])
+            train_dataset_awake = TensorDataset(
+                X_train, y_train[:, :, data_info.y_columns["state-wakeup"]])
 
         # Create dataloaders for awake and onset
-        train_dataloader_onset = torch.utils.data.DataLoader(
+        train_dataloader_onset = DataLoader(
             train_dataset_onset, batch_size=batch_size)
 
-        train_dataloader_awake = torch.utils.data.DataLoader(
+        train_dataloader_awake = DataLoader(
             train_dataset_awake, batch_size=batch_size)
 
         # Print the shapes and types of train and test
@@ -309,12 +227,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
-        :return: the predictions
+        :param with_cpu: whether to use cpu
+        :return: predictions of the model (windows, labels)
         """
+
         # Prediction function
         logger.info(f"--- Predicting results with model {self.name}")
         # Run the model on the data and return the predictions
@@ -335,7 +255,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         logger.info(f"--- Data shape of predictions dataset: {data.shape}")
 
         # Create a DataLoader for batched inference
-        dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
+        dataset = TensorDataset(torch.from_numpy(data))
         dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
 
         # Onset predictions
@@ -356,6 +276,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Concatenate the predictions from all batches for onset
         predictions_onset = np.concatenate(predictions_onset, axis=0)
+        # Permute np array to (batch, 1, steps)
+        predictions_onset = predictions_onset.transpose(0, 2, 1)
 
         # Awake predictions
         predictions_awake = []
@@ -375,6 +297,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Concatenate the predictions from all batches for awake
         predictions_awake = np.concatenate(predictions_awake, axis=0)
+        predictions_awake = predictions_awake.transpose(0, 2, 1)
 
         # Concatenate the predictions from awake and onset (batch, steps, 1) + (batch, steps, 1) = (batch, steps, 2)
         predictions = np.concatenate(
@@ -406,20 +329,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Return numpy array
         return np.array(all_predictions), np.array(all_confidences)
-
-    def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
-        """
-        Evaluation function for the model.
-        :param pred: predictions
-        :param target: targets
-        :return: avg loss of predictions
-        """
-        # Evaluate function
-        logger.info("--- Evaluating model")
-        # Calculate the loss of the predictions
-        criterion = self.config["loss"]
-        loss = criterion(pred, target)
-        return loss
 
     def save(self, path: str) -> None:
         """
@@ -457,6 +366,47 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
 
+    def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
+        """
+        Load config function for the model.
+        :param loss: loss function
+        :param epochs: number of epochs
+        :param optimizer: optimizer
+        :param kwargs: other parameters
+        """
+
+        # Get default_config
+        default_config = self.get_default_config()
+
+        # Copy kwargs
+        config = copy.deepcopy(kwargs)
+
+        # Add parameters
+        config["batch_size"] = config.get(
+            "batch_size", default_config["batch_size"])
+        config["lr"] = config.get("lr", default_config["lr"])
+        config["early_stopping"] = config.get(
+            "early_stopping", default_config["early_stopping"])
+        config["threshold"] = config.get(
+            "threshold", default_config["threshold"])
+
+        # Add loss, epochs and optimizer to config
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
+        if config["mask_unlabeled"]:
+            config["loss"] = Loss.get_loss(loss, reduction="none")
+        else:
+            config["loss"] = Loss.get_loss(loss, reduction="mean")
+        config["optimizer_onset"] = Optimizer.get_optimizer(
+            optimizer, config["lr"], model=self.model_onset)
+        config["optimizer_awake"] = Optimizer.get_optimizer(
+            optimizer, config["lr"], model=self.model_awake)
+        config["epochs"] = epochs
+        config["trained_epochs_onset"] = epochs
+        config["trained_epochs_awake"] = epochs
+
+        self.config = config
+
     def reset_optimizer(self) -> None:
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
@@ -470,7 +420,5 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
-        self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-        self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+        self.model_onset = TransformerPool(**self.transformer_config)
+        self.model_awake = TransformerPool(**self.transformer_config)

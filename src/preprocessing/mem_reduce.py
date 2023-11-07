@@ -73,16 +73,20 @@ class MemReduce(PP):
         data['series_id'] = data['series_id'].map(encoding).astype('int16')
 
         timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))
+
+        utc = timestamp_pl.str.slice(21, 1).cast(pl.UInt16)
         timestamp_pl = timestamp_pl.str.slice(0, 19)
+
         timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S", time_unit='ms')
         logger.debug("------ Done converting timestamp to datetime")
         data['timestamp'] = timestamp_pl
+        data['utc'] = utc
 
         del timestamp_pl
         gc.collect()
 
         pad_type = {'step': np.int32, 'series_id': np.uint16, 'enmo': np.float32,
-                    'anglez': np.float32, 'timestamp': 'datetime64[ns]'}
+                    'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
         data = data.astype(pad_type)
         gc.collect()
 

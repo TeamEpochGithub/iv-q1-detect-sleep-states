@@ -47,8 +47,10 @@ class RemoveUnlabeled(PP):
         logger.info(f"------ Data shape before: {data.shape}")
 
         if self.remove_entire_series:
+            # Remove series that have at least one 3
             data = data.groupby(["series_id"]).filter(lambda x: (x['awake'] != 3).all()).reset_index(drop=True)
             if self.remove_nan:
+                # Remove series that have at least one 2
                 data = data.groupby(["series_id"]).filter(lambda x: (x['awake'] != 2).all()).reset_index(drop=True)
 
             logger.info(f"------ Data shape after: {data.shape}")

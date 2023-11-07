@@ -10,12 +10,12 @@ from tqdm import tqdm
 
 from .architectures.seg_unet_1d_cnn import SegUnet1D
 from .model import Model, ModelException
+from .trainers.event_trainer import EventTrainer
 from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
-from .trainers.event_trainer import EventTrainer
 
 
 class SplitEventSegmentationUnet1DCNN(Model):
@@ -86,7 +86,10 @@ class SplitEventSegmentationUnet1DCNN(Model):
         if config["mask_unlabeled"]:
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+            if config["loss"] == "kldiv-torch":
+                config["loss"] = Loss.get_loss(config["loss"], reduction="batchmean")
+            else:
+                config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
@@ -218,6 +221,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # Train the onset model
         logger.info("--- Training onset model")
+
         trainer_onset = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(

@@ -44,6 +44,8 @@ class Loss:
                 return ShrinkageLoss(**kwargs)
             case "bce-logits-torch":
                 return nn.BCEWithLogitsLoss(**kwargs)
+            case "kldiv-torch":
+                return nn.KLDivLoss(**kwargs)
             case "regression":
                 return RegressionLoss()
             case "event-regression":

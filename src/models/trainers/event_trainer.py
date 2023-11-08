@@ -7,6 +7,7 @@ from numpy import ndarray
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
 from tqdm import tqdm
+import copy
 
 from ... import data_info
 from ...logger.logger import logger
@@ -145,7 +146,7 @@ class EventTrainer:
             # Save model if validation loss is lower than previous lowest validation loss
             if not full_train and val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss
-                best_model = model.state_dict()
+                best_model = copy.deepcopy(model.state_dict())
                 counter = 0
             elif not full_train:
                 counter += 1

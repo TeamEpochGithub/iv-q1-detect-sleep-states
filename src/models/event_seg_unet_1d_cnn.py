@@ -46,10 +46,7 @@ class EventSegmentationUnet1DCNN(Model):
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2, model_type=self.model_type,
-                                     **self.load_network_params(config))
-
-        # Load optimizer
-        self.load_optimizer()
+                               **self.load_network_params(config))
 
         # Load config
         self.load_config(config)
@@ -97,20 +94,13 @@ class EventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model)
         if "lr_schedule" in config:
             config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
             config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
         config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
         config["network_params"] = config.get("network_params", default_config["network_params"])
         self.config = config
-
-    def load_optimizer(self) -> None:
-        """
-        Load optimizer function for the model.
-        """
-        # Load optimizer
-        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
-                                                           self.config.get("weight_decay", self.get_default_config()["weight_decay"]), self.model)
 
     def load_network_params(self, config: dict) -> dict:
         return config["network_params"] | self.get_default_config()["network_params"]

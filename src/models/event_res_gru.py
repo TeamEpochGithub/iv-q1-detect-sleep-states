@@ -77,7 +77,6 @@ class EventResGRU(Model):
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
-
         if "lr_schedule" in config:
             config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
             config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
@@ -213,7 +212,7 @@ class EventResGRU(Model):
         trainer = EventTrainer(epochs, criterion)
         trainer.fit(trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
                     activation_delay=activation_delay)
-        logger.info(f"--- Full train complete!")
+        logger.info("Full train complete!")
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -332,7 +331,6 @@ class EventResGRU(Model):
         self.reset_optimizer()
         self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
-
 
     def reset_weights(self) -> None:
         """

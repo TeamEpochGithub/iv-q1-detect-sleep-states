@@ -55,6 +55,13 @@ class Ensemble:
         :return: whether to only predict with the ensemble
         """
         return self.pred_only
+    
+    def get_test_idx(self) -> np.ndarray:
+        """
+        Get the test indices from the ensemble
+        :return: the test indices
+        """
+        return self.test_idx
 
     def pred(self, config, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -115,6 +122,7 @@ class Ensemble:
 
             x_train, x_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
                 featured_data)
+            self.test_idx = test_idx
 
             logger.info("X Train data shape (size, window_size, features): " + str(
                 x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))

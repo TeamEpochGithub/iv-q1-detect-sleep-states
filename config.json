@@ -15,8 +15,8 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["1_event_1d_unet_cnn.json", "2_event_1d_unet_cnn.json"],
-        "weights": [0.5, 0.5],
+        "models": ["1_event_1d_unet_cnn.json"],
+        "weights": [1],
         "comb_method": "addition",
         "pred_only": true
     },

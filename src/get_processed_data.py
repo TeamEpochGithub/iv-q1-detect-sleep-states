@@ -54,7 +54,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     for j, step in enumerate(step_names[i:]):
         log_memory()
         logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
-        path = config.get_pp_out() + '/' + '_'.join(step_names[:i + j + 1]) + '.parquet'
+        path = config.get_processed_out() + '/' + '_'.join(step_names[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')

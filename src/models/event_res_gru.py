@@ -69,8 +69,10 @@ class EventResGRU(Model):
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
-        config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
-        config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
+
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
         config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])

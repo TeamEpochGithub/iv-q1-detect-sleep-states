@@ -98,8 +98,9 @@ class EventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
-        config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
-        config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
         config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
         config["network_params"] = config.get("network_params", default_config["network_params"])
         self.config = config
@@ -166,6 +167,12 @@ class EventSegmentationUnet1DCNN(Model):
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
         early_stopping = self.config["early_stopping"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
+
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -219,7 +226,8 @@ class EventSegmentationUnet1DCNN(Model):
         trainer = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name)
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            activation_delay=activation_delay)
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -250,6 +258,11 @@ class EventSegmentationUnet1DCNN(Model):
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
 
         logger.info("--- Running for " + str(epochs) + " epochs.")
 
@@ -280,7 +293,7 @@ class EventSegmentationUnet1DCNN(Model):
         logger.info("--- Training model full " + self.name)
         trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(trainloader=train_dataloader, testloader=None,
-                                                               model=self.model, optimizer=optimizer, name=self.name)
+                                                               model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler, activation_delay=activation_delay)
 
         logger.info("--- Full train complete!")
 

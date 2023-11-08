@@ -105,8 +105,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
-        config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
-        config["scheduler"] = CosineLRScheduler(config["optimizer"], **config["lr_schedule"])
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
         config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
         config["network_params"] |= self.get_default_config()["network_params"]
         self.config = config
@@ -177,6 +178,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
         batch_size = self.config["batch_size"]
         early_stopping = self.config["early_stopping"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -242,14 +248,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(
-            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset")
+            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset", scheduler=scheduler, activation_delay=activation_delay)
 
         # Train the awake model
         logger.info("--- Training awake model")
         trainer_awake = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_awake, avg_val_losses_awake, total_epochs_awake = trainer_awake.fit(
-            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
+            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake",scheduler=scheduler, activation_delay=activation_delay)
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -275,6 +281,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
         epochs_awake = self.config["total_epochs_awake"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
 
         logger.info("--- Running for " + str(epochs_onset) + " epochs_onset.")
         logger.info("--- Running for " + str(epochs_awake) + " epochs_awake.")
@@ -318,14 +329,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs_onset, criterion, mask_unlabeled, -1)
         trainer_onset.fit(train_dataloader_onset, None, self.model_onset,
-                          optimizer_onset, self.name + "_onset_full")
+                          optimizer_onset, self.name + "_onset_full", scheduler=scheduler, activation_delay=activation_delay)
 
         # Train the awake model
         logger.info("--- Training awake model full")
         trainer_awake = EventTrainer(
             epochs_awake, criterion, mask_unlabeled, -1)
         trainer_awake.fit(train_dataloader_awake, None, self.model_awake,
-                          optimizer_awake, self.name + "_awake_full")
+                          optimizer_awake, self.name + "_awake_full", scheduler=scheduler, activation_delay=activation_delay)
 
         logger.info("--- Full train complete!")
 

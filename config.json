@@ -83,6 +83,7 @@
     "hpo": {
         "kind": "wandb_sweeps",
         "apply": true,
+        "count": 2,
         "sweep_configuration": {
             "method": "random",
             "metric": {"goal": "maximize", "name": "cv_score"},

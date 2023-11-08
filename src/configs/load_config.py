@@ -1,9 +1,12 @@
 import json
 
+from src.cv.cv import CV
+
 from .. import data_info
 from ..ensemble.ensemble import Ensemble
 from ..hpo.hpo import HPO
 from .load_model_config import ModelConfigLoader
+from typing import Optional
 
 
 class ConfigLoader:
@@ -46,6 +49,21 @@ class ConfigLoader:
             "downsampling_factor", data_info.downsampling_factor)
         data_info.plot_summary = self.config.get("data_info").get(
             "plot_summary", data_info.plot_summary)
+    
+    def reset_globals(self) -> None:
+        """Reset the global variables to the default values"""
+        data_info.pred_with_cpu = self.get_pred_with_cpu()
+        data_info.window_size_before = self.config.get("data_info").get("window_size", data_info.window_size)
+        data_info.window_size = data_info.window_size_before
+        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", data_info.downsampling_factor)
+        data_info.stage = "load_config"
+        data_info.substage = "set_globals"
+        data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
+
+        data_info.X_columns = {}
+        data_info.y_columns = {}
+
+        data_info.cv_current_fold = 0
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
@@ -54,7 +72,7 @@ class ConfigLoader:
         """
         return self.config["train_series_path"]
 
-    def get_train_labels_path(self) -> str:
+    def get_train_events_path(self) -> str:
         """
         Get the path to the training labels data
         :return: the path to the train_events.csv file
@@ -110,7 +128,7 @@ class ConfigLoader:
                 processed_out=self.get_processed_out(),
                 processed_in=self.get_processed_in(),
                 train_series=self.get_train_series_path(),
-                train_labels=self.get_train_labels_path(),
+                train_events=self.get_train_events_path(),
                 test_series=self.get_test_series_path()))
 
         # Create ensemble
@@ -125,6 +143,15 @@ class ConfigLoader:
         :return: the ensemble
         """
         return self.ensemble
+    
+    def get_cv(self) -> Optional[CV]:
+        """
+        Get the cross validation method from the config
+        :return: the cross validation method
+        """
+        if not self.config["cv"]:
+            return None
+        return CV(**self.config["cv"])
 
     def get_hpo(self) -> HPO:
         """
@@ -139,6 +166,13 @@ class ConfigLoader:
                                   self.config["hpo"]["method"])
 
         return hpo_class
+
+    def get_train_optimal(self) -> bool:
+        """
+        Get whether to train optimal model from the config
+        :return: whether to train optimal model
+        """
+        return self.config["train_optimal"]
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

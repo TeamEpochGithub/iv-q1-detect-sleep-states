@@ -13,12 +13,21 @@ class Ensemble:
     # Init function
     def __init__(self, model_configs: List[ModelConfigLoader] = None, weight_matrix: List[int] = None, combination_method: str = "addition"):
         if model_configs is None:
-            self.models = []
+            self.model_configs = []
         else:
-            self.models = model_configs
+            self.model_configs = model_configs
 
         if weight_matrix is None:
-            self.weight_matrix = np.ones(len(self.models))
+            self.weight_matrix = np.ones(len(self.model_configs))
+        elif len(weight_matrix) != len(self.model_configs):
+            logger.critical("Weight matrix length does not match number of models")
+            raise ValueError("Weight matrix length does not match number of models")
+        elif np.sum(weight_matrix) != 1:
+            logger.critical("Weight matrix must sum to 1")
+            raise ValueError("Weight matrix must sum to 1")
+        elif np.any(weight_matrix) <= 0:
+            logger.critical("Weight matrix must be positive")
+            raise ValueError("Weight matrix must be positive")
         else:
             self.weight_matrix = weight_matrix
 
@@ -27,7 +36,7 @@ class Ensemble:
         Get the models from the ensemble
         :return: the models
         """
-        return self.models
+        return self.model_configs
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -45,7 +54,8 @@ class Ensemble:
         predictions = []
         confidences = []
         # model_pred is (onset, wakeup) tuples for each window
-        for model in self.models:
+        for model_config in self.model_configs:
+            model = model_config.get_model()
             # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
             if hasattr(model, 'device'):
                 model_pred = model.pred(data, pred_with_cpu=pred_with_cpu)

@@ -1,5 +1,5 @@
 {
-    "name": "111-Event-1D-Unet-CNN",
+    "name": "2-Event-1D-Unet-CNN",
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -56,7 +56,7 @@
         "epochs": 52,
         "batch_size": 32,
         "lr": 0.0005,
-        "hidden_layers": 16,
+        "hidden_layers": 32,
         "early_stopping": 7,
         "threshold": 0,
         "mask_unlabeled": true

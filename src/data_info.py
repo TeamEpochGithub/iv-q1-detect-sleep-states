@@ -18,3 +18,4 @@ y_columns: dict[str, int] = {}  # The names of the labels
 
 # Cross Validation data
 cv_current_fold: int = 0  # The current fold of the cross validation
+cv_unique_series: list[str] = []

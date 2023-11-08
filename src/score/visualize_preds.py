@@ -68,9 +68,9 @@ if __name__ == "__main__":
     # For testing you need a submission.csv file in the main folder
     # and it read the processed data
     preds = pd.read_csv("submission.csv")
-    config = ConfigLoader("config.json")
+    config_loader = ConfigLoader("config.json")
     series_path = 'data/raw/train_series.parquet'
-    featured_data = get_processed_data(config, series_path, save_output=True)
+    featured_data = get_processed_data(config_loader, series_path, save_output=True)
     # Plot the predictions on the series data for the chosen series_ids
     plot_preds_on_series(preds, featured_data,
                          number_of_series_to_plot=5, show_plot=True, save_figures=False)

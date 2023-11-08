@@ -1,4 +1,5 @@
 import json
+from functools import cached_property
 
 from torch import nn
 
@@ -7,6 +8,7 @@ from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
 from ..hpo.hpo import HPO
+from ..hpo.wandb_sweeps import WandBSweeps
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
@@ -61,6 +63,25 @@ class ConfigLoader:
         data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
         data_info.latitude = self.config.get("data_info").get("latitude", data_info.latitude)
         data_info.longitude = self.config.get("data_info").get("longitude", data_info.longitude)
+
+    def reset_globals(self) -> None:
+        """Reset the global variables to the default values"""
+        data_info.pred_with_cpu = self.get_pred_with_cpu()
+        data_info.window_size_before = self.config.get("data_info").get("window_size", 17280)
+        data_info.window_size = data_info.window_size_before
+        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", 1)
+        data_info.stage = "load_config"
+        data_info.substage = "set_globals"
+        data_info.plot_summary = self.config.get("data_info").get("plot_summary", False)
+
+        data_info.latitude = self.config.get("data_info").get("latitude", 40.730610)
+        data_info.longitude = self.config.get("data_info").get("longitude", -73.935242)
+
+        data_info.X_columns = {}
+        data_info.y_columns = {}
+
+        data_info.cv_current_fold = 0
+        data_info.cv_unique_series = []
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
@@ -242,21 +263,22 @@ class ConfigLoader:
 
         return loss_class
 
-    def get_hpo(self) -> HPO:
-        """Get the hyperparameter tuning method from the config
+    @cached_property
+    def hpo(self) -> HPO:
+        """Get the hyperparameter optimization from the config
 
-        :return: the hyperparameter tuning method
+        :return: the hyperparameter optimization object
+        :raises ConfigException: if Weights & Biases Sweeps is used without logging to Weights & Biases
         """
-        hpo_class = None
-        if self.config["hpo"]["method"] == "example_hpo":
-            hpo_class = HPO(None, None, None)
-        else:
-            raise ConfigException("Hyperparameter tuning method not found: " +
-                                  self.config["hpo"]["method"])
+        hpo: HPO | None = HPO.from_config(self.config["hpo"])
 
-        return hpo_class
+        if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
+            raise ConfigException("Cannot run Weights & Biases Sweeps without logging to Weights & Biases")
 
-    def get_cv(self) -> CV:
+        return hpo
+
+    @cached_property
+    def cv(self) -> CV:
         """Get the cross validation method from the config
 
         :return: the cross validation method

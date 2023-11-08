@@ -9,19 +9,19 @@ from src.configs.load_config import ConfigLoader
 
 if __name__ == "__main__":
 
-    config = ConfigLoader("test/test_config.json")
+    config_loader = ConfigLoader("test/test_config.json")
     # remove the preprocessing steps from the config
     # start the timer
     start_time = time.time()
     # read the last preprocessing steps output
     # for testing purposes if the file in preprocessing doesnt exist
     # read from the raw data
-    if os.path.exists(config.get_pp_in() + '_' + '_'.join(config.config['preprocessing']) + '.parquet'):
-        df = pd.read_parquet(config.get_fe_in() + '_' + '_'.join(config.config['preprocessing']) + '.parquet')
+    if os.path.exists(config_loader.get_pp_in() + '_' + '_'.join(config_loader.config['preprocessing']) + '.parquet'):
+        df = pd.read_parquet(config_loader.get_fe_in() + '_' + '_'.join(config_loader.config['preprocessing']) + '.parquet')
     else:
-        df = pd.read_parquet(config.get_pp_in() + '/train_series.parquet')
+        df = pd.read_parquet(config_loader.get_pp_in() + '/train_series.parquet')
     # Initialize feature engineering steps
-    fe_steps, fe_s = config.get_fe_steps()
+    fe_steps, fe_s = config_loader.get_fe_steps()
     # Initialize the data
     featured_data = df
     # Get the feature engineering steps as a list of str to make the paths
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     print(featured_data.shape)
     for i, fe_step in enumerate(fe_steps):
         # Passes the current fe list and the pp list
-        feature = fe_steps[fe_step].run(df, fe_s[:i + 1], config.config["preprocessing"])
+        feature = fe_steps[fe_step].run(df, fe_s[:i + 1], config_loader.config["preprocessing"])
         # Add feature to featured_data
         featured_data = pd.concat([featured_data, feature], axis=1)
     # end the timer

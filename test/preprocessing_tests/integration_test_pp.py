@@ -7,10 +7,10 @@ from src.get_processed_data import get_processed_data
 
 if __name__ == "__main__":
 
-    config = ConfigLoader("test/test_config.json")
+    config_loader = ConfigLoader("test/test_config.json")
     start_time = time.time()
     # Passes the current list because it's needed to write to if the path doesn't exist
-    processed = get_processed_data(config, save_output=True)
+    processed = get_processed_data(config_loader, save_output=True)
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Elapsed time for preprocessing: {elapsed_time:.6f} seconds")

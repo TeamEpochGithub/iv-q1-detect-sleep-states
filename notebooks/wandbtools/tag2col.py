@@ -24,4 +24,3 @@ if __name__ == "__main__":
 
             # sync the results to the server
             run.update()
-

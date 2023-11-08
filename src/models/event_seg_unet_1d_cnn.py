@@ -413,15 +413,16 @@ class EventSegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                                   model_type=self.model_type, config=self.config)
+            self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
 
     def reset_optimizer(self) -> None:
@@ -467,3 +468,11 @@ class EventSegmentationUnet1DCNN(Model):
         """
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
                                model_type=self.model_type, config=self.config)
+
+
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler to the initial state. Useful for retraining the model.
+        """
+        if 'scheduler' in self.config:
+            self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])

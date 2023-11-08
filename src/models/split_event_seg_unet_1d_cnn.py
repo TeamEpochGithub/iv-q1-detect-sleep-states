@@ -43,7 +43,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         self.model_type = "event-segmentation"
 
-
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         self.model_onset = SegUnet1D(
             in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(config))
@@ -107,14 +106,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "weight_decay", default_config["weight_decay"])
         if "lr_schedule" in config:
             config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
-            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
+            config["scheduler_onset"] = CosineLRScheduler(config["optimizer_onset"], **self.config["lr_schedule"])
+            config["scheduler_awake"] = CosineLRScheduler(config["optimizer_awake"], **self.config["lr_schedule"])
         config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
         config["network_params"] |= self.get_default_config()["network_params"]
         self.config = config
 
     def load_network_params(self, config: dict) -> dict:
         return config["network_params"] | self.get_default_config()["network_params"]
-
 
     def load_optimizer(self) -> None:
         """
@@ -180,7 +179,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         mask_unlabeled = self.config["mask_unlabeled"]
         activation_delay = self.config["activation_delay"]
         if "scheduler" in self.config:
-            scheduler = self.config["scheduler"]
+            scheduler_onset = self.config["scheduler_onset"]
+            scheduler_awake = self.config["scheduler_awake"]
         else:
             scheduler = None
         if early_stopping > 0:
@@ -248,14 +248,16 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(
-            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset", scheduler=scheduler, activation_delay=activation_delay)
+            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset", scheduler=scheduler_onset,
+            activation_delay=activation_delay)
 
         # Train the awake model
         logger.info("--- Training awake model")
         trainer_awake = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_awake, avg_val_losses_awake, total_epochs_awake = trainer_awake.fit(
-            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake",scheduler=scheduler, activation_delay=activation_delay)
+            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake", scheduler=scheduler_awake,
+            activation_delay=activation_delay)
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -479,6 +481,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         if only_hyperparameters:
             self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
@@ -486,6 +489,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.model_onset.load_state_dict(checkpoint['onset_model_state_dict'])
         self.model_awake.load_state_dict(checkpoint['awake_model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
 
     def reset_optimizer(self) -> None:
@@ -505,3 +509,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
             in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
         self.model_awake = SegUnet1D(
             in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler to the initial state. Useful for retraining the model.
+        """
+        if 'scheduler' in self.config:
+            self.config['scheduler_onset'] = CosineLRScheduler(self.config['optimizer_onset'], **self.config["lr_schedule"])
+            self.config['scheduler_awake'] = CosineLRScheduler(self.config['optimizer_awake'], **self.config["lr_schedule"])

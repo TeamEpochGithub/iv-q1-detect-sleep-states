@@ -95,9 +95,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["kernel_size"] = config.get(
-            "kernel_size", default_config["kernel_size"])
-        config["depth"] = config.get("depth", default_config["depth"])
         config["early_stopping"] = config.get(
             "early_stopping", default_config["early_stopping"])
         config["threshold"] = config.get(
@@ -121,9 +118,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         # Load optimizer
         self.config["optimizer_onset"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_onset)
+            self.config["optimizer"], self.config["lr"], self.config.get("weight_decay", self.get_default_config()["weight_decay"]), self.model_onset)
         self.config["optimizer_awake"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_awake)
+            self.config["optimizer"], self.config["lr"], self.config.get("weight_decay", self.get_default_config()["weight_decay"]), self.model_awake)
 
     def get_default_config(self) -> dict:
         """
@@ -182,7 +179,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
             scheduler_onset = self.config["scheduler_onset"]
             scheduler_awake = self.config["scheduler_awake"]
         else:
-            scheduler = None
+            scheduler_onset = None
+            scheduler_awake = None
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -285,9 +283,12 @@ class SplitEventSegmentationUnet1DCNN(Model):
         mask_unlabeled = self.config["mask_unlabeled"]
         activation_delay = self.config["activation_delay"]
         if "scheduler" in self.config:
-            scheduler = self.config["scheduler"]
+            scheduler_onset = self.config["scheduler_onset"]
+            scheduler_awake = self.config["scheduler_awake"]
+
         else:
-            scheduler = None
+            scheduler_onset = None
+            scheduler_awake = None
 
         logger.info("--- Running for " + str(epochs_onset) + " epochs_onset.")
         logger.info("--- Running for " + str(epochs_awake) + " epochs_awake.")
@@ -331,14 +332,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs_onset, criterion, mask_unlabeled, -1)
         trainer_onset.fit(train_dataloader_onset, None, self.model_onset,
-                          optimizer_onset, self.name + "_onset_full", scheduler=scheduler, activation_delay=activation_delay)
+                          optimizer_onset, self.name + "_onset_full", scheduler=scheduler_onset, activation_delay=activation_delay)
 
         # Train the awake model
         logger.info("--- Training awake model full")
         trainer_awake = EventTrainer(
             epochs_awake, criterion, mask_unlabeled, -1)
         trainer_awake.fit(train_dataloader_awake, None, self.model_awake,
-                          optimizer_awake, self.name + "_awake_full", scheduler=scheduler, activation_delay=activation_delay)
+                          optimizer_awake, self.name + "_awake_full", scheduler=scheduler_awake, activation_delay=activation_delay)
 
         logger.info("--- Full train complete!")
 
@@ -440,20 +441,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Return numpy array
         return np.array(all_predictions), np.array(all_confidences)
 
-    def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
-        """
-        Evaluation function for the model.
-        :param pred: predictions
-        :param target: targets
-        :return: avg loss of predictions
-        """
-        # Evaluate function
-        logger.info("--- Evaluating model")
-        # Calculate the loss of the predictions
-        criterion = self.config["loss"]
-        loss = criterion(pred, target)
-        return loss
-
     def save(self, path: str) -> None:
         """
         Save function for the model.
@@ -505,9 +492,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(self.config))
         self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(self.config))
 
     def reset_scheduler(self) -> None:
         """

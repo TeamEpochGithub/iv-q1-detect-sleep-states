@@ -65,7 +65,15 @@ class EventResGRU(Model):
 
         # Get default_config
         default_config = self.get_default_config()
-        config["loss"] = Loss.get_loss(config["loss"])
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
+        if config["mask_unlabeled"]:
+            config["loss"] = Loss.get_loss(config["loss"], reduction="none")
+        else:
+            if config["loss"] == "kldiv-torch":
+                config["loss"] = Loss.get_loss(config["loss"], reduction="batchmean")
+            else:
+                config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
         config["batch_size"] = config.get("batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
@@ -88,6 +96,7 @@ class EventResGRU(Model):
             "early_stopping": 3,
             "activation_delay": 0,
             "threshold": 0.0,
+            "mask_unlabeled": False,
             "lr_schedule": {
                 "t_initial": 100,
                 "warmup_t": 5,
@@ -323,7 +332,7 @@ class EventResGRU(Model):
         self.reset_optimizer()
         self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
-        return
+
 
     def reset_weights(self) -> None:
         """

@@ -122,7 +122,7 @@ class EventTrainer:
             if activation_delay is None:
                 use_activation = None
             else:
-                use_activation = epoch > activation_delay
+                use_activation = epoch >= activation_delay
             # Training loss
             train_losses = self.train_one_epoch(
                 dataloader=trainloader, epoch_no=epoch, optimizer=optimizer, model=model, scheduler=scheduler, use_activation=use_activation)
@@ -297,6 +297,7 @@ class EventTrainer:
             # Retrieve target and output
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
+
 
             if str(model).startswith("MultiResidualBiGRU"):
                 output, _ = model(data[0].to(self.device))

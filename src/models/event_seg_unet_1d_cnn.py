@@ -45,7 +45,7 @@ class EventSegmentationUnet1DCNN(Model):
         self.model_type = "event-segmentation"
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model_onset = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2, model_type=self.model_type,
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2, model_type=self.model_type,
                                      **self.load_network_params(config))
 
         # Load optimizer
@@ -78,6 +78,8 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Get default_config
         default_config = self.get_default_config()
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
         if config["mask_unlabeled"]:
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
@@ -89,9 +91,6 @@ class EventSegmentationUnet1DCNN(Model):
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["kernel_size"] = config.get(
-            "kernel_size", default_config["kernel_size"])
-        config["depth"] = config.get("depth", default_config["depth"])
         config["early_stopping"] = config.get(
             "early_stopping", default_config["early_stopping"])
         config["threshold"] = config.get(
@@ -111,7 +110,7 @@ class EventSegmentationUnet1DCNN(Model):
         """
         # Load optimizer
         self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
-                                                           self.config["weight_decay"], self.model)
+                                                           self.config.get("weight_decay", self.get_default_config()["weight_decay"]), self.model)
 
     def load_network_params(self, config: dict) -> dict:
         return config["network_params"] | self.get_default_config()["network_params"]
@@ -460,8 +459,7 @@ class EventSegmentationUnet1DCNN(Model):
         Reset the weights of the model.
         """
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                               model_type=self.model_type, config=self.config)
-
+                               model_type=self.model_type, **self.load_network_params(self.config))
 
     def reset_scheduler(self) -> None:
         """

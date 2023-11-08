@@ -155,6 +155,7 @@ class SegUnet1D(nn.Module):
 
         if self.model_type == "state-segmentation":
             out = self.softmax(out)
-        elif self.model_type == "event-segmentation" and use_activation:
-                out = self.activation(x)
+        elif self.model_type == "event-segmentation":
+            if use_activation:
+                out = self.activation(out)
         return out

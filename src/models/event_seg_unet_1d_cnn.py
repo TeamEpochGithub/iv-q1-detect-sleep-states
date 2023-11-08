@@ -425,13 +425,6 @@ class EventSegmentationUnet1DCNN(Model):
         self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
 
-    def reset_optimizer(self) -> None:
-        """
-        Reset the optimizer to the initial state. Useful for retraining the model.
-        """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(),
-                                                                  lr=self.config['optimizer'].param_groups[0]['lr'])
-
     def find_optimal_threshold(self, X: np.ndarray, y: np.ndarray) -> float:
         """Finds and sets the optimal threshold for the model.
 
@@ -476,3 +469,10 @@ class EventSegmentationUnet1DCNN(Model):
         """
         if 'scheduler' in self.config:
             self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])
+
+    def reset_optimizer(self) -> None:
+
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model.
+        """
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['lr'])

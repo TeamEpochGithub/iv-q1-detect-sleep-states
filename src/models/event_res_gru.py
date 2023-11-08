@@ -325,18 +325,18 @@ class EventResGRU(Model):
         logger.info("Model fully loaded from: " + path)
         return
 
-    def reset_optimizer(self) -> None:
-
-        """
-        Reset the optimizer to the initial state. Useful for retraining the model.
-        """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
-
     def reset_weights(self) -> None:
         """
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])
+
+    def reset_optimizer(self) -> None:
+
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model.
+        """
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['lr'])
 
     def reset_scheduler(self) -> None:
         """

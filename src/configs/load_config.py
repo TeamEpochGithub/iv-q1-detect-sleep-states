@@ -74,7 +74,7 @@ class ConfigLoader:
         data_info.plot_summary = self.config.get("data_info").get("plot_summary", False)
 
         data_info.latitude = self.config.get("data_info").get("latitude", 40.730610)
-        data_info.longitude = -73.935242
+        data_info.longitude = self.config.get("data_info").get("longitude", -73.935242)
 
         data_info.X_columns = {}
         data_info.y_columns = {}

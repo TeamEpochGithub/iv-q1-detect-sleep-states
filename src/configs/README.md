@@ -552,7 +552,7 @@ where we want to optimize the number of epochs using random search with Weights 
                     "SplitEvent-1D-Unet-CNN": {
                         "parameters": {
                             "type": {"value": "split-event-seg-unet-1d-cnn"},
-                            "loss": {"value": "kldiv-torch"},
+                            "loss": {"value": "mse-torch"},
                             "optimizer": {"value": "adam-torch"},
                             "epochs": {"values": [3, 5, 7]},
                             "batch_size": {"value": 32},

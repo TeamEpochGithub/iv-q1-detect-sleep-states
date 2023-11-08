@@ -119,11 +119,6 @@ def main() -> None:
             logger.info("Applying cross-validation on model " + str(i) + ": " + model)
             data_info.stage = "cv"
             cv = config_loader.cv
-
-
-
-            # TODO Implement hyperparameter optimization and train optimal model on train split and evaluate on test split. Save that as the optimal model.#101
-            # It now only saves the trained model from the last fold
             train_df = featured_data.iloc[train_idx]
 
             # Apply CV
@@ -141,7 +136,7 @@ def main() -> None:
                 return
 
             # Enter the optimal training
-            # TODO Train optimal model from hpo train on train split, for now train without hpo
+            # TODO Train optimal model from with optimal parameters from HPO
             data_info.stage = "train"
             data_info.substage = "optimal"
 

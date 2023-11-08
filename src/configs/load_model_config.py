@@ -34,7 +34,7 @@ class ModelConfigLoader:
         # Read JSON from file
         with open(config_path, 'r') as f:
             self.config = json.load(f)
-        
+
     # Get full configuration
     def get_config(self) -> dict:
         """
@@ -42,7 +42,7 @@ class ModelConfigLoader:
         :return: the full configuration dict
         """
         return self.config
-    
+
     def get_name(self) -> str:
         """
         Get the name of the model
@@ -131,7 +131,7 @@ class ModelConfigLoader:
         :return: the path to the processed data output
         """
         return self.out_path
-    
+
     def get_processed_in(self) -> str:
         """
         Get the path to the processed data input
@@ -145,14 +145,14 @@ class ModelConfigLoader:
         :return: the path to the training series
         """
         return self.train_series
-    
+
     def get_train_events_path(self) -> str:
         """
         Get the path to the training labels
         :return: the path to the training labels
         """
         return self.train_events
-    
+
 
 # ConfigException class
 class ConfigException(Exception):

@@ -11,16 +11,15 @@ if __name__ == "__main__":
     # go over all runs with a tag, print it, and set the LB score
     for run in runs:
         tags = run.tags
-        if len(tags) > 0:
-            name = run.name
-            if "score" in run.summary:
-                score = run.summary["score"]
-            else:
-                score = "None"
-            print(f"{name}: {score} - {tags[0]}")
+        if len(tags) < 1:
+            continue
 
-            # set the LB score for the run from the tag
-            run.summary["score_lb"] = float(tags[0])
+        name = run.name
+        score = run.summary.get("score", "None")
+        print(f"{name}: {score} - {tags[0]}")
 
-            # sync the results to the server
-            run.update()
+        # set the LB score for the run from the tag
+        run.summary["score_lb"] = float(tags[0])
+
+        # sync the results to the server
+        run.update()

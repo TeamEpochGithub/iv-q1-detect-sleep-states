@@ -5,7 +5,6 @@ import tracemalloc
 import pandas as pd
 
 from src import data_info
-from src.configs.load_config import ConfigLoader
 from src.configs.load_model_config import ModelConfigLoader
 from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger

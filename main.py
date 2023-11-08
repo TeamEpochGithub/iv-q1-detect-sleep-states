@@ -63,111 +63,114 @@ def main(config: ConfigLoader) -> None:
 
     ensemble = config.get_ensemble()
     models = ensemble.get_models()
+    if not ensemble.get_pred_only():
+        for i, model_config in enumerate(models):
+            config.reset_globals()
+            model_name = model_config.get_name()
 
-    for i, model_config in enumerate(models):
-        config.reset_globals()
-        model_name = model_config.get_name()
+            # ------------------------------------------- #
+            #    Preprocessing and feature Engineering    #
+            # ------------------------------------------- #
 
-        # ------------------------------------------- #
-        #    Preprocessing and feature Engineering    #
-        # ------------------------------------------- #
+            print_section_separator(
+                "Preprocessing and feature engineering", spacing=0)
+            data_info.stage = "preprocessing & feature engineering"
+            featured_data = get_processed_data(
+                model_config, training=True, save_output=True)
 
-        print_section_separator(
-            "Preprocessing and feature engineering", spacing=0)
-        data_info.stage = "preprocessing & feature engineering"
-        featured_data = get_processed_data(
-            model_config, training=True, save_output=True)
+            # ------------------------ #
+            #         Pretrain         #
+            # ------------------------ #
 
-        # ------------------------ #
-        #         Pretrain         #
-        # ------------------------ #
+            print_section_separator("Pretrain", spacing=0)
+            data_info.stage = "pretraining"
 
-        print_section_separator("Pretrain", spacing=0)
-        data_info.stage = "pretraining"
-
-        logger.info(
-            "Get pretraining parameters from config and initialize pretrain")
-        pretrain: Pretrain = model_config.get_pretraining()
-
-        logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
-                    " and test size of " + str(pretrain.test_size))
-
-        # Split data into train/test and validation
-        # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-        logger.info("Splitting data into train and test...")
-        data_info.substage = "pretrain_split"
-
-        x_train, x_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
-            featured_data)
-
-        logger.info("X Train data shape (size, window_size, features): " + str(
-            x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
-        logger.info("X Test data shape (size, window_size, features): " + str(
-            x_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
-
-        logger.info("Creating model using ModelConfigLoader")
-        model = model_config.set_model()
-
-        # Hash of concatenated string of preprocessing, feature engineering and pretraining
-        initial_hash = hash_config(model_config.get_pp_fe_pretrain(), length=5)
-        data_info.substage = f"training model {i}: {model_name}"
-
-        # Get filename of model
-        model_filename_opt = store_location + "/optimal_" + \
-            model_name + "-" + initial_hash + model.hash + ".pt"
-
-        # Get cv object
-        cv = config.get_cv()
-
-        def run_cv():
-            # ------------------------- #
-            # Cross Validation Training #
-            # ------------------------- #
-
-            print_section_separator("CV", spacing=0)
-            logger.info("Applying cross-validation on model " +
-                        str(i) + ": " + model_name)
-            data_info.stage = "cv"
-
-            # TODO Implement hyperparameter optimization and train optimal model on train split and evaluate on test split. Save that as the optimal model.#101
-            # It now only saves the trained model from the last fold
-            train_df = featured_data.iloc[train_idx]
-
-            # Apply CV
-            scores = cv.cross_validate(
-                model, x_train, y_train, train_df=train_df, groups=groups)
-
-            # Log scores to wandb
-            mean_scores = np.mean(scores, axis=0)
-            log_scores_to_wandb(mean_scores[0], mean_scores[1])
             logger.info(
-                f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+                "Get pretraining parameters from config and initialize pretrain")
+            pretrain: Pretrain = model_config.get_pretraining()
 
-        # If this file exists, load instead of start training
-        if os.path.isfile(model_filename_opt):
-            logger.info("Found existing trained optimal model " + str(i) +
-                        ": " + model_name + " with location " + model_filename_opt)
-            model.load(model_filename_opt, only_hyperparameters=False)
-        else:
-            if cv.get_apply():
-                run_cv()
-            if config.get_train_optimal():
-                data_info.stage = "train"
-                data_info.substage = "optimal"
+            logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
+                        " and test size of " + str(pretrain.test_size))
 
-                logger.info("Training optimal model " +
+            # Split data into train/test and validation
+            # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
+            logger.info("Splitting data into train and test...")
+            data_info.substage = "pretrain_split"
+
+            x_train, x_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
+                featured_data)
+
+            logger.info("X Train data shape (size, window_size, features): " + str(
+                x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
+            logger.info("X Test data shape (size, window_size, features): " + str(
+                x_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
+
+            logger.info("Creating model using ModelConfigLoader")
+            model = model_config.set_model()
+
+            # Hash of concatenated string of preprocessing, feature engineering and pretraining
+            initial_hash = hash_config(
+                model_config.get_pp_fe_pretrain(), length=5)
+            data_info.substage = f"training model {i}: {model_name}"
+
+            # Get filename of model
+            model_filename_opt = store_location + "/optimal_" + \
+                model_name + "-" + initial_hash + model.hash + ".pt"
+
+            # Get cv object
+            cv = config.get_cv()
+
+            def run_cv():
+                # ------------------------- #
+                # Cross Validation Training #
+                # ------------------------- #
+
+                print_section_separator("CV", spacing=0)
+                logger.info("Applying cross-validation on model " +
                             str(i) + ": " + model_name)
-                model.train(x_train, x_test, y_train, y_test)
+                data_info.stage = "cv"
+
+                # TODO Implement hyperparameter optimization and train optimal model on train split and evaluate on test split. Save that as the optimal model.#101
+                # It now only saves the trained model from the last fold
+                train_df = featured_data.iloc[train_idx]
+
+                # Apply CV
+                scores = cv.cross_validate(
+                    model, x_train, y_train, train_df=train_df, groups=groups)
+
+                # Log scores to wandb
+                mean_scores = np.mean(scores, axis=0)
+                log_scores_to_wandb(mean_scores[0], mean_scores[1])
+                logger.info(
+                    f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+
+            # If this file exists, load instead of start training
+            if os.path.isfile(model_filename_opt):
+                logger.info("Found existing trained optimal model " + str(i) +
+                            ": " + model_name + " with location " + model_filename_opt)
+                model.load(model_filename_opt, only_hyperparameters=False)
             else:
-                logger.info("Not training optimal model " +
-                            str(i) + ": " + model_name)
-                # Exit from main as the model is not trained optimally
-                if config.get_log_to_wandb():
-                    wandb.finish()
-                    logger.info("Finished logging to wandb")
-                return
+                if cv.get_apply():
+                    run_cv()
+                if config.get_train_optimal():
+                    data_info.stage = "train"
+                    data_info.substage = "optimal"
 
-        model.save(model_filename_opt)
+                    logger.info("Training optimal model " +
+                                str(i) + ": " + model_name)
+                    model.train(x_train, x_test, y_train, y_test)
+                else:
+                    logger.info("Not training optimal model " +
+                                str(i) + ": " + model_name)
+                    # Exit from main as the model is not trained optimally
+                    if config.get_log_to_wandb():
+                        wandb.finish()
+                        logger.info("Finished logging to wandb")
+                    return
+
+            model.save(model_filename_opt)
+    else:
+        logger.info("Not training models")
 
     # ------------------------------------------------------- #
     #                    Scoring                              #
@@ -180,7 +183,7 @@ def main(config: ConfigLoader) -> None:
     scoring = config.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
-        predictions = ensemble.pred(x_test, pred_with_cpu=pred_cpu)
+        predictions = ensemble.pred(config, pred_with_cpu=pred_cpu)
 
         logger.info("Formatting predictions...")
 

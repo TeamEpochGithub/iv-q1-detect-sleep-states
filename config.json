@@ -17,7 +17,8 @@
     "ensemble": {
         "models": ["1_event_1d_unet_cnn.json", "2_event_1d_unet_cnn.json"],
         "weights": [0.5, 0.5],
-        "comb_method": "addition"
+        "comb_method": "addition",
+        "pred_only": true
     },
     "cv": {
         "splitter": "group_shuffle_split",

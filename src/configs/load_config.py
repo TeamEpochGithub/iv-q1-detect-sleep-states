@@ -133,7 +133,7 @@ class ConfigLoader:
 
         # Create ensemble
         ensemble = Ensemble(
-            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"])
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"], self.config["ensemble"]["pred_only"])
 
         self.ensemble = ensemble
 

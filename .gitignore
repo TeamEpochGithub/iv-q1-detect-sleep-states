@@ -199,3 +199,6 @@ prediction_plots/
 
 #Ignore submissions
 submissions/
+
+# Ignore model configs
+model_configs/

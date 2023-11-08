@@ -9,6 +9,8 @@ import wandb
 from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
+from src.hpo.hpo import HPO
+from src.hpo.wandb_sweeps import WandBSweeps
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
@@ -19,33 +21,38 @@ from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
 
 
-def main(config: ConfigLoader) -> None:
+def main() -> None:
     """
     Main function for training the model
-
-    :param config: loaded config
     """
     print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
     logger.info("Start of main.py")
 
-    config_hash = hash_config(config.get_config(), length=16)
+    global config_loader
+    config_loader.reset_globals()
+    config_hash = hash_config(config_loader.get_config(), length=16)
     logger.info("Config hash encoding: " + config_hash)
 
     # Initialize wandb
-    if config.get_log_to_wandb():
+    if config_loader.get_log_to_wandb():
         # Initialize wandb
         wandb.init(
             project='detect-sleep-states',
             name=config_hash,
-            config=config.get_config()
+            config=config_loader.get_config()
         )
-        wandb.run.summary.update(config.get_config())
+
+        if isinstance(config_loader.hpo, WandBSweeps):
+            # Get the hyperparameters selected by the Weights & Biases Sweep agent in our own config
+            config_loader.config |= wandb.config
+
+        wandb.run.summary.update(config_loader.get_config())
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
 
     # Predict with CPU
-    pred_cpu = config.get_pred_with_cpu()
+    pred_cpu = config_loader.get_pred_with_cpu()
     if pred_cpu:
         logger.info("Predicting with CPU for inference")
     else:
@@ -56,7 +63,7 @@ def main(config: ConfigLoader) -> None:
 
     print_section_separator("Preprocessing and feature engineering", spacing=0)
     data_info.stage = "preprocessing & feature engineering"
-    featured_data = get_processed_data(config, training=True, save_output=True)
+    featured_data = get_processed_data(config_loader, training=True, save_output=True)
 
     # ------------------------ #
     #         Pretrain         #
@@ -66,7 +73,7 @@ def main(config: ConfigLoader) -> None:
     data_info.stage = "pretraining"
 
     logger.info("Get pretraining parameters from config and initialize pretrain")
-    pretrain: Pretrain = config.get_pretraining()
+    pretrain: Pretrain = config_loader.get_pretraining()
 
     logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
 
@@ -90,15 +97,15 @@ def main(config: ConfigLoader) -> None:
     print_section_separator("CV", spacing=0)
 
     # Initialize models
-    store_location = config.get_model_store_loc()
+    store_location = config_loader.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
     # Initialize models
     logger.info("Initializing models...")
-    models = config.get_models()
+    models = config_loader.get_models()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
-    initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
+    initial_hash = hash_config(config_loader.get_pp_fe_pretrain(), length=5)
 
     for i, model in enumerate(models):
         data_info.substage = f"training model {i}: {model}"
@@ -111,7 +118,9 @@ def main(config: ConfigLoader) -> None:
         else:
             logger.info("Applying cross-validation on model " + str(i) + ": " + model)
             data_info.stage = "cv"
-            cv = config.get_cv()
+            cv = config_loader.cv
+
+
 
             # TODO Implement hyperparameter optimization and train optimal model on train split and evaluate on test split. Save that as the optimal model.#101
             # It now only saves the trained model from the last fold
@@ -124,7 +133,12 @@ def main(config: ConfigLoader) -> None:
             mean_scores = np.mean(scores, axis=0)
             log_scores_to_wandb(mean_scores[0], mean_scores[1])
             logger.info(
-                f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+                f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
+
+            if isinstance(config_loader.hpo, WandBSweeps):
+                # Done sweeping after CV
+                # Yes, it won't train multiple models anymore, but that will be refactored with the Ensembling in #111
+                return
 
             # Enter the optimal training
             # TODO Train optimal model from hpo train on train split, for now train without hpo
@@ -148,7 +162,7 @@ def main(config: ConfigLoader) -> None:
     data_info.substage = "TODO"
 
     # TODO Add crossvalidation to models #107
-    ensemble = config.get_ensemble(models)
+    ensemble = config_loader.get_ensemble(models)
 
     # Initialize loss
     # TODO assert that every model has a loss function #67
@@ -160,8 +174,8 @@ def main(config: ConfigLoader) -> None:
     print_section_separator(
         "Hyperparameter optimization for ensemble", spacing=0)
     # TODO Hyperparameter optimization for ensembles
-    hpo = config.get_hpo()
-    hpo.optimize()
+    # hpo = config.get_hpo()
+    # hpo.optimize()
 
     # ------------------------------------------------------- #
     #          Cross validation optimization for ensemble     #
@@ -176,7 +190,7 @@ def main(config: ConfigLoader) -> None:
     data_info.stage = "scoring"
     data_info.substage = ""
 
-    scoring = config.get_scoring()
+    scoring = config_loader.get_scoring()
     if scoring:
         logger.info("Making predictions with ensemble on test data")
         predictions = ensemble.pred(X_test, pred_with_cpu=pred_cpu)
@@ -198,7 +212,7 @@ def main(config: ConfigLoader) -> None:
         # TODO Do the window_offset thing in from_numpy_to_submission_format too
 
         # filter out predictions using a threshold on (f_)similarity_nan
-        filter_cfg = config.get_similarity_filter()
+        filter_cfg = config_loader.get_similarity_filter()
         if filter_cfg:
             logger.info(f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
             col_name = [col for col in featured_data.columns if 'similarity_nan' in col]
@@ -221,7 +235,7 @@ def main(config: ConfigLoader) -> None:
         test_series_ids = [decoding[sid] for sid in test_series_ids]
 
         # load solution for test set and compute score
-        solution = (pd.read_csv(config.get_train_events_path())
+        solution = (pd.read_csv(config_loader.get_train_events_path())
                     .groupby('series_id')
                     .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
                     .reset_index(drop=True))
@@ -243,9 +257,9 @@ def main(config: ConfigLoader) -> None:
         plot_preds_on_series(plot_submission,
                              featured_data[
                                  featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
-                             number_of_series_to_plot=config.get_number_of_plots(),
+                             number_of_series_to_plot=config_loader.get_number_of_plots(),
                              folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
-                             show_plot=config.get_browser_plot(), save_figures=config.get_store_plots()),
+                             show_plot=config_loader.get_browser_plot(), save_figures=config_loader.get_store_plots()),
 
     else:
         logger.info("Not scoring")
@@ -257,14 +271,14 @@ def main(config: ConfigLoader) -> None:
     print_section_separator("Train for submission", spacing=0)
     data_info.stage = "train for submission"
 
-    if config.get_train_for_submission():
+    if config_loader.get_train_for_submission():
         logger.info("Retraining models for submission")
 
         # Retrain all models with optimal parameters
         X_train, y_train, groups = pretrain.pretrain_final(featured_data)
 
         # Save scaler
-        scaler_filename: str = config.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
+        scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):
@@ -286,7 +300,7 @@ def main(config: ConfigLoader) -> None:
         logger.info("Not training best model for submission")
 
     # [optional] finish the wandb run, necessary in notebooks
-    if config.get_log_to_wandb():
+    if config_loader.get_log_to_wandb():
         wandb.finish()
         logger.info("Finished logging to wandb")
 
@@ -297,7 +311,12 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config = ConfigLoader("config.json")
+    config_loader: ConfigLoader = ConfigLoader("config.json")
+    hpo: HPO | None = config_loader.hpo
 
-    # Run main
-    main(config)
+    if hpo is None:  # HPO disabled
+        logger.info("Running main without HPO")
+        main()
+    else:  # HPO enabled
+        logger.info("Running main with HPO")
+        hpo.optimize(main)

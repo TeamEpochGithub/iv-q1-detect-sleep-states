@@ -22,8 +22,6 @@ _COLUMN_NAMES = {
     'score_column_name': 'score',
 }
 
-_unique_series = []
-
 
 def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
     """Verify that there are no consecutive onsets or wakeups
@@ -42,12 +40,12 @@ def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
 
     # Extend unique series ids and assert that there are no duplicates
     # Log the duplicate series if they exist
-    duplicates = [k for k, v in Counter(_unique_series).items() if v > 1]
+    duplicates = [k for k, v in Counter(data_info.cv_unique_series).items() if v > 1]
     if len(duplicates) > 0:
         logger.warning(f'Duplicate series ids: {duplicates}. This means you used no groups, or there is a bug in our code. Will currently crash')
 
     # Assert that there are no duplicate series ids in the current submission
-    if len(_unique_series) != len(set(_unique_series)):
+    if len(data_info.cv_unique_series) != len(set(data_info.cv_unique_series)):
         logger.critical('Current validation fold contains series_id, that were also in the previous fold.')
         raise ScoringException('Submission contains duplicate series ids')
 
@@ -70,7 +68,7 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
 
     # Add the series ids to the list of unique series ids
     solution_series_ids = solution['series_id'].unique()
-    _unique_series.extend(solution_series_ids)
+    data_info.cv_unique_series.extend(solution_series_ids)
 
     verify_cv(submission, solution)
 

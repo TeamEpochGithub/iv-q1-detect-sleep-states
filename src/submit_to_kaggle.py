@@ -76,6 +76,6 @@ if __name__ == "__main__":
 
     coloredlogs.install()
 
-    config = ConfigLoader("config.json")
+    config_loader = ConfigLoader("config.json")
 
-    submit(config, submit=True)
+    submit(config_loader, submit=True)

@@ -6,6 +6,7 @@ import torch
 import wandb
 from numpy import ndarray, dtype
 from sklearn.metrics import roc_curve
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -43,15 +44,15 @@ class EventSegmentationUnet1DCNN(Model):
 
         self.model_type = "event-segmentation"
 
-        # Load config
-        self.load_config(config)
-
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                               model_type=self.model_type, config=self.config)
+        self.model_onset = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2, model_type=self.model_type,
+                                     **self.load_network_params(config))
 
         # Load optimizer
         self.load_optimizer()
+
+        # Load config
+        self.load_config(config)
 
         # Print model summary
         if wandb.run is not None:
@@ -88,8 +89,6 @@ class EventSegmentationUnet1DCNN(Model):
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["hidden_layers"] = config.get(
-            "hidden_layers", default_config["hidden_layers"])
         config["kernel_size"] = config.get(
             "kernel_size", default_config["kernel_size"])
         config["depth"] = config.get("depth", default_config["depth"])
@@ -99,6 +98,10 @@ class EventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
+        config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+        config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
+        config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
+        config["network_params"] = config.get("network_params", default_config["network_params"])
         self.config = config
 
     def load_optimizer(self) -> None:
@@ -109,13 +112,36 @@ class EventSegmentationUnet1DCNN(Model):
         self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
                                                            self.config["weight_decay"], self.model)
 
+    def load_network_params(self, config: dict) -> dict:
+        return config["network_params"] | self.get_default_config()["network_params"]
+
     def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
-                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0, "mask_unlabeled": False}
+        return {
+            "batch_size": 32,
+            "lr": 0.001,
+            "epochs": 10,
+            "early_stopping": -1,
+            "threshold": 0.5,
+            "weight_decay": 0.0,
+            "mask_unlabeled": False,
+            "lr_schedule": {
+                "t_initial": 100,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.000001,
+                "lr_min": 2e-8
+            },
+            "activation_delay": 0,
+            "network_params": {
+                "activation": "relu",
+                "hidden_layers": 8,
+                "kernel_size": 7,
+                "depth": 2,
+            }
+        }
 
     def get_type(self) -> str:
         """

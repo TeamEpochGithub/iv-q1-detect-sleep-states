@@ -92,6 +92,10 @@ class EventResGRU(Model):
                 "warmup_lr_init": 0.000001,
                 "lr_min": 2e-8
             },
+            "network_params": {
+                "activation": "relu",
+                "hidden_layers": 8
+            }
         }
 
     def get_type(self) -> str:
@@ -263,7 +267,7 @@ class EventResGRU(Model):
 
     def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
         """
-        Evaluation function for the model.
+        Evaluation function for the model.F
         :param pred: predictions
         :param target: targets
         :return: avg loss of predictions
@@ -299,13 +303,15 @@ class EventResGRU(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])
+            self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
         return
 
@@ -321,3 +327,10 @@ class EventResGRU(Model):
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])
+
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler to the initial state. Useful for retraining the model.
+        """
+        if 'scheduler' in self.config:
+            self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])

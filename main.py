@@ -119,6 +119,7 @@ def main(config: ConfigLoader) -> None:
             # Apply CV if in the config
 
             if cv is not None:
+                logger.info("Applying cross-validation on model " + str(i) + ": " + model)
                 scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
 
                 # Log scores to wandb
@@ -127,7 +128,10 @@ def main(config: ConfigLoader) -> None:
                 logger.info(
                     f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
 
-
+            # ------------------------- #
+            #          Training         #
+            # ------------------------- #
+            print_section_separator("Optimal Training", spacing=0)
             # Enter the optimal training
             # TODO Train optimal model from hpo train on train split, for now train without hpo
             data_info.stage = "train"

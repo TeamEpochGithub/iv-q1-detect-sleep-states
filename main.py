@@ -232,6 +232,11 @@ def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
         logger.info("Predicting with CPU for inference")
     else:
         logger.info("Predicting with GPU for inference")
+
+    # Get config hash
+    config_hash = hash_config(config.get_config(), length=16)
+
+    # Make predictions on test data
     predictions = ensemble.pred(config, pred_with_cpu=pred_cpu)
     test_idx = ensemble.get_test_idx()
 

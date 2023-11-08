@@ -119,7 +119,7 @@ def main() -> None:
             logger.info("Applying cross-validation on model " + str(i) + ": " + model)
             train_df = featured_data.iloc[train_idx]
             cv = config_loader.cv
-            
+
             # Apply CV if in the config
             if cv is not None:
                 logger.info("Applying cross-validation on model " + str(i) + ": " + model)

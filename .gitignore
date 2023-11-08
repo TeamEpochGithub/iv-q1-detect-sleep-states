@@ -192,7 +192,7 @@ tm/
 tm.zip
 
 #Ignore configs
-configs/
+./configs/
 
 #Ignore prediction plots
 prediction_plots/

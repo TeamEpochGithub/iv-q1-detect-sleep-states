@@ -112,13 +112,13 @@ class SegmentationUnet1DCNN(Model):
         :return: default config
         """
         return {"batch_size": 32, "lr": 0.001, "epochs": 10, "kernel_size": 7, "depth": 2,
-                    "lr_schedule": {
-                        "t_initial": 100,
-                        "warmup_t": 5,
-                        "warmup_lr_init": 0.000001,
-                        "lr_min": 2e-8
-                    },
-                    "early_stopping": -1, "weight_decay": 0.0,
+                "lr_schedule": {
+                    "t_initial": 100,
+                    "warmup_t": 5,
+                    "warmup_lr_init": 0.000001,
+                    "lr_min": 2e-8
+                },
+                "early_stopping": -1, "weight_decay": 0.0,
                 "network_params": {
                     "activation": "relu", "hidden_layers": 8
                 }}
@@ -144,7 +144,6 @@ class SegmentationUnet1DCNN(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
-        scheduler = self.config["scheduler"]
         early_stopping = self.config["early_stopping"]
         if early_stopping > 0:
             logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")

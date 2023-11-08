@@ -299,7 +299,6 @@ class EventTrainer:
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
 
-
             if str(model).startswith("MultiResidualBiGRU"):
                 output, _ = model(data[0].to(self.device))
             else:

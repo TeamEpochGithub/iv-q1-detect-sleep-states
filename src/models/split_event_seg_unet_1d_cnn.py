@@ -49,9 +49,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.model_awake = SegUnet1D(
             in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(config))
 
-        # Load optimizer
-        self.load_optimizer()
-
         # Load config
         self.load_config(config)
 
@@ -95,12 +92,11 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["early_stopping"] = config.get(
-            "early_stopping", default_config["early_stopping"])
-        config["threshold"] = config.get(
-            "threshold", default_config["threshold"])
-        config["weight_decay"] = config.get(
-            "weight_decay", default_config["weight_decay"])
+        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
+        config["threshold"] = config.get("threshold", default_config["threshold"])
+        config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
+        config["optimizer_onset"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model_onset)
+        config["optimizer_awake"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model_awake)
         if "lr_schedule" in config:
             config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
             config["scheduler_onset"] = CosineLRScheduler(config["optimizer_onset"], **self.config["lr_schedule"])
@@ -111,16 +107,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
     def load_network_params(self, config: dict) -> dict:
         return config["network_params"] | self.get_default_config()["network_params"]
-
-    def load_optimizer(self) -> None:
-        """
-        Load optimizer function for the model.
-        """
-        # Load optimizer
-        self.config["optimizer_onset"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config.get("weight_decay", self.get_default_config()["weight_decay"]), self.model_onset)
-        self.config["optimizer_awake"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config.get("weight_decay", self.get_default_config()["weight_decay"]), self.model_awake)
 
     def get_default_config(self) -> dict:
         """

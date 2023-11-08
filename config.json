@@ -2,10 +2,6 @@
     "name": "config",
     "log_to_wandb": true,
     "pred_with_cpu": false,
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12
-    },
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -14,6 +10,12 @@
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
     "preprocessing": [
         {
             "kind": "mem_reduce",
@@ -49,6 +51,10 @@
         }
     ],
     "feature_engineering": [
+        {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        },
         {
             "kind": "time",
             "time_features": ["hour","minute"]
@@ -86,7 +92,7 @@
                         "HPO-Test-SplitEvent-1D-Unet-CNN": {
                             "parameters": {
                                 "type": {"value": "split-event-seg-unet-1d-cnn"},
-                                "loss": {"value": "kldiv-torch"},
+                                "loss": {"value": "mse-torch"},
                                 "optimizer": {"value": "adam-torch"},
                                 "epochs": {"values": [3, 5, 7]},
                                 "batch_size": {"value": 32},
@@ -104,7 +110,7 @@
     "models": {
         "HPO-Test-SplitEvent-1D-Unet-CNN": {
             "type": "split-event-seg-unet-1d-cnn",
-            "loss": "kldiv-torch",
+            "loss": "mse-torch",
             "optimizer": "adam-torch",
             "epochs": 200,
             "batch_size": 32,

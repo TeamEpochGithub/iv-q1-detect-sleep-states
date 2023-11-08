@@ -17,6 +17,9 @@ List of options and their config options:
       - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
+- `sun`
+    -  `sun_features`: a list of sun features to include
+      - Options: `elevation`, `azimuth`
 
 
 Example:
@@ -44,6 +47,10 @@ Example:
         {
             "kind": "time",
             "time_features": ["day", "hour", "minute", "second"]    
+        },
+        {
+            "kind": "sun",
+            "sun_features": ["elevation", "azimuth"]
         }
 ]
 ```

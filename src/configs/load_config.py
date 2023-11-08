@@ -60,6 +60,8 @@ class ConfigLoader:
         data_info.window_size = self.config.get("data_info").get("window_size", data_info.window_size)
         data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", data_info.downsampling_factor)
         data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
+        data_info.latitude = self.config.get("data_info").get("latitude", data_info.latitude)
+        data_info.longitude = self.config.get("data_info").get("longitude", data_info.longitude)
 
     def reset_globals(self) -> None:
         """Reset the global variables to the default values"""
@@ -70,6 +72,9 @@ class ConfigLoader:
         data_info.stage = "load_config"
         data_info.substage = "set_globals"
         data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
+
+        data_info.latitude = 40.730610
+        data_info.longitude = -73.935242
 
         data_info.X_columns = {}
         data_info.y_columns = {}

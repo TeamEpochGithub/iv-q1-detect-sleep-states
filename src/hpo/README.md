@@ -25,6 +25,7 @@ It only returns `None` if HPO is disabled.
 ## Configuration
 - `"kind": str`: The kind of HPO to use. Currently, only `"wandb_sweeps"` is supported.
 - `"apply": bool`: Whether to apply the HPO. If `false`, the HPO is disabled and `ConfigLoader.hpo` returns `None`.
+- `"count": int`: The number of runs to perform. If `count` is missing, it will run indefinitely. 
 - `"sweep_configuration": dict`: The configuration for the HPO method if it is `"wandb_sweeps"`.
   See the [Weights & Biases documentation](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration) for more information.
 
@@ -34,6 +35,7 @@ where we want to optimize the number of epochs using random search with Weights 
 "hpo": {
     "kind": "wandb_sweeps",
     "apply": true,
+    "count": 2,
     "sweep_configuration": {
         "method": "random",
         "metric": {"goal": "maximize", "name": "cv_score"},

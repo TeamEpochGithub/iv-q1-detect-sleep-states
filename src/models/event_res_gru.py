@@ -57,7 +57,7 @@ class EventResGRU(Model):
         config = copy.deepcopy(config)
 
         # Error checks. Check if all necessary parameters are in the config.
-        required = ["loss", "optimizer", "lr_schedule"]
+        required = ["loss", "optimizer"]
         for req in required:
             if req not in config:
                 logger.critical("------ Config is missing required parameter: " + req)
@@ -121,7 +121,10 @@ class EventResGRU(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
-        scheduler = self.config["scheduler"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
         early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
         if early_stopping > 0:
@@ -174,7 +177,12 @@ class EventResGRU(Model):
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
         optimizer = self.config["optimizer"]
-        scheduler = self.config["scheduler"]
+        self.reset_scheduler()
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
+
         activation_delay = self.config["activation_delay"]
 
         # Create a dataset from X and y

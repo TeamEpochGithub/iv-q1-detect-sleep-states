@@ -60,7 +60,7 @@ def main() -> None:
         logger.info("Predicting with CPU for inference")
     else:
         logger.info("Predicting with GPU for inference")
-    
+
     # ------------------------------------------- #
     #                 Ensemble                    #
     # ------------------------------------------- #
@@ -101,32 +101,11 @@ def main() -> None:
     data_info.stage = "train for submission"
 
     if config_loader.get_train_for_submission():
+        data_info.substage = "Full"
+        for model_config in ensemble.get_models():
+            config_loader.reset_globals()
+            full_train_from_config(model_config, store_location)
         logger.info("Retraining models for submission")
-
-        # Retrain all models with optimal parameters
-        x_train, y_train, groups = pretrain.pretrain_final(featured_data)
-
-        # Save scaler
-        scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + \
-            initial_hash + ".pkl"
-        pretrain.scaler.save(scaler_filename)
-
-        for i, model in enumerate(models):
-            data_info.substage = "Full"
-
-            model_filename_opt = store_location + "/optimal_" + \
-                model + "-" + initial_hash + models[model].hash + ".pt"
-            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
-                model].hash + ".pt"
-            if os.path.isfile(model_filename_submit):
-                logger.info("Found existing fully trained submit model " + str(
-                    i) + ": " + model + " with location " + model_filename_submit)
-            else:
-                models[model].load(model_filename_opt,
-                                   only_hyperparameters=True)
-                logger.info("Retraining model " + str(i) + ": " + model)
-                models[model].train_full(x_train, y_train)
-                models[model].save(model_filename_submit)
     else:
         logger.info("Not training best model for submission")
 
@@ -330,6 +309,47 @@ def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
                          number_of_series_to_plot=config.get_number_of_plots(),
                          folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
                          show_plot=config.get_browser_plot(), save_figures=config.get_store_plots())
+
+
+def full_train_from_config(model_config: ModelConfigLoader, store_location: str) -> None:
+    """
+    Full train the model with the optimal parameters
+    :param model_config: the model config
+    :param store_location: the store location of the models
+    """
+    model_name = model_config.get_name()
+    initial_hash = hash_config(
+        model_config.get_pp_fe_pretrain(), length=5)
+
+    featured_data = get_processed_data(
+        model_config, training=True, save_output=True)
+
+    # Get pretrain
+    pretrain: Pretrain = model_config.get_pretraining()
+
+    # Retrain all models with optimal parameters
+    x_train, y_train, _ = pretrain.pretrain_final(featured_data)
+
+    logger.info("Creating model using ModelConfigLoader")
+    model = model_config.set_model()
+
+    # Save scaler
+    scaler_filename: str = store_location + "/scaler-" + \
+        initial_hash + ".pkl"
+    pretrain.scaler.save(scaler_filename)
+
+    model_filename_opt = store_location + "/optimal_" + \
+        model_name + "-" + initial_hash + model.hash + ".pt"
+    model_filename_submit = store_location + "/submit_" + \
+        model_name + "-" + initial_hash + model.hash + ".pt"
+    if os.path.isfile(model_filename_submit):
+        logger.info("Found existing fully trained submit model: " +
+                    model_name + " with location " + model_filename_submit)
+    else:
+        model.load(model_filename_opt, only_hyperparameters=True)
+        logger.info("Retraining model: " + model)
+        model.train_full(x_train, y_train)
+        model.save(model_filename_submit)
 
 
 if __name__ == "__main__":

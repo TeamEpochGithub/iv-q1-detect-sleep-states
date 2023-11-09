@@ -40,8 +40,8 @@ def main() -> None:
             name=config_hash,
             config=config_loader.get_config()
         )
-
-        config_loader.config |= wandb.config
+        if config_loader.get_hpo():
+            config_loader.config |= wandb.config
 
         wandb.run.summary.update(config_loader.get_config())
         logger.info(f"Logging to wandb with run id: {config_hash}")

@@ -33,6 +33,7 @@ class FE:
         from .time import Time
         from .rotation import Rotation
         from .sun import Sun
+        from .sin_hour import SinHour
 
         _FEATURE_ENGINEERING_STEPS: dict[str, type[FE]] = {
             "kurtosis": Kurtosis,
@@ -40,7 +41,8 @@ class FE:
             "skewness": Skewness,
             "time": Time,
             "rotation": Rotation,
-            "sun": Sun
+            "sun": Sun,
+            "sin_hour": SinHour
         }
 
         kind: str = config["kind"]

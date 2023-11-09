@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -12,7 +12,7 @@
     "model_store_loc": "tm",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 1,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
@@ -48,6 +48,9 @@
             "remove_entire_series": false,
             "remove_partially_unlabeled_windows": true,
             "remove_nan": true
+        },
+        {
+            "kind": "sin_hour"
         }
     ],
     "feature_engineering": [
@@ -61,11 +64,6 @@
         }
     ],
     "pretraining": {
-        "downsample": {
-            "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
-            "standard": "mean"
-        },
         "test_size": 0.2,
         "scaler": {
             "kind": "standard-scaler",
@@ -82,7 +80,7 @@
     },
     "hpo": {
         "kind": "wandb_sweeps",
-        "apply": true,
+        "apply": false,
         "count": 2,
         "sweep_configuration": {
             "method": "random",
@@ -109,8 +107,8 @@
         }
     },
     "models": {
-        "HPO-Test-SplitEvent-1D-Unet-CNN": {
-            "type": "split-event-seg-unet-1d-cnn",
+        "Spectrogram_2D_Cnn": {
+            "type": "event-segmentation-2d-cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
             "epochs": 200,
@@ -118,11 +116,17 @@
             "lr": 0.0005,
             "hidden_layers": 8,
             "early_stopping": 7,
-            "threshold": 0
+            "threshold": 0,
+            "n_fft": 127,
+            "hop_length": 1,
+            "encoder_name": "resnet34",
+            "encoder_weights": "imagenet",
+            "bilinear": true,
+            "scale_factor": 1
         }
     },
     "ensemble": {
-        "models": ["HPO-Test-SplitEvent-1D-Unet-CNN"],
+        "models": ["Spectrogram_2D_Cnn"],
         "weights": [1],
         "comb_method": "addition"
     },

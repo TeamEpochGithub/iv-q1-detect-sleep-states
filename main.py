@@ -310,7 +310,7 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config_loader: ConfigLoader = ConfigLoader("config.json")
+    config_loader: ConfigLoader = ConfigLoader("configs/90-hpo.json")
     hpo: HPO | None = config_loader.hpo
 
     if hpo is None:  # HPO disabled

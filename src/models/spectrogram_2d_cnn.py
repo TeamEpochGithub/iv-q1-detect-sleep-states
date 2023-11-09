@@ -45,7 +45,7 @@ class EventSegmentation2DCNN(Model):
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
 
         self.model = SpectrogramEncoderDecoder(
-            in_channels=len(data_info.X_columns), out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
 
         # Load config
         self.load_config(config)
@@ -53,9 +53,7 @@ class EventSegmentation2DCNN(Model):
         if wandb.run is not None:
             if data_info.plot_summary:
                 from torchsummary import summary
-                summary(self.model_onset.cuda(), input_size=(
-                    len(data_info.X_columns), data_info.window_size))
-                summary(self.model_awake.cuda(), input_size=(
+                summary(self.model.cuda(), input_size=(
                     len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
@@ -279,60 +277,33 @@ class EventSegmentation2DCNN(Model):
             device = torch.device("cuda")
 
         # Set models to eval for inference
-        self.model_onset.eval()
-        self.model_awake.eval()
-
-        self.model_onset.to(device)
-        self.model_awake.to(device)
-
+        self.model.eval()
+        self.model.to(device)
         # Print data shape
         logger.info(f"--- Data shape of predictions dataset: {data.shape}")
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
-        dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=8, shuffle=False)
 
         # Onset predictions
-        predictions_onset = []
+        predictions = []
         with torch.no_grad():
             for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
                 batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
-                batch_prediction = self.model_onset(batch_data)
+                batch_prediction = self.model(batch_data)
 
                 if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
 
-                predictions_onset.append(batch_prediction)
+                predictions.append(batch_prediction)
 
         # Concatenate the predictions from all batches for onset
-        predictions_onset = np.concatenate(predictions_onset, axis=0)
-
-        # Awake predictions
-        predictions_awake = []
-        with torch.no_grad():
-            for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
-                batch_data = batch_data[0].to(device)
-
-                # Make a batch prediction
-                batch_prediction = self.model_awake(batch_data)
-
-                if pred_with_cpu:
-                    batch_prediction = batch_prediction.numpy()
-                else:
-                    batch_prediction = batch_prediction.cpu().numpy()
-
-                predictions_awake.append(batch_prediction)
-
-        # Concatenate the predictions from all batches for awake
-        predictions_awake = np.concatenate(predictions_awake, axis=0)
-
-        # Concatenate the predictions from awake and onset (batch, steps, 1) + (batch, steps, 1) = (batch, steps, 2)
-        predictions = np.concatenate(
-            (predictions_onset, predictions_awake), axis=1)
+        predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:
@@ -345,7 +316,7 @@ class EventSegmentation2DCNN(Model):
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
-
+            # TODO state to events expects 2 labels ignore the awake channel from output
             # Add step offset based on repeat factor.
             if data_info.downsampling_factor <= 1:
                 offset = 0
@@ -381,8 +352,7 @@ class EventSegmentation2DCNN(Model):
         :param path: path to save the model to
         """
         checkpoint = {
-            'onset_model_state_dict': self.model_onset.state_dict(),
-            'awake_model_state_dict': self.model_awake.state_dict(),
+            'model_state_dict': self.model.state_dict(),
             'config': self.config
         }
         torch.save(checkpoint, path)
@@ -406,8 +376,7 @@ class EventSegmentation2DCNN(Model):
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
 
-        self.model_onset.load_state_dict(checkpoint['onset_model_state_dict'])
-        self.model_awake.load_state_dict(checkpoint['awake_model_state_dict'])
+        self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
         logger.info("Model fully loaded from: " + path)
 
@@ -415,10 +384,8 @@ class EventSegmentation2DCNN(Model):
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(
-            self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
-        self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
-            self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+        self.config['optimizer_onset'] = type(self.config['optimizer'])(
+            self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
 
     def reset_weights(self) -> None:
         """

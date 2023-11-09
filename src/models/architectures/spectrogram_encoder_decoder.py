@@ -19,7 +19,8 @@ class SpectrogramEncoderDecoder(nn.Module):
             classes=1,
         )
         self.decoder = UNet1DDecoder(
-            n_channels=1,
+            # TODO this will be the height dont hardcode
+            n_channels=64,
             n_classes=out_channels,
             bilinear=config.get('bilinear', True),
             scale_factor=config.get('scale_factor', 1),
@@ -31,4 +32,4 @@ class SpectrogramEncoderDecoder(nn.Module):
         x_spec = self.spectrogram(x)
         x_encoded = self.encoder(x_spec).squeeze(1)
         y = self.decoder(x_encoded)
-        return y
+        return y.permute(0, 2, 1)

@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -51,7 +51,7 @@
         },
         {
             "kind": "time",
-            "time_features": ["hour","minute"]
+            "time_features": ["hour", "minute"]
         }
     ],
     "pretraining": {
@@ -68,37 +68,9 @@
     },
     "cv": {
         "splitter": "group_k_fold",
-        "scoring": ["score_full", "score_clean"],
+        "scoring": ["score_full"],
         "splitter_params": {
-            "n_splits": 5
-        }
-    },
-    "hpo": {
-        "kind": "wandb_sweeps",
-        "apply": false,
-        "count": 500,
-        "sweep_configuration": {
-            "method": "random",
-            "metric": {"goal": "maximize", "name": "cv_score"},
-            "parameters": {
-                "models": {
-                    "parameters": {
-                        "HPO-Test-SplitEvent-1D-Unet-CNN": {
-                            "parameters": {
-                                "type": {"value": "split-event-seg-unet-1d-cnn"},
-                                "loss": {"values": ["mse-torch", "shrinkage-loss"]},
-                                "optimizer": {"values": ["adam-torch", "adamw-torch"]},
-                                "epochs": {"value": 500},
-                                "batch_size": {"value": 32},
-                                "lr": {"values": [0.0005, 0.001, 0.005, 0.01, 0.0001, 0.00035]},
-                                "hidden_layers": {"values": [4, 8, 16, 32, 64]},
-                                "early_stopping": {"values": [5, 10, 15, 20]},
-                                "threshold": {"values": [0, 0.001, 0.01, 0.1]}
-                            }
-                        }
-                    }
-                }
-            }
+            "n_splits": 2
         }
     },
     "models": {

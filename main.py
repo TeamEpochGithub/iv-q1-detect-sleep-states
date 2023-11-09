@@ -1,4 +1,5 @@
 # This file does the training of the model
+import gc
 import json
 import os
 
@@ -19,11 +20,9 @@ from src.score.visualize_preds import plot_preds_on_series
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
-import gc
 
 
 def main() -> None:
-
     # For sweeps do garbage collection after each run
     # This is necessary because the sweeps run in the same process
     # and the memory is not freed after each run
@@ -133,7 +132,7 @@ def main() -> None:
 
             # Log scores to wandb
             mean_scores = np.mean(scores, axis=0)
-            log_scores_to_wandb(mean_scores[0], mean_scores[1])
+            log_scores_to_wandb(mean_scores, cv.scoring)
             logger.info(
                 f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
@@ -243,8 +242,8 @@ def main() -> None:
                     .reset_index(drop=True))
         logger.info("Start scoring test predictions...")
 
-        scores = (compute_score_full(submission, solution), compute_score_clean(submission, solution))
-        log_scores_to_wandb(*scores)
+        scores = [compute_score_full(submission, solution), compute_score_clean(submission, solution)]
+        log_scores_to_wandb(scores, data_info.scorings)
 
         # compute confusion matrix for making predictions or not
         window_offset['series_id'] = window_offset['series_id'].map(decoding)

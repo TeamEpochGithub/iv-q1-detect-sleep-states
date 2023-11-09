@@ -17,8 +17,8 @@ from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
-from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
+from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
@@ -261,12 +261,16 @@ class ConfigLoader:
         return loss_class
 
     @cached_property
-    def hpo(self) -> HPO:
+    def hpo(self) -> HPO | None:
         """Get the hyperparameter optimization from the config
 
         :return: the hyperparameter optimization object
         :raises ConfigException: if Weights & Biases Sweeps is used without logging to Weights & Biases
         """
+
+        if "hpo" not in self.config:
+            return None
+
         hpo: HPO | None = HPO.from_config(self.config["hpo"])
 
         if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():

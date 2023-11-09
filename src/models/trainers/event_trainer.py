@@ -1,10 +1,13 @@
-import numpy as np
-from torch import nn, log_softmax, softmax
-import torch
-from tqdm import tqdm
+import copy
 from typing import List
+
+import numpy as np
+import torch
 import wandb
 from numpy import ndarray
+from torch import nn, log_softmax, softmax
+from tqdm import tqdm
+
 from ... import data_info
 
 
@@ -50,11 +53,11 @@ class EventTrainer:
     """
 
     def __init__(
-        self,
-        epochs: int = 10,
-        criterion: nn.Module = nn.CrossEntropyLoss(),
-        mask_unlabeled: bool = False,
-        early_stopping: int = 10
+            self,
+            epochs: int = 10,
+            criterion: nn.Module = nn.CrossEntropyLoss(),
+            mask_unlabeled: bool = False,
+            early_stopping: int = 10
     ) -> None:
         self.criterion = criterion
         self.mask_unlabeled = mask_unlabeled
@@ -68,12 +71,12 @@ class EventTrainer:
         self.device = torch.device("cuda:" + cuda_dev if use_cuda else "cpu")
 
     def fit(
-        self,
-        trainloader: torch.utils.data.DataLoader,
-        testloader: torch.utils.data.DataLoader,
-        model: nn.Module,
-        optimizer: torch.optim.Optimizer,
-        name: str
+            self,
+            trainloader: torch.utils.data.DataLoader,
+            testloader: torch.utils.data.DataLoader,
+            model: nn.Module,
+            optimizer: torch.optim.Optimizer,
+            name: str
     ) -> tuple[ndarray[float], ndarray[float], int]:
         """
         Train the model on the training set and validate on the test set.
@@ -131,7 +134,7 @@ class EventTrainer:
             # Save model if validation loss is lower than previous lowest validation loss
             if not full_train and val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss
-                best_model = model.state_dict()
+                best_model = copy.deepcopy(model.state_dict())
                 counter = 0
             elif not full_train:
                 counter += 1
@@ -149,11 +152,11 @@ class EventTrainer:
         return avg_train_losses, avg_val_losses, trained_epochs
 
     def train_one_epoch(
-        self, dataloader: torch.utils.data.DataLoader,
-        epoch_no: int,
-        optimizer: torch.optim.Optimizer,
-        model: nn.Module,
-        disable_tqdm=False
+            self, dataloader: torch.utils.data.DataLoader,
+            epoch_no: int,
+            optimizer: torch.optim.Optimizer,
+            model: nn.Module,
+            disable_tqdm=False
     ) -> ndarray[float]:
         """
         Train the model on the training set for one epoch and return training losses
@@ -174,7 +177,7 @@ class EventTrainer:
         return losses
 
     def _train_one_loop(
-        self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer
+            self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer
     ) -> List[float]:
         """
         Train the model on one batch and return the loss.
@@ -209,10 +212,10 @@ class EventTrainer:
         return losses
 
     def val_loss(
-        self,
-        dataloader: torch.utils.data.DataLoader,
-        epoch_no: int, model: nn.Module,
-        disable_tqdm: bool = False
+            self,
+            dataloader: torch.utils.data.DataLoader,
+            epoch_no: int, model: nn.Module,
+            disable_tqdm: bool = False
     ) -> List[float]:
         """
         Run the model on the test set and return validation loss
@@ -234,10 +237,10 @@ class EventTrainer:
         return losses
 
     def _val_one_loop(
-        self,
-        data: torch.utils.data.DataLoader,
-        losses: List[float],
-        model: nn.Module
+            self,
+            data: torch.utils.data.DataLoader,
+            losses: List[float],
+            model: nn.Module
     ) -> List[float]:
         """
         Validate the model on one batch and return the loss.

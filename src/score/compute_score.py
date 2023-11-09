@@ -187,7 +187,7 @@ def log_scores_to_wandb(scores: np.ndarray | list[float], scorer: list) -> None:
     for s, t in zip(scores, scorer):
         match t:
             case "score_full":
-                wandb.log({prepend + "score_full": s})
+                wandb.log({prepend + "score": s})
             case "score_clean":
                 wandb.log({prepend + "score_clean": s})
 

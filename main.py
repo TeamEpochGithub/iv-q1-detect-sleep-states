@@ -23,11 +23,6 @@ from src.util.submissionformat import to_submission_format
 
 
 def main() -> None:
-    # For sweeps do garbage collection after each run
-    # This is necessary because the sweeps run in the same process
-    # and the memory is not freed after each run
-    gc.collect()
-
     """
     Main function for training the model
     """
@@ -139,8 +134,11 @@ def main() -> None:
                     f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
                 if isinstance(config_loader.hpo, WandBSweeps):
-                    # Done sweeping after CV
-                    # Yes, it won't train multiple models anymore, but that will be refactored with the Ensembling in #111
+                    # For sweeps do garbage collection after each run
+                    # This is necessary because the sweeps run in the same process
+                    # and the memory is not freed after each run
+                    gc.collect()
+
                     return
 
         # ------------------------- #

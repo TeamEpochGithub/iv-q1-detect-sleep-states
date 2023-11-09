@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+
 import pandas as pd
 
 
 from ..logger.logger import logger
 
 
-class FE:
+class FE(ABC):
     """
     Base class for feature engineering (FE) steps.
     All child classes should implement the feature engineering method.
@@ -19,6 +21,19 @@ class FE:
         :param kwargs: the parameters for the feature engineering step
         """
         self.kind = kind
+
+    def __hash__(self) -> int:
+        """Return the hash of the feature engineering step
+
+        Just hash the string representation of the feature engineering step.
+        """
+        return hash(repr(self))
+
+    def __eq__(self, other: object) -> bool:
+        """Check if the feature engineering steps are equal. Necessary for hashing."""
+        if not isinstance(other, FE):
+            return NotImplemented
+        return repr(self) == repr(other)
 
     @staticmethod
     def from_config_single(config: dict) -> FE:
@@ -70,6 +85,7 @@ class FE:
         """
         return self.feature_engineering(data)
 
+    @abstractmethod
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         """Process the data. This method should be overridden by the child class.
 

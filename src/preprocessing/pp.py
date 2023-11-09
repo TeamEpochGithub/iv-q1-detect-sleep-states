@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+
 import pandas as pd
 
 from ..logger.logger import logger
 
 
-class PP:
+class PP(ABC):
     """
     Base class for preprocessing (PP) steps.
     All child classes should implement the preprocess method.
@@ -20,6 +22,19 @@ class PP:
         """
         self.kind = kind
         self.use_pandas = use_pandas
+
+    def __hash__(self) -> int:
+        """Return the hash of the preprocessing step
+
+        Just hash the string representation of the preprocessing step.
+        """
+        return hash(repr(self))
+
+    def __eq__(self, other: object) -> bool:
+        """Check if the preprocessing steps are equal. Necessary for hashing."""
+        if not isinstance(other, PP):
+            return NotImplemented
+        return repr(self) == repr(other)
 
     @staticmethod
     def from_config_single(config: dict) -> PP:
@@ -88,6 +103,7 @@ class PP:
         """
         return self.preprocess(data)
 
+    @abstractmethod
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Preprocess the data. This method should be overridden by the child class.

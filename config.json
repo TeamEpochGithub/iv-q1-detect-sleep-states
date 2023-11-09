@@ -22,6 +22,14 @@
         "latitude": 40.730610,
         "longitude": -73.935242
     },
+    "cv": {
+        "splitter": "group_shuffle_split",
+        "scoring": ["score_full", "score_clean"],
+        "splitter_params": {
+            "n_splits": 1
+        },
+        "apply": false
+    },
     "train_optimal": true,
     "hpo": {
         "kind": "wandb_sweeps",

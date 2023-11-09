@@ -33,6 +33,10 @@
             "time_features": ["hour","minute"]
         },
         {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        },
+        {
             "kind": "rotation",
             "window_sizes": [12, 36, 60, 90, 120, 150, 180, 240, 300, 360, 1000]
         }

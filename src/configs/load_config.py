@@ -7,8 +7,6 @@ from .. import data_info
 from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
-from ..hpo.hpo import HPO
-from ..hpo.wandb_sweeps import WandBSweeps
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
@@ -264,22 +262,6 @@ class ConfigLoader:
         return loss_class
 
     @cached_property
-    def hpo(self) -> HPO:
-        """Get the hyperparameter optimization from the config
-
-        :return: the hyperparameter optimization object
-        :raises ConfigException: if Weights & Biases Sweeps is used without logging to Weights & Biases
-        """
-        hpo: HPO | None = HPO.from_config(self.config["hpo"])
-
-        if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
-            raise ConfigException("Cannot run Weights & Biases Sweeps without logging to Weights & Biases")
-        if hpo is not None and self.cv is None:
-            logger.critical("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
-            raise ConfigException("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
-        return hpo
-
-    @cached_property
     def cv(self) -> CV:
         """Get the cross validation method from the config
 
@@ -288,6 +270,13 @@ class ConfigLoader:
         if "cv" in self.config:
             return CV(**self.config["cv"])
         return None
+
+    def get_hpo(self) -> bool:
+        """Get the hyperparameter optimization parameters from the config
+
+        :return: the hyperparameter optimization parameters
+        """
+        return self.config["hpo"]
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

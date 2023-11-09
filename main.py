@@ -9,8 +9,6 @@ import wandb
 from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
-from src.hpo.hpo import HPO
-from src.hpo.wandb_sweeps import WandBSweeps
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
@@ -42,9 +40,7 @@ def main() -> None:
             config=config_loader.get_config()
         )
 
-        if isinstance(config_loader.hpo, WandBSweeps):
-            # Get the hyperparameters selected by the Weights & Biases Sweep agent in our own config
-            config_loader.config |= wandb.config
+        config_loader.config |= wandb.config
 
         wandb.run.summary.update(config_loader.get_config())
         logger.info(f"Logging to wandb with run id: {config_hash}")
@@ -130,7 +126,7 @@ def main() -> None:
                 log_scores_to_wandb(mean_scores[0], mean_scores[1])
                 logger.info(f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
-                if isinstance(config_loader.hpo, WandBSweeps):
+                if config_loader.get_hpo():
                     # Done sweeping after CV
                     # Yes, it won't train multiple models anymore, but that will be refactored with the Ensembling in #111
                     return
@@ -140,7 +136,6 @@ def main() -> None:
             # ------------------------- #
             print_section_separator("Optimal Training", spacing=0)
             # Enter the optimal training
-            # TODO Train optimal model from with optimal parameters from HPO
             data_info.stage = "train"
             data_info.substage = "optimal"
 
@@ -163,23 +158,7 @@ def main() -> None:
     # TODO Add crossvalidation to models #107
     ensemble = config_loader.get_ensemble(models)
 
-    # Initialize loss
-    # TODO assert that every model has a loss function #67
 
-    # ------------------------------------------------------- #
-    #          Hyperparameter optimization for ensemble       #
-    # ------------------------------------------------------- #
-
-    print_section_separator(
-        "Hyperparameter optimization for ensemble", spacing=0)
-    # TODO Hyperparameter optimization for ensembles
-    # hpo = config.get_hpo()
-    # hpo.optimize()
-
-    # ------------------------------------------------------- #
-    #          Cross validation optimization for ensemble     #
-    # ------------------------------------------------------- #
-    # print_section_separator("Cross validation for ensemble", spacing=0)
 
     # ------------------------------------------------------- #
     #                    Scoring                              #
@@ -311,11 +290,4 @@ if __name__ == "__main__":
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")
-    hpo: HPO | None = config_loader.hpo
-
-    if hpo is None:  # HPO disabled
-        logger.info("Running main without HPO")
-        main()
-    else:  # HPO enabled
-        logger.info("Running main with HPO")
-        hpo.optimize(main)
+    main()

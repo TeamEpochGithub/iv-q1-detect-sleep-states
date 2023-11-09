@@ -281,6 +281,8 @@ class ConfigLoader:
         if hpo is not None and self.cv is None:
             logger.critical("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
             raise ConfigException("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
+        if isinstance(hpo, WandBSweeps):
+            data_info.hpo = True
         return hpo
 
     @cached_property

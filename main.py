@@ -128,6 +128,7 @@ def main() -> None:
             if cv is not None:
                 logger.info("Applying cross-validation on model " + str(i) + ": " + model)
                 data_info.stage = "cv"
+
                 train_df = featured_data.iloc[train_idx]
 
                 scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)

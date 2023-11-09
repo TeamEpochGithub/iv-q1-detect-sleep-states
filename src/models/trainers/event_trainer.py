@@ -203,8 +203,8 @@ class EventTrainer:
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
         return losses
 
-    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer, use_activation: bool = None) -> List[
-        float]:
+    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer,
+                        use_activation: bool = None) -> List[float]:
         """
         Train the model on one batch and return the loss.
         :param data: The batch to train on.

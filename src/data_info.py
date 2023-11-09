@@ -7,6 +7,7 @@ stage: str = "load_config"  # The stage of the pipeline
 substage: str = "set_globals"  # The substage of the pipeline
 plot_summary: bool = False  # Whether to plot the summary of the model
 
+hpo: bool = False  # Whether to do hyperparameter optimization
 
 scorings: list[str] = ["score_full", "score_clean"]  # The scorings to use for evaluation
 

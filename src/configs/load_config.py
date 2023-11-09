@@ -276,6 +276,7 @@ class ConfigLoader:
 
         :return: the hyperparameter optimization parameters
         """
+        data_info.hpo = self.config["hpo"]
         return self.config["hpo"]
 
     # Function to retrieve train for submission

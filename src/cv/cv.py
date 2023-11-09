@@ -128,7 +128,7 @@ class CV:
             scores.append(score)
 
             # If we are doing HPO and the score_full is lower than 0.1, stop the HPO
-            if data_info.hpo == "hpo" and score[0] < 0.1:
+            if data_info.hpo and score[0] < 0.1:
                 break
 
         return np.array(scores)

@@ -42,12 +42,6 @@
         },
         {
             "kind": "split_windows"
-        },
-        {
-            "kind": "remove_unlabeled",
-            "remove_entire_series": false,
-            "remove_partially_unlabeled_windows": true,
-            "remove_nan": true
         }
     ],
     "feature_engineering": [
@@ -73,17 +67,16 @@
         }
     },
     "cv": {
-        "splitter": "group_shuffle_split",
+        "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],
         "splitter_params": {
-            "n_splits": 1,
-            "test_size": 0.2
+            "n_splits": 5
         }
     },
     "hpo": {
         "kind": "wandb_sweeps",
-        "apply": true,
-        "count": 2,
+        "apply": false,
+        "count": 500,
         "sweep_configuration": {
             "method": "random",
             "metric": {"goal": "maximize", "name": "cv_score"},
@@ -93,14 +86,14 @@
                         "HPO-Test-SplitEvent-1D-Unet-CNN": {
                             "parameters": {
                                 "type": {"value": "split-event-seg-unet-1d-cnn"},
-                                "loss": {"value": "mse-torch"},
-                                "optimizer": {"value": "adam-torch"},
-                                "epochs": {"values": [3, 5, 7]},
+                                "loss": {"values": ["mse-torch", "shrinkage-loss"]},
+                                "optimizer": {"values": ["adam-torch", "adamw-torch"]},
+                                "epochs": {"value": 500},
                                 "batch_size": {"value": 32},
-                                "lr": {"value": 0.0005},
-                                "hidden_layers": {"value": 8},
-                                "early_stopping": {"value": 7},
-                                "threshold": {"value": 0}
+                                "lr": {"values": [0.0005, 0.001, 0.005, 0.01, 0.0001, 0.00035]},
+                                "hidden_layers": {"values": [4, 8, 16, 32, 64]},
+                                "early_stopping": {"values": [5, 10, 15, 20]},
+                                "threshold": {"values": [0, 0.001, 0.01, 0.1]}
                             }
                         }
                     }

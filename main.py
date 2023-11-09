@@ -19,9 +19,16 @@ from src.score.visualize_preds import plot_preds_on_series
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
+import gc
 
 
 def main() -> None:
+
+    # For sweeps do garbage collection after each run
+    # This is necessary because the sweeps run in the same process
+    # and the memory is not freed after each run
+    gc.collect()
+
     """
     Main function for training the model
     """

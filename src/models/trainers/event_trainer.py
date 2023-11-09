@@ -1,3 +1,4 @@
+import copy
 from typing import List
 
 import numpy as np
@@ -7,7 +8,6 @@ from numpy import ndarray
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
 from tqdm import tqdm
-import copy
 
 from ... import data_info
 from ...logger.logger import logger
@@ -78,9 +78,11 @@ class EventTrainer:
             testloader: torch.utils.data.DataLoader,
             model: nn.Module,
             optimizer: torch.optim.Optimizer,
+
             name: str,
             scheduler: CosineLRScheduler = None,
             activation_delay: int = None
+
     ) -> tuple[ndarray[float], ndarray[float], int]:
         """
         Train the model on the training set and validate on the test set.
@@ -169,9 +171,11 @@ class EventTrainer:
             epoch_no: int,
             optimizer: torch.optim.Optimizer,
             model: nn.Module,
+
             disable_tqdm=False,
             scheduler: CosineLRScheduler = None,
             use_activation: bool = None
+
     ) -> ndarray[float]:
         """
         Train the model on the training set for one epoch and return training losses
@@ -199,9 +203,8 @@ class EventTrainer:
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
         return losses
 
-    def _train_one_loop(
-            self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer, use_activation: bool = None
-    ) -> List[float]:
+    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer,
+                        use_activation: bool = None) -> List[float]:
         """
         Train the model on one batch and return the loss.
         :param data: The batch to train on.

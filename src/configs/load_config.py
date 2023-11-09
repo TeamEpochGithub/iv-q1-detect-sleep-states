@@ -264,12 +264,16 @@ class ConfigLoader:
         return loss_class
 
     @cached_property
-    def hpo(self) -> HPO:
+    def hpo(self) -> HPO | None:
         """Get the hyperparameter optimization from the config
 
         :return: the hyperparameter optimization object
         :raises ConfigException: if Weights & Biases Sweeps is used without logging to Weights & Biases
         """
+
+        if "hpo" not in self.config:
+            return None
+
         hpo: HPO | None = HPO.from_config(self.config["hpo"])
 
         if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
@@ -277,6 +281,8 @@ class ConfigLoader:
         if hpo is not None and self.cv is None:
             logger.critical("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
             raise ConfigException("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
+        if isinstance(hpo, WandBSweeps):
+            data_info.hpo = True
         return hpo
 
     @cached_property

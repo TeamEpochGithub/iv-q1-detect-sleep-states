@@ -116,25 +116,29 @@ def main() -> None:
             logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
             models[model].load(model_filename_opt, only_hyperparameters=False)
         else:
-            logger.info("Applying cross-validation on model " + str(i) + ": " + model)
-            data_info.stage = "cv"
             cv = config_loader.cv
-            train_df = featured_data.iloc[train_idx]
 
-            # Apply CV
-            scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+            # Apply CV if in the config
+            if cv is not None:
+                logger.info("Applying cross-validation on model " + str(i) + ": " + model)
+                data_info.stage = "cv"
+                train_df = featured_data.iloc[train_idx]
 
-            # Log scores to wandb
-            mean_scores = np.mean(scores, axis=0)
-            log_scores_to_wandb(mean_scores[0], mean_scores[1])
-            logger.info(
-                f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
+                scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+                # Log scores to wandb
+                mean_scores = np.mean(scores, axis=0)
+                log_scores_to_wandb(mean_scores[0], mean_scores[1])
+                logger.info(f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
-            if isinstance(config_loader.hpo, WandBSweeps):
-                # Done sweeping after CV
-                # Yes, it won't train multiple models anymore, but that will be refactored with the Ensembling in #111
-                return
+                if isinstance(config_loader.hpo, WandBSweeps):
+                    # Done sweeping after CV
+                    # Yes, it won't train multiple models anymore, but that will be refactored with the Ensembling in #111
+                    return
 
+            # ------------------------- #
+            #          Training         #
+            # ------------------------- #
+            print_section_separator("Optimal Training", spacing=0)
             # Enter the optimal training
             # TODO Train optimal model from with optimal parameters from HPO
             data_info.stage = "train"

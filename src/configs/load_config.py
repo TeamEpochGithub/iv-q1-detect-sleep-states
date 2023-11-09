@@ -12,13 +12,14 @@ from ..hpo.wandb_sweeps import WandBSweeps
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
+from ..models.event_res_gru import EventResGRU
 from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
 from ..models.example_model import ExampleModel
 from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
 from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
-from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
+from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
@@ -193,6 +194,8 @@ class ConfigLoader:
                     curr_model = EventSegmentationTransformer(model_config, model_name)
                 case "seg-unet-1d-cnn":
                     curr_model = SegmentationUnet1DCNN(model_config, model_name)
+                case "event-res-gru":
+                    curr_model = EventResGRU(model_config, model_name)
                 case "event-seg-unet-1d-cnn":
                     curr_model = EventSegmentationUnet1DCNN(model_config, model_name)
                 case "split-event-seg-unet-1d-cnn":
@@ -271,7 +274,9 @@ class ConfigLoader:
 
         if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
             raise ConfigException("Cannot run Weights & Biases Sweeps without logging to Weights & Biases")
-
+        if hpo is not None and self.cv is None:
+            logger.critical("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
+            raise ConfigException("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
         return hpo
 
     @cached_property
@@ -280,7 +285,9 @@ class ConfigLoader:
 
         :return: the cross validation method
         """
-        return CV(**self.config["cv"])
+        if "cv" in self.config:
+            return CV(**self.config["cv"])
+        return None
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

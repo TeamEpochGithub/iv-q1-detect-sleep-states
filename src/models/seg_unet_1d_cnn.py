@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -89,10 +90,12 @@ class SegmentationUnet1DCNN(Model):
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
         config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
-        config["hidden_layers"] = config.get("hidden_layers", default_config["hidden_layers"])
         config["kernel_size"] = config.get("kernel_size", default_config["kernel_size"])
         config["depth"] = config.get("depth", default_config["depth"])
         config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
+        config["network_params"] = config.get("network_params", default_config["network_params"])
+        config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+        config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
         self.config = config
 
     def load_optimizer(self) -> None:
@@ -108,8 +111,17 @@ class SegmentationUnet1DCNN(Model):
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
-                "early_stopping": -1, "weight_decay": 0.0}
+        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "kernel_size": 7, "depth": 2,
+                "lr_schedule": {
+                    "t_initial": 100,
+                    "warmup_t": 5,
+                    "warmup_lr_init": 0.000001,
+                    "lr_min": 2e-8
+                },
+                "early_stopping": -1, "weight_decay": 0.0,
+                "network_params": {
+                    "activation": "relu", "hidden_layers": 8
+                }}
 
     def get_type(self) -> str:
         """
@@ -469,8 +481,7 @@ class SegmentationUnet1DCNN(Model):
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(),
-                                                                  lr=self.config['optimizer'].param_groups[0]['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['lr'])
 
     def reset_weights(self) -> None:
         """

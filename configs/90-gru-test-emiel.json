@@ -42,12 +42,6 @@
         },
         {
             "kind": "split_windows"
-        },
-        {
-            "kind": "remove_unlabeled",
-            "remove_entire_series": false,
-            "remove_partially_unlabeled_windows": true,
-            "remove_nan": true
         }
     ],
     "feature_engineering": [
@@ -57,7 +51,7 @@
         },
         {
             "kind": "time",
-            "time_features": ["hour","minute"]
+            "time_features": ["hour", "minute"]
         }
     ],
     "pretraining": {
@@ -72,62 +66,42 @@
             "copy": true
         }
     },
-    "cv": {
-        "splitter": "group_shuffle_split",
-        "scoring": ["score_full", "score_clean"],
-        "splitter_params": {
-            "n_splits": 1,
-            "test_size": 0.2
-        }
-    },
-    "hpo": {
-        "kind": "wandb_sweeps",
-        "apply": true,
-        "count": 2,
-        "sweep_configuration": {
-            "method": "random",
-            "metric": {"goal": "maximize", "name": "cv_score"},
-            "parameters": {
-                "models": {
-                    "parameters": {
-                        "HPO-Test-SplitEvent-1D-Unet-CNN": {
-                            "parameters": {
-                                "type": {"value": "split-event-seg-unet-1d-cnn"},
-                                "loss": {"value": "mse-torch"},
-                                "optimizer": {"value": "adam-torch"},
-                                "epochs": {"values": [3, 5, 7]},
-                                "batch_size": {"value": 32},
-                                "lr": {"value": 0.0005},
-                                "hidden_layers": {"value": 8},
-                                "early_stopping": {"value": 7},
-                                "threshold": {"value": 0}
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    },
     "models": {
-        "HPO-Test-SplitEvent-1D-Unet-CNN": {
-            "type": "split-event-seg-unet-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 200,
+        "EventResGRU": {
+            "type": "event-res-gru",
+            "loss": "shrinkage-loss",
+            "epochs": 500,
             "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 7,
+            "optimizer": "adam-torch",
+            "early_stopping": 10,
+            "activation_delay": 15,
+            "lr": 0.001,
+            "network_params": {
+                "hidden_size": 8,
+                "n_layers": 5,
+                "activation": "relu"
+            },
+            "lr_schedule": {
+                "t_initial": 100,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.000001,
+                "lr_min": 2e-8
+            },
             "threshold": 0
         }
     },
     "ensemble": {
-        "models": ["HPO-Test-SplitEvent-1D-Unet-CNN"],
+        "models": ["EventResGRU"],
         "weights": [1],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
-    "train_for_submission": false,
+    "hpo": {
+        "apply": false,
+        "method": "example_hpo"
+    },
+    "train_for_submission": true,
+
     "scoring": true,
     "visualize_preds": {
         "n": 0,

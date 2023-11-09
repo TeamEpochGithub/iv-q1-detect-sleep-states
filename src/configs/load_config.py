@@ -56,24 +56,34 @@ class ConfigLoader:
 
     def set_globals(self) -> None:
         """Set the global variables"""
-        data_info.window_size = self.config.get("data_info").get("window_size", data_info.window_size)
-        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", data_info.downsampling_factor)
-        data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
-        data_info.latitude = self.config.get("data_info").get("latitude", data_info.latitude)
-        data_info.longitude = self.config.get("data_info").get("longitude", data_info.longitude)
+        data_info.window_size = self.config.get("data_info").get(
+            "window_size", data_info.window_size)
+        data_info.downsampling_factor = self.config.get("data_info").get(
+            "downsampling_factor", data_info.downsampling_factor)
+        data_info.plot_summary = self.config.get("data_info").get(
+            "plot_summary", data_info.plot_summary)
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", data_info.latitude)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", data_info.longitude)
 
     def reset_globals(self) -> None:
         """Reset the global variables to the default values"""
         data_info.pred_with_cpu = self.get_pred_with_cpu()
-        data_info.window_size_before = self.config.get("data_info").get("window_size", 17280)
+        data_info.window_size_before = self.config.get(
+            "data_info").get("window_size", 17280)
         data_info.window_size = data_info.window_size_before
-        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", 1)
+        data_info.downsampling_factor = self.config.get(
+            "data_info").get("downsampling_factor", 1)
         data_info.stage = "load_config"
         data_info.substage = "set_globals"
-        data_info.plot_summary = self.config.get("data_info").get("plot_summary", False)
+        data_info.plot_summary = self.config.get(
+            "data_info").get("plot_summary", False)
 
-        data_info.latitude = self.config.get("data_info").get("latitude", 40.730610)
-        data_info.longitude = self.config.get("data_info").get("longitude", -73.935242)
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", 40.730610)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", -73.935242)
 
         data_info.X_columns = {}
         data_info.y_columns = {}
@@ -183,21 +193,27 @@ class ConfigLoader:
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, model_name)
+                    curr_model = SegmentationSimple1DCNN(
+                        model_config, model_name)
                 case "transformer":
                     curr_model = Transformer(model_config, model_name)
                 case "segmentation-transformer":
-                    curr_model = SegmentationTransformer(model_config, model_name)
+                    curr_model = SegmentationTransformer(
+                        model_config, model_name)
                 case "event-segmentation-transformer":
-                    curr_model = EventSegmentationTransformer(model_config, model_name)
+                    curr_model = EventSegmentationTransformer(
+                        model_config, model_name)
                 case "seg-unet-1d-cnn":
-                    curr_model = SegmentationUnet1DCNN(model_config, model_name)
+                    curr_model = SegmentationUnet1DCNN(
+                        model_config, model_name)
                 case "event-res-gru":
                     curr_model = EventResGRU(model_config, model_name)
                 case "event-seg-unet-1d-cnn":
-                    curr_model = EventSegmentationUnet1DCNN(model_config, model_name)
+                    curr_model = EventSegmentationUnet1DCNN(
+                        model_config, model_name)
                 case "split-event-seg-unet-1d-cnn":
-                    curr_model = SplitEventSegmentationUnet1DCNN(model_config, model_name)
+                    curr_model = SplitEventSegmentationUnet1DCNN(
+                        model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException(
@@ -272,8 +288,8 @@ class ConfigLoader:
         return None
 
     def get_hpo(self) -> bool:
-        """Get the hyperparameter optimization parameters from the config
-
+        """
+        Get the hyperparameter optimization parameters from the config
         :return: the hyperparameter optimization parameters
         """
         data_info.hpo = self.config["hpo"]

@@ -30,10 +30,9 @@
         },
         "apply": false
     },
-    "train_optimal": true,
     "hpo": {
         "kind": "wandb_sweeps",
-        "apply": true,
+        "apply": false,
         "count": 2,
         "sweep_configuration": {
             "method": "random",
@@ -72,6 +71,7 @@
             "threshold": 0
         }
     },
+    "train_optimal": true,
     "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {

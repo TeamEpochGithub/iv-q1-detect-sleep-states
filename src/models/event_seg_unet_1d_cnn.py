@@ -6,6 +6,7 @@ import torch
 import wandb
 from numpy import ndarray, dtype
 from sklearn.metrics import roc_curve
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -43,15 +44,12 @@ class EventSegmentationUnet1DCNN(Model):
 
         self.model_type = "event-segmentation"
 
+        # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2, model_type=self.model_type,
+                               **self.load_network_params(config))
+
         # Load config
         self.load_config(config)
-
-        # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                               model_type=self.model_type, config=self.config)
-
-        # Load optimizer
-        self.load_optimizer()
 
         # Print model summary
         if wandb.run is not None:
@@ -77,6 +75,8 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Get default_config
         default_config = self.get_default_config()
+        config["mask_unlabeled"] = config.get(
+            "mask_unlabeled", default_config["mask_unlabeled"])
         if config["mask_unlabeled"]:
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
@@ -88,34 +88,50 @@ class EventSegmentationUnet1DCNN(Model):
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["hidden_layers"] = config.get(
-            "hidden_layers", default_config["hidden_layers"])
-        config["kernel_size"] = config.get(
-            "kernel_size", default_config["kernel_size"])
-        config["depth"] = config.get("depth", default_config["depth"])
         config["early_stopping"] = config.get(
             "early_stopping", default_config["early_stopping"])
         config["threshold"] = config.get(
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
+        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model)
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
+        config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
+        config["network_params"] = config.get("network_params", default_config["network_params"])
         self.config = config
 
-    def load_optimizer(self) -> None:
-        """
-        Load optimizer function for the model.
-        """
-        # Load optimizer
-        self.config["optimizer"] = Optimizer.get_optimizer(self.config["optimizer"], self.config["lr"],
-                                                           self.config["weight_decay"], self.model)
+    def load_network_params(self, config: dict) -> dict:
+        return config["network_params"] | self.get_default_config()["network_params"]
 
     def get_default_config(self) -> dict:
         """
         Get default config function for the model.
         :return: default config
         """
-        return {"batch_size": 32, "lr": 0.001, "epochs": 10, "hidden_layers": 32, "kernel_size": 7, "depth": 2,
-                "early_stopping": -1, "threshold": 0, "weight_decay": 0.0, "mask_unlabeled": False}
+        return {
+            "batch_size": 32,
+            "lr": 0.001,
+            "epochs": 10,
+            "early_stopping": -1,
+            "threshold": 0.5,
+            "weight_decay": 0.0,
+            "mask_unlabeled": False,
+            "lr_schedule": {
+                "t_initial": 100,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.000001,
+                "lr_min": 2e-8
+            },
+            "activation_delay": 0,
+            "network_params": {
+                "activation": "relu",
+                "hidden_layers": 8,
+                "kernel_size": 7,
+                "depth": 2,
+            }
+        }
 
     def get_type(self) -> str:
         """
@@ -140,6 +156,12 @@ class EventSegmentationUnet1DCNN(Model):
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
         early_stopping = self.config["early_stopping"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
+
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -193,7 +215,8 @@ class EventSegmentationUnet1DCNN(Model):
         trainer = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name)
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            activation_delay=activation_delay)
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -224,6 +247,11 @@ class EventSegmentationUnet1DCNN(Model):
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
 
         logger.info("--- Running for " + str(epochs) + " epochs.")
 
@@ -253,10 +281,14 @@ class EventSegmentationUnet1DCNN(Model):
         # Train the model
         logger.info("--- Training model full " + self.name)
         trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
-        trainer.fit(trainloader=train_dataloader, testloader=None,
-                    model=self.model, optimizer=optimizer, name=self.name)
+        avg_losses, avg_val_losses, total_epochs = trainer.fit(trainloader=train_dataloader, testloader=None,
+                                                               model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler, activation_delay=activation_delay)
 
         logger.info("--- Full train complete!")
+
+        # Log the results to wandb
+        if wandb.run is not None:
+            self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
@@ -370,23 +402,17 @@ class EventSegmentationUnet1DCNN(Model):
             checkpoint = torch.load(path)
         self.config = checkpoint['config']
         if only_hyperparameters:
-            self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                                   model_type=self.model_type, config=self.config)
+            self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
-
-    def reset_optimizer(self) -> None:
-        """
-        Reset the optimizer to the initial state. Useful for retraining the model.
-        """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(),
-                                                                  lr=self.config['optimizer'].param_groups[0]['lr'])
 
     def find_optimal_threshold(self, X: np.ndarray, y: np.ndarray) -> float:
         """Finds and sets the optimal threshold for the model.
@@ -423,4 +449,18 @@ class EventSegmentationUnet1DCNN(Model):
         Reset the weights of the model.
         """
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                               model_type=self.model_type, config=self.config)
+                               model_type=self.model_type, **self.load_network_params(self.config))
+
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler to the initial state. Useful for retraining the model.
+        """
+        if 'scheduler' in self.config:
+            self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])
+
+    def reset_optimizer(self) -> None:
+
+        """
+        Reset the optimizer to the initial state. Useful for retraining the model.
+        """
+        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['lr'])

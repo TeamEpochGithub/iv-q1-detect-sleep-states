@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import wandb
 from numpy import ndarray, dtype
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
@@ -42,17 +43,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         self.model_type = "event-segmentation"
 
-        # Load config
-        self.load_config(config)
-
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(config))
         self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(config))
 
-        # Load optimizer
-        self.load_optimizer()
+        # Load config
+        self.load_config(config)
 
         # Print model summary
         if wandb.run is not None:
@@ -94,29 +92,21 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["hidden_layers"] = config.get(
-            "hidden_layers", default_config["hidden_layers"])
-        config["kernel_size"] = config.get(
-            "kernel_size", default_config["kernel_size"])
-        config["depth"] = config.get("depth", default_config["depth"])
-        config["early_stopping"] = config.get(
-            "early_stopping", default_config["early_stopping"])
-        config["threshold"] = config.get(
-            "threshold", default_config["threshold"])
-        config["weight_decay"] = config.get(
-            "weight_decay", default_config["weight_decay"])
-
+        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
+        config["threshold"] = config.get("threshold", default_config["threshold"])
+        config["weight_decay"] = config.get("weight_decay", default_config["weight_decay"])
+        config["optimizer_onset"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model_onset)
+        config["optimizer_awake"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model_awake)
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+            config["scheduler_onset"] = CosineLRScheduler(config["optimizer_onset"], **self.config["lr_schedule"])
+            config["scheduler_awake"] = CosineLRScheduler(config["optimizer_awake"], **self.config["lr_schedule"])
+        config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
+        config["network_params"] |= self.get_default_config()["network_params"]
         self.config = config
 
-    def load_optimizer(self) -> None:
-        """
-        Load optimizer function for the model.
-        """
-        # Load optimizer
-        self.config["optimizer_onset"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_onset)
-        self.config["optimizer_awake"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_awake)
+    def load_network_params(self, config: dict) -> dict:
+        return config["network_params"] | self.get_default_config()["network_params"]
 
     def get_default_config(self) -> dict:
         """
@@ -127,13 +117,23 @@ class SplitEventSegmentationUnet1DCNN(Model):
             "batch_size": 32,
             "lr": 0.001,
             "epochs": 10,
-            "hidden_layers": 32,
-            "kernel_size": 7,
-            "depth": 2,
             "early_stopping": -1,
             "threshold": 0.5,
             "weight_decay": 0.0,
-            "mask_unlabeled": False
+            "mask_unlabeled": False,
+            "lr_schedule": {
+                "t_initial": 100,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.000001,
+                "lr_min": 2e-8
+            },
+            "activation_delay": 0,
+            "network_params": {
+                "activation": "relu",
+                "hidden_layers": 8,
+                "kernel_size": 7,
+                "depth": 2,
+            }
         }
 
     def get_type(self) -> str:
@@ -160,6 +160,13 @@ class SplitEventSegmentationUnet1DCNN(Model):
         batch_size = self.config["batch_size"]
         early_stopping = self.config["early_stopping"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler_onset = self.config["scheduler_onset"]
+            scheduler_awake = self.config["scheduler_awake"]
+        else:
+            scheduler_onset = None
+            scheduler_awake = None
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -225,14 +232,16 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_onset, avg_val_losses_onset, total_epochs_onset = trainer_onset.fit(
-            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset")
+            train_dataloader_onset, test_dataloader_onset, self.model_onset, optimizer_onset, self.name + "_onset", scheduler=scheduler_onset,
+            activation_delay=activation_delay)
 
         # Train the awake model
         logger.info("--- Training awake model")
         trainer_awake = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses_awake, avg_val_losses_awake, total_epochs_awake = trainer_awake.fit(
-            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake")
+            train_dataloader_awake, test_dataloader_awake, self.model_awake, optimizer_awake, self.name + "_awake", scheduler=scheduler_awake,
+            activation_delay=activation_delay)
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -258,6 +267,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         epochs_awake = self.config["total_epochs_awake"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
+        activation_delay = self.config["activation_delay"]
+        if "scheduler" in self.config:
+            scheduler_onset = self.config["scheduler_onset"]
+            scheduler_awake = self.config["scheduler_awake"]
+
+        else:
+            scheduler_onset = None
+            scheduler_awake = None
 
         logger.info("--- Running for " + str(epochs_onset) + " epochs_onset.")
         logger.info("--- Running for " + str(epochs_awake) + " epochs_awake.")
@@ -301,14 +318,14 @@ class SplitEventSegmentationUnet1DCNN(Model):
         trainer_onset = EventTrainer(
             epochs_onset, criterion, mask_unlabeled, -1)
         trainer_onset.fit(train_dataloader_onset, None, self.model_onset,
-                          optimizer_onset, self.name + "_onset_full")
+                          optimizer_onset, self.name + "_onset_full", scheduler=scheduler_onset, activation_delay=activation_delay)
 
         # Train the awake model
         logger.info("--- Training awake model full")
         trainer_awake = EventTrainer(
             epochs_awake, criterion, mask_unlabeled, -1)
         trainer_awake.fit(train_dataloader_awake, None, self.model_awake,
-                          optimizer_awake, self.name + "_awake_full")
+                          optimizer_awake, self.name + "_awake_full", scheduler=scheduler_awake, activation_delay=activation_delay)
 
         logger.info("--- Full train complete!")
 
@@ -410,20 +427,6 @@ class SplitEventSegmentationUnet1DCNN(Model):
         # Return numpy array
         return np.array(all_predictions), np.array(all_confidences)
 
-    def evaluate(self, pred: np.ndarray, target: np.ndarray) -> float:
-        """
-        Evaluation function for the model.
-        :param pred: predictions
-        :param target: targets
-        :return: avg loss of predictions
-        """
-        # Evaluate function
-        logger.info("--- Evaluating model")
-        # Calculate the loss of the predictions
-        criterion = self.config["loss"]
-        loss = criterion(pred, target)
-        return loss
-
     def save(self, path: str) -> None:
         """
         Save function for the model.
@@ -451,6 +454,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
         if only_hyperparameters:
             self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
@@ -458,22 +462,30 @@ class SplitEventSegmentationUnet1DCNN(Model):
         self.model_onset.load_state_dict(checkpoint['onset_model_state_dict'])
         self.model_awake.load_state_dict(checkpoint['awake_model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
 
     def reset_optimizer(self) -> None:
+
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(
-            self.model_onset.parameters(), lr=self.config['optimizer_onset'].param_groups[0]['lr'])
-        self.config[('optimizer_awake')] = type(self.config['optimizer_awake'])(
-            self.model_awake.parameters(), lr=self.config['optimizer_awake'].param_groups[0]['lr'])
+        self.config['optimizer_onset'] = type(self.config['optimizer'])(self.model_onset.parameters(), lr=self.config['lr'])
+        self.config['optimizer_awake'] = type(self.config['optimizer'])(self.model_awake.parameters(), lr=self.config['lr'])
 
     def reset_weights(self) -> None:
         """
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(self.config))
         self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(self.config))
+
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler to the initial state. Useful for retraining the model.
+        """
+        if 'scheduler' in self.config:
+            self.config['scheduler_onset'] = CosineLRScheduler(self.config['optimizer_onset'], **self.config["lr_schedule"])
+            self.config['scheduler_awake'] = CosineLRScheduler(self.config['optimizer_awake'], **self.config["lr_schedule"])

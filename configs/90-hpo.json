@@ -42,12 +42,6 @@
         },
         {
             "kind": "split_windows"
-        },
-        {
-            "kind": "remove_unlabeled",
-            "remove_entire_series": false,
-            "remove_partially_unlabeled_windows": true,
-            "remove_nan": true
         }
 
     ],
@@ -63,40 +57,60 @@
             "copy": true
         }
     },
-    "cv": {
-        "splitter": "group_shuffle_split",
-        "scoring": ["score_full", "score_clean"],
-        "splitter_params": {
-            "n_splits": 1,
-            "test_size": 0.2
-        }
-    },
     "hpo": {
         "kind": "wandb_sweeps",
         "apply": false,
         "count": 2,
         "sweep_configuration": {
             "method": "random",
-            "metric": {"goal": "maximize", "name": "cv_score"},
+            "metric": {
+                "goal": "maximize",
+                "name": "cv_score"
+            },
             "parameters": {
                 "models": {
                     "parameters": {
                         "HPO-Test-SplitEvent-1D-Unet-CNN": {
                             "parameters": {
-                                "type": {"value": "split-event-seg-unet-1d-cnn"},
-                                "loss": {"value": "mse-torch"},
-                                "optimizer": {"value": "adam-torch"},
-                                "epochs": {"values": [3, 5, 7]},
-                                "batch_size": {"value": 32},
-                                "lr": {"value": 0.0005},
-                                "hidden_layers": {"value": 8},
-                                "early_stopping": {"value": 7},
-                                "threshold": {"value": 0}
+                                "type": {
+                                    "value": "split-event-seg-unet-1d-cnn"
+                                },
+                                "loss": {
+                                    "value": "mse-torch"
+                                },
+                                "optimizer": {
+                                    "value": "adam-torch"
+                                },
+                                "epochs": {
+                                    "values": [3, 5, 7]
+                                },
+                                "batch_size": {
+                                    "value": 32
+                                },
+                                "lr": {
+                                    "value": 0.0005
+                                },
+                                "hidden_layers": {
+                                    "value": 8
+                                },
+                                "early_stopping": {
+                                    "value": 7
+                                },
+                                "threshold": {
+                                    "value": 0
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    },
+    "cv": {
+        "splitter": "group_k_fold",
+        "scoring": ["score_full", "score_clean"],
+        "splitter_params": {
+            "n_splits": 3
         }
     },
     "models": {
@@ -124,7 +138,7 @@
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

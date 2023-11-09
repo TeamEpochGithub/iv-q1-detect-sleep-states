@@ -54,6 +54,7 @@
             "time_features": ["hour", "minute"]
         }
     ],
+
     "pretraining": {
         "downsample": {
             "features": ["f_anglez", "f_enmo"],

@@ -274,7 +274,9 @@ class ConfigLoader:
 
         if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
             raise ConfigException("Cannot run Weights & Biases Sweeps without logging to Weights & Biases")
-
+        if hpo is not None and self.cv is None:
+            logger.critical("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
+            raise ConfigException("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
         return hpo
 
     @cached_property

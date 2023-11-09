@@ -66,33 +66,85 @@
             "copy": true
         }
     },
-    "cv": {
-        "splitter": "group_k_fold",
-        "scoring": ["score_full"],
-        "splitter_params": {
-            "n_splits": 2
+    "hpo": {
+        "kind": "wandb_sweeps",
+        "apply": true,
+        "count": 2,
+        "sweep_configuration": {
+            "method": "random",
+            "metric": {
+                "goal": "maximize",
+                "name": "cv_score"
+            },
+            "parameters": {
+                "models": {
+                    "parameters": {
+                        "HPO-Test-SplitEvent-1D-Unet-CNN": {
+                            "parameters": {
+                                "type": {
+                                    "value": "split-event-seg-unet-1d-cnn"
+                                },
+                                "loss": {
+                                    "value": "mse-torch"
+                                },
+                                "optimizer": {
+                                    "value": "adam-torch"
+                                },
+                                "epochs": {
+                                    "values": [3, 5, 7]
+                                },
+                                "batch_size": {
+                                    "value": 32
+                                },
+                                "lr": {
+                                    "value": 0.0005
+                                },
+                                "hidden_layers": {
+                                    "value": 8
+                                },
+                                "early_stopping": {
+                                    "value": 7
+                                },
+                                "threshold": {
+                                    "value": 0
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "models": {
-        "HPO-Test-SplitEvent-1D-Unet-CNN": {
+        "Split-Event-1D-Unet-CNN": {
             "type": "split-event-seg-unet-1d-cnn",
-            "loss": "mse-torch",
+            "loss": "shrinkage-loss",
             "optimizer": "adam-torch",
-            "epochs": 200,
+            "epochs": 5,
+            "early_stopping": 10,
             "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 7,
+            "lr": 0.001,
+            "network_params": {
+                "hidden_layers": 8,
+                "activation": "relu"
+            },
+            "lr_schedule": {
+                "t_initial": 100,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.000001,
+                "lr_min": 2e-5
+            },
+            "activation_delay": 5,
             "threshold": 0
         }
     },
     "ensemble": {
-        "models": ["HPO-Test-SplitEvent-1D-Unet-CNN"],
+        "models": ["Split-Event-1D-Unet-CNN"],
         "weights": [1],
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

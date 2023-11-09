@@ -71,7 +71,7 @@ class SplitWindows(PP):
                     'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
 
         optionals = {  # (data_type, default_val for padding)
-            'awake': (np.uint8, 2),
+            'awake': (np.uint8, 3),
             'state-onset': (np.float32, 0),
             'state-wakeup': (np.float32, 0),
             'f_similarity_nan': (np.float32, 0),

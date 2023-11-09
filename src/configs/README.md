@@ -326,13 +326,24 @@ This contains all the models and their hyperparameters that are implemented. The
     - epochs=10
     - batch_size=32
     - lr=0.001
-    - hidden_layers=32
-    - kernel_size=7 (only works on 7 for now)
-    - depth=2
+    - network_params (hidden_layers=32, depth=2, kernel_size=7, activation=relu)
+    - activation_delay (number of epochs to wait before applying activation to last layer)
+    - lr_schedule (config for learning rate schedule, see [CosineLRWithRestarts](https://timm.fast.ai/SGDR))
     - early_stopping=-1
     - weight_decay=0.0
     - threshold=0 (threshold for the event prediction, if the prediction is below this, it returns a nan)
     - mask_unlabeled=false
+
+- event-res-gru
+    - epochs (required) 
+    - loss (required)
+    - optimizer (required)
+    - early_stopping
+    - network_params (hidden_size, n_layers, activation)
+    - activation_delay (number of epochs to wait before applying activation to last layer)
+    - lr
+    - lr_schedule (config for learning rate schedule, see [CosineLRWithRestarts](https://timm.fast.ai/SGDR))
+    - threshold
 
 #### Transformers
 - transformer / segmentation-transformer / event-segmentation-transformer
@@ -404,17 +415,49 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "hidden_layers": 8
 }
 
+
+"EventResGRU": {
+    "type": "event_res_gru",
+    "loss": "shrinkage-loss",
+    "epochs": 100,
+    "batch_size": 32,
+    "optimizer": "adam-torch",
+    "early_stopping": 10,
+    "network_params": {
+      "hidden_size": 64,
+      "n_layers": 5,
+      "activation": "relu"
+    },
+    "activation_delay": 15,
+    "lr": 0.001,
+    "lr_schedule": {
+      "t_initial": 100,
+      "warmup_t": 5,
+      "warmup_lr_init": 1e-6,
+      "lr_min": 2e-8
+    },
+    "threshold": 0
+
 "Event-1D-Unet-CNN": {
-      "type": "event-seg-unet-1d-cnn" / "SplitEvent-1D-Unet-CNN",
-      "loss": "mse-torch",
+      "type": "split-event-seg-unet-1d-cnn" / "event-seg-unet-1d-cnn",
+      "loss": "shrinkage-loss",
       "optimizer": "adam-torch",
-      "epochs": 10,
+      "epochs": 5,
+      "early_stopping": 10,
       "batch_size": 32,
       "lr": 0.001,
-      "hidden_layers": 8,
-      "early_stopping": 7,
-      "threshold": 0,
-      "mask_unlabeled": false
+      "network_params": {
+          "hidden_layers": 8,
+          "activation": "relu"
+      },
+      "lr_schedule": {
+          "t_initial": 100,
+          "warmup_t": 5,
+          "warmup_lr_init": 0.000001,
+          "lr_min": 2e-5
+      },
+      "activation_delay": 5,
+      "threshold": 0
 }
 ```
 

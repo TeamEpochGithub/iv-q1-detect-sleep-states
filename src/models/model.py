@@ -118,7 +118,14 @@ class Model:
         logger.critical("--- Resetting weights of base class called. Did you forget to override it?")
         raise ModelException("Resetting weights of base class called. Did you forget to override it?")
 
-    def log_train_test(self, avg_losses: list, avg_val_losses: list, epochs: int, name: str = "") -> None:
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler of the model. Useful for retraining the model. This function should be overwritten by the user.
+        """
+        logger.critical("--- Resetting scheduler of base class called. Did you forget to override it?")
+        raise ModelException("Resetting scheduler of base class called. Did you forget to override it?")
+
+    def log_train_test(self, avg_losses: list | np.ndarray, avg_val_losses: list | np.ndarray, epochs: int, name: str = "") -> None:
         """
         Log the train and test loss to wandb.
         :param avg_losses: list of average train losses

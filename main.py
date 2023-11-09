@@ -131,7 +131,7 @@ def main() -> None:
                     models[model], X_train, y_train, train_df=train_df, groups=groups)
                 # Log scores to wandb
                 mean_scores = np.mean(scores, axis=0)
-                log_scores_to_wandb(mean_scores, cv.scoring)
+                log_scores_to_wandb(mean_scores, data_info.scorings)
                 logger.info(
                     f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 

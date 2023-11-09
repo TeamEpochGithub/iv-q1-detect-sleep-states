@@ -315,7 +315,7 @@ class EventSegmentation2DCNN(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred, thresh=self.config["threshold"])
+            events = pred_to_event_state(pred[:, :, :-1], thresh=self.config["threshold"])
             # TODO state to events expects 2 labels ignore the awake channel from output
             # Add step offset based on repeat factor.
             if data_info.downsampling_factor <= 1:

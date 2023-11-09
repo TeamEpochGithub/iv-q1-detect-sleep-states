@@ -50,6 +50,7 @@
             "kind": "sin_hour"
         }
     ],
+
     "pretraining": {
         "test_size": 0.2,
         "scaler": {
@@ -104,13 +105,6 @@
                     }
                 }
             }
-        }
-    },
-    "cv": {
-        "splitter": "group_k_fold",
-        "scoring": ["score_full", "score_clean"],
-        "splitter_params": {
-            "n_splits": 3
         }
     },
     "models": {

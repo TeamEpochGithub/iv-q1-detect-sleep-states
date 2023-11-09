@@ -108,7 +108,7 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
                                   .filter(lambda x: x['series_id'].iloc[0] in solution_no_nan_ids))
 
     # Compute the score for the clean series
-    score_clean = np.NaN
+    score_clean = 0
     if len(solution_no_nan_ids) == 0 or len(submission_filtered_no_nan) == 0:
         logger.info(f'No clean series to compute non-nan score with,'
                     f' submission has none of the {len(solution_no_nan_ids)} clean series')
@@ -173,25 +173,23 @@ def from_numpy_to_submission_format(train_df: pd.DataFrame, y_pred: np.ndarray, 
     return submission, solution
 
 
-def log_scores_to_wandb(score_full: float, score_clean: float) -> None:
+def log_scores_to_wandb(scores: np.ndarray | list[float], scorer: list) -> None:
     """Log the scores to wandb
-
-    :param score_full: the score for all series
-    :param score_clean: the score for the clean series
+    :param scores: the mean scores
+    :param scorer: the scorers
     """
+    assert len(scores) == len(scorer)
+
     if wandb.run is None:
         return
+    prepend = "cv_" if data_info.stage == 'cv' else ""
 
-    if data_info.stage == 'cv':
-        wandb.log({'cv_score': score_full})
-    else:
-        wandb.log({'score': score_full})
-
-    if score_clean is not np.NaN:
-        if data_info.stage == 'cv':
-            wandb.log({'cv_score_clean': score_clean})
-        else:
-            wandb.log({'score_clean': score_clean})
+    for s, t in zip(scores, scorer):
+        match t:
+            case "score_full":
+                wandb.log({prepend + "score": s})
+            case "score_clean":
+                wandb.log({prepend + "score_clean": s})
 
 
 class ScoringException(Exception):

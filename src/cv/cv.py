@@ -124,6 +124,7 @@ class CV:
                 score = [scorer(train_df, y_pred, validate_idx) for scorer in self.scoring]
             else:
                 score = self.scoring(train_df, y_pred, validate_idx)
+
             scores.append(score)
 
             # If we are doing HPO and the score_full is lower than 0.1, stop the HPO

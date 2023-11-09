@@ -1,4 +1,5 @@
 # This file does the training of the model
+import gc
 import json
 import os
 
@@ -122,30 +123,35 @@ def main() -> None:
             if cv is not None:
                 logger.info("Applying cross-validation on model " + str(i) + ": " + model)
                 data_info.stage = "cv"
+
                 train_df = featured_data.iloc[train_idx]
 
                 scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
                 # Log scores to wandb
                 mean_scores = np.mean(scores, axis=0)
-                log_scores_to_wandb(mean_scores[0], mean_scores[1])
-                logger.info(f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
+                log_scores_to_wandb(mean_scores, cv.scoring)
+                logger.info(
+                    f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
                 if isinstance(config_loader.hpo, WandBSweeps):
-                    # Done sweeping after CV
-                    # Yes, it won't train multiple models anymore, but that will be refactored with the Ensembling in #111
+                    # For sweeps do garbage collection after each run
+                    # This is necessary because the sweeps run in the same process
+                    # and the memory is not freed after each run
+                    gc.collect()
+
                     return
 
-            # ------------------------- #
-            #          Training         #
-            # ------------------------- #
-            print_section_separator("Optimal Training", spacing=0)
-            # Enter the optimal training
-            # TODO Train optimal model from with optimal parameters from HPO
-            data_info.stage = "train"
-            data_info.substage = "optimal"
+        # ------------------------- #
+        #          Training         #
+        # ------------------------- #
+        print_section_separator("Optimal Training", spacing=0)
+        # Enter the optimal training
+        # TODO Train optimal model from with optimal parameters from HPO
+        data_info.stage = "train"
+        data_info.substage = "optimal"
 
-            logger.info("Training optimal model " + str(i) + ": " + model)
-            models[model].train(X_train, X_test, y_train, y_test)
+        logger.info("Training optimal model " + str(i) + ": " + model)
+        models[model].train(X_train, X_test, y_train, y_test)
 
     # Store optimal models
     for i, model in enumerate(models):
@@ -240,8 +246,8 @@ def main() -> None:
                     .reset_index(drop=True))
         logger.info("Start scoring test predictions...")
 
-        scores = (compute_score_full(submission, solution), compute_score_clean(submission, solution))
-        log_scores_to_wandb(*scores)
+        scores = [compute_score_full(submission, solution), compute_score_clean(submission, solution)]
+        log_scores_to_wandb(scores, data_info.scorings)
 
         # compute confusion matrix for making predictions or not
         window_offset['series_id'] = window_offset['series_id'].map(decoding)

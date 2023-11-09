@@ -36,4 +36,13 @@ class Kurtosis(RollingWindow):
         # Make sure there are no NaN values turn them into 0
         data["f_kurtosis_" + feature + "_" + str(window_size)] = data[
             "f_kurtosis_" + feature + "_" + str(window_size)].fillna(0.0)
+
+        # Clip kurtosis
+        data["f_kurtosis_" + feature + "_" + str(window_size)] = data[
+            "f_kurtosis_" + feature + "_" + str(window_size)].clip(
+            lower=data["f_kurtosis_" + feature + "_" + str(window_size)].mean() - 5 * data[
+                "f_kurtosis_" + feature + "_" + str(window_size)].std(),
+            upper=data["f_kurtosis_" + feature + "_" + str(window_size)].mean() + 5 * data[
+                "f_kurtosis_" + feature + "_" + str(window_size)].std())
+
         return data

@@ -202,3 +202,6 @@ submissions/
 
 # Ignore model configs
 model_configs/
+
+#Ignore config.json
+config.json

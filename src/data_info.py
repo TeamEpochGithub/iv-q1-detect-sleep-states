@@ -8,9 +8,14 @@ substage: str = "set_globals"  # The substage of the pipeline
 plot_summary: bool = False  # Whether to plot the summary of the model
 
 
+# Data info variables
+latitude = 40.730610  # The latitude of the data of NYC
+longitude = -73.935242  # The longitude of the data of NYC
+
 # Info about the data
 X_columns: dict[str, int] = {}  # The names of the features
 y_columns: dict[str, int] = {}  # The names of the labels
 
 # Cross Validation data
 cv_current_fold: int = 0  # The current fold of the cross validation
+cv_unique_series: list[str] = []

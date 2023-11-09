@@ -14,7 +14,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
     featured_data = get_processed_data(config, save_output=False, training=False)
 
     # Get predict with cpu
-    pred_cpu = config.get_pred_with_cpu()
+    pred_with_cpu = config.get_pred_with_cpu()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
@@ -60,7 +60,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
 
     # make predictions
     ensemble = config.get_ensemble(models)
-    predictions = ensemble.pred(x_data, pred_with_cpu=pred_cpu)
+    predictions = ensemble.pred(x_data, pred_with_cpu=pred_with_cpu)
     if nan_mask is not None:
         predictions = predictions * nan_mask
 
@@ -76,6 +76,6 @@ if __name__ == "__main__":
 
     coloredlogs.install()
 
-    config = ConfigLoader("config.json")
+    config_loader = ConfigLoader("config.json")
 
-    submit(config, submit=True)
+    submit(config_loader, submit=True)

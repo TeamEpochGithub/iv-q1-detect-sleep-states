@@ -20,10 +20,8 @@ The following steps are currently implemented:
     - Parameters: `start_hour: int = 15`
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
-    - Removes all the data points where there is no labeled data
-- `truncate` (requires `add_state_labels`)
-    - Truncates the unlabeled end of the data
-    - `remove_unlabeled` also removes the unlabeled end
+    - Parameters: `remove_entire_series: bool`, `remove_partially_unlabeled_windows: bool`, `remove_nan`
+    - Removes all the unlabeled data points and optionally, all NaN data. 
 - `add_regression_labels` (requires `add_state_labels`, `split_windows`)
     - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
 - `add_segmentation_labels` (requires `add_state_labels`)
@@ -54,10 +52,10 @@ Example:
       "start_hour": 15
     },
     {
-      "kind": "remove_unlabeled"
-    },
-    {
-      "kind": "truncate"
+        "kind": "remove_unlabeled",
+        "remove_entire_series": false,
+        "remove_partially_unlabeled_windows": true,
+        "remove_nan": true
     },
     {
       "kind": "add_regression_labels"

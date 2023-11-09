@@ -2,10 +2,6 @@
     "name": "config",
     "log_to_wandb": false,
     "pred_with_cpu": false,
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12
-    },
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
@@ -20,19 +16,54 @@
         "comb_method": "addition",
         "pred_only": true
     },
-    "cv": {
-        "splitter": "group_shuffle_split",
-        "scoring": ["score_full", "score_clean"],
-        "splitter_params": {
-            "n_splits": 1
-        },
-        "apply": false
-    },
-    "hpo": {
-        "apply": false,
-        "method": "example_hpo"
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.730610,
+        "longitude": -73.935242
     },
     "train_optimal": true,
+    "hpo": {
+        "kind": "wandb_sweeps",
+        "apply": true,
+        "count": 2,
+        "sweep_configuration": {
+            "method": "random",
+            "metric": {"goal": "maximize", "name": "cv_score"},
+            "parameters": {
+                "models": {
+                    "parameters": {
+                        "HPO-Test-SplitEvent-1D-Unet-CNN": {
+                            "parameters": {
+                                "type": {"value": "split-event-seg-unet-1d-cnn"},
+                                "loss": {"value": "mse-torch"},
+                                "optimizer": {"value": "adam-torch"},
+                                "epochs": {"values": [3, 5, 7]},
+                                "batch_size": {"value": 32},
+                                "lr": {"value": 0.0005},
+                                "hidden_layers": {"value": 8},
+                                "early_stopping": {"value": 7},
+                                "threshold": {"value": 0}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "models": {
+        "HPO-Test-SplitEvent-1D-Unet-CNN": {
+            "type": "split-event-seg-unet-1d-cnn",
+            "loss": "mse-torch",
+            "optimizer": "adam-torch",
+            "epochs": 200,
+            "batch_size": 32,
+            "lr": 0.0005,
+            "hidden_layers": 8,
+            "early_stopping": 7,
+            "threshold": 0
+        }
+    },
     "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {

@@ -76,10 +76,8 @@ Adds this as a column that is 0 for perfect similarity.
     - Parameters: `start_hour: int = 15`
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
-    - Removes all the data points where there is no labeled data
-- `truncate` (requires `add_state_labels`)
-    - Truncates the unlabeled end of the data
-    - `remove_unlabeled` also removes the unlabeled end
+    - Parameters: `remove_entire_series: bool`, `remove_partially_unlabeled_windows: bool`, `remove_nan`
+    - Removes all the unlabeled data points and optionally, all NaN data. 
 - `add_regression_labels` (requires `split_windows`)
     - Parameters: `id_encoding_path: str`, `events_path: str`,
     - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels
@@ -122,7 +120,10 @@ Example for each step:
         "start_hour": 15
     },
     {
-        "kind": "remove_unlabeled"
+        "kind": "remove_unlabeled",
+        "remove_entire_series": false,
+        "remove_partially_unlabeled_windows": true,
+        "remove_nan": true
     },
     {
         "kind": "truncate"
@@ -175,6 +176,10 @@ List of options and their config options:
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 - `similarity_nan`
   - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
+- `sun`
+    -  `sun_features`: a list of sun features to include based the longitude and latitude that should be specified in the data_info.
+    Currently, NYC location is used.
+    - Options: `elevation`, `azimuth`
 
 
 Example:
@@ -207,6 +212,10 @@ Example:
             "kind": "similarity_nan",
             "as_feature": true,
         },
+        {
+            "kind": "sun",
+            "sun_features": ["elevation", "azimuth"]
+        }
 ]
 ```
 
@@ -520,22 +529,49 @@ Options
 - "binarycrossentropy-torch"
 
 ## Hyperparameter optimization
-Will be implemented in the future. The plan is to automatically detect if multiple model values are given, and then
-applying a hyperparameter optimization.
+See [HPO Readme](../hpo/README.md) for more information.
 
-Specification for what to do for hyperparameter optimization
+### Usage
+- `"kind": str`: The kind of HPO to use. Currently, only `"wandb_sweeps"` is supported.
+- `"apply": bool`: Whether to apply the HPO. If `false`, the HPO is disabled and `ConfigLoader.hpo` returns `None`.
+- `"count": int`: The number of runs to perform. If `count` is missing, it will run indefinitely. 
+- `"sweep_configuration": dict`: The configuration for the HPO method if it is `"wandb_sweeps"`.
+  See the [Weights & Biases documentation](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration) for more information.
 
-```JSON
+Here's an example configuration for the `SplitEvent-1D-Unet-CNN` model 
+where we want to optimize the number of epochs using random search with Weights & Biases Sweeps:
+```json
 "hpo": {
-    "apply": true | false,
-    "method": "hpo1"
-}
+    "kind": "wandb_sweeps",
+    "apply": true,
+    "count": 2,
+    "sweep_configuration": {
+        "method": "random",
+        "metric": {"goal": "maximize", "name": "cv_score"},
+        "parameters": {
+            "models": {
+                "parameters": {
+                    "SplitEvent-1D-Unet-CNN": {
+                        "parameters": {
+                            "type": {"value": "split-event-seg-unet-1d-cnn"},
+                            "loss": {"value": "mse-torch"},
+                            "optimizer": {"value": "adam-torch"},
+                            "epochs": {"values": [3, 5, 7]},
+                            "batch_size": {"value": 32},
+                            "lr": {"value": 0.0005},
+                            "hidden_layers": {"value": 8},
+                            "early_stopping": {"value": 7},
+                            "threshold": {"value": 0}
+                        }
+                    }
+                }
+            }
+        }
+    }
+},
 ```
 
-Options
 
-- hpo1
-- hpo2
 
 ## Scoring
 Choose whether to do the scoring and show plots

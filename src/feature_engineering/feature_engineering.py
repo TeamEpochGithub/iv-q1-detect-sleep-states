@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+
 from ..logger.logger import logger
 
 
@@ -31,13 +32,15 @@ class FE:
         from .skewness import Skewness
         from .time import Time
         from .rotation import Rotation
+        from .sun import Sun
 
         _FEATURE_ENGINEERING_STEPS: dict[str, type[FE]] = {
             "kurtosis": Kurtosis,
             "mean": Mean,
             "skewness": Skewness,
             "time": Time,
-            "rotation": Rotation
+            "rotation": Rotation,
+            "sun": Sun
         }
 
         kind: str = config["kind"]

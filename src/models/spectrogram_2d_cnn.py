@@ -18,7 +18,7 @@ from ..optimizer.optimizer import Optimizer
 from ..util.state_to_event import pred_to_event_state
 
 
-class EventSegmnentation2DCNN(Model):
+class EventSegmentation2DCNN(Model):
     """
     This model is an event segmentation model based on the Unet 1D CNN. It uses the architecture from the SegSimple1DCNN class.
     """
@@ -40,16 +40,15 @@ class EventSegmnentation2DCNN(Model):
             logger.info(
                 f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-        self.model_type = "event-segmentation"
+        self.model_type = "Spectrogram_2D_Cnn"
+
+        # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
+
+        self.model = SpectrogramEncoderDecoder(
+            in_channels=len(data_info.X_columns), out_channels=1, model_type=self.model_type, config=self.config)
 
         # Load config
         self.load_config(config)
-
-        # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-  
-        self.model = SpectrogramEncoderDecoder(
-            input_channels=len(data_info.X_columns), output_channels=1, model_type=self.model_type, config=self.config)
-
         # Print model summary
         if wandb.run is not None:
             if data_info.plot_summary:
@@ -101,11 +100,9 @@ class EventSegmnentation2DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
-        self.config["optimizer_onset"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_onset)
-        self.config["optimizer_awake"] = Optimizer.get_optimizer(
-            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model_awake)
         self.config = config
+        self.config["optimizer"] = Optimizer.get_optimizer(
+            self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model)
 
     def get_default_config(self) -> dict:
         """
@@ -427,7 +424,5 @@ class EventSegmnentation2DCNN(Model):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
-        self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
-        self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, config=self.config)
+        self.model = SpectrogramEncoderDecoder(
+            input_channels=len(data_info.X_columns), output_channels=1, model_type=self.model_type, config=self.config)

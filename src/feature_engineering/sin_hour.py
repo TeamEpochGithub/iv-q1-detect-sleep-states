@@ -20,10 +20,10 @@ class SinHour(FE):
         :return: the processed data
         """
         # assert that the data has a timestamp column
-        assert "datetime" in data.columns, "dataframe has no datetime column"
+        assert "timestamp" in data.columns, "dataframe has no timestamp column"
 
         # get the hour from the datetime column
-        hour = data['datetime'].dt.hour
+        hour = data['timestamp'].dt.hour
 
         # map the hour to a value between 0-2*pi
         hour = hour.map(lambda x: x / 24 * 2 * np.pi)

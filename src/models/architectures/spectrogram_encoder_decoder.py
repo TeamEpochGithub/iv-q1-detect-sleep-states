@@ -9,13 +9,13 @@ class SpectrogramEncoderDecoder(nn.Module):
     Pytorch implementation of a really simple baseline model.
     """
 
-    def __init__(self, input_channels, out_channels, config):
+    def __init__(self, in_channels, out_channels, model_type, config):
         super(SpectrogramEncoderDecoder, self).__init__()
         self.spectrogram = T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1))
-        self.encoder = self.encoder = Unet(
+        self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
-            in_channels=input_channels,
+            in_channels=in_channels,
             classes=1,
         )
         self.decoder = UNet1DDecoder(
@@ -23,7 +23,8 @@ class SpectrogramEncoderDecoder(nn.Module):
             n_classes=out_channels,
             bilinear=config.get('bilinear', True),
             scale_factor=config.get('scale_factor', 1),
-            norm=nn.BatchNorm1d,
+            # TODO do not hardcode this
+            duration=17280
         )
 
     def forward(self, x):

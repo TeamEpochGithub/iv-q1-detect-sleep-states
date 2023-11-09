@@ -48,19 +48,12 @@
             "remove_entire_series": false,
             "remove_partially_unlabeled_windows": true,
             "remove_nan": true
-        },
-        {
-            "kind": "sin_hour"
         }
+
     ],
     "feature_engineering": [
         {
-            "kind": "sun",
-            "sun_features": ["azimuth", "altitude"]
-        },
-        {
-            "kind": "time",
-            "time_features": ["hour","minute"]
+            "kind": "sin_hour"
         }
     ],
     "pretraining": {
@@ -108,11 +101,11 @@
     },
     "models": {
         "Spectrogram_2D_Cnn": {
-            "type": "event-segmentation-2d-cnn",
+            "type": "Spectrogram_2D_Cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
             "epochs": 200,
-            "batch_size": 32,
+            "batch_size": 16,
             "lr": 0.0005,
             "hidden_layers": 8,
             "early_stopping": 7,

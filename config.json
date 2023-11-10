@@ -16,6 +16,7 @@
         "comb_method": "addition",
         "pred_only": true
     },
+    "hpo": "1_event_1d_unet_cnn.json",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -29,47 +30,6 @@
             "n_splits": 1
         },
         "apply": false
-    },
-    "hpo": {
-        "kind": "wandb_sweeps",
-        "apply": false,
-        "count": 2,
-        "sweep_configuration": {
-            "method": "random",
-            "metric": {"goal": "maximize", "name": "cv_score"},
-            "parameters": {
-                "models": {
-                    "parameters": {
-                        "HPO-Test-SplitEvent-1D-Unet-CNN": {
-                            "parameters": {
-                                "type": {"value": "split-event-seg-unet-1d-cnn"},
-                                "loss": {"value": "mse-torch"},
-                                "optimizer": {"value": "adam-torch"},
-                                "epochs": {"values": [3, 5, 7]},
-                                "batch_size": {"value": 32},
-                                "lr": {"value": 0.0005},
-                                "hidden_layers": {"value": 8},
-                                "early_stopping": {"value": 7},
-                                "threshold": {"value": 0}
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    },
-    "models": {
-        "HPO-Test-SplitEvent-1D-Unet-CNN": {
-            "type": "split-event-seg-unet-1d-cnn",
-            "loss": "mse-torch",
-            "optimizer": "adam-torch",
-            "epochs": 200,
-            "batch_size": 32,
-            "lr": 0.0005,
-            "hidden_layers": 8,
-            "early_stopping": 7,
-            "threshold": 0
-        }
     },
     "train_optimal": true,
     "train_for_submission": false,

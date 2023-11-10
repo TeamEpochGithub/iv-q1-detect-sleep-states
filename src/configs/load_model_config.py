@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 from ..feature_engineering.feature_engineering import FE
 from ..logger.logger import logger
@@ -35,7 +34,6 @@ class ModelConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
-    # Get full configuration
     def get_config(self) -> dict:
         """
         Get the full configuration
@@ -85,7 +83,6 @@ class ModelConfigLoader:
         Set the model from the config
         :return: the model
         """
-        # Loop through models
         logger.info("Models: " + str(self.config.get("models")))
         model_name = self.config["name"]
         model_config = self.config["architecture"]

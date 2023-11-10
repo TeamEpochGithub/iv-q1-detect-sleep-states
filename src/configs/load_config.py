@@ -1,11 +1,11 @@
 import json
-from functools import cached_property
 
 from src.cv.cv import CV
 
 from .. import data_info
 from ..ensemble.ensemble import Ensemble
 from .load_model_config import ModelConfigLoader
+from ..logger.logger import logger
 
 
 class ConfigLoader:
@@ -21,6 +21,13 @@ class ConfigLoader:
         # Read JSON from file
         with open(config_path, 'r') as f:
             self.config = json.load(f)
+
+        # Can't have ensemble and hpo in one config
+        if "ensemble" in self.config and "hpo" in self.config:
+            logger.critical(
+                "Config cannot have both ensemble and hpo")
+            raise ConfigException(
+                "Config cannot have both ensemble and hpo")
 
         self.set_globals()
         self.set_ensemble()

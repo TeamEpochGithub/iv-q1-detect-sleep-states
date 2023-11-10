@@ -29,7 +29,7 @@ class RemoveUnlabeled(PP):
 
     def __repr__(self) -> str:
         """Return a string representation of a RemoveUnlabeled object"""
-        return (f"{self.__class__.__name__}(partially_unlabeled_windows={self.remove_partially_unlabeled_windows}, "
+        return (f"{self.__class__.__name__}(remove_partially_unlabeled_windows={self.remove_partially_unlabeled_windows}, "
                 f"remove_nan={self.remove_nan}, remove_entire_series={self.remove_entire_series})")
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:

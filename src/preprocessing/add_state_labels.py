@@ -38,7 +38,8 @@ class AddStateLabels(PP):
 
     def __repr__(self) -> str:
         """Return a string representation of a AddStateLabels object"""
-        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path})"
+        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path}, " \
+               f"use_similarity_nan={self.use_similarity_nan})"
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.

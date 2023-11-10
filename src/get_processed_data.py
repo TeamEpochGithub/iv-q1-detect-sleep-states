@@ -13,6 +13,7 @@ from src.util.hash_config import hash_config
 
 _STEP_HASH_LENGTH = 5
 
+
 def log_memory():
     size, peak = tracemalloc.get_traced_memory()
     logger.debug(f"Current memory usage is {size / 10 ** 6:.2f} MB; Peak was {peak / 10 ** 6:.2f} MB")
@@ -25,9 +26,10 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
 
     steps: list[PP | FE] = pp_steps + fe_steps
     step_names: list[str] = [step.kind for step in steps]
-    step_hashes: list[str] = [hash_config(step, _STEP_HASH_LENGTH) for step in steps]  # I think it looks a little silly to use hash_config here...
+    step_hashes: list[str] = [hash_config(step, _STEP_HASH_LENGTH) for step in
+                              steps]  # I think it looks a little silly to use hash_config here...
 
-    logger.info(f'--- Running preprocessing & feature engineering steps: {step_names}')
+    logger.info(f'--- Running preprocessing & feature engineering steps: {steps}')
 
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()

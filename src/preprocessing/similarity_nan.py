@@ -16,7 +16,7 @@ class SimilarityNan(PP):
 
     def __repr__(self) -> str:
         """Return a string representation of a SimilarityNan object"""
-        return f"SimilarityNan(as_feature={self.as_feature})"
+        return f"{self.__class__.__name__}(as_feature={self.as_feature})"
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         tqdm.pandas()

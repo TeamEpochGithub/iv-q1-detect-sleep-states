@@ -20,7 +20,7 @@ class TestAddEventSegmentationLabels(TestCase):
         self.assertEqual(scoring[-1], 0)
 
     def test_repr(self):
-        self.assertEqual(self.pp.__repr__(), "AddEventLabels(events_path=./dummy_event_path, id_encoding_path=./dummy_id_encoding_path, smoothing=2)")
+        self.assertEqual(self.pp.__repr__(), "AddEventLabels(events_path=./dummy_event_path, id_encoding_path=./dummy_id_encoding_path, smoothing=2, steepness=1)")
 
     def test_add_event_labels_crash(self):
         df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),

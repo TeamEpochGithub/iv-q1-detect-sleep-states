@@ -176,7 +176,8 @@ class ConfigLoader:
 
         :return: the slice config with relevant parameters for pretraining
         """
-        return self.config["data_info", "preprocessing", "feature_engineering", "pretraining"]
+        return {k: self.config[k] for k in ["data_info", "preprocessing", "feature_engineering", "pretraining"]
+                if k in self.config}
 
     # Function to retrieve model data
     def get_models(self) -> dict:

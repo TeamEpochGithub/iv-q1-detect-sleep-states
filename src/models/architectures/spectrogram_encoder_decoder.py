@@ -24,13 +24,11 @@ class SpectrogramEncoderDecoder(nn.Module):
             classes=1,
         )
         self.decoder = UNet1DDecoder(
-            # TODO this will be the height dont hardcode
-            n_channels=64,
+            n_channels=(config.get('n_fft', 127)+1)//2,
             n_classes=out_channels,
             bilinear=config.get('bilinear', True),
             scale_factor=config.get('scale_factor', 1),
-            # TODO do not hardcode this
-            duration=17280
+            duration=17280//config.get('hop_length', 1),
         )
 
     def forward(self, x):

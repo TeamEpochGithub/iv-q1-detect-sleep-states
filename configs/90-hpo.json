@@ -23,7 +23,7 @@
         },
         {
             "kind": "similarity_nan",
-            "as_feature": true
+            "as_feature": false
         },
         {
             "kind": "add_state_labels",
@@ -46,9 +46,6 @@
 
     ],
     "feature_engineering": [
-        {
-            "kind": "sin_hour"
-        }
     ],
 
     "pretraining": {
@@ -112,14 +109,14 @@
             "type": "Spectrogram_2D_Cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 1,
-            "batch_size": 8,
+            "epochs": 10,
+            "batch_size": 32,
             "lr": 0.0005,
             "hidden_layers": 8,
             "early_stopping": 7,
             "threshold": 0,
             "n_fft": 127,
-            "hop_length": 1,
+            "hop_length": 6,
             "encoder_name": "resnet34",
             "encoder_weights": "imagenet",
             "bilinear": false,

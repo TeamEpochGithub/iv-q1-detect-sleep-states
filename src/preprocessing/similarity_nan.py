@@ -7,10 +7,16 @@ from src.logger.logger import logger
 
 
 class SimilarityNan(PP):
+    # TODO Add docstrings for the class and preprocess function and complete the docstring for the similarity_nan function
+    # TODO Add type hints to the similarity_nan function
 
-    def __init__(self, as_feature=False, **kwargs):
+    def __init__(self, as_feature: bool = False, **kwargs: dict) -> None:
         super().__init__(**kwargs | {"kind": "similarity_nan"})
         self.as_feature = as_feature
+
+    def __repr__(self) -> str:
+        """Return a string representation of a SimilarityNan object"""
+        return f"SimilarityNan(as_feature={self.as_feature})"
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         tqdm.pandas()

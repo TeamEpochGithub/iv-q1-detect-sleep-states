@@ -1,10 +1,12 @@
+from abc import ABC, abstractmethod
+
 import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 
 
-class RollingWindow(FE):
+class RollingWindow(FE, ABC):
     """Base class for features that need a rolling window.
 
     # TODO Describe this class
@@ -24,6 +26,7 @@ class RollingWindow(FE):
         self.features = features
         self.features.sort()
 
+    @abstractmethod
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         """Process the data. This method should be overridden by the child class.
 

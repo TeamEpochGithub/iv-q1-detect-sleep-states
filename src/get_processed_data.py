@@ -1,5 +1,4 @@
 import gc
-import hashlib
 import os
 import tracemalloc
 
@@ -12,6 +11,7 @@ from src.logger.logger import logger
 from src.preprocessing.pp import PP
 from src.util.hash_config import hash_config
 
+_STEP_HASH_LENGTH = 5
 
 def log_memory():
     size, peak = tracemalloc.get_traced_memory()
@@ -25,7 +25,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
 
     steps: list[PP | FE] = pp_steps + fe_steps
     step_names: list[str] = [step.kind for step in steps]
-    step_hashes: list[str] = [hashlib.sha256(repr(step).encode("UTF-8")).hexdigest()[:10] for step in steps]
+    step_hashes: list[str] = [hash_config(step, _STEP_HASH_LENGTH) for step in steps]  # I think it looks a little silly to use hash_config here...
 
     logger.info(f'--- Running preprocessing & feature engineering steps: {step_names}')
 

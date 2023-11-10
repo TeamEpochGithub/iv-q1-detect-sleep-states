@@ -140,23 +140,22 @@ def main() -> None:
                     gc.collect()
 
                     return
+            # ------------------------- #
+            #          Training         #
+            # ------------------------- #
+            print_section_separator("Optimal Training", spacing=0)
+            # Enter the optimal training
+            # TODO Train optimal model from with optimal parameters from HPO
+            data_info.stage = "train"
+            data_info.substage = "optimal"
 
-        # ------------------------- #
-        #          Training         #
-        # ------------------------- #
-        print_section_separator("Optimal Training", spacing=0)
-        # Enter the optimal training
-        # TODO Train optimal model from with optimal parameters from HPO
-        data_info.stage = "train"
-        data_info.substage = "optimal"
+            logger.info("Training optimal model " + str(i) + ": " + model)
+            models[model].train(X_train, X_test, y_train, y_test)
 
-        logger.info("Training optimal model " + str(i) + ": " + model)
-        models[model].train(X_train, X_test, y_train, y_test)
-
-    # Store optimal models
-    for i, model in enumerate(models):
-        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
-        models[model].save(model_filename_opt)
+        # Store optimal models
+        for i, model in enumerate(models):
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            models[model].save(model_filename_opt)
 
     # ------------------------- #
     #          Ensemble         #

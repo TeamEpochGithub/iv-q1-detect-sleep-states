@@ -72,12 +72,12 @@ class FocalLoss(nn.Module):
 
 
 class ShrinkageLoss(nn.Module):
-    def __init__(self, weight=None, size_average=True, reduction: str = "mean"):
+
+    def __init__(self, reduction: str = "mean"):
         super(ShrinkageLoss, self).__init__()
         self.reduction = reduction
 
     def forward(self, inputs, targets, alpha: int = 2, c: int = 0.2):
-
         l1_loss = torch.abs(inputs - targets)
         shrinkage_loss = ((l1_loss) ** 2) * torch.exp(targets) / \
             (1 + torch.exp(alpha * (c - l1_loss)))

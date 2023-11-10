@@ -5,10 +5,7 @@ from src.cv.cv import CV
 
 from .. import data_info
 from ..ensemble.ensemble import Ensemble
-from ..hpo.hpo import HPO
 from .load_model_config import ModelConfigLoader
-from typing import Optional
-from ..hpo.wandb_sweeps import WandBSweeps
 
 
 class ConfigLoader:
@@ -51,6 +48,10 @@ class ConfigLoader:
             "downsampling_factor", data_info.downsampling_factor)
         data_info.plot_summary = self.config.get("data_info").get(
             "plot_summary", data_info.plot_summary)
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", data_info.latitude)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", data_info.longitude)
 
     def reset_globals(self) -> None:
         """Reset the global variables to the default values"""
@@ -160,36 +161,29 @@ class ConfigLoader:
         """
         return self.ensemble
 
-    def get_cv(self) -> Optional[CV]:
-        """
-        Get the cross validation method from the config
-        :return: the cross validation method
-        """
-        if not self.config["cv"]:
-            return None
-        return CV(**self.config["cv"])
-
-    @cached_property
-    def hpo(self) -> HPO:
-        """Get the hyperparameter optimization from the config
-
-        :return: the hyperparameter optimization object
-        :raises ConfigException: if Weights & Biases Sweeps is used without logging to Weights & Biases
-        """
-        hpo: HPO | None = HPO.from_config(self.config["hpo"])
-
-        if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
-            raise ConfigException(
-                "Cannot run Weights & Biases Sweeps without logging to Weights & Biases")
-
-        return hpo
-
     def get_train_optimal(self) -> bool:
         """
         Train optimal model from the config
         :return: whether to train optimal model
         """
         return self.config["train_optimal"]
+
+    def cv(self) -> CV:
+        """Get the cross validation method from the config
+
+        :return: the cross validation method
+        """
+        if "cv" in self.config:
+            return CV(**self.config["cv"])
+        return None
+
+    def get_hpo(self) -> bool:
+        """
+        Get the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+        data_info.hpo = self.config["hpo"]
+        return self.config["hpo"]
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

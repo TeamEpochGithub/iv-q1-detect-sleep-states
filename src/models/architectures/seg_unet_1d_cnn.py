@@ -73,16 +73,24 @@ class SegUnet1D(nn.Module):
     SegUnetId model. Contains the architecture of the SegUnetId model used for state and event segmentation.
     """
 
-    def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str, config: dict):
+    def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str, activation: str = 'relu', hidden_layers: int = 8, kernel_size: int = 7,
+                 depth: int = 2):
         super(SegUnet1D, self).__init__()
+
+        # Set model dims
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.hidden_layers = config["hidden_layers"]
-        self.kernel_size = config["kernel_size"]
-        self.depth = config["depth"]
         self.window_size = window_size
         self.model_type = model_type
 
+        # Set model params
+        self.hidden_layers = hidden_layers
+        self.kernel_size = kernel_size
+        self.depth = depth
+        if activation is None:
+            self.activation = nn.Identity
+        else:
+            self.activation = nn.functional.__dict__[activation]
         self.stride = 4
         self.padding = 1
 
@@ -116,7 +124,7 @@ class SegUnet1D(nn.Module):
             block.append(ReBlock(out_layer, out_layer, kernel, 1))
         return nn.Sequential(*block)
 
-    def forward(self, x):
+    def forward(self, x, use_activation=True):
         pool_x1 = self.AvgPool1D1(x)
         pool_x2 = self.AvgPool1D2(x)
 
@@ -148,6 +156,6 @@ class SegUnet1D(nn.Module):
         if self.model_type == "state-segmentation":
             out = self.softmax(out)
         elif self.model_type == "event-segmentation":
-            out = self.relu(out)
-
+            if use_activation:
+                out = self.activation(out)
         return out

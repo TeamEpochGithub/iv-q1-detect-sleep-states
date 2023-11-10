@@ -114,16 +114,22 @@ class CV:
             model.train(X_train, X_validate, y_train, y_validate)
             y_pred: np.array = model.pred(X_validate, pred_with_cpu=False)
 
-            # Reset weights and optimizer for next fold
+            # Reset weights, optimizer and scheduler for next fold
             model.reset_weights()
             model.reset_optimizer()
+            model.reset_scheduler()
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
                 score = [scorer(train_df, y_pred, validate_idx) for scorer in self.scoring]
             else:
                 score = self.scoring(train_df, y_pred, validate_idx)
+
             scores.append(score)
+
+            # If we are doing HPO and the score_full is lower than 0.1, stop the HPO
+            if data_info.hpo and score[0] < 0.1:
+                break
 
         return np.array(scores)
 

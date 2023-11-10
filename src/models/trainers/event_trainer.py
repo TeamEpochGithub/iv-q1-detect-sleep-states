@@ -1,11 +1,16 @@
-import numpy as np
-from torch import nn, log_softmax, softmax
-import torch
-from tqdm import tqdm
+import copy
 from typing import List
+
+import numpy as np
+import torch
 import wandb
 from numpy import ndarray
+from timm.scheduler import CosineLRScheduler
+from torch import nn, log_softmax, softmax
+from tqdm import tqdm
+
 from ... import data_info
+from ...logger.logger import logger
 
 
 def masked_loss(criterion, outputs, y):
@@ -50,11 +55,11 @@ class EventTrainer:
     """
 
     def __init__(
-        self,
-        epochs: int = 10,
-        criterion: nn.Module = nn.CrossEntropyLoss(),
-        mask_unlabeled: bool = False,
-        early_stopping: int = 10
+            self,
+            epochs: int = 10,
+            criterion: nn.Module = nn.CrossEntropyLoss(),
+            mask_unlabeled: bool = False,
+            early_stopping: int = 10
     ) -> None:
         self.criterion = criterion
         self.mask_unlabeled = mask_unlabeled
@@ -68,12 +73,16 @@ class EventTrainer:
         self.device = torch.device("cuda:" + cuda_dev if use_cuda else "cpu")
 
     def fit(
-        self,
-        trainloader: torch.utils.data.DataLoader,
-        testloader: torch.utils.data.DataLoader,
-        model: nn.Module,
-        optimizer: torch.optim.Optimizer,
-        name: str
+            self,
+            trainloader: torch.utils.data.DataLoader,
+            testloader: torch.utils.data.DataLoader,
+            model: nn.Module,
+            optimizer: torch.optim.Optimizer,
+
+            name: str,
+            scheduler: CosineLRScheduler = None,
+            activation_delay: int = None
+
     ) -> tuple[ndarray[float], ndarray[float], int]:
         """
         Train the model on the training set and validate on the test set.
@@ -82,6 +91,8 @@ class EventTrainer:
         :param model: The model to train.
         :param optimizer: The optimizer to use.
         :param name: The name of the model.
+        :param scheduler: The optional LR scheduler to use.
+        :param activation_delay: The optional activation delay to use.
         """
 
         # Setup model for training
@@ -111,33 +122,40 @@ class EventTrainer:
         max_counter = self.early_stopping
         trained_epochs = 0
         for epoch in range(self.n_epochs):
-
+            if activation_delay is None:
+                use_activation = None
+            else:
+                use_activation = epoch >= activation_delay
             # Training loss
             train_losses = self.train_one_epoch(
-                dataloader=trainloader, epoch_no=epoch, optimizer=optimizer, model=model)
+                dataloader=trainloader, epoch_no=epoch, optimizer=optimizer, model=model, scheduler=scheduler, use_activation=use_activation)
             train_loss = sum(train_losses) / (len(train_losses) + 1)
-            avg_train_losses.append(train_loss.cpu())
+            avg_train_losses.append(train_loss)
 
             # Validation
             if not full_train:
                 val_losses = self.val_loss(testloader, epoch, model)
                 val_loss = sum(val_losses) / (len(val_losses) + 1)
-                avg_val_losses.append(val_loss.cpu())
+                avg_val_losses.append(val_loss)
 
-            if wandb.run is not None and not full_train:
-                wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss,
-                           f"{data_info.substage} - Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+            if wandb.run is not None:
+                if not full_train:
+                    wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss,
+                               f"{data_info.substage} - Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
+                else:
+                    wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss, "epoch": epoch})
 
             # Save model if validation loss is lower than previous lowest validation loss
             if not full_train and val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss
-                best_model = model.state_dict()
+                best_model = copy.deepcopy(model.state_dict())
                 counter = 0
             elif not full_train:
                 counter += 1
                 if counter >= max_counter:
                     model.load_state_dict(best_model)
                     trained_epochs = (epoch - counter + 1)
+                    logger.info(f"--- Early stopping achieved at {epoch} ---, loading model from epoch {trained_epochs}")
                     break
 
             trained_epochs = epoch + 1
@@ -149,11 +167,15 @@ class EventTrainer:
         return avg_train_losses, avg_val_losses, trained_epochs
 
     def train_one_epoch(
-        self, dataloader: torch.utils.data.DataLoader,
-        epoch_no: int,
-        optimizer: torch.optim.Optimizer,
-        model: nn.Module,
-        disable_tqdm=False
+            self, dataloader: torch.utils.data.DataLoader,
+            epoch_no: int,
+            optimizer: torch.optim.Optimizer,
+            model: nn.Module,
+
+            disable_tqdm=False,
+            scheduler: CosineLRScheduler = None,
+            use_activation: bool = None
+
     ) -> ndarray[float]:
         """
         Train the model on the training set for one epoch and return training losses
@@ -161,35 +183,59 @@ class EventTrainer:
         :param epoch_no: The epoch number.
         :param optimizer: The optimizer to use.
         :param model: The model to train.
+        :param disable_tqdm: Whether to disable tqdm or not.
+        :param scheduler: The optional LR scheduler to use.
+        :param use_activation: The optional activation delay to use.
         """
 
         # Loop through batches and return losses
         losses = []
+
+        # Step the scheduler
+        if scheduler is not None:
+            scheduler.step(epoch_no)
+
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
             for _, data in enumerate(tepoch):
                 losses = self._train_one_loop(
-                    data=data, losses=losses, model=model, optimizer=optimizer)
+                    data=data, losses=losses, model=model, optimizer=optimizer, use_activation=use_activation)
                 tepoch.set_description(f"Epoch {epoch_no}")
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
         return losses
 
-    def _train_one_loop(
-        self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer
-    ) -> List[float]:
+    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer,
+                        use_activation: bool = None) -> List[float]:
         """
         Train the model on one batch and return the loss.
         :param data: The batch to train on.
         :param losses: The list of losses.
         :param model: The model to train.
         :param optimizer: The optimizer to use.
+        :param use_activation: The optional activation delay to use.
         :return: The updated list of losses.
         """
 
         # Retrieve target and output
-        optimizer.zero_grad()
         data[0] = data[0].to(self.device).float()
         data[1] = data[1].to(self.device).float()
-        output = model(data[0].to(self.device))
+
+        # Set gradients to zero
+        optimizer.zero_grad()
+
+        # Forward pass with model and optional activation delay
+        if use_activation is not None:
+            # If it is an GRU Model, ignore the second output
+            if str(model).startswith("MultiResidualBiGRU"):
+                output, _ = model(data[0].to(self.device), use_activation=use_activation)
+            else:
+                output = model(data[0].to(self.device), use_activation=use_activation)
+        else:
+            if str(model).startswith("MultiResidualBiGRU"):
+                output, _ = model(data[0].to(self.device))
+            else:
+                output = model(data[0].to(self.device))
+
+        # Squeeze output
         output = output.squeeze()
 
         # Calculate loss
@@ -201,18 +247,21 @@ class EventTrainer:
             else:
                 loss = self.criterion(output, data[1])
 
-        # Backpropagate loss and update weights
+        # Backpropagate loss and update weights with gradient clipping
         loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), max_norm=1e-1)
         optimizer.step()
-        losses.append(loss.detach())
+
+        # Append loss to list
+        losses.append(loss.item())
 
         return losses
 
     def val_loss(
-        self,
-        dataloader: torch.utils.data.DataLoader,
-        epoch_no: int, model: nn.Module,
-        disable_tqdm: bool = False
+            self,
+            dataloader: torch.utils.data.DataLoader,
+            epoch_no: int, model: nn.Module,
+            disable_tqdm: bool = False
     ) -> List[float]:
         """
         Run the model on the test set and return validation loss
@@ -230,14 +279,14 @@ class EventTrainer:
                 losses = self._val_one_loop(
                     data=data, losses=losses, model=model)
                 tepoch.set_description(f"Epoch {epoch_no}")
-                tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
+                tepoch.set_postfix(loss=sum(losses) / (len(losses) + 0.0000001))
         return losses
 
     def _val_one_loop(
-        self,
-        data: torch.utils.data.DataLoader,
-        losses: List[float],
-        model: nn.Module
+            self,
+            data: torch.utils.data.DataLoader,
+            losses: List[float],
+            model: nn.Module
     ) -> List[float]:
         """
         Validate the model on one batch and return the loss.
@@ -252,7 +301,12 @@ class EventTrainer:
             # Retrieve target and output
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
-            output = model(data[0].to(self.device))
+
+            if str(model).startswith("MultiResidualBiGRU"):
+                output, _ = model(data[0].to(self.device))
+            else:
+                output = model(data[0].to(self.device))
+
             output = output.squeeze()
 
             # Calculate loss
@@ -263,5 +317,5 @@ class EventTrainer:
                     loss = self.criterion(log_softmax(output, dim=1), softmax(data[1], dim=1))
                 else:
                     loss = self.criterion(output, data[1])
-            losses.append(loss.detach())
+            losses.append(loss.item())
         return losses

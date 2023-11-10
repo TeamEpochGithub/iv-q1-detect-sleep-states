@@ -1,4 +1,5 @@
 # This file does the training of the model
+import gc
 import json
 import os
 
@@ -11,8 +12,6 @@ from src.configs.load_config import ConfigLoader
 from src.configs.load_model_config import ModelConfigLoader
 from src.ensemble.ensemble import Ensemble
 from src.get_processed_data import get_processed_data
-from src.hpo.hpo import HPO
-from src.hpo.wandb_sweeps import WandBSweeps
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
@@ -45,9 +44,7 @@ def main() -> None:
             name=config_hash,
             config=config_loader.get_config()
         )
-
-        if isinstance(config_loader.hpo, WandBSweeps):
-            # Get the hyperparameters selected by the Weights & Biases Sweep agent in our own config
+        if config_loader.get_hpo():
             config_loader.config |= wandb.config
 
         wandb.run.summary.update(config_loader.get_config())
@@ -123,11 +120,4 @@ if __name__ == "__main__":
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")
-    hpo: HPO | None = config_loader.hpo
-
-    if hpo is None:  # HPO disabled
-        logger.info("Running main without HPO")
-        main()
-    else:  # HPO enabled
-        logger.info("Running main with HPO")
-        hpo.optimize(main)
+    main()

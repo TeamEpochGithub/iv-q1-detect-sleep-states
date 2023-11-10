@@ -13,11 +13,10 @@ from src.get_processed_data import get_processed_data
 from src.hpo.hpo import HPO
 from src.hpo.wandb_sweeps import WandBSweeps
 from src.logger.logger import logger
-from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
 from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.score.visualize_preds import plot_preds_on_series
-from src.util.get_pretrain_data import get_pretrain_split_data
+from src.util.get_pretrain_cache import get_pretrain_split_cache
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -67,45 +66,16 @@ def main() -> None:
     data_info.stage = "preprocessing & feature engineering"
     featured_data = get_processed_data(config_loader, training=True, save_output=True)
 
+    # ------------------------ #
+    #         Pretrain         #
+    # ------------------------ #
+
+    print_section_separator("Pretrain", spacing=0)
+    data_info.stage = "pretraining"
+
     # Get pretrained data, either from cache or by preprocessing & feature engineering
-    pretrain_split_cache = get_pretrain_split_data(config_loader)
-    if pretrain_split_cache is None:
-        logger.info("No pretrain cache found. Starting with preprocessing and feature engineering.")
-
-        # ------------------------ #
-        #         Pretrain         #
-        # ------------------------ #
-
-        print_section_separator("Pretrain", spacing=0)
-        data_info.stage = "pretraining"
-
-        logger.info("Get pretraining parameters from config and initialize pretrain")
-        pretrain: Pretrain = config_loader.get_pretraining()
-
-        logger.info(
-            "Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
-
-        # Split data into train/test and validation
-        # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-        logger.info("Splitting data into train and test...")
-        data_info.substage = "pretrain_split"
-
-        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
-            featured_data)
-
-        # Cache the pretrain data
-        path = config_loader.get_pp_out() + '/'
-        np.save(path + config_hash + '/X_train.npy', X_train)
-        np.save(path + config_hash + '/X_test.npy', X_test)
-        np.save(path + config_hash + '/y_train.npy', y_train)
-        np.save(path + config_hash + '/y_test.npy', y_test)
-        np.save(path + config_hash + '/train_idx.npy', train_idx)
-        np.save(path + config_hash + '/test_idx.npy', test_idx)
-        np.save(path + config_hash + '/groups.npy', groups)
-    else:
-        logger.info("Found pretrain cache. Loading pretrain data.")
-        data_info.stage = "pretraining"
-        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain_split_cache
+    X_train, X_test, y_train, y_test, train_idx, test_idx, groups \
+        = get_pretrain_split_cache(config_loader, featured_data, save_output=True)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         X_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
@@ -135,7 +105,8 @@ def main() -> None:
         model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename_opt):
-            logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
+            logger.info("Found existing trained optimal model " + str(
+                i) + ": " + model + " with location " + model_filename_opt)
             models[model].load(model_filename_opt, only_hyperparameters=False)
         else:
             cv = config_loader.cv
@@ -230,7 +201,8 @@ def main() -> None:
         #                .apply(lambda x: x.iloc[0]))
         # # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
         # #  to access the first step as a negative index which is now a very large integer instead
-        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if 'similarity_nan' in col]
+        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if
+                                                            'similarity_nan' in col]
         grouped = (featured_data.iloc[test_idx][important_cols]
                    .groupby(['series_id', 'window']))
         window_offset = grouped.apply(lambda x: x.iloc[0])

@@ -1,6 +1,7 @@
 import json
 from functools import cached_property
 
+import numpy as np
 from torch import nn
 
 from .. import data_info
@@ -167,6 +168,15 @@ class ConfigLoader:
         :return: the pretraining object
         """
         return Pretrain.from_config(self.config["pretraining"])
+
+    def get_pretrain_config(self) -> dict:
+        """Get the data_info, preprocessing, feature_engineering and pretraining from the config
+
+        This is necessary for the creating and retrieving the cached pretrain arrays.
+
+        :return: the slice config with relevant parameters for pretraining
+        """
+        return self.config["data_info", "preprocessing", "feature_engineering", "pretraining"]
 
     # Function to retrieve model data
     def get_models(self) -> dict:

@@ -17,6 +17,7 @@ from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
 from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.score.visualize_preds import plot_preds_on_series
+from src.util.get_pretrain_data import get_pretrain_split_data
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -66,25 +67,45 @@ def main() -> None:
     data_info.stage = "preprocessing & feature engineering"
     featured_data = get_processed_data(config_loader, training=True, save_output=True)
 
-    # ------------------------ #
-    #         Pretrain         #
-    # ------------------------ #
+    # Get pretrained data, either from cache or by preprocessing & feature engineering
+    pretrain_split_cache = get_pretrain_split_data(config_loader)
+    if pretrain_split_cache is None:
+        logger.info("No pretrain cache found. Starting with preprocessing and feature engineering.")
 
-    print_section_separator("Pretrain", spacing=0)
-    data_info.stage = "pretraining"
+        # ------------------------ #
+        #         Pretrain         #
+        # ------------------------ #
 
-    logger.info("Get pretraining parameters from config and initialize pretrain")
-    pretrain: Pretrain = config_loader.get_pretraining()
+        print_section_separator("Pretrain", spacing=0)
+        data_info.stage = "pretraining"
 
-    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
+        logger.info("Get pretraining parameters from config and initialize pretrain")
+        pretrain: Pretrain = config_loader.get_pretraining()
 
-    # Split data into train/test and validation
-    # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    logger.info("Splitting data into train and test...")
-    data_info.substage = "pretrain_split"
+        logger.info(
+            "Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
 
-    X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
-        featured_data)
+        # Split data into train/test and validation
+        # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
+        logger.info("Splitting data into train and test...")
+        data_info.substage = "pretrain_split"
+
+        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
+            featured_data)
+
+        # Cache the pretrain data
+        path = config_loader.get_pp_out() + '/'
+        np.save(path + config_hash + '/X_train.npy', X_train)
+        np.save(path + config_hash + '/X_test.npy', X_test)
+        np.save(path + config_hash + '/y_train.npy', y_train)
+        np.save(path + config_hash + '/y_test.npy', y_test)
+        np.save(path + config_hash + '/train_idx.npy', train_idx)
+        np.save(path + config_hash + '/test_idx.npy', test_idx)
+        np.save(path + config_hash + '/groups.npy', groups)
+    else:
+        logger.info("Found pretrain cache. Loading pretrain data.")
+        data_info.stage = "pretraining"
+        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain_split_cache
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         X_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))

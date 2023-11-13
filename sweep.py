@@ -1,6 +1,7 @@
 import pygame
 import time
 
+
 def play_mp3(mp3_file):
     # Initialize Pygame
     pygame.init()
@@ -22,6 +23,8 @@ def play_mp3(mp3_file):
         # Quit Pygame
         pygame.quit()
 
+
 if __name__ == "__main__":
-    mp3_file_path = "sweep_gottasweep.mp3"  # Replace with the path to your MP3 file
+    # Replace with the path to your MP3 file
+    mp3_file_path = "sweep_gottasweep.mp3"
     play_mp3(mp3_file_path)

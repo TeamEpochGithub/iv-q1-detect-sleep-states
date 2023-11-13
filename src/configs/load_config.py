@@ -8,8 +8,6 @@ from .. import data_info
 from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
 from ..feature_engineering.feature_engineering import FE
-from ..hpo.hpo import HPO
-from ..hpo.wandb_sweeps import WandBSweeps
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..models.classic_base_model import ClassicBaseModel
@@ -59,24 +57,34 @@ class ConfigLoader:
 
     def set_globals(self) -> None:
         """Set the global variables"""
-        data_info.window_size = self.config.get("data_info").get("window_size", data_info.window_size)
-        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", data_info.downsampling_factor)
-        data_info.plot_summary = self.config.get("data_info").get("plot_summary", data_info.plot_summary)
-        data_info.latitude = self.config.get("data_info").get("latitude", data_info.latitude)
-        data_info.longitude = self.config.get("data_info").get("longitude", data_info.longitude)
+        data_info.window_size = self.config.get("data_info").get(
+            "window_size", data_info.window_size)
+        data_info.downsampling_factor = self.config.get("data_info").get(
+            "downsampling_factor", data_info.downsampling_factor)
+        data_info.plot_summary = self.config.get("data_info").get(
+            "plot_summary", data_info.plot_summary)
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", data_info.latitude)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", data_info.longitude)
 
     def reset_globals(self) -> None:
         """Reset the global variables to the default values"""
         data_info.pred_with_cpu = self.get_pred_with_cpu()
-        data_info.window_size_before = self.config.get("data_info").get("window_size", 17280)
+        data_info.window_size_before = self.config.get(
+            "data_info").get("window_size", 17280)
         data_info.window_size = data_info.window_size_before
-        data_info.downsampling_factor = self.config.get("data_info").get("downsampling_factor", 1)
+        data_info.downsampling_factor = self.config.get(
+            "data_info").get("downsampling_factor", 1)
         data_info.stage = "load_config"
         data_info.substage = "set_globals"
-        data_info.plot_summary = self.config.get("data_info").get("plot_summary", False)
+        data_info.plot_summary = self.config.get(
+            "data_info").get("plot_summary", False)
 
-        data_info.latitude = self.config.get("data_info").get("latitude", 40.730610)
-        data_info.longitude = self.config.get("data_info").get("longitude", -73.935242)
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", 40.730610)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", -73.935242)
 
         data_info.X_columns = {}
         data_info.y_columns = {}
@@ -196,21 +204,27 @@ class ConfigLoader:
                 case "classic-base-model":
                     curr_model = ClassicBaseModel(model_config, model_name)
                 case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(model_config, model_name)
+                    curr_model = SegmentationSimple1DCNN(
+                        model_config, model_name)
                 case "transformer":
                     curr_model = Transformer(model_config, model_name)
                 case "segmentation-transformer":
-                    curr_model = SegmentationTransformer(model_config, model_name)
+                    curr_model = SegmentationTransformer(
+                        model_config, model_name)
                 case "event-segmentation-transformer":
-                    curr_model = EventSegmentationTransformer(model_config, model_name)
+                    curr_model = EventSegmentationTransformer(
+                        model_config, model_name)
                 case "seg-unet-1d-cnn":
-                    curr_model = SegmentationUnet1DCNN(model_config, model_name)
+                    curr_model = SegmentationUnet1DCNN(
+                        model_config, model_name)
                 case "event-res-gru":
                     curr_model = EventResGRU(model_config, model_name)
                 case "event-seg-unet-1d-cnn":
-                    curr_model = EventSegmentationUnet1DCNN(model_config, model_name)
+                    curr_model = EventSegmentationUnet1DCNN(
+                        model_config, model_name)
                 case "split-event-seg-unet-1d-cnn":
-                    curr_model = SplitEventSegmentationUnet1DCNN(model_config, model_name)
+                    curr_model = SplitEventSegmentationUnet1DCNN(
+                        model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException(
@@ -275,28 +289,6 @@ class ConfigLoader:
         return loss_class
 
     @cached_property
-    def hpo(self) -> HPO | None:
-        """Get the hyperparameter optimization from the config
-
-        :return: the hyperparameter optimization object
-        :raises ConfigException: if Weights & Biases Sweeps is used without logging to Weights & Biases
-        """
-
-        if "hpo" not in self.config:
-            return None
-
-        hpo: HPO | None = HPO.from_config(self.config["hpo"])
-
-        if isinstance(hpo, WandBSweeps) and not self.get_log_to_wandb():
-            raise ConfigException("Cannot run Weights & Biases Sweeps without logging to Weights & Biases")
-        if hpo is not None and self.cv is None:
-            logger.critical("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
-            raise ConfigException("HPO is enabled but CV is not enabled. Please enable CV in the config file.")
-        if isinstance(hpo, WandBSweeps):
-            data_info.hpo = True
-        return hpo
-
-    @cached_property
     def cv(self) -> CV:
         """Get the cross validation method from the config
 
@@ -305,6 +297,14 @@ class ConfigLoader:
         if "cv" in self.config:
             return CV(**self.config["cv"])
         return None
+
+    def get_hpo(self) -> bool:
+        """
+        Get the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+        data_info.hpo = self.config["hpo"]
+        return self.config["hpo"]
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

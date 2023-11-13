@@ -16,9 +16,9 @@ from ...logger.logger import logger
 def masked_loss(criterion, outputs, y):
     assert y.shape[1] > 1, "Masked loss only works with shape (batch_size, 2 | 3 depending on both awake and onset, seq_len)"
 
-    if y.shape[1] == data_info.window_size:
+    if y.shape[1] > y.shape[2]:
         y = y.permute(0, 2, 1)
-    if outputs.shape[1] == data_info.window_size:
+    if outputs.shape[1] > outputs.shape[2]:
         outputs = outputs.permute(0, 2, 1)
     labels = y[:, 1:, :]
     labels = labels.squeeze()

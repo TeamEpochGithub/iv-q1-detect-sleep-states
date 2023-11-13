@@ -15,6 +15,7 @@ from .. import data_info
 from ..logger.logger import logger
 from ..loss.loss import Loss
 from ..optimizer.optimizer import Optimizer
+from timm.scheduler import CosineLRScheduler
 from ..util.state_to_event import pred_to_event_state
 
 
@@ -101,6 +102,9 @@ class EventSegmentation2DCNN(Model):
         self.config = config
         self.config["optimizer"] = Optimizer.get_optimizer(
             self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model)
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
 
     def get_default_config(self) -> dict:
         """
@@ -143,6 +147,11 @@ class EventSegmentation2DCNN(Model):
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
         early_stopping = self.config["early_stopping"]
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
+
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -167,6 +176,11 @@ class EventSegmentation2DCNN(Model):
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
             y_test = y_test[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
+
+        # clip the awake state to 0 and 1
+        y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+        y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
+
         # our pretrain downsampling puts the median of 12 items into one item
         # this loop also does that
         y_train_downsampled = []
@@ -213,7 +227,7 @@ class EventSegmentation2DCNN(Model):
         trainer = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name)
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler)
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -244,7 +258,11 @@ class EventSegmentation2DCNN(Model):
         epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
-
+        if "scheduler" in self.config:
+            scheduler = self.config["scheduler"]
+        else:
+            scheduler = None
+            
         logger.info("--- Running for " + str(epochs) + " epochs.")
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
@@ -255,6 +273,10 @@ class EventSegmentation2DCNN(Model):
         else:
             y_train = y_train[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
+            # clip the awake state to 0 and 1
+            y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+
+            # downsample the y data
             y_train_downsampled = []
             for i in range(y_train.shape[0]):
                 downsampled_channels = []
@@ -280,7 +302,7 @@ class EventSegmentation2DCNN(Model):
         logger.info("--- Training model full " + self.name)
         trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
         trainer.fit(trainloader=train_dataloader, testloader=None,
-                    model=self.model, optimizer=optimizer, name=self.name)
+                    model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler)
 
         logger.info("--- Full train complete!")
 
@@ -408,6 +430,13 @@ class EventSegmentation2DCNN(Model):
         """
         self.config['optimizer_onset'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['optimizer'].param_groups[0]['lr'])
+
+    def reset_scheduler(self) -> None:
+        """
+        Reset the scheduler to the initial state. Useful for retraining the model.
+        """
+        if 'scheduler' in self.config:
+            self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])
 
     def reset_weights(self) -> None:
         """

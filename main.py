@@ -11,10 +11,10 @@ from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
-from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
 from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.score.visualize_preds import plot_preds_on_series
+from src.util.get_pretrain_cache import get_pretrain_split_cache, get_pretrain_full_cache
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -71,19 +71,9 @@ def main() -> None:
     print_section_separator("Pretrain", spacing=0)
     data_info.stage = "pretraining"
 
-    logger.info("Get pretraining parameters from config and initialize pretrain")
-    pretrain: Pretrain = config_loader.get_pretraining()
-
-    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
-                " and test size of " + str(pretrain.test_size))
-
-    # Split data into train/test and validation
-    # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-    logger.info("Splitting data into train and test...")
-    data_info.substage = "pretrain_split"
-
-    X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
-        featured_data)
+    # Get pretrained data, either from cache or by preprocessing & feature engineering
+    X_train, X_test, y_train, y_test, train_idx, test_idx, groups \
+        = get_pretrain_split_cache(config_loader, featured_data, save_output=True)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         X_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
@@ -94,8 +84,6 @@ def main() -> None:
     # Cross Validation Training #
     # ------------------------- #
 
-    print_section_separator("CV", spacing=0)
-
     # Initialize models
     store_location = config_loader.get_model_store_loc()
     logger.info("Model store location: " + store_location)
@@ -105,23 +93,22 @@ def main() -> None:
     models = config_loader.get_models()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
-    initial_hash = hash_config(config_loader.get_pp_fe_pretrain(), length=5)
+    initial_hash = hash_config(config_loader.get_pretrain_config(), length=5)
 
     for i, model in enumerate(models):
         data_info.substage = f"training model {i}: {model}"
         # Get filename of model
-        model_filename_opt = store_location + "/optimal_" + \
-            model + "-" + initial_hash + models[model].hash + ".pt"
+        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename_opt):
-            logger.info("Found existing trained optimal model " + str(i) +
-                        ": " + model + " with location " + model_filename_opt)
+            logger.info("Found existing trained optimal model " + str(
+                i) + ": " + model + " with location " + model_filename_opt)
             models[model].load(model_filename_opt, only_hyperparameters=False)
         else:
             cv = config_loader.cv
-
             # Apply CV if in the config
             if cv is not None:
+                print_section_separator("CV", spacing=0)
                 logger.info("Applying cross-validation on model " +
                             str(i) + ": " + model)
                 data_info.stage = "cv"
@@ -143,28 +130,25 @@ def main() -> None:
                     gc.collect()
 
                     return
+            # ------------------------- #
+            #          Training         #
+            # ------------------------- #
+            print_section_separator("Optimal Training", spacing=0)
+            # Enter the optimal training
+            data_info.stage = "train"
+            data_info.substage = "optimal"
+
+            logger.info("Training optimal model " + str(i) + ": " + model)
+            models[model].train(X_train, X_test, y_train, y_test)
+
+        # Store optimal models
+        for i, model in enumerate(models):
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            models[model].save(model_filename_opt)
 
         # ------------------------- #
-        #          Training         #
+        #          Ensemble         #
         # ------------------------- #
-        print_section_separator("Optimal Training", spacing=0)
-        # Enter the optimal training
-        # TODO Train optimal model from with optimal parameters from HPO
-        data_info.stage = "train"
-        data_info.substage = "optimal"
-
-        logger.info("Training optimal model " + str(i) + ": " + model)
-        models[model].train(X_train, X_test, y_train, y_test)
-
-    # Store optimal models
-    for i, model in enumerate(models):
-        model_filename_opt = store_location + "/optimal_" + \
-            model + "-" + initial_hash + models[model].hash + ".pt"
-        models[model].save(model_filename_opt)
-
-    # ------------------------- #
-    #          Ensemble         #
-    # ------------------------- #
 
     print_section_separator("Ensemble", spacing=0)
     data_info.stage = "ensemble"
@@ -195,8 +179,9 @@ def main() -> None:
         #                .apply(lambda x: x.iloc[0]))
         # # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
         # #  to access the first step as a negative index which is now a very large integer instead
-        important_cols = ['series_id', 'window', 'step'] + \
-            [col for col in featured_data.columns if 'similarity_nan' in col]
+        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if
+                                                            'similarity_nan' in col]
+
         grouped = (featured_data.iloc[test_idx][important_cols]
                    .groupby(['series_id', 'window']))
         window_offset = grouped.apply(lambda x: x.iloc[0])
@@ -270,19 +255,13 @@ def main() -> None:
     if config_loader.get_train_for_submission():
         logger.info("Retraining models for submission")
 
-        # Retrain all models with optimal parameters
-        X_train, y_train, groups = pretrain.pretrain_final(featured_data)
-
-        # Save scaler
-        scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + \
-            initial_hash + ".pkl"
-        pretrain.scaler.save(scaler_filename)
+        # Cache the full pretrain data
+        X_train, y_train, groups = get_pretrain_full_cache(config_loader, featured_data, save_output=True)
 
         for i, model in enumerate(models):
             data_info.substage = "Full"
 
-            model_filename_opt = store_location + "/optimal_" + \
-                model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
                 model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
@@ -294,7 +273,6 @@ def main() -> None:
                 logger.info("Retraining model " + str(i) + ": " + model)
                 models[model].train_full(X_train, y_train)
                 models[model].save(model_filename_submit)
-
     else:
         logger.info("Not training best model for submission")
 

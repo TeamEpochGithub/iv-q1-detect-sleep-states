@@ -176,6 +176,16 @@ class ConfigLoader:
         """
         return Pretrain.from_config(self.config["pretraining"])
 
+    def get_pretrain_config(self) -> dict:
+        """Get the data_info, preprocessing, feature_engineering and pretraining from the config
+
+        This is necessary for the creating and retrieving the cached pretrain arrays.
+
+        :return: the slice config with relevant parameters for pretraining
+        """
+        return {k: self.config[k] for k in ["data_info", "preprocessing", "feature_engineering", "pretraining"]
+                if k in self.config}
+
     # Function to retrieve model data
     def get_models(self) -> dict:
         """Get the models from the config

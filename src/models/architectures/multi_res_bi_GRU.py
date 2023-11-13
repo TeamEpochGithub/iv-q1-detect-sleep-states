@@ -45,3 +45,27 @@ class MultiResidualBiGRU(nn.Module):
         if use_activation:
             x = self.activation(x)
         return x, new_h  # log probabilities + hidden states
+
+    # def forward(self, x, h=None, use_activation=True):
+    #     # if we are at the beginning of a sequence (no hidden state)=
+    #     new_h = []
+    #
+    #     x = self.fc_in(x)
+    #     x = self.ln(x)
+    #     x = nn.functional.relu(x)
+    #     # Loop through every window in the batch of x dim
+    #     for window in range(x.shape[0]):
+    #         # Create a placeholder for the partial x output
+    #         x_all = torch.empty(x.shape[1], x.shape[2]).to(x.device)
+    #
+    #         for res_bigru in self.res_bigrus:
+    #             curr_x, h_next = res_bigru(x[window, :, :], h)
+    #             x_all = torch.cat((x_all, curr_x.unsqueeze(0)), dim=0)
+    #
+    #             new_h.append(h_next)
+    #             h = h_next
+    #
+    #     x = self.fc_out(x)
+    #     if use_activation:
+    #         x = self.activation(x)
+    #     return x, new_h  # log probabilities + hidden states

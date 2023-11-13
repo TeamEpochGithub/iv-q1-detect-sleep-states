@@ -160,7 +160,7 @@ class EventResGRU(Model):
         test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
 
         trainer = EventTrainer(
-            epochs, criterion, early_stopping=early_stopping)
+            epochs, criterion, early_stopping=early_stopping, mask_unlabeled=self.config["mask_unlabeled"])
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)

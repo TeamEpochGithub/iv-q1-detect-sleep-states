@@ -120,7 +120,8 @@
         },
         "optimizer": "adam-torch",
         "threshold": 0,
-        "type": "event-res-gru"
+        "type": "event-res-gru",
+        "mask_unlabeled": false
       }
     },
     "ensemble": {

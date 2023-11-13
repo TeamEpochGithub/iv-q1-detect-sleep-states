@@ -16,7 +16,7 @@ from src.logger.logger import logger
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
 from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.score.visualize_preds import plot_preds_on_series
-from src.util.get_pretrain_cache import get_pretrain_split_cache
+from src.util.get_pretrain_cache import get_pretrain_split_cache, get_pretrain_full_cache
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
@@ -272,12 +272,8 @@ def main() -> None:
     if config_loader.get_train_for_submission():
         logger.info("Retraining models for submission")
 
-        # Retrain all models with optimal parameters
-        X_train, y_train, groups = pretrain.pretrain_final(featured_data)
-
-        # Save scaler
-        scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
-        pretrain.scaler.save(scaler_filename)
+        # Cache the full pretrain data
+        X_train, y_train, groups = get_pretrain_full_cache(config_loader, featured_data, save_output=True)
 
         for i, model in enumerate(models):
             data_info.substage = "Full"

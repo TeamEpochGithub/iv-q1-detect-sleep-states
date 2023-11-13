@@ -129,6 +129,7 @@ class EventResGRU(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         if "scheduler" in self.config:
             scheduler = self.config["scheduler"]
         else:
@@ -141,9 +142,17 @@ class EventResGRU(Model):
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
 
-        cols = np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])
-        y_train = torch.from_numpy(y_train[:, :, cols])
-        y_test = torch.from_numpy(y_test[:, :, cols])
+        # Get only the 2 event state features
+        if mask_unlabeled:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        else:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -160,7 +169,7 @@ class EventResGRU(Model):
         test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
 
         trainer = EventTrainer(
-            epochs, criterion, early_stopping=early_stopping, mask_unlabeled=self.config["mask_unlabeled"])
+            epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)

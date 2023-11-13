@@ -121,7 +121,7 @@
         "optimizer": "adam-torch",
         "threshold": 0,
         "type": "event-res-gru",
-        "mask_unlabeled": false
+        "mask_unlabeled": true
       }
     },
     "ensemble": {

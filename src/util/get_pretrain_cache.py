@@ -27,7 +27,7 @@ def get_pretrain_split_cache(config_loader: ConfigLoader, featured_data: pd.Data
         logger.info(f'Pretrain: Reading existing files from: {path}')
         X_train, X_test, y_train, y_test, train_idx, test_idx, groups, data_info.X_columns, data_info.y_columns \
             = pickle.load(open(path, "rb"))
-
+        data_info.window_size = data_info.window_size // data_info.downsampling_factor
         logger.info('Finished reading')
     else:
         logger.info(f"No pretrain cache found at {path}.")
@@ -66,7 +66,6 @@ def get_pretrain_full_cache(config_loader: ConfigLoader, featured_data: pd.DataF
     if os.path.exists(path):
         logger.info(f'Pretrain full: Reading existing files from: {path}')
         X_train, y_train, groups, data_info.X_columns, data_info.y_columns = pickle.load(open(path, "rb"))
-
         logger.info('Finished reading')
     else:
         logger.info(f"No pretrain full cache found at {path}.")
@@ -84,8 +83,9 @@ def get_pretrain_full_cache(config_loader: ConfigLoader, featured_data: pd.DataF
             pickle.dump((X_train, y_train, groups, data_info.X_columns, data_info.y_columns), open(path, "wb"))
 
         # Save scaler
-        initial_hash = hash_config(config_loader.get_pp_fe_pretrain(), length=5)
+        initial_hash = hash_config(config_loader.get_pretrain_config(), length=5)
         scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
+        logger.info(f"Saved scaler to {scaler_filename}")
 
     return X_train, y_train, groups

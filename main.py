@@ -92,13 +92,12 @@ def main() -> None:
     models = config_loader.get_models()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
-    initial_hash = hash_config(config_loader.get_pp_fe_pretrain(), length=5)
+    initial_hash = hash_config(config_loader.get_pretrain_config(), length=5)
 
     for i, model in enumerate(models):
         data_info.substage = f"training model {i}: {model}"
         # Get filename of model
-        model_filename_opt = store_location + "/optimal_" + \
-                             model + "-" + initial_hash + models[model].hash + ".pt"
+        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename_opt):
             logger.info("Found existing trained optimal model " + str(
@@ -255,26 +254,24 @@ def main() -> None:
     if config_loader.get_train_for_submission():
         logger.info("Retraining models for submission")
 
-    # Cache the full pretrain data
-    X_train, y_train, groups = get_pretrain_full_cache(config_loader, featured_data, save_output=True)
+        # Cache the full pretrain data
+        X_train, y_train, groups = get_pretrain_full_cache(config_loader, featured_data, save_output=True)
 
-    for i, model in enumerate(models):
-        data_info.substage = "Full"
+        for i, model in enumerate(models):
+            data_info.substage = "Full"
 
-        model_filename_opt = store_location + "/optimal_" + \
-                             model + "-" + initial_hash + models[model].hash + ".pt"
-        model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
-            model].hash + ".pt"
-        if os.path.isfile(model_filename_submit):
-            logger.info("Found existing fully trained submit model " + str(
-                i) + ": " + model + " with location " + model_filename_submit)
-        else:
-            models[model].load(model_filename_opt,
-                               only_hyperparameters=True)
-            logger.info("Retraining model " + str(i) + ": " + model)
-            models[model].train_full(X_train, y_train)
-            models[model].save(model_filename_submit)
-
+            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
+                model].hash + ".pt"
+            if os.path.isfile(model_filename_submit):
+                logger.info("Found existing fully trained submit model " + str(
+                    i) + ": " + model + " with location " + model_filename_submit)
+            else:
+                models[model].load(model_filename_opt,
+                                   only_hyperparameters=True)
+                logger.info("Retraining model " + str(i) + ": " + model)
+                models[model].train_full(X_train, y_train)
+                models[model].save(model_filename_submit)
     else:
         logger.info("Not training best model for submission")
 

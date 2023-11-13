@@ -1,7 +1,6 @@
 import json
 from functools import cached_property
 
-import numpy as np
 from torch import nn
 
 from .. import data_info

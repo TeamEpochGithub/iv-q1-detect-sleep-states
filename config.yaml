@@ -17,7 +17,7 @@ parameters:
             max: 50
             min: 0
           batch_size:
-            max: 256
+            max: 128
             min: 16
           early_stopping:
             max: 50
@@ -60,7 +60,7 @@ parameters:
                   - relu
                   - gelu
               hidden_size:
-                max: 128
+                max: 64
                 min: 4
               n_layers:
                 max: 10

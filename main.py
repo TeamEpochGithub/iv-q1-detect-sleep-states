@@ -304,9 +304,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    
     import coloredlogs
 
     coloredlogs.install()
+
+    # Set seed for reproducibility
+    import torch
+    torch.manual_seed(42)
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")

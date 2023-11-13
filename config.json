@@ -61,7 +61,7 @@
       },
       {
         "kind": "rotation",
-        "window_sizes": [12, 36, 72, 144, 288, 576, 1000]
+        "window_sizes": [12, 36, 72, 240, 360, 1000]
       }
     ],
     "pretraining": {
@@ -95,7 +95,7 @@
         "score_clean"
       ],
       "splitter_params": {
-        "n_splits": 3
+        "n_splits": 5
       }
     },
     "models": {
@@ -103,7 +103,7 @@
         "activation_delay": 23,
         "batch_size": 88,
         "early_stopping": 19,
-        "epochs": 100,
+        "epochs": 250,
         "loss": "shrinkage-loss",
         "lr": 0.00408247121596589,
         "lr_schedule": {

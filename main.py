@@ -1,25 +1,12 @@
-# This file does the training of the model
-import gc
-import json
-import os
-
-import numpy as np
-import pandas as pd
+# This file does the training of the models
+import torch
 
 import wandb
 from src import data_info
 from src.configs.load_config import ConfigLoader
-from src.configs.load_model_config import ModelConfigLoader
-from src.ensemble.ensemble import Ensemble
-from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
-from src.pretrain.pretrain import Pretrain
-from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
-from src.score.nan_confusion import compute_nan_confusion_matrix
-from src.score.visualize_preds import plot_preds_on_series
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
-from src.util.submissionformat import to_submission_format
 from main_utils import train_from_config, full_train_from_config, scoring
 
 
@@ -31,6 +18,7 @@ def main() -> None:
     print_section_separator("Q1 - Detect Sleep States - Kaggle", spacing=0)
     logger.info("Start of main.py")
 
+    # Load config file and hash
     global config_loader
     config_loader.reset_globals()
     config_hash = hash_config(config_loader.get_config(), length=16)
@@ -45,12 +33,18 @@ def main() -> None:
             config=config_loader.get_config()
         )
         if config_loader.get_hpo():
+            # Merge the config from the hpo config
             config_loader.config |= wandb.config
 
+            # Update hash as the config is different now
+            config_hash = hash_config(config_loader.get_config(), length=16)
+
+        # Update the wandb summary with the updated config
         wandb.run.summary.update(config_loader.get_config())
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
+        logger.info("If you want to use hpo with wandb, set log_to_wandb to True in config.json")
 
     # Predict with CPU
     pred_cpu = config_loader.get_pred_with_cpu()
@@ -67,6 +61,13 @@ def main() -> None:
     store_location = config_loader.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
+    # If hpo is enabled, run hpo instead
+    # This can be done via terminal and a sweep or a local cross validation run
+    if config_loader.get_hpo():
+        logger.info("Running HPO")
+        train_from_config(config_loader.get_hpo_config(), config_loader, store_location)
+        return
+
     # Initialize models
     logger.info("Initializing models...")
 
@@ -74,6 +75,7 @@ def main() -> None:
     models = ensemble.get_models()
     if not ensemble.get_pred_only():
         for _, model_config in enumerate(models):
+            
             train_from_config(model_config, config_loader, store_location)
     else:
         logger.info("Not training models")
@@ -114,9 +116,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    import coloredlogs
 
+    # Set up logging
+    import coloredlogs
     coloredlogs.install()
+
+    # Set torch seed
+    torch.manual_seed(42)
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")

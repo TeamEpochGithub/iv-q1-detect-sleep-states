@@ -30,9 +30,11 @@ class ConfigLoader:
                 "Config cannot have both ensemble and hpo")
 
         self.set_globals()
-        self.set_ensemble()
+        if self.config["ensemble"]:
+            self.set_ensemble()
+        if self.config["hpo"]:
+            self.set_hpo_config()
 
-    # Get full configuration
     def get_config(self) -> dict:
         """
         Get the full configuration
@@ -191,6 +193,28 @@ class ConfigLoader:
         """
         data_info.hpo = self.config["hpo"]
         return self.config["hpo"]
+
+    def set_hpo_config(self) -> dict:
+        """
+        Set the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+
+        curr_path = self.config["model_config_loc"] + "/" + self.config["hpo"]
+        self.hpo_config = ModelConfigLoader(
+            config_path=curr_path,
+            processed_out=self.get_processed_out(),
+            processed_in=self.get_processed_in(),
+            train_series=self.get_train_series_path(),
+            train_events=self.get_train_events_path(),
+            test_series=self.get_test_series_path())
+
+    def get_hpo_config(self) -> dict:
+        """
+        Get the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+        return self.hpo_config
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

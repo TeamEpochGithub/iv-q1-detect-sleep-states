@@ -10,6 +10,12 @@
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
     "ensemble": {
         "models": ["1_event_1d_unet_cnn.json"],
         "weights": [1],
@@ -17,14 +23,8 @@
         "pred_only": true
     },
     "hpo": "1_event_1d_unet_cnn.json",
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12,
-        "latitude": 40.730610,
-        "longitude": -73.935242
-    },
     "cv": {
-        "splitter": "group_shuffle_split",
+        "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],
         "splitter_params": {
             "n_splits": 1

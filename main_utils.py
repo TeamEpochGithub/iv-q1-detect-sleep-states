@@ -18,7 +18,7 @@ from src.score.compute_score import compute_score_full, compute_score_clean, log
 from src.score.visualize_preds import plot_preds_on_series
 
 
-def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoader, store_location: str) -> None:
+def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoader, store_location: str, hpo: bool = False) -> None:
     config_loader.reset_globals()
     model_name = model_config.get_name()
 
@@ -102,7 +102,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
                     model_name + " with location " + model_filename_opt)
         model.load(model_filename_opt, only_hyperparameters=False)
     else:
-        if cv.get_apply():
+        if hpo:
             run_cv()
         if config_loader.get_train_optimal():
             data_info.stage = "train"
@@ -119,6 +119,8 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
             return
 
     model.save(model_filename_opt)
+
+
 
 
 def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:

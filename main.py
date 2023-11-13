@@ -309,5 +309,5 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config_loader: ConfigLoader = ConfigLoader("config.json")
+    config_loader: ConfigLoader = ConfigLoader("configs/90-hpo.json")
     main()

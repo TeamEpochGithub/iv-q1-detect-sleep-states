@@ -216,8 +216,6 @@ class ConfigLoader:
                     curr_model = SplitEventSegmentationUnet1DCNN(model_config, model_name)
                 case "Spectrogram_2D_Cnn":
                     curr_model = EventSegmentation2DCNN(model_config, model_name)
-                    curr_model = SplitEventSegmentationUnet1DCNN(
-                        model_config, model_name)
                 case _:
                     logger.critical("Model not found: " + model_config["type"])
                     raise ConfigException(

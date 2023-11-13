@@ -18,6 +18,8 @@ def masked_loss(criterion, outputs, y):
 
     if y.shape[1] == data_info.window_size:
         y = y.permute(0, 2, 1)
+    if outputs.shape[1] == data_info.window_size:
+        outputs = outputs.permute(0, 2, 1)
     labels = y[:, 1:, :]
     labels = labels.squeeze()
 

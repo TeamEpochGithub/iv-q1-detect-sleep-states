@@ -196,3 +196,6 @@ prediction_plots/
 
 #Ignore submissions
 submissions/
+
+#Ignore config.json
+config.json

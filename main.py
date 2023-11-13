@@ -29,7 +29,6 @@ def main() -> None:
     logger.info("Start of main.py")
 
     global config_loader
-    config_loader.reset_globals()
     config_hash = hash_config(config_loader.get_config(), length=16)
     logger.info("Config hash encoding: " + config_hash)
 
@@ -48,6 +47,8 @@ def main() -> None:
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
+
+    config_loader.reset_globals()
 
     # Predict with CPU
     pred_cpu = config_loader.get_pred_with_cpu()

@@ -17,6 +17,7 @@ from ..loss.loss import Loss
 from ..optimizer.optimizer import Optimizer
 from timm.scheduler import CosineLRScheduler
 from ..util.state_to_event import pred_to_event_state
+import matplotlib.pyplot as plt
 
 
 class EventSegmentation2DCNN(Model):
@@ -262,7 +263,7 @@ class EventSegmentation2DCNN(Model):
             scheduler = self.config["scheduler"]
         else:
             scheduler = None
-            
+
         logger.info("--- Running for " + str(epochs) + " epochs.")
 
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
@@ -351,28 +352,40 @@ class EventSegmentation2DCNN(Model):
         predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
-        if data_info.downsampling_factor > 1:
+        if self.config.get('hop_length', 1) > 1:
             predictions = np.repeat(
-                predictions, data_info.downsampling_factor, axis=2)
+                predictions, self.config.get('hop_length', 1), axis=2)
 
         all_predictions = []
         all_confidences = []
         # Convert to events
+        y_test_from_main = np.load('y_test.npy')
+        i = 0
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
+            plt.plot(pred[0, :])
+            # plt.plot(pred[1, :])
+            # plt.plot(pred[2, :])
+            # plt.vlines(events[0], 0, 1, colors='r', linestyles='dashed')
+            # plt.vlines(events[1], 0, 1, colors='g', linestyles='dashed')
+            # plt.plot(y_test_from_main[i, :, 0], color='r', alpha=0.5)
+            # plt.plot(y_test_from_main[i, :, 1], color='g', alpha=0.5)
+            # plt.plot(y_test_from_main[i, :, 2], color='b', alpha=0.5)
+            # plt.legend(['onset', 'wake-up', 'awake', 'onset_event', 'wake-up_event', 'y_test_onset', 'y_test_wake-up', 'y_test_awake'])
+            # plt.show()
             # Add step offset based on repeat factor.
-            if data_info.downsampling_factor <= 1:
+            if self.config.get('hop_length', 1) <= 1:
                 offset = 0
-            elif data_info.downsampling_factor % 2 == 0:
-                offset = (data_info.downsampling_factor / 2.0) - 0.5
+            elif self.config.get('hop_length', 1) % 2 == 0:
+                offset = (self.config.get('hop_length', 1) / 2.0) - 0.5
             else:
-                offset = data_info.downsampling_factor // 2
+                offset = self.config.get('hop_length', 1) // 2
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)
             all_confidences.append(confidences)
-
+            i += 1
         # Return numpy array
         return np.array(all_predictions), np.array(all_confidences)
 

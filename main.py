@@ -180,9 +180,10 @@ def main() -> None:
 
     scoring = config_loader.get_scoring()
     if scoring:
+        np.save('y_test.npy', y_test)
         logger.info("Making predictions with ensemble on test data")
         predictions = ensemble.pred(X_test, pred_with_cpu=pred_cpu)
-
+        
         logger.info("Formatting predictions...")
 
         # TODO simplify this

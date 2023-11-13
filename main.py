@@ -10,8 +10,6 @@ import wandb
 from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.get_processed_data import get_processed_data
-from src.hpo.hpo import HPO
-from src.hpo.wandb_sweeps import WandBSweeps
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.compute_score import log_scores_to_wandb, compute_score_full, compute_score_clean
@@ -42,9 +40,7 @@ def main() -> None:
             name=config_hash,
             config=config_loader.get_config()
         )
-
-        if isinstance(config_loader.hpo, WandBSweeps):
-            # Get the hyperparameters selected by the Weights & Biases Sweep agent in our own config
+        if config_loader.get_hpo():
             config_loader.config |= wandb.config
 
         wandb.run.summary.update(config_loader.get_config())
@@ -64,7 +60,8 @@ def main() -> None:
 
     print_section_separator("Preprocessing and feature engineering", spacing=0)
     data_info.stage = "preprocessing & feature engineering"
-    featured_data = get_processed_data(config_loader, training=True, save_output=True)
+    featured_data = get_processed_data(
+        config_loader, training=True, save_output=True)
 
     # ------------------------ #
     #         Pretrain         #
@@ -76,7 +73,8 @@ def main() -> None:
     logger.info("Get pretraining parameters from config and initialize pretrain")
     pretrain: Pretrain = config_loader.get_pretraining()
 
-    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
+    logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
+                " and test size of " + str(pretrain.test_size))
 
     # Split data into train/test and validation
     # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
@@ -111,29 +109,33 @@ def main() -> None:
     for i, model in enumerate(models):
         data_info.substage = f"training model {i}: {model}"
         # Get filename of model
-        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+        model_filename_opt = store_location + "/optimal_" + \
+            model + "-" + initial_hash + models[model].hash + ".pt"
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename_opt):
-            logger.info("Found existing trained optimal model " + str(i) + ": " + model + " with location " + model_filename_opt)
+            logger.info("Found existing trained optimal model " + str(i) +
+                        ": " + model + " with location " + model_filename_opt)
             models[model].load(model_filename_opt, only_hyperparameters=False)
         else:
             cv = config_loader.cv
 
             # Apply CV if in the config
             if cv is not None:
-                logger.info("Applying cross-validation on model " + str(i) + ": " + model)
+                logger.info("Applying cross-validation on model " +
+                            str(i) + ": " + model)
                 data_info.stage = "cv"
 
                 train_df = featured_data.iloc[train_idx]
 
-                scores = cv.cross_validate(models[model], X_train, y_train, train_df=train_df, groups=groups)
+                scores = cv.cross_validate(
+                    models[model], X_train, y_train, train_df=train_df, groups=groups)
                 # Log scores to wandb
                 mean_scores = np.mean(scores, axis=0)
-                log_scores_to_wandb(mean_scores, cv.scoring)
+                log_scores_to_wandb(mean_scores, data_info.scorings)
                 logger.info(
                     f"Done CV for model {i}: {model} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
-                if isinstance(config_loader.hpo, WandBSweeps):
+                if config_loader.get_hpo():
                     # For sweeps do garbage collection after each run
                     # This is necessary because the sweeps run in the same process
                     # and the memory is not freed after each run
@@ -155,7 +157,8 @@ def main() -> None:
 
     # Store optimal models
     for i, model in enumerate(models):
-        model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+        model_filename_opt = store_location + "/optimal_" + \
+            model + "-" + initial_hash + models[model].hash + ".pt"
         models[model].save(model_filename_opt)
 
     # ------------------------- #
@@ -168,24 +171,6 @@ def main() -> None:
 
     # TODO Add crossvalidation to models #107
     ensemble = config_loader.get_ensemble(models)
-
-    # Initialize loss
-    # TODO assert that every model has a loss function #67
-
-    # ------------------------------------------------------- #
-    #          Hyperparameter optimization for ensemble       #
-    # ------------------------------------------------------- #
-
-    print_section_separator(
-        "Hyperparameter optimization for ensemble", spacing=0)
-    # TODO Hyperparameter optimization for ensembles
-    # hpo = config.get_hpo()
-    # hpo.optimize()
-
-    # ------------------------------------------------------- #
-    #          Cross validation optimization for ensemble     #
-    # ------------------------------------------------------- #
-    # print_section_separator("Cross validation for ensemble", spacing=0)
 
     # ------------------------------------------------------- #
     #                    Scoring                              #
@@ -209,7 +194,8 @@ def main() -> None:
         #                .apply(lambda x: x.iloc[0]))
         # # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
         # #  to access the first step as a negative index which is now a very large integer instead
-        important_cols = ['series_id', 'window', 'step'] + [col for col in featured_data.columns if 'similarity_nan' in col]
+        important_cols = ['series_id', 'window', 'step'] + \
+            [col for col in featured_data.columns if 'similarity_nan' in col]
         grouped = (featured_data.iloc[test_idx][important_cols]
                    .groupby(['series_id', 'window']))
         window_offset = grouped.apply(lambda x: x.iloc[0])
@@ -219,10 +205,13 @@ def main() -> None:
         # filter out predictions using a threshold on (f_)similarity_nan
         filter_cfg = config_loader.get_similarity_filter()
         if filter_cfg:
-            logger.info(f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
-            col_name = [col for col in featured_data.columns if 'similarity_nan' in col]
+            logger.info(
+                f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
+            col_name = [
+                col for col in featured_data.columns if 'similarity_nan' in col]
             if len(col_name) == 0:
-                raise ValueError("No (f_)similarity_nan column found in the data for filtering")
+                raise ValueError(
+                    "No (f_)similarity_nan column found in the data for filtering")
             mean_sim = grouped.apply(lambda x: (x[col_name] == 0).mean())
             nan_mask = mean_sim > filter_cfg['threshold']
             nan_mask = np.where(nan_mask, np.nan, 1)
@@ -246,7 +235,8 @@ def main() -> None:
                     .reset_index(drop=True))
         logger.info("Start scoring test predictions...")
 
-        scores = [compute_score_full(submission, solution), compute_score_clean(submission, solution)]
+        scores = [compute_score_full(
+            submission, solution), compute_score_clean(submission, solution)]
         log_scores_to_wandb(scores, data_info.scorings)
 
         # compute confusion matrix for making predictions or not
@@ -283,20 +273,23 @@ def main() -> None:
         X_train, y_train, groups = pretrain.pretrain_final(featured_data)
 
         # Save scaler
-        scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
+        scaler_filename: str = config_loader.get_model_store_loc() + "/scaler-" + \
+            initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
 
         for i, model in enumerate(models):
             data_info.substage = "Full"
 
-            model_filename_opt = store_location + "/optimal_" + model + "-" + initial_hash + models[model].hash + ".pt"
+            model_filename_opt = store_location + "/optimal_" + \
+                model + "-" + initial_hash + models[model].hash + ".pt"
             model_filename_submit = store_location + "/submit_" + model + "-" + initial_hash + models[
                 model].hash + ".pt"
             if os.path.isfile(model_filename_submit):
                 logger.info("Found existing fully trained submit model " + str(
                     i) + ": " + model + " with location " + model_filename_submit)
             else:
-                models[model].load(model_filename_opt, only_hyperparameters=True)
+                models[model].load(model_filename_opt,
+                                   only_hyperparameters=True)
                 logger.info("Retraining model " + str(i) + ": " + model)
                 models[model].train_full(X_train, y_train)
                 models[model].save(model_filename_submit)
@@ -316,12 +309,5 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Load config file
-    config_loader: ConfigLoader = ConfigLoader("configs/90-hpo.json")
-    hpo: HPO | None = config_loader.hpo
-
-    if hpo is None:  # HPO disabled
-        logger.info("Running main without HPO")
-        main()
-    else:  # HPO enabled
-        logger.info("Running main with HPO")
-        hpo.optimize(main)
+    config_loader: ConfigLoader = ConfigLoader("config.json")
+    main()

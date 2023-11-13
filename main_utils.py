@@ -19,6 +19,8 @@ from src.score.visualize_preds import plot_preds_on_series
 
 
 def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoader, store_location: str, hpo: bool = False) -> None:
+
+    # Initialisation
     config_loader.reset_globals()
     model_name = model_config.get_name()
 
@@ -104,7 +106,8 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
     else:
         if hpo:
             run_cv()
-        if config_loader.get_train_optimal():
+            return
+        elif config_loader.get_train_optimal():
             data_info.stage = "train"
             data_info.substage = "optimal"
 
@@ -119,8 +122,6 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
             return
 
     model.save(model_filename_opt)
-
-
 
 
 def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:

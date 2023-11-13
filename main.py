@@ -65,18 +65,16 @@ def main() -> None:
     # This can be done via terminal and a sweep or a local cross validation run
     if config_loader.get_hpo():
         logger.info("Running HPO")
-        train_from_config(config_loader.get_hpo_config(), config_loader, store_location)
+        train_from_config(config_loader.get_hpo_config(), config_loader, store_location, hpo=True)
         return
 
     # Initialize models
     logger.info("Initializing models...")
-
     ensemble = config_loader.get_ensemble()
     models = ensemble.get_models()
     if not ensemble.get_pred_only():
         for _, model_config in enumerate(models):
-            
-            train_from_config(model_config, config_loader, store_location)
+            train_from_config(model_config, config_loader, store_location, hpo=False)
     else:
         logger.info("Not training models")
 

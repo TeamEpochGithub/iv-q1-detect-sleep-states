@@ -470,8 +470,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer_onset'] = type(self.config['optimizer'])(self.model_onset.parameters(), lr=self.config['lr'])
-        self.config['optimizer_awake'] = type(self.config['optimizer'])(self.model_awake.parameters(), lr=self.config['lr'])
+        self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(self.model_onset.parameters(), lr=self.config['lr'])
+        self.config['optimizer_awake'] = type(self.config['optimizer_awake'])(self.model_awake.parameters(), lr=self.config['lr'])
 
     def reset_weights(self) -> None:
         """

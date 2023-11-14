@@ -1,44 +1,42 @@
 import json
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ..preprocessing.pp import PP
+from ..logger.logger import logger
+from ..preprocessing.pp import PP, PPException
 
 
+@dataclass
 class AddStateLabels(PP):
     """Adds state labels to each row of the data
 
     The state labels are added to the "awake" column based on the events csv file.
     The values are 0 for asleep, 1 for awake, and 2 for unlabeled.
+
+    :param events_path: the path to the events csv file
+    :param id_encoding_path: the path to the encoding file of the series id
+    :param use_similarity_nan: If True, use the similarity_nan column to fill in the awake column
+    :param fill_limit: The maximum number of steps to fill in the awake column
+    :param nan_tolerance_window: The number of steps to tolerate NaNs before filling in the awake column
     """
 
-    def __init__(self, events_path: str, id_encoding_path: str,
-                 use_similarity_nan: bool, **kwargs) -> None:
-        """Initialize the AddStateLabels class.
+    events_path: str
+    id_encoding_path: str
+    use_similarity_nan: bool
+    fill_limit: int | None = None
+    nan_tolerance_window: int = 1
 
-        :param events_path: the path to the events csv file
-        :param id_encoding_path: the path to the encoding file of the series id
+    def __post_init__(self) -> None:
+        """Check if the fill_limit is set when using similarity NaN
+
+        :raises PPException: If the fill_limit is not set when using similarity NaN
         """
-        super().__init__(**kwargs | {"kind": "add_state_labels"})
-
-        self.events_path: str = events_path
-        self.events: pd.DataFrame = pd.DataFrame()
-
-        self.id_encoding_path: str = id_encoding_path
-        self.id_encoding: dict = {}
-
-        self.use_similarity_nan: bool = use_similarity_nan
-        if self.use_similarity_nan:
-            if "fill_limit" not in kwargs:
-                raise Exception("fill_limit is required when use_similarity_nan is True")
-            self.fill_limit = kwargs.pop("fill_limit")
-            self.nan_tolerance_window = kwargs.pop("nan_tolerance_window", 1)
-
-    def __repr__(self) -> str:
-        """Return a string representation of a AddStateLabels object"""
-        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path})"
+        if self.use_similarity_nan and self.fill_limit is None:
+            logger.critical("fill_limit is required when using similarity NaN")
+            raise PPException("fill_limit is required when using similarity NaN")
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.
@@ -91,6 +89,7 @@ class AddStateLabels(PP):
 
         return data
 
+    # TODO Add type hints and (better) PyDoc comments to set_awake, set_awake_with_similarity, fill_backward and fill_forward
     def set_awake(self, series, weird_series_encoded):
         awake_col = series.columns.get_loc('awake')
         series_id = series['series_id'].iloc[0]

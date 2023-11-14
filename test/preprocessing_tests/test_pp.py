@@ -60,7 +60,26 @@ class TestPP(TestCase):
         self.assertIsInstance(pp_steps[2], SplitWindows)
         self.assertEqual(pp_steps[2].start_hour, 1)
 
-        pp_steps = PP.from_config(config["preprocessing"], training=False)
+        config_2: dict = {
+            "preprocessing": [
+                {
+                    "kind": "mem_reduce",
+                    "id_encoding_path": "a.json"
+                },
+                {
+                    "kind": "add_state_labels",
+                    "id_encoding_path": "b.json",
+                    "events_path": "c.csv",
+                    "use_similarity_nan": False
+                },
+                {
+                    "kind": "split_windows",
+                    "start_hour": 1
+                }
+            ],
+        }
+
+        pp_steps = PP.from_config(config_2["preprocessing"], training=False)
 
         self.assertIsInstance(pp_steps[0], MemReduce)
         self.assertEqual(pp_steps[0].id_encoding_path, "a.json")

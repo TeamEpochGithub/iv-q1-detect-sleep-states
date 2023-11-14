@@ -7,18 +7,21 @@ from src.feature_engineering.time import Time
 
 class TestTime(TestCase):
     def test_time_init(self):
-        time = Time("day")
+        time = Time(["day"])
         self.assertEqual("Time(time_features=['day'])", str(time))
 
         time = Time(["day", "hour"])
         self.assertEqual("Time(time_features=['day', 'hour'])", str(time))
+
+    def test_repr(self):
+        self.assertEqual("Time(time_features=['day'])", repr(Time(["day"])))
 
     def test_time_feature_engineering_single(self):
         data = pd.DataFrame({
             "timestamp": pd.to_datetime(["2021-01-04 12:15:18", "2022-02-05 13:16:19", "2023-03-06 14:17:20"])
         })
 
-        time = Time("day")
+        time = Time(["day"])
         data = time.feature_engineering(data)
 
         self.assertEqual(2, len(data.columns))

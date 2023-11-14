@@ -6,6 +6,9 @@ from src.preprocessing.add_segmentation_labels import AddSegmentationLabels
 
 
 class TestAddSegmentationLabels(TestCase):
+    def test_repr(self):
+        self.assertEqual("AddSegmentationLabels()", AddSegmentationLabels().__repr__())
+
     def test_preprocess_segmentation_labels_normal(self):
         """
         This test should test the onehot encoding of the awake column

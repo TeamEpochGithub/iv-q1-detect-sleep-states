@@ -25,7 +25,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
     fe_steps = config.get_fe_steps()
 
     steps: list[PP | FE] = pp_steps + fe_steps
-    step_names: list[str] = [step.kind for step in steps]
+    step_names: list[str] = [step.__class__.__name__ for step in steps]
     step_hashes: list[str] = [hash_config(step, _STEP_HASH_LENGTH) for step in
                               steps]  # I think it looks a little silly to use hash_config here...
 

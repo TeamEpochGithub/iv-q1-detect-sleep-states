@@ -1,4 +1,5 @@
 import gc
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
@@ -8,22 +9,20 @@ from .. import data_info
 from ..preprocessing.pp import PP
 
 
+@dataclass
 class SplitWindows(PP):
     """Splits the data into 24h windows
 
     A new column named window will be added that contains the window number for each row.
+    :param start_hour: the hour of the day to start the window at. Default is 15:00.
     """
+    start_hour: float = 15
 
-    def __init__(self, start_hour: float = 15, **kwargs: dict) -> None:
-        """Initialize the SplitWindows class.
+    _steps_before: float = field(init=False, default=0, repr=False, compare=False)
 
-        :param start_hour: the hour of the day to start the window at. Default is 15:00.
-        :param window_size: the size of the window in steps. Default is 24 * 60 * 12 = 17280.
-        """
-        super().__init__(**kwargs | {"kind": "split_windows"})
-
-        self.start_hour = start_hour
-        self.steps_before = (start_hour * 60 * 12)
+    def __post_init__(self) -> None:
+        """Initialize the SplitWindows class."""
+        self._steps_before = (self.start_hour * 60 * 12)
 
     def __repr__(self) -> str:
         """Return a string representation of a SplitWindows object"""
@@ -96,11 +95,11 @@ class SplitWindows(PP):
         # If index is 0, then the first row is at 15:00:00 so do nothing
         # If index is negative, time is before 15:00:00 and after 00:00:00 so add initial seconds and 9 hours
         amount_of_padding_start = 0
-        if initial_steps < self.steps_before:
+        if initial_steps < self._steps_before:
             amount_of_padding_start += (data_info.window_size -
-                                        self.steps_before) + initial_steps
+                                        self._steps_before) + initial_steps
         else:
-            amount_of_padding_start += initial_steps - self.steps_before
+            amount_of_padding_start += initial_steps - self._steps_before
 
         # Create a numpy array of step values
         step = (-np.arange(1, amount_of_padding_start + 1))[::-1]

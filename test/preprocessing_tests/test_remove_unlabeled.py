@@ -28,6 +28,11 @@ class TestRemoveUnlabeled(TestCase):
             remove_unlabeled.preprocess(df)
         self.assertEqual("No awake column. Did you run AddStateLabels before?", str(context.exception))
 
+    def test_repr(self):
+        remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=True, remove_nan=False,
+                                           remove_entire_series=False)
+        self.assertEqual("RemoveUnlabeled(remove_partially_unlabeled_windows=True, remove_nan=False, remove_entire_series=False)", remove_unlabeled.__repr__())
+
     def test_no_window(self) -> None:
         remove_unlabeled = RemoveUnlabeled(remove_partially_unlabeled_windows=True, remove_nan=False,
                                            remove_entire_series=False)

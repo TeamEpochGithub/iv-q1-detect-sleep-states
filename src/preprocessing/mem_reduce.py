@@ -1,6 +1,6 @@
 import gc
 import json
-from typing import Optional
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
@@ -10,25 +10,16 @@ from ..logger.logger import logger
 from ..preprocessing.pp import PP
 
 
+@dataclass
 class MemReduce(PP):
     """Preprocessing step that reduces the memory usage of the data
 
     It will reduce the memory usage of the data by changing the data types of the columns.
+    :param id_encoding_path: the path to the encoding file of the series id
     """
+    id_encoding_path: str | None = None
 
-    def __init__(self, id_encoding_path: Optional[str] = None, **kwargs) -> None:
-        """Initialize the MemReduce class.
-
-        :param id_encoding_path: the path to the encoding file of the series id
-        """
-        super().__init__(**kwargs | {"kind": "mem_reduce"})
-
-        self.id_encoding_path: str = id_encoding_path
-        self.encoding = {}
-
-    def __repr__(self) -> str:
-        """Return a string representation of a MemReduce object"""
-        return f"{self.__class__.__name__}(id_encoding_path={self.id_encoding_path})"
+    _encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.

@@ -13,29 +13,6 @@ class PP(ABC):
     All child classes should implement the preprocess method.
     """
 
-    def __init__(self, kind: str, use_pandas: bool = True, **kwargs) -> None:
-        """
-        Initialize the preprocessing step.
-
-        :param kind: the kind of the preprocessing step
-        :param use_pandas: whether to use Pandas or Polars dataframes. Default is True.
-        """
-        self.kind = kind
-        self.use_pandas = use_pandas
-
-    def __hash__(self) -> int:
-        """Return the hash of the preprocessing step
-
-        Just hash the string representation of the preprocessing step.
-        """
-        return hash(repr(self))
-
-    def __eq__(self, other: object) -> bool:
-        """Check if the preprocessing steps are equal. Necessary for hashing."""
-        if not isinstance(other, PP):
-            return NotImplemented
-        return repr(self) == repr(other)
-
     @staticmethod
     def from_config_single(config: dict) -> PP:
         """Parse the config of a single preprocessing step and return the preprocessing step.
@@ -43,39 +20,40 @@ class PP(ABC):
         :param config: the config of a single preprocessing step
         :return: the specific preprocessing step
         """
-        kind: str = config["kind"]
+        kind: str = config.pop("kind", None)
 
-        match kind:
-            case "mem_reduce":
-                from .mem_reduce import MemReduce
-                return MemReduce(**config)
-            case "add_noise":
-                from .add_noise import AddNoise
-                return AddNoise(**config)
-            case "similarity_nan":
-                from .similarity_nan import SimilarityNan
-                return SimilarityNan(**config)
-            case "add_regression_labels":
-                from .add_regression_labels import AddRegressionLabels
-                return AddRegressionLabels(**config)
-            case "add_segmentation_labels":
-                from .add_segmentation_labels import AddSegmentationLabels
-                return AddSegmentationLabels(**config)
-            case "add_event_labels":
-                from .add_event_labels import AddEventLabels
-                return AddEventLabels(**config)
-            case "add_state_labels":
-                from .add_state_labels import AddStateLabels
-                return AddStateLabels(**config)
-            case "remove_unlabeled":
-                from .remove_unlabeled import RemoveUnlabeled
-                return RemoveUnlabeled(**config)
-            case "split_windows":
-                from .split_windows import SplitWindows
-                return SplitWindows(**config)
-            case _:
-                logger.critical(f"Unknown preprocessing step: {kind}")
-                raise PPException(f"Unknown preprocessing step: {kind}")
+        if kind is None:
+            logger.critical("No kind specified for preprocessing step")
+            raise PPException("No kind specified for preprocessing step")
+
+        # Import the preprocessing steps here to avoid circular imports
+        from .mem_reduce import MemReduce
+        from .add_noise import AddNoise
+        from .similarity_nan import SimilarityNan
+        from .add_regression_labels import AddRegressionLabels
+        from .add_segmentation_labels import AddSegmentationLabels
+        from .add_event_labels import AddEventLabels
+        from .add_state_labels import AddStateLabels
+        from .remove_unlabeled import RemoveUnlabeled
+        from .split_windows import SplitWindows
+
+        _PREPROCESSING_KINDS: dict[str] = {
+            "mem_reduce": MemReduce,
+            "add_noise": AddNoise,
+            "similarity_nan": SimilarityNan,
+            "add_regression_labels": AddRegressionLabels,
+            "add_segmentation_labels": AddSegmentationLabels,
+            "add_event_labels": AddEventLabels,
+            "add_state_labels": AddStateLabels,
+            "remove_unlabeled": RemoveUnlabeled,
+            "split_windows": SplitWindows
+        }
+
+        try:
+            return _PREPROCESSING_KINDS[kind](**config)
+        except KeyError:
+            logger.critical(f"Unknown preprocessing step: {kind}")
+            raise PPException(f"Unknown preprocessing step: {kind}")
 
     @staticmethod
     def from_config(config_list: list[dict], training: bool) -> list[PP]:

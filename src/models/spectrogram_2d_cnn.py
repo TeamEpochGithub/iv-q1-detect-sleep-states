@@ -166,6 +166,14 @@ class EventSegmentation2DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
+        # make sure to put enmo and anglez first in the feature order
+        desired_feature_order = ['f_enmo', 'f_anglez'] + [feature for feature in data_info.X_columns if feature not in ['f_enmo', 'f_anglez']]
+        # get the indices of the desired feature order
+        desired_feature_order_indices = np.array([data_info.X_columns[feature] for feature in desired_feature_order])
+        # now use the indices to reorder the X_train and X_test
+        X_train = X_train[:, desired_feature_order_indices, :]
+        X_test = X_test[:, desired_feature_order_indices, :]
+
         # Get only the 2 event state features and the awake state
         if mask_unlabeled:
             y_train = y_train[:, :, np.array(
@@ -330,7 +338,7 @@ class EventSegmentation2DCNN(Model):
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
-        dataloader = DataLoader(dataset, batch_size=8, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=self.config.get('batch_size', 8), shuffle=False)
 
         # Onset predictions
         predictions = []

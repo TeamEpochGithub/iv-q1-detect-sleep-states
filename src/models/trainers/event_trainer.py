@@ -25,6 +25,11 @@ def masked_loss(criterion, outputs, y):
     if y.shape[1] == 3:
         # Mask is should be two times y[:,0,:] so shape is (batch_size, 2, seq_len)
         unlabeled_mask = torch.stack([y[:, 0, :], y[:, 0, :]], dim=1)
+    # This is for the case of duplicating the awake column in the labels
+    # This way I didn't need to make a new trainer for my model
+    elif y.shape[1] == 4:
+        # Mask is should be two times y[:,0,:] so shape is (batch_size, 3, seq_len)
+        unlabeled_mask = torch.stack([y[:, 0, :], y[:, 0, :], y[:, 0, :]], dim=1)
     else:
         # Mask is should be one time y[:,0,:] so shape is (batch_size, 1, seq_len)
         unlabeled_mask = y[:, 0, :]

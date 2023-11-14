@@ -19,10 +19,9 @@ class MultiResidualBiGRU(nn.Module):
         self.fc_in = nn.Linear(input_size, hidden_size)
         self.ln = nn.LayerNorm(hidden_size)
         self.res_bigrus = nn.ModuleList(
-            [
-                ResidualBiGRU(hidden_size, internal_layers=internal_layers, bidir=bidir,dropout=dropout)
-                for _ in range(n_layers)
-            ]
+            [ResidualBiGRU(hidden_size, internal_layers=internal_layers, bidir=bidir, dropout=dropout)
+             for _ in range(n_layers)
+             ]
         )
         self.fc_out = nn.Linear(hidden_size, out_size)
 

@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 
 
@@ -16,7 +15,6 @@ class ResidualBiGRU(nn.Module):
             batch_first=True,
             bidirectional=bidir, dropout=dropout
         )
-
 
         # These are added for testing, LSTM performs a bit worse and RNN is complete garbage.
         self.lstm = nn.LSTM(

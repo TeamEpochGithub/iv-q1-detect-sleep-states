@@ -46,8 +46,7 @@ class TestFE(TestCase):
                     "time_features": ["day", "hour", "minute", "second"]
                 },
                 {
-                    "kind": "rotation",
-                    "window_sizes": [100]
+                    "kind": "rotation"
                 }
             ]
         }

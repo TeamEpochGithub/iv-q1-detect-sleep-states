@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Final
 
 import pandas as pd
-
 
 from ..logger.logger import logger
 
@@ -14,27 +14,6 @@ class FE(ABC):
     All child classes should implement the feature engineering method.
     """
 
-    def __init__(self, kind: str, **kwargs: dict) -> None:
-        """Initialize the feature engineering step.
-
-        :param kind: the kind of feature engineering step
-        :param kwargs: the parameters for the feature engineering step
-        """
-        self.kind = kind
-
-    def __hash__(self) -> int:
-        """Return the hash of the feature engineering step
-
-        Just hash the string representation of the feature engineering step.
-        """
-        return hash(repr(self))
-
-    def __eq__(self, other: object) -> bool:
-        """Check if the feature engineering steps are equal. Necessary for hashing."""
-        if not isinstance(other, FE):
-            return NotImplemented
-        return repr(self) == repr(other)
-
     @staticmethod
     def from_config_single(config: dict) -> FE:
         """Parse the config of a single feature engineering step and return the feature engineering step.
@@ -42,6 +21,12 @@ class FE(ABC):
         :param config: the config of a single feature engineering step
         :return: the specific feature engineering step
         """
+        kind: str = config.pop("kind", None)
+
+        if kind is None:
+            logger.critical("No kind specified for feature engineering step")
+            raise FEException("No kind specified for feature engineering step")
+
         from .kurtosis import Kurtosis
         from .mean import Mean
         from .skewness import Skewness
@@ -49,7 +34,7 @@ class FE(ABC):
         from .rotation import Rotation
         from .sun import Sun
 
-        _FEATURE_ENGINEERING_STEPS: dict[str, type[FE]] = {
+        _FEATURE_ENGINEERING_KINDS: Final[dict[str, type[FE]]] = {
             "kurtosis": Kurtosis,
             "mean": Mean,
             "skewness": Skewness,
@@ -58,10 +43,8 @@ class FE(ABC):
             "sun": Sun
         }
 
-        kind: str = config["kind"]
-
         try:
-            return _FEATURE_ENGINEERING_STEPS[kind](**config)
+            return _FEATURE_ENGINEERING_KINDS[kind](**config)
         except KeyError:
             logger.critical(f"Unknown feature engineering step: {kind}")
             raise FEException(f"Unknown feature engineering step: {kind}")

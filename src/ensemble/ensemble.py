@@ -3,12 +3,14 @@
 # Imports
 import os
 import numpy as np
+from tqdm import tqdm
 from src.get_processed_data import get_processed_data
 from src.pretrain.pretrain import Pretrain
 from src.util.get_pretrain_cache import get_pretrain_split_cache
 
 from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
+from src.util.state_to_event import pred_to_event_state
 
 from ..logger.logger import logger
 from typing import List
@@ -21,6 +23,7 @@ class Ensemble:
     # Init function
     def __init__(self, model_configs: List[ModelConfigLoader] = None, weight_matrix: List[int] = None, combination_method: str = "addition", pred_only: bool = False) -> None:
         self.pred_only = pred_only
+        self.combination_method = combination_method
 
         if model_configs is None:
             self.model_configs = []
@@ -84,7 +87,7 @@ class Ensemble:
 
         logger.info("Predicting with ensemble")
         # Run each model
-        predictions = []
+        predictions = None
         confidences = []
         # model_pred is (onset, wakeup) tuples for each window
         for i, model_config in enumerate(self.model_configs):
@@ -121,7 +124,8 @@ class Ensemble:
             logger.info("Splitting data into train and test...")
             data_info.substage = "pretrain_split"
 
-            x_train, x_test, y_train, y_test, train_idx, test_idx, groups = get_pretrain_split_cache(model_config, featured_data, save_output=True)
+            x_train, x_test, y_train, y_test, train_idx, test_idx, groups = get_pretrain_split_cache(
+                model_config, featured_data, save_output=True)
             self.test_idx = test_idx
 
             logger.info("X Train data shape (size, window_size, features): " + str(
@@ -153,14 +157,42 @@ class Ensemble:
             model = model_config.get_model()
             # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
             if hasattr(model, 'device'):
-                model_pred = model.pred(x_test, pred_with_cpu=pred_with_cpu, raw_output=True)
+                model_pred = model.pred(
+                    x_test, pred_with_cpu=pred_with_cpu, raw_output=True)
             else:
                 model_pred = model.pred(x_test, raw_output=True)
 
             # Model_pred is tuple of np.array(onset, awake) for each window
             # Split the series of tuples into two column
-            predictions.append(model_pred)
+            if predictions is not None:
+                predictions = np.concatenate((predictions, (model_pred.reshape(
+                    model_pred.shape[0], model_pred.shape[1], 2, 1))), axis=3)
+            else:
+                predictions = model_pred.reshape(
+                    model_pred.shape[0], model_pred.shape[1], 2, 1)
 
+        if self.combination_method == "confidence_average":
+            predictions = np.average(predictions, axis=3)
+            all_predictions = []
+            all_confidences = []
+            for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+                # Convert to relative window event timestamps
+                events = pred_to_event_state(pred, thresh=0)
+
+                # Add step offset based on repeat factor.
+                if data_info.downsampling_factor <= 1:
+                    offset = 0
+                elif data_info.downsampling_factor % 2 == 0:
+                    offset = (data_info.downsampling_factor / 2.0) - 0.5
+                else:
+                    offset = data_info.downsampling_factor // 2
+                steps = (events[0] + offset, events[1] + offset)
+                confidences = (events[2], events[3])
+                all_predictions.append(steps)
+                all_confidences.append(confidences)
+
+            # Return numpy array
+            return np.array(all_predictions), np.array(all_confidences)
 
         # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 

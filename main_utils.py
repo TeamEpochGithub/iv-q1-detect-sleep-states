@@ -196,9 +196,10 @@ def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
                 .reset_index(drop=True))
     logger.info("Start scoring test predictions...")
 
-    scores = (compute_score_full(submission, solution),
-              compute_score_clean(submission, solution))
-    log_scores_to_wandb(*scores)
+    scores = [compute_score_full(
+            submission, solution), compute_score_clean(submission, solution)]
+    log_scores_to_wandb(scores, data_info.scorings)
+
 
     # compute confusion matrix for making predictions or not
     window_offset['series_id'] = window_offset['series_id'].map(decoding)

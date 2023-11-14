@@ -104,7 +104,8 @@ class EventResGRU(Model):
             },
             "network_params": {
                 "activation": "relu",
-                "hidden_layers": 8
+                "hidden_layers": 8,
+                "flatten": False,
             }
         }
 

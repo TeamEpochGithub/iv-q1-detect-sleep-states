@@ -1,15 +1,18 @@
 from torch import nn
+
+from src import data_info
 from src.models.architectures.res_bi_GRU import ResidualBiGRU
 
 
 class MultiResidualBiGRU(nn.Module):
-    def __init__(self, input_size, hidden_size=64, out_size=2, n_layers=5, bidir=True, activation: str = None, model_name=''):
+    def __init__(self, input_size, hidden_size=64, out_size=2, n_layers=5, bidir=True, activation: str = None, flatten: bool = False, model_name=''):
         super(MultiResidualBiGRU, self).__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.out_size = out_size
         self.n_layers = n_layers
+        self.flatten = flatten
 
         self.fc_in = nn.Linear(input_size, hidden_size)
         self.ln = nn.LayerNorm(hidden_size)
@@ -32,14 +35,22 @@ class MultiResidualBiGRU(nn.Module):
             # (re)initialize the hidden state
             h = [None for _ in range(self.n_layers)]
 
+        # Flatten the (32,1440,3) to (32*1440, 3)
+
+        if self.flatten:
+            x = x.view(-1, x.shape[-1])
+
         x = self.fc_in(x)
         x = self.ln(x)
         x = nn.functional.relu(x)
 
         new_h = []
         for i, res_bigru in enumerate(self.res_bigrus):
-            x, new_hi = res_bigru(x, h[i])
+            x, new_hi = res_bigru(x, h[i] if i == 0 else new_h[i - 1])
             new_h.append(new_hi)
+
+        if self.flatten:
+            x = x.view(-1, data_info.window_size, x.shape[-1])
 
         x = self.fc_out(x)
         if use_activation:

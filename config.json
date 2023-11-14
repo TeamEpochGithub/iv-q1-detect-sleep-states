@@ -17,7 +17,7 @@
         "longitude": -73.935242
     },
     "ensemble": {
-        "models": ["gru2.json"],
+        "models": ["gru3.json"],
         "weights": [1],
         "comb_method": "confidence_average",
         "pred_only": true

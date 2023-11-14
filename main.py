@@ -39,8 +39,10 @@ def main() -> None:
             # Update hash as the config is different now
             config_hash = hash_config(config_loader.get_config(), length=16)
 
-        # Update the wandb summary with the updated config
-        wandb.run.summary.update(config_loader.get_config())
+            # Update the wandb summary with the updated config
+            wandb.run.summary.update(config_loader.get_config())
+            wandb.run.name.update(config_hash)
+        
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
@@ -102,7 +104,7 @@ def main() -> None:
         data_info.substage = "Full"
         for model_config in ensemble.get_models():
             config_loader.reset_globals()
-            full_train_from_config(model_config, store_location)
+            full_train_from_config(config_loader, model_config, store_location)
         logger.info("Retraining models for submission")
     else:
         logger.info("Not training best model for submission")

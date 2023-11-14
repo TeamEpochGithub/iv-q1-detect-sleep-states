@@ -8,6 +8,7 @@ from src.ensemble.ensemble import Ensemble
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.nan_confusion import compute_nan_confusion_matrix
+from src.util.get_pretrain_cache import get_pretrain_full_cache, get_pretrain_split_cache
 from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
 import numpy as np
@@ -53,8 +54,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
     logger.info("Splitting data into train and test...")
     data_info.substage = "pretrain_split"
 
-    x_train, x_test, y_train, y_test, train_idx, _, groups = pretrain.pretrain_split(
-        featured_data)
+    x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(config_loader, featured_data, save_output=True)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
@@ -217,7 +217,7 @@ def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
                          show_plot=config.get_browser_plot(), save_figures=config.get_store_plots())
 
 
-def full_train_from_config(model_config: ModelConfigLoader, store_location: str) -> None:
+def full_train_from_config(config_loader: ConfigLoader, model_config: ModelConfigLoader, store_location: str) -> None:
     """
     Full train the model with the optimal parameters
     :param model_config: the model config
@@ -234,7 +234,7 @@ def full_train_from_config(model_config: ModelConfigLoader, store_location: str)
     pretrain: Pretrain = model_config.get_pretraining()
 
     # Retrain all models with optimal parameters
-    x_train, y_train, _ = pretrain.pretrain_final(featured_data)
+    x_train, y_train, _ = get_pretrain_full_cache(config_loader, featured_data, save_output=True)
 
     logger.info("Creating model using ModelConfigLoader")
     model = model_config.set_model()

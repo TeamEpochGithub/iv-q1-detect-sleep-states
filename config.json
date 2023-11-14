@@ -22,7 +22,6 @@
         "comb_method": "addition",
         "pred_only": true
     },
-    "hpo": "1_event_1d_unet_cnn.json",
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],

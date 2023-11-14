@@ -30,9 +30,9 @@ class ConfigLoader:
                 "Config cannot have both ensemble and hpo")
 
         self.set_globals()
-        if self.config["ensemble"]:
+        if self.config.get("ensemble"):
             self.set_ensemble()
-        if self.config["hpo"]:
+        if self.config.get("hpo"):
             self.set_hpo_config()
 
     def get_config(self) -> dict:
@@ -191,8 +191,8 @@ class ConfigLoader:
         Get the hyperparameter optimization parameters from the config
         :return: the hyperparameter optimization parameters
         """
-        data_info.hpo = self.config["hpo"]
-        return self.config["hpo"]
+        data_info.hpo = self.config.get("hpo")
+        return self.config.get("hpo")
 
     def set_hpo_config(self) -> dict:
         """

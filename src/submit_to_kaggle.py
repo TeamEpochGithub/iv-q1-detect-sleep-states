@@ -17,7 +17,7 @@ def submit(config: ConfigLoader, submit=False) -> None:
     pred_with_cpu = config.get_pred_with_cpu()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
-    initial_hash = hash_config(config.get_pp_fe_pretrain(), length=5)
+    initial_hash = hash_config(config_loader.get_pretrain_config(), length=5)
 
     # Apply pretraining
     pretrain: Pretrain = config.get_pretraining()

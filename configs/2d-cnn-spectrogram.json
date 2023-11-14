@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -46,14 +46,6 @@
 
     ],
     "feature_engineering": [
-        {
-        "kind": "time",
-        "time_features": ["day", "hour"]
-    },
-    {
-        "kind": "rotation",
-        "window_sizes": [100]
-    }
     ],
 
     "pretraining": {
@@ -82,9 +74,15 @@
             "encoder_weights": "imagenet",
             "bilinear": false,
             "scale_factor": 2,
-            "mask_unlabeled": true
-            
+            "mask_unlabeled": false,
+            "lr_schedule": {
+                "t_initial": 20,
+                "warmup_t": 5,
+                "warmup_lr_init": 0.0005,
+                "lr_min": 2e-5
+            } 
         }
+        
     },
     "ensemble": {
         "models": ["Spectrogram_2D_Cnn"],

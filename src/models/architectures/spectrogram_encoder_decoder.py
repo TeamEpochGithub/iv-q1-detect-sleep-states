@@ -29,6 +29,7 @@ class SpectrogramEncoderDecoder(nn.Module):
             # so this is hardcoded to 2 for now
             in_channels=2,
             classes=1,
+            encoder_depth=config.get('encoder_depth', 5),
         )
         self.decoder = UNet1DDecoder(
             n_channels=(config.get('n_fft', 127)+1)//2 + self.num_res_features,

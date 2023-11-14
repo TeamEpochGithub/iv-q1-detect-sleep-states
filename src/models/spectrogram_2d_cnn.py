@@ -100,11 +100,11 @@ class EventSegmentation2DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
+
         self.config = config
         self.config["optimizer"] = Optimizer.get_optimizer(
             self.config["optimizer"], self.config["lr"], self.config["weight_decay"], self.model)
-        if "lr_schedule" in config:
-            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
+        if "lr_schedule" in self.config:
             config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
 
     def get_default_config(self) -> dict:

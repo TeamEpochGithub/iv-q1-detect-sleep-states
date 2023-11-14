@@ -38,6 +38,8 @@ class Loss:
                 return nn.CrossEntropyLoss(**kwargs)
             case "bce-torch":
                 return nn.BCELoss(**kwargs)
+            case "bce-logits-torch":
+                return nn.BCEWithLogitsLoss(**kwargs)
             case "focal-loss":
                 return FocalLoss(**kwargs)
             case "shrinkage-loss":

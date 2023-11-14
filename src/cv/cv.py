@@ -121,7 +121,8 @@ class CV:
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(train_df, y_pred, validate_idx) for scorer in self.scoring]
+                score = [scorer(train_df, y_pred, validate_idx)
+                         for scorer in self.scoring]
             else:
                 score = self.scoring(train_df, y_pred, validate_idx)
 
@@ -139,6 +140,7 @@ class CV:
         :return: whether to apply the CV or not
         """
         return self.apply
+
 
 class CVException(Exception):
     """Exception raised for errors in the CV."""

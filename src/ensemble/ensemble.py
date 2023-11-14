@@ -55,7 +55,7 @@ class Ensemble:
         :return: whether to only predict with the ensemble
         """
         return self.pred_only
-    
+
     def get_test_idx(self) -> np.ndarray:
         """
         Get the test indices from the ensemble

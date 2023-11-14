@@ -42,11 +42,12 @@ def main() -> None:
             # Update the wandb summary with the updated config
             wandb.run.summary.update(config_loader.get_config())
             wandb.run.name.update(config_hash)
-        
+
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
-        logger.info("If you want to use hpo with wandb, set log_to_wandb to True in config.json")
+        logger.info(
+            "If you want to use hpo with wandb, set log_to_wandb to True in config.json")
 
     # Predict with CPU
     pred_cpu = config_loader.get_pred_with_cpu()
@@ -67,7 +68,8 @@ def main() -> None:
     # This can be done via terminal and a sweep or a local cross validation run
     if config_loader.get_hpo():
         logger.info("Running HPO")
-        train_from_config(config_loader.get_hpo_config(), config_loader, store_location, hpo=True)
+        train_from_config(config_loader.get_hpo_config(),
+                          config_loader, store_location, hpo=True)
         return
 
     # Initialize models
@@ -76,7 +78,8 @@ def main() -> None:
     models = ensemble.get_models()
     if not ensemble.get_pred_only():
         for _, model_config in enumerate(models):
-            train_from_config(model_config, config_loader, store_location, hpo=False)
+            train_from_config(model_config, config_loader,
+                              store_location, hpo=False)
     else:
         logger.info("Not training models")
 

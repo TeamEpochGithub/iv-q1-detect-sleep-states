@@ -1,36 +1,28 @@
+from dataclasses import dataclass
+
 import pandas as pd
 
 from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
 
 
+@dataclass
 class RemoveUnlabeled(PP):
     """Preprocessing step that removes the NaN and unlabeled data
 
     After adding the "awake" column with AddStateLabels, this will only keep the labeled data
     by dropping all the rows where "awake" is 3 (no more event data) and optionally 2 (don't make a prediction).
     If the "window" column in present, only drop the windows where all the "awake" values are 3 or 2.
+
+    :param remove_partially_unlabeled_windows: Only applies when windowing is used.
+        If True, remove all windows that contain unlabeled data.
+        If False, only remove the fully unlabeled windows.
+    :param remove_nan: If false, remove the NaN data too. If True, keep the NaN data.
+    :param remove_entire_series: If True, remove all series that contain unlabeled data. Ignores windowing.
     """
-
-    def __init__(self, remove_partially_unlabeled_windows: bool, remove_nan: bool, remove_entire_series: bool,
-                 **kwargs: dict) -> None:
-        """Initialize the RemoveUnlabeled class
-
-        :param remove_partially_unlabeled_windows: Only applies when windowing is used.
-            If True, remove all windows that contain unlabeled data.
-            If False, only remove the fully unlabeled windows.
-        :param remove_nan: If false, remove the NaN data too. If True, keep the NaN data.
-        :param remove_entire_series: If True, remove all series that contain unlabeled data. Ignores windowing.
-        """
-        super().__init__(**kwargs | {"kind": "remove_unlabeled"})
-        self.remove_partially_unlabeled_windows = remove_partially_unlabeled_windows
-        self.remove_nan = remove_nan
-        self.remove_entire_series = remove_entire_series
-
-    def __repr__(self) -> str:
-        """Return a string representation of a RemoveUnlabeled object"""
-        return (f"{self.__class__.__name__}(partially_unlabeled_windows={self.remove_partially_unlabeled_windows}, "
-                f"remove_nan={self.remove_nan}, remove_entire_series={self.remove_entire_series})")
+    remove_partially_unlabeled_windows: bool
+    remove_nan: bool
+    remove_entire_series: bool
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Removes all the data points where there is no labeled data

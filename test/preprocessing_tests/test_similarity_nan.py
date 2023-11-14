@@ -7,6 +7,9 @@ from src.preprocessing.similarity_nan import SimilarityNan
 
 
 class SimilarityTest(TestCase):
+    def test_repr(self):
+        self.assertEqual("SimilarityNan(as_feature=False)", SimilarityNan(as_feature=False).__repr__())
+
     def test_last_window_diff(self):
         # create a series where the second and last window are the same,
         # but are not exactly a multiple of STEPS_PER_DAY

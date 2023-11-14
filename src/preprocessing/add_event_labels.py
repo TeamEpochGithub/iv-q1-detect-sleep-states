@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
@@ -9,32 +10,25 @@ from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
 
 
+@dataclass
 class AddEventLabels(PP):
     """Adds event state labels to each row of the data
 
     The event state labels results in two new columns: "state_onset" and "state_wakeup".
     The values are 0 for no event and 1 for event.
+
+    :param events_path: the path to the events csv file
+    :param id_encoding_path: the path to the encoding file of the series id
+    :param smoothing: the sigma value for the gaussian smoothing
+    :param steepness: the steepness of the gaussian smoothing
     """
+    events_path: str
+    id_encoding_path: str
+    smoothing: int = 0
+    steepness: int = 1
 
-    def __init__(self, events_path: str, id_encoding_path: str, smoothing: int = 0, steepness: int = 1, **kwargs: dict) -> None:
-        """Initialize the AddEventLabels class.
-
-        :param events_path: the path to the events csv file
-        :param id_encoding_path: the path to the encoding file of the series id
-        :param smoothing: the sigma value for the gaussian smoothing
-        """
-        super().__init__(**kwargs | {"kind": "add_event_labels"})
-
-        self.events_path: str = events_path
-        self.events: pd.DataFrame = pd.DataFrame()
-        self.smoothing: int = smoothing
-        self.steepness: int = steepness
-        self.id_encoding_path: str = id_encoding_path
-        self.id_encoding: dict = {}
-
-    def __repr__(self) -> str:
-        """Return a string representation of a AddStateLabels object"""
-        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path}, smoothing={self.smoothing})"
+    _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
+    _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.
@@ -58,10 +52,10 @@ class AddEventLabels(PP):
                            "This can cause issues when also adding event labels."
                            "Make sure your model takes the correct features.")
 
-        self.events = pd.read_csv(self.events_path)
-        self.id_encoding = json.load(open(self.id_encoding_path))
+        self._events = pd.read_csv(self.events_path)
+        self._id_encoding = json.load(open(self.id_encoding_path))
         res = self.preprocess(data)
-        del self.events
+        del self._events
         return res
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -76,7 +70,7 @@ class AddEventLabels(PP):
         data["state-wakeup"] = 0.0
 
         # apply encoding to events
-        self.events['series_id'] = self.events['series_id'].map(self.id_encoding)
+        self._events['series_id'] = self._events['series_id'].map(self._id_encoding)
 
         # iterate over the series and set the awake column
         tqdm.pandas()
@@ -86,9 +80,10 @@ class AddEventLabels(PP):
                 .reset_index(drop=True))
         return data
 
+    # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array
     def fill_series_labels(self, series: pd.DataFrame) -> pd.DataFrame:
         series_id = series['series_id'].iloc[0]
-        current_events = self.events[self.events["series_id"] == series_id]
+        current_events = self._events[self._events["series_id"] == series_id]
 
         # Only get non-nan values and convert to int
         current_onsets = current_events[current_events["event"] == "onset"]["step"].dropna().astype(int).values

@@ -1,37 +1,31 @@
+from dataclasses import dataclass
+
 import pandas as pd
 from tqdm import tqdm
 
 from .feature_engineering import FE, FEException
 from .. import data_info
+from ..logger.logger import logger
 from ..util.suncalc import get_position
 
 _SUN_FEATURES: list[str] = ["azimuth", "altitude"]
 
 
+@dataclass
 class Sun(FE):
     """Add sun features to the data
 
     The following sun-related features can be added: "azimuth", "altitude".
+
+    :param sun_features: the sun features to add
     """
+    sun_features: list[str]
 
-    def __init__(self, sun_features: str | list[str], **kwargs: dict) -> None:
-        """Initialize the Sun class
-
-        :param sun_features: the sun features to add
-        """
-        super().__init__(**kwargs | {"kind": "sun"})
-
-        if isinstance(sun_features, list):
-            self.sun_features = sun_features
-        else:
-            self.sun_features = [sun_features]
-
+    def __post_init__(self) -> None:
+        """Check if the sun features are supported"""
         if any(sun_feature not in _SUN_FEATURES for sun_feature in self.sun_features):
-            raise FEException(f"Unknown sun features: {sun_features}")
-
-    def __repr__(self) -> str:
-        """Return a string representation of a Sun object"""
-        return f"{self.__class__.__name__}(sun_features={self.sun_features})"
+            logger.critical(f"Unknown sun features: {self.sun_features}")
+            raise FEException(f"Unknown sun features: {self.sun_features}")
 
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         """Add the selected sun columns.

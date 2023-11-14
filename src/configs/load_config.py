@@ -141,6 +141,13 @@ class ConfigLoader:
         """
         return self.config["model_store_loc"]
 
+    def get_cv(self) -> CV:
+        """
+        Get the cross validation method
+        :return: the cross validation method
+        """
+        return CV(**self.config["cv"])
+
     def set_ensemble(self) -> None:
         """
         Reads each model config file and gets the ensemble from the config

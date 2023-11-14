@@ -75,7 +75,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
         model_name + "-" + initial_hash + model.hash + ".pt"
 
     # Get cv object
-    cv = model_config.get_cv()
+    cv = config_loader.get_cv()
 
     def run_cv():
         # ------------------------- #

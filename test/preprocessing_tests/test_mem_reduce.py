@@ -6,6 +6,9 @@ from src.preprocessing.mem_reduce import MemReduce
 
 
 class Test(TestCase):
+    def test_repr(self):
+        self.assertEqual("MemReduce(id_encoding_path='dummy')", MemReduce(id_encoding_path='dummy').__repr__())
+
     def test_mem_reduce(self):
         # read the data
         mem_reducer = MemReduce()

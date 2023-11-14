@@ -1,22 +1,17 @@
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 
 from ..preprocessing.pp import PP
 
 
+@dataclass
 class AddNoise(PP):
     """Adds noise to the data
 
     Adds random Gaussian distributed noise to the "anglez" column.
     """
-
-    def __init__(self, **kwargs: dict) -> None:
-        """Initialize the AddNoise class"""
-        super().__init__(**kwargs | {"kind": "add_noise"})
-
-    def __repr__(self) -> str:
-        """Return a string representation of a AddNoise object"""
-        return f"{self.__class__.__name__}()"
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by adding noise to the data.

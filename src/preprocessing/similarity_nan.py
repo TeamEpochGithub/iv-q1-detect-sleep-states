@@ -1,16 +1,20 @@
-from src import data_info
-from src.preprocessing.pp import PP
+from dataclasses import dataclass
+
 import numpy as np
-from tqdm import tqdm
 import pandas as pd
+from tqdm import tqdm
+
+from src import data_info
 from src.logger.logger import logger
+from src.preprocessing.pp import PP
 
 
+@dataclass
 class SimilarityNan(PP):
+    # TODO Add docstrings for the class and preprocess function and complete the docstring for the similarity_nan function
+    # TODO Add type hints to the similarity_nan function
 
-    def __init__(self, as_feature=False, **kwargs):
-        super().__init__(**kwargs | {"kind": "similarity_nan"})
-        self.as_feature = as_feature
+    as_feature: bool = False
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         tqdm.pandas()
@@ -31,7 +35,8 @@ class SimilarityNan(PP):
 
         # pad the series to a multiple of steps per day
         feature_np = series['anglez'].to_numpy()
-        padded = np.pad(feature_np, (0, data_info.window_size - (len(series) % data_info.window_size)), 'constant', constant_values=0)
+        padded = np.pad(feature_np, (0, data_info.window_size - (len(series) % data_info.window_size)), 'constant',
+                        constant_values=0)
 
         # compute the absolute difference between each day
         days = len(padded) // data_info.window_size

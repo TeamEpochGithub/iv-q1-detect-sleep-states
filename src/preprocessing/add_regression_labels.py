@@ -1,3 +1,5 @@
+from dataclasses import dataclass, field
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -9,28 +11,20 @@ from ..preprocessing.pp import PP, PPException
 import json
 
 
+@dataclass
 class AddRegressionLabels(PP):
     """Preprocessing step that adds the event labels to the data
 
     This will add the event labels to the data by using the event data.
+
+    :param events_path: the path to the events csv file
+    :param id_encoding_path: the path to the encoding file of the series id
     """
+    events_path: str
+    id_encoding_path: str
 
-    def __init__(self, events_path: str, id_encoding_path: str, **kwargs: dict) -> None:
-        """Initialize the AddRegressionLabels class
-
-        :param events_path: the path to the events csv file
-        :param id_encoding_path: the path to the encoding file of the series id
-        """
-        super().__init__(**kwargs | {"kind": "add_regression_labels"})
-
-        self.events_path: str = events_path
-        self.events: pd.DataFrame = pd.DataFrame()
-        self.id_encoding_path: str = id_encoding_path
-        self.id_encoding: dict = {}
-
-    def __repr__(self) -> str:
-        """Return a string representation of a AddRegressionLabels object"""
-        return f"{self.__class__.__name__}(events_path={self.events_path}, id_encoding_path={self.id_encoding_path})"
+    _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
+    _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Run the preprocessing step.
@@ -50,13 +44,14 @@ class AddRegressionLabels(PP):
                 "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep) for state segmentation models. This can cause issues when also adding regression labels."
                 "Make sure your model takes the correct features.")
         if "state-onset" in data.columns:
-            logger.warning("State-onset column is present, for state segmentation models. This can cause issues when also adding regression labels."
-                           "Make sure your model takes the correct features.")
+            logger.warning(
+                "State-onset column is present, for state segmentation models. This can cause issues when also adding regression labels."
+                "Make sure your model takes the correct features.")
 
-        self.events = pd.read_csv(self.events_path)
-        self.id_encoding = json.load(open(self.id_encoding_path))
+        self._events = pd.read_csv(self.events_path)
+        self._id_encoding = json.load(open(self.id_encoding_path))
         res = self.preprocess(data)
-        del self.events
+        del self._events
         return res
 
     def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -79,8 +74,8 @@ class AddRegressionLabels(PP):
         data["wakeup-NaN"] = np.int8(1)
 
         # apply encoding to events
-        self.events['series_id'] = self.events['series_id'].map(
-            self.id_encoding)
+        self._events['series_id'] = self._events['series_id'].map(
+            self._id_encoding)
 
         # iterate over the series and set the awake column
         tqdm.pandas()
@@ -97,7 +92,7 @@ class AddRegressionLabels(PP):
         :return: the series with the onset/wakeup and onset-NaN/wakeup-Nan columns filled
         """
         series_id = series['series_id'].iloc[0]
-        current_events = self.events[self.events["series_id"] == series_id]
+        current_events = self._events[self._events["series_id"] == series_id]
 
         # Only get non-nan values and convert to int
         current_onsets = current_events[current_events["event"]

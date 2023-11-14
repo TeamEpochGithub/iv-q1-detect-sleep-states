@@ -1,29 +1,29 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
 import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 
 
-class RollingWindow(FE):
+@dataclass
+class RollingWindow(FE, ABC):
     """Base class for features that need a rolling window.
 
     # TODO Describe this class
+    # TODO Describe window_sizes and features
     """
 
-    def __init__(self, window_sizes: list[int], features: list[str], **kwargs: dict) -> None:
-        """Initialize the Rolling Window class
+    window_sizes: list[int]
+    features: list[str]
 
-        # TODO Describe window_sizes and features
-        :param window_sizes: ???
-        :param features: ???
-        """
-        super().__init__(**kwargs)
-
-        self.window_sizes = window_sizes
+    def __post_init__(self) -> None:
+        """Sort the window sizes and features"""
         self.window_sizes.sort()
-        self.features = features
         self.features.sort()
 
+    @abstractmethod
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         """Process the data. This method should be overridden by the child class.
 

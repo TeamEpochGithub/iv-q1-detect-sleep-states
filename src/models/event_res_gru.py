@@ -106,6 +106,8 @@ class EventResGRU(Model):
                 "activation": "relu",
                 "hidden_layers": 8,
                 "flatten": False,
+                "bidir": True,
+
             }
         }
 

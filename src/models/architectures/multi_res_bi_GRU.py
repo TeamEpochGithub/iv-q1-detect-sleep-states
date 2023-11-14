@@ -5,7 +5,8 @@ from src.models.architectures.res_bi_GRU import ResidualBiGRU
 
 
 class MultiResidualBiGRU(nn.Module):
-    def __init__(self, input_size, hidden_size=64, out_size=2, n_layers=5, bidir=True, activation: str = None, flatten: bool = False, model_name=''):
+    def __init__(self, input_size, hidden_size=64, out_size=2, n_layers=5, bidir=True, activation: str = None, flatten: bool = False, dropout: float = 0,
+                 internal_layers: int = 1, model_name=''):
         super(MultiResidualBiGRU, self).__init__()
 
         self.input_size = input_size
@@ -13,12 +14,13 @@ class MultiResidualBiGRU(nn.Module):
         self.out_size = out_size
         self.n_layers = n_layers
         self.flatten = flatten
+        self.dropout = dropout
 
         self.fc_in = nn.Linear(input_size, hidden_size)
         self.ln = nn.LayerNorm(hidden_size)
         self.res_bigrus = nn.ModuleList(
             [
-                ResidualBiGRU(hidden_size, n_layers=1, bidir=bidir)
+                ResidualBiGRU(hidden_size, internal_layers=internal_layers, bidir=bidir,dropout=dropout)
                 for _ in range(n_layers)
             ]
         )

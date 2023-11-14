@@ -1,19 +1,38 @@
+import torch
 from torch import nn
 
 
 class ResidualBiGRU(nn.Module):
-    def __init__(self, hidden_size, n_layers=1, bidir=True):
+    def __init__(self, hidden_size, internal_layers=1, bidir=True, dropout=0):
         super(ResidualBiGRU, self).__init__()
 
         self.hidden_size = hidden_size
-        self.n_layers = n_layers
+        self.internal_layers = internal_layers
 
         self.gru = nn.GRU(
             hidden_size,
             hidden_size,
-            n_layers,
+            internal_layers,
             batch_first=True,
-            bidirectional=bidir,
+            bidirectional=bidir, dropout=dropout
+        )
+
+
+        # These are added for testing, LSTM performs a bit worse and RNN is complete garbage.
+        self.lstm = nn.LSTM(
+            hidden_size,
+            hidden_size,
+            internal_layers,
+            batch_first=True,
+            bidirectional=bidir, dropout=dropout
+        )
+
+        self.rnn = nn.RNN(
+            hidden_size,
+            hidden_size,
+            internal_layers,
+            batch_first=True,
+            bidirectional=bidir, dropout=dropout
         )
         dir_factor = 2 if bidir else 1
         self.fc1 = nn.Linear(
@@ -25,7 +44,6 @@ class ResidualBiGRU(nn.Module):
 
     def forward(self, x, h=None):
         res, new_h = self.gru(x, h)
-        # res.shape = (batch_size, sequence_size, 2*hidden_size)
 
         res = self.fc1(res)
         res = self.ln1(res)

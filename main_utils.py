@@ -1,7 +1,8 @@
 import os
 
 import pandas as pd
-from src import data_info, get_processed_data
+from src import data_info
+from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 from src.configs.load_model_config import ModelConfigLoader
 from src.ensemble.ensemble import Ensemble
@@ -54,7 +55,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
     logger.info("Splitting data into train and test...")
     data_info.substage = "pretrain_split"
 
-    x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(config_loader, featured_data, save_output=True)
+    x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(model_config, featured_data, save_output=True)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
@@ -74,7 +75,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
         model_name + "-" + initial_hash + model.hash + ".pt"
 
     # Get cv object
-    cv = config_loader.get_cv()
+    cv = model_config.get_cv()
 
     def run_cv():
         # ------------------------- #

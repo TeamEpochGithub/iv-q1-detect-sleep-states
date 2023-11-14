@@ -17,10 +17,10 @@
         "longitude": -73.935242
     },
     "ensemble": {
-        "models": ["1_event_1d_unet_cnn.json"],
+        "models": ["gru.json"],
         "weights": [1],
         "comb_method": "addition",
-        "pred_only": true
+        "pred_only": false
     },
     "cv": {
         "splitter": "group_k_fold",

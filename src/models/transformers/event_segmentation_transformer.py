@@ -227,7 +227,7 @@ class EventSegmentationTransformer(BaseTransformer):
 
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool = False) -> ndarray[Any, dtype[Any]]:
+    def pred(self, data: np.ndarray[Any, dtype[Any]], pred_with_cpu: bool = False, raw_output: bool = False) -> ndarray[Any, dtype[Any]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -307,6 +307,10 @@ class EventSegmentationTransformer(BaseTransformer):
         if data_info.downsampling_factor > 1:
             predictions = np.repeat(
                 predictions, data_info.downsampling_factor, axis=2)
+
+        # Return raw output if necessary
+        if raw_output:
+            return predictions
 
         all_predictions = []
         all_confidences = []

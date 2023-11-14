@@ -5,6 +5,7 @@ import os
 import numpy as np
 from src.get_processed_data import get_processed_data
 from src.pretrain.pretrain import Pretrain
+from src.util.get_pretrain_cache import get_pretrain_split_cache
 
 from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
@@ -63,7 +64,7 @@ class Ensemble:
         """
         return self.test_idx
 
-    def pred(self, config, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, config_loader, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -75,7 +76,7 @@ class Ensemble:
         """
 
         # Initialize models
-        store_location = config.get_model_store_loc()
+        store_location = config_loader.get_model_store_loc()
         logger.info("Model store location: " + store_location)
 
         # Initialize models
@@ -88,7 +89,7 @@ class Ensemble:
         # model_pred is (onset, wakeup) tuples for each window
         for i, model_config in enumerate(self.model_configs):
 
-            config.reset_globals()
+            config_loader.reset_globals()
             model_name = model_config.get_name()
 
             # ------------------------------------------- #
@@ -120,8 +121,7 @@ class Ensemble:
             logger.info("Splitting data into train and test...")
             data_info.substage = "pretrain_split"
 
-            x_train, x_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
-                featured_data)
+            x_train, x_test, y_train, y_test, train_idx, test_idx, groups = get_pretrain_split_cache(model_config, featured_data, save_output=True)
             self.test_idx = test_idx
 
             logger.info("X Train data shape (size, window_size, features): " + str(
@@ -153,14 +153,14 @@ class Ensemble:
             model = model_config.get_model()
             # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
             if hasattr(model, 'device'):
-                model_pred = model.pred(x_test, pred_with_cpu=pred_with_cpu)
+                model_pred = model.pred(x_test, pred_with_cpu=pred_with_cpu, raw_output=True)
             else:
-                model_pred = model.pred(x_test)
+                model_pred = model.pred(x_test, raw_output=True)
 
-            # Model_pred is tuple of np.array(onset, awake), np.array(confidences) for each window
+            # Model_pred is tuple of np.array(onset, awake) for each window
             # Split the series of tuples into two column
-            predictions.append(model_pred[0])
-            confidences.append(model_pred[1])
+            predictions.append(model_pred)
+
 
         # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 

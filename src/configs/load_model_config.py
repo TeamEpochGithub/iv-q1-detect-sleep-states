@@ -10,6 +10,7 @@ from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
 from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
+from ..models.event_res_gru import EventResGRU
 from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
@@ -78,6 +79,16 @@ class ModelConfigLoader:
         """
         return Pretrain.from_config(self.config["pretraining"])
 
+    def get_pretrain_config(self) -> dict:
+        """Get the data_info, preprocessing, feature_engineering and pretraining from the config
+
+        This is necessary for the creating and retrieving the cached pretrain arrays.
+
+        :return: the slice config with relevant parameters for pretraining
+        """
+        return {k: self.config[k] for k in ["data_info", "preprocessing", "feature_engineering", "pretraining"]
+                if k in self.config}
+
     def set_model(self) -> Model:
         """
         Set the model from the config
@@ -92,16 +103,21 @@ class ModelConfigLoader:
             case "classic-base-model":
                 curr_model = ClassicBaseModel(model_config, model_name)
             case "seg-simple-1d-cnn":
-                curr_model = SegmentationSimple1DCNN(model_config, model_name)
+                curr_model = SegmentationSimple1DCNN(
+                    model_config, model_name)
             case "transformer":
                 curr_model = Transformer(model_config, model_name)
             case "segmentation-transformer":
-                curr_model = SegmentationTransformer(model_config, model_name)
+                curr_model = SegmentationTransformer(
+                    model_config, model_name)
             case "event-segmentation-transformer":
                 curr_model = EventSegmentationTransformer(
                     model_config, model_name)
             case "seg-unet-1d-cnn":
-                curr_model = SegmentationUnet1DCNN(model_config, model_name)
+                curr_model = SegmentationUnet1DCNN(
+                    model_config, model_name)
+            case "event-res-gru":
+                curr_model = EventResGRU(model_config, model_name)
             case "event-seg-unet-1d-cnn":
                 curr_model = EventSegmentationUnet1DCNN(
                     model_config, model_name)
@@ -112,6 +128,7 @@ class ModelConfigLoader:
                 logger.critical("Model not found: " + model_config["type"])
                 raise ConfigException(
                     "Model not found: " + model_config["type"])
+
         self.model = curr_model
         return curr_model
 

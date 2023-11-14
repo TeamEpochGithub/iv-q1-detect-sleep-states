@@ -214,7 +214,7 @@ class EventResGRU(Model):
                     activation_delay=activation_delay)
         logger.info("Full train complete!")
 
-    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -262,6 +262,10 @@ class EventResGRU(Model):
         downsampling_factor = data_info.downsampling_factor
         if downsampling_factor > 1:
             predictions = np.repeat(predictions, downsampling_factor, axis=1)
+
+        # Return raw output if necessary
+        if raw_output:
+            return predictions
 
         all_predictions = []
         all_confidences = []
@@ -336,6 +340,7 @@ class EventResGRU(Model):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
+        torch.manual_seed(42)
         self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])
 
     def reset_optimizer(self) -> None:

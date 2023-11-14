@@ -290,7 +290,7 @@ class EventSegmentationUnet1DCNN(Model):
         if wandb.run is not None:
             self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
-    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabeled data (step, features)
@@ -341,6 +341,10 @@ class EventSegmentationUnet1DCNN(Model):
         if data_info.downsampling_factor > 1:
             predictions = np.repeat(
                 predictions, data_info.downsampling_factor, axis=2)
+
+        # Return raw output if necessary
+        if raw_output:
+            return predictions
 
         all_predictions = []
         all_confidences = []

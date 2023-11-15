@@ -46,6 +46,8 @@
 
     ],
     "feature_engineering": [
+        {"kind": "rotation",
+        "window_sizes": [360]}
     ],
 
     "pretraining": {
@@ -62,11 +64,11 @@
             "type": "Spectrogram_2D_Cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 40,
+            "epochs": 50,
             "batch_size": 64,
-            "lr": 0.0005,
+            "lr": 0.00005,
             "hidden_layers": 8,
-            "early_stopping": 8,
+            "early_stopping": 20,
             "threshold": 0,
             "n_fft": 63,
             "hop_length": 6,
@@ -77,12 +79,13 @@
             "mask_unlabeled": true,
             "encoder_depth": 5,
             "use_augmentation": false,
-            "clip_awake": false,
+            "clip_awake": true,
+            "use_activation": true,
             "lr_schedule": {
-                "t_initial": 15,
-                "warmup_t": 5,
+                "t_initial": 3,
+                "warmup_t": 0,
                 "warmup_lr_init": 0.00005,
-                "lr_min": 5e-4
+                "lr_min": 0.000015
             } 
         }
         
@@ -93,7 +96,7 @@
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

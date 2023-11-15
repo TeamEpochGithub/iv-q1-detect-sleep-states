@@ -45,7 +45,14 @@
         }
 
     ],
-    "feature_engineering": [
+    "feature_engineering": [{
+        "kind": "time",
+        "time_features": ["day", "hour", "minute", "second"]    
+    },
+    {
+        "kind": "rotation",
+        "window_sizes": [100]
+    }
     ],
 
     "pretraining": {
@@ -63,23 +70,24 @@
             "loss": "mse-torch",
             "optimizer": "adam-torch",
             "epochs": 200,
-            "batch_size": 32,
+            "batch_size": 16,
             "lr": 0.0005,
             "hidden_layers": 8,
-            "early_stopping": 15,
+            "early_stopping": 20,
             "threshold": 0,
-            "n_fft": 127,
-            "hop_length": 6,
-            "encoder_name": "resnet34",
+            "n_fft": 63,
+            "hop_length": 2,
+            "encoder_name": "resnext50_32x4d",
             "encoder_weights": "imagenet",
             "bilinear": false,
             "scale_factor": 2,
             "mask_unlabeled": false,
+            "encoder_depth": 5,
             "lr_schedule": {
-                "t_initial": 20,
+                "t_initial": 15,
                 "warmup_t": 5,
-                "warmup_lr_init": 0.0005,
-                "lr_min": 2e-5
+                "warmup_lr_init": 0.005,
+                "lr_min": 2e-8
             } 
         }
         
@@ -90,7 +98,7 @@
         "comb_method": "addition"
     },
     "ensemble_loss": "mse-torch",
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

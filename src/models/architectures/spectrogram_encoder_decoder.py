@@ -18,7 +18,7 @@ class SpectrogramEncoderDecoder(nn.Module):
         self.spectrogram = nn.Sequential(
             T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
             T.AmplitudeToDB(top_db=80),
-            SpecNormalize(),
+            nn.BatchNorm2d(num_features=2)
         )
         self.config = config
         self.num_res_features = in_channels - 2

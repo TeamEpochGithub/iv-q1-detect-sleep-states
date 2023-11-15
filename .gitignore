@@ -173,7 +173,7 @@ data/
 wandb/
 
 # Ignore zip files
-src.zip
+*.zip
 
 # Ignore submission files
 submission.csv

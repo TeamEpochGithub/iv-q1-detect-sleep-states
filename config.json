@@ -18,7 +18,7 @@
     },
     "ensemble": {
         "models": ["gru.json", "gru2.json", "gru3.json"],
-        "weights": [1],
+        "weights": [1, 1, 1],
         "comb_method": "confidence_average",
         "pred_only": false
     },

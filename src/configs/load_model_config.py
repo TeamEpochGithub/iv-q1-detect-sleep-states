@@ -182,6 +182,7 @@ class ModelConfigLoader:
         """
         return self.store_location
 
+
 # ConfigException class
 class ConfigException(Exception):
     """

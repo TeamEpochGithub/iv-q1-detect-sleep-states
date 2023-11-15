@@ -31,20 +31,22 @@ class Ensemble:
             self.model_configs = model_configs
 
         if weight_matrix is None:
-            self.weight_matrix = np.ones(len(self.model_configs))
-        elif len(weight_matrix) != len(self.model_configs):
+            weight_matrix = np.ones(len(self.model_configs))
+        
+        # Apply softmax to weight matrix
+        self.weight_matrix = np.exp(weight_matrix) / np.sum(np.exp(weight_matrix))
+
+        if len(self.weight_matrix) != len(self.model_configs):
             logger.critical(
                 "Weight matrix length does not match number of models")
             raise ValueError(
                 "Weight matrix length does not match number of models")
-        elif np.sum(weight_matrix) != 1:
+        elif np.sum(self.weight_matrix) != 1:
             logger.critical("Weight matrix must sum to 1")
             raise ValueError("Weight matrix must sum to 1")
-        elif np.any(weight_matrix) <= 0:
+        elif np.any(self.weight_matrix) <= 0:
             logger.critical("Weight matrix must be positive")
             raise ValueError("Weight matrix must be positive")
-        else:
-            self.weight_matrix = weight_matrix
 
     def get_models(self):
         """

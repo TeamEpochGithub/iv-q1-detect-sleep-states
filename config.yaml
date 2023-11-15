@@ -6,7 +6,7 @@ command:
   - ${args}
 method: bayes
 project: detect-sleep-states
-name: sweep-gru
+name: sweep-gru-ensemble-test
 metric:
   goal: maximize
   name: cv_score
@@ -15,6 +15,65 @@ parameters:
     parameters:
       name:
         value: gru_sweep
+      preprocessing:
+        value: [
+          {
+              "kind": "mem_reduce",
+              "id_encoding_path": "series_id_encoding.json"
+          },
+          {
+              "kind": "similarity_nan",
+              "as_feature": true
+          },
+          {
+              "kind": "add_state_labels",
+              "id_encoding_path": "series_id_encoding.json",
+              "events_path": "data/raw/train_events.csv",
+              "use_similarity_nan": true,
+              "fill_limit": 8640,
+              "nan_tolerance_window": 5
+          },
+          {
+              "kind": "add_event_labels",
+              "id_encoding_path": "series_id_encoding.json",
+              "events_path": "data/raw/train_events.csv",
+              "smoothing": 0
+          },
+          {
+              "kind": "split_windows"
+          }]
+      feature_engineering:
+        value: [
+          {
+              "kind": "time",
+              "time_features": ["hour","minute"]
+          },
+          {
+              "kind": "sun",
+              "sun_features": ["azimuth", "altitude"]
+          },
+          {
+              "kind": "rotation",
+              "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+          }]
+      pretraining:
+        parameters:
+          downsample:
+            parameters:
+              features:
+                value: ["f_anglez", "f_enmo"]
+              methods:
+                value: ["min", "max", "mean", "std", "median", "range", "var"]
+              standard:
+                value: "mean"
+          test_size:
+            value: 0.2
+          scaler:
+            parameters:
+              kind:
+                value: "standard-scaler"
+              copy:
+                value: true
       architecture:
         parameters:
           activation_delay:
@@ -27,7 +86,7 @@ parameters:
             max: 50
             min: 1
           epochs:
-            value: 250
+            value: 5
           loss:
             values:
               - mse-torch

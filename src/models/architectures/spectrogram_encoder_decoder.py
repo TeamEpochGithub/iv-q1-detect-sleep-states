@@ -15,11 +15,6 @@ class SpectrogramEncoderDecoder(nn.Module):
 
     def __init__(self, in_channels, out_channels, model_type, config):
         super(SpectrogramEncoderDecoder, self).__init__()
-        self.spectrogram = nn.Sequential(
-            T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
-            T.AmplitudeToDB(top_db=80),
-            nn.BatchNorm2d(num_features=2)
-        )
         self.config = config
         self.num_res_features = in_channels - 2
         self.encoder = Unet(
@@ -41,11 +36,10 @@ class SpectrogramEncoderDecoder(nn.Module):
 
     def forward(self, x):
         # Pass only enmo and anglez to the spectrogram
-        x_spec = self.spectrogram(x[:, 0:2, :])
-        x_encoded = self.encoder(x_spec).squeeze(1)
+        x_encoded = self.encoder(x).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
-        y = self.decoder(cat((x_encoded, x[:, 2:, ::self.config.get('hop_length')]), dim=1))
+        y = self.decoder(x_encoded)
         return y.permute(0, 2, 1)
 
 

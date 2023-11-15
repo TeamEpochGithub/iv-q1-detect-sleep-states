@@ -18,6 +18,8 @@ from ..optimizer.optimizer import Optimizer
 from timm.scheduler import CosineLRScheduler
 from ..util.state_to_event import pred_to_event_state
 import matplotlib.pyplot as plt
+import torchaudio.transforms as T
+from torch import nn
 
 
 class EventSegmentation2DCNN(Model):
@@ -226,6 +228,12 @@ class EventSegmentation2DCNN(Model):
             f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Create a dataloader from the dataset
+
+        # Create a custom dataset class to apply the spectrogram to the data
+
+        train_dataset = SpectrogramDataset(train_dataset, self.config)
+        test_dataset = SpectrogramDataset(test_dataset, self.config)
+
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
         test_dataloader = torch.utils.data.DataLoader(
@@ -302,6 +310,8 @@ class EventSegmentation2DCNN(Model):
             f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
         logger.info(
             f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+
+        train_dataset = SpectrogramDataset(train_dataset, self.config)
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(
@@ -464,4 +474,36 @@ class EventSegmentation2DCNN(Model):
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model = SpectrogramEncoderDecoder(
-            in_channels=len(data_info.X_columns), out_channels=1, model_type=self.model_type, config=self.config)
+            in_channels=len(data_info.X_columns), out_channels=1, model_type=self.model_type, config=self.config)        
+
+
+class SpectrogramDataset(torch.utils.data.TensorDataset):
+    def __init__(self, dataset, config):
+        super().__init__()
+        self.dataset = dataset
+        self.spectrogram = nn.Sequential(
+            T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
+            T.AmplitudeToDB(top_db=80),
+            SpecNormalize()
+        )
+
+    def __getitem__(self, index):
+        x, y = self.dataset[index]
+        x = self.spectrogram(x)
+        return x, y
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+class SpecNormalize(nn.Module):
+    def __init__(self, eps: float = 1e-8):
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, x):
+        # x: (batch, channel, freq, time)
+        min_ = x.min(dim=-1, keepdim=True)[0].min(dim=-2, keepdim=True)[0]
+        max_ = x.max(dim=-1, keepdim=True)[0].max(dim=-2, keepdim=True)[0]
+
+        return (x - min_) / (max_ - min_ + self.eps)

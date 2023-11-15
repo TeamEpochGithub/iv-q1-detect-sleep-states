@@ -183,16 +183,18 @@ class EventSegmentation2DCNN(Model):
                 [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
             y_test = y_test[:, :, np.array(
                 [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
+            if self.config.get('clip_awake', False):
+                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
+                y_test[:, :, 3] = np.clip(y_test[:, :, 3], 0, 1)
         else:
             y_train = y_train[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
             y_test = y_test[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
-
+            if self.config.get('clip_awake', False):
+                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+                y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
         # clip the awake state to 0 and 1
-        if self.config.get('clip_awake', False):
-            y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
-            y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
 
         # our pretrain downsampling puts the median of 12 items into one item
         # this loop also does that
@@ -289,32 +291,32 @@ class EventSegmentation2DCNN(Model):
         if mask_unlabeled:
             y_train = y_train[:, :, np.array(
                 [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
+            if self.config.get('clip_awake', False):
+                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
         else:
             y_train = y_train[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
-            # clip the awake state to 0 and 1
             if self.config.get('clip_awake', False):
                 y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
 
-            # downsample the y data
-            y_train_downsampled = []
-            for i in range(y_train.shape[0]):
-                downsampled_channels = []
-                for j in range(y_train.shape[2]):
-                    downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
-                y_train_downsampled.append(np.array(downsampled_channels))
-            y_train = torch.from_numpy(np.array(y_train_downsampled))
-            del y_train_downsampled
+        # downsample the y data
+        y_train_downsampled = []
+        for i in range(y_train.shape[0]):
+            downsampled_channels = []
+            for j in range(y_train.shape[2]):
+                downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
+            y_train_downsampled.append(np.array(downsampled_channels))
+        y_train = torch.from_numpy(np.array(y_train_downsampled))
+        del y_train_downsampled
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+        train_dataset = SpectrogramDataset(train_dataset, self.config)
 
         # Print the shapes and types of train and test
         logger.info(
             f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
         logger.info(
             f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-
-        train_dataset = SpectrogramDataset(train_dataset, self.config)
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(
@@ -351,13 +353,14 @@ class EventSegmentation2DCNN(Model):
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
-        dataloader = DataLoader(dataset, batch_size=self.config.get('batch_size', 8), shuffle=False)
+        dataset = SpectrogramDataset(dataset, self.config)
+        dataloader = DataLoader(dataset, batch_size=self.config.get('batch_size', 1), shuffle=False)
 
         # Onset predictions
         predictions = []
         with torch.no_grad():
             for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
-                batch_data = batch_data[0].to(device)
+                batch_data = batch_data.to(device)
 
                 # Make a batch prediction
                 batch_prediction = self.model(batch_data)
@@ -385,7 +388,7 @@ class EventSegmentation2DCNN(Model):
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
-            plt.plot(pred[0, :])
+            # plt.plot(pred[0, :])
             # plt.plot(pred[1, :])
             # plt.plot(pred[2, :])
             # plt.vlines(events[0], 0, 1, colors='r', linestyles='dashed')
@@ -477,7 +480,7 @@ class EventSegmentation2DCNN(Model):
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model = SpectrogramEncoderDecoder(
-            in_channels=len(data_info.X_columns), out_channels=1, model_type=self.model_type, config=self.config)        
+            in_channels=len(data_info.X_columns), out_channels=1, model_type=self.model_type, config=self.config)
 
 
 class SpectrogramDataset(torch.utils.data.TensorDataset):
@@ -503,11 +506,16 @@ class SpectrogramDataset(torch.utils.data.TensorDataset):
         ])
 
     def __getitem__(self, index):
-        x, y = self.dataset[index]
-        x = self.spectrogram(x)
-        if self.config.get('use_augmentation', False):
-            x = self.transforms(x)
-        return x, y
+        if len(self.dataset.tensors) == 2:
+            x, y = self.dataset[index]
+            x = self.spectrogram(x)
+            if self.config.get('use_augmentation', False):
+                x = self.transforms(x)
+            return x, y
+        else:
+            x = self.dataset[index]
+            x = self.spectrogram(x[0].unsqueeze(0)).squeeze(0)
+            return x
 
     def __len__(self):
         return len(self.dataset)

@@ -1,34 +1,18 @@
 import json
-from functools import cached_property
 
-from torch import nn
-
+from src.cv.cv import CV
 from .. import data_info
-from ..cv.cv import CV
 from ..ensemble.ensemble import Ensemble
-from ..feature_engineering.feature_engineering import FE
+from .load_model_config import ModelConfigLoader
 from ..logger.logger import logger
-from ..loss.loss import Loss
-from ..models.classic_base_model import ClassicBaseModel
-from ..models.event_res_gru import EventResGRU
-from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
-from ..models.example_model import ExampleModel
-from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
-from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
-from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
-from ..models.transformers.segmentation_transformer import SegmentationTransformer
-from ..models.transformers.transformer import Transformer
-from ..preprocessing.pp import PP
-from ..pretrain.pretrain import Pretrain
 
 
 class ConfigLoader:
     """Class to load the configuration from a JSON file"""
 
     def __init__(self, config_path: str) -> None:
-        """Initialize the ConfigLoader class
-
+        """
+        Initialize the ConfigLoader class
         :param config_path: the path to the config.json file
         """
         self.config_path = config_path
@@ -37,19 +21,36 @@ class ConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+        # Can't have ensemble and hpo in one config
+        if "ensemble" in self.config and "hpo" in self.config:
+            logger.critical(
+                "Config cannot have both ensemble and hpo")
+            raise ConfigException(
+                "Config cannot have both ensemble and hpo")
+
         self.set_globals()
+        if self.config.get("ensemble"):
+            self.set_ensemble()
+        if self.config.get("hpo"):
+            self.set_hpo_config()
+        self.name = self.config["name"]
 
-    # Get full configuration
     def get_config(self) -> dict:
-        """Get the full configuration
-
+        """
+        Get the full configuration
         :return: the full configuration dict
         """
         return self.config
 
-    def get_log_to_wandb(self) -> bool:
-        """Get whether to log to Weights & Biases
+    def get_name(self) -> str:
+        """
+        Get the name of the config
+        :return: the name of the config
+        """
 
+    def get_log_to_wandb(self) -> bool:
+        """
+        Get whether to log to Weights & Biases
         :return: whether to log to Weights & Biases
         """
         return self.config["log_to_wandb"]
@@ -91,6 +92,11 @@ class ConfigLoader:
         data_info.cv_current_fold = 0
         data_info.cv_unique_series = []
 
+        data_info.X_columns = {}
+        data_info.y_columns = {}
+
+        data_info.cv_current_fold = 0
+
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
 
@@ -99,8 +105,8 @@ class ConfigLoader:
         return self.config["train_series_path"]
 
     def get_train_events_path(self) -> str:
-        """Get the path to the training labels data
-
+        """
+        Get the path to the training labels data
         :return: the path to the train_events.csv file
         """
         return self.config["train_events_path"]
@@ -112,21 +118,6 @@ class ConfigLoader:
         """
         return self.config["test_series_path"]
 
-    def get_pp_steps(self, training: bool) -> list[PP]:
-        """Get the preprocessing steps classes
-
-        :param training: whether the preprocessing is for training or testing
-        :return: the preprocessing steps and their names
-        """
-        return PP.from_config(self.config["preprocessing"], training)
-
-    def get_pp_out(self) -> str:
-        """Get the path to the preprocessing output folder
-
-        :return: the path to the preprocessing output folder
-        """
-        return self.config["processed_loc_out"]
-
     def get_pred_with_cpu(self) -> bool:
         """Get whether to use CPU for prediction
 
@@ -134,104 +125,19 @@ class ConfigLoader:
         """
         return self.config["pred_with_cpu"]
 
-    def get_pp_in(self) -> str:
+    def get_processed_in(self) -> str:
         """Get the path to the preprocessing input data folder
 
         :return: the path to the preprocessing input data folder
         """
         return self.config["processed_loc_in"]
 
-    def get_fe_steps(self) -> list[FE]:
-        """Get the feature engineering steps classes
+    def get_processed_out(self) -> str:
+        """Get the path to the preprocessing output folder
 
-        :return: the feature engineering steps and their names
+        :return: the path to the preprocessing output folder
         """
-        return FE.from_config(self.config["feature_engineering"])
-
-    def get_pp_fe_pretrain(self) -> str:
-        """Gets the config of preprocessing, feature engineering and pretraining as a string. This is used to hash in the future.
-        :return: the config of preprocessing, feature engineering and pretraining as a string
-        """
-        return str(self.config['preprocessing']) + str(self.config['feature_engineering']) + str(
-            self.config["pretraining"])
-
-    def get_fe_out(self) -> str:
-        """Get the path to the feature engineering output folder
-
-        :return: the path to the feature engineering output folder
-        """
-        return self.config["fe_loc_out"]
-
-    def get_fe_in(self) -> str:
-        """Get the path to the feature engineering input data folder
-
-        :return: the path to the feature engineering input data folder
-        """
-        return self.config["fe_loc_in"]
-
-    def get_pretraining(self) -> Pretrain:
-        """Get the pretraining parameters
-
-        :return: the pretraining object
-        """
-        return Pretrain.from_config(self.config["pretraining"])
-
-    def get_pretrain_config(self) -> dict:
-        """Get the data_info, preprocessing, feature_engineering and pretraining from the config
-
-        This is necessary for the creating and retrieving the cached pretrain arrays.
-
-        :return: the slice config with relevant parameters for pretraining
-        """
-        return {k: self.config[k] for k in ["data_info", "preprocessing", "feature_engineering", "pretraining"]
-                if k in self.config}
-
-    # Function to retrieve model data
-    def get_models(self) -> dict:
-        """Get the models from the config
-
-        :return: the models
-        """
-        models: dict = {}
-        # Loop through models
-        logger.info("Models: " + str(self.config.get("models")))
-        for model_name in self.config["models"]:
-            model_config = self.config["models"][model_name]
-            match model_config["type"]:
-                case "example-fc-model":
-                    curr_model = ExampleModel(model_config, model_name)
-                case "classic-base-model":
-                    curr_model = ClassicBaseModel(model_config, model_name)
-                case "seg-simple-1d-cnn":
-                    curr_model = SegmentationSimple1DCNN(
-                        model_config, model_name)
-                case "transformer":
-                    curr_model = Transformer(model_config, model_name)
-                case "segmentation-transformer":
-                    curr_model = SegmentationTransformer(
-                        model_config, model_name)
-                case "event-segmentation-transformer":
-                    curr_model = EventSegmentationTransformer(
-                        model_config, model_name)
-                case "seg-unet-1d-cnn":
-                    curr_model = SegmentationUnet1DCNN(
-                        model_config, model_name)
-                case "event-res-gru":
-                    curr_model = EventResGRU(model_config, model_name)
-                case "event-seg-unet-1d-cnn":
-                    curr_model = EventSegmentationUnet1DCNN(
-                        model_config, model_name)
-                case "split-event-seg-unet-1d-cnn":
-                    curr_model = SplitEventSegmentationUnet1DCNN(
-                        model_config, model_name)
-                case _:
-                    logger.critical("Model not found: " + model_config["type"])
-                    raise ConfigException(
-                        "Model not found: " + model_config["type"])
-
-            models[model_name] = curr_model
-
-        return models
+        return self.config["processed_loc_out"]
 
     def get_model_store_loc(self) -> str:
         """Get the path to the model store directory
@@ -240,54 +146,53 @@ class ConfigLoader:
         """
         return self.config["model_store_loc"]
 
-    def get_ensemble(self, models: dict) -> Ensemble:
-        """Get the ensemble from the config
+    def get_cv(self) -> CV:
+        """
+        Get the cross validation method
+        :return: the cross validation method
+        """
+        return CV(**self.config["cv"])
 
-        :param models: the models
+    def set_ensemble(self) -> None:
+        """
+        Reads each model config file and gets the ensemble from the config
         :return: the ensemble
         """
-
-        curr_models: list = []
-        # If length of weights and models is not equal, raise exception
-        if len(self.config["ensemble"]["weights"]) != len(self.config["ensemble"]["models"]):
-            logger.critical("Length of weights and models is not equal")
-            raise ConfigException("Length of weights and models is not equal")
-
-        if len(models) < len(self.config["ensemble"]["models"]):
-            logger.critical("You cannot have more ensembles than models.")
-            raise ConfigException(
-                "You cannot have more ensembles than models.")
-
-        for model_name in self.config["ensemble"]["models"]:
-            if model_name not in models:
-                logger.critical(f"Model {model_name} not found in models.")
-                raise ConfigException(
-                    f"Model {model_name} not found in models.")
-            curr_models.append(models[model_name])
+        # Get all models
+        curr_models = []
+        for model_file_name in self.config["ensemble"]["models"]:
+            curr_path = self.config["model_config_loc"] + "/" + model_file_name
+            curr_models.append(ModelConfigLoader(
+                config_path=curr_path,
+                processed_out=self.get_processed_out(),
+                processed_in=self.get_processed_in(),
+                train_series=self.get_train_series_path(),
+                train_events=self.get_train_events_path(),
+                test_series=self.get_test_series_path(),
+                store_location=self.get_model_store_loc()))
 
         # Create ensemble
         ensemble = Ensemble(
-            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"],
-            self.config["ensemble"])
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"], self.config["ensemble"]["pred_only"])
 
-        return ensemble
+        self.ensemble = ensemble
 
-    def get_ensemble_loss(self) -> nn.Module:
-        """Get the ensemble loss function from the config
-
-        :return: the loss function
+    def get_ensemble(self) -> Ensemble:
         """
-        loss_class = None
-        if self.config["ensemble_loss"] == "example_loss":
-            loss_class = Loss().get_loss("example_loss")
-        else:
-            logger.critical("Loss function not found: " + self.config["loss"])
-            raise ConfigException(
-                "Loss function not found: " + self.config["loss"])
+        Get the ensemble from the config
+        :return: the ensemble
+        """
+        if not hasattr(self, "ensemble"):
+            return None
+        return self.ensemble
 
-        return loss_class
+    def get_train_optimal(self) -> bool:
+        """
+        Train optimal model from the config
+        :return: whether to train optimal model
+        """
+        return self.config["train_optimal"]
 
-    @cached_property
     def cv(self) -> CV:
         """Get the cross validation method from the config
 
@@ -302,8 +207,31 @@ class ConfigLoader:
         Get the hyperparameter optimization parameters from the config
         :return: the hyperparameter optimization parameters
         """
-        data_info.hpo = self.config["hpo"]
-        return self.config["hpo"]
+        data_info.hpo = self.config.get("hpo")
+        return self.config.get("hpo")
+
+    def set_hpo_config(self) -> dict:
+        """
+        Set the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+
+        curr_path = self.config["model_config_loc"] + "/" + self.config["hpo"]
+        self.hpo_config = ModelConfigLoader(
+            config_path=curr_path,
+            processed_out=self.get_processed_out(),
+            processed_in=self.get_processed_in(),
+            train_series=self.get_train_series_path(),
+            train_events=self.get_train_events_path(),
+            test_series=self.get_test_series_path(),
+            store_location=self.get_model_store_loc())
+
+    def get_hpo_config(self) -> dict:
+        """
+        Get the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+        return self.hpo_config
 
     # Function to retrieve train for submission
     def get_train_for_submission(self) -> bool:

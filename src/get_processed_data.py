@@ -5,7 +5,7 @@ import tracemalloc
 import pandas as pd
 
 from src import data_info
-from src.configs.load_config import ConfigLoader
+from src.configs.load_model_config import ModelConfigLoader
 from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
 from src.preprocessing.pp import PP
@@ -16,11 +16,13 @@ _STEP_HASH_LENGTH = 5
 
 def log_memory():
     size, peak = tracemalloc.get_traced_memory()
-    logger.debug(f"Current memory usage is {size / 10 ** 6:.2f} MB; Peak was {peak / 10 ** 6:.2f} MB")
+    logger.debug(
+        f"Current memory usage is {size / 10 ** 6:.2f} MB; Peak was {peak / 10 ** 6:.2f} MB")
     tracemalloc.reset_peak()
 
 
-def get_processed_data(config: ConfigLoader, training=True, save_output=True) -> pd.DataFrame:
+def get_processed_data(config: ModelConfigLoader, training=True, save_output=True) -> pd.DataFrame:
+    # TODO Use the a hash of the string representations of each PP and FE step
     pp_steps: list[PP] = config.get_pp_steps(training=training)
     fe_steps = config.get_fe_steps()
 
@@ -34,7 +36,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()
     for i in range(len(step_hashes), -1, -1):
-        path = config.get_pp_out() + '/' + '_'.join(step_hashes[:i]) + '.parquet'
+        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i]) + '.parquet'
         # check if the final result of the preprocessing exists
         if os.path.exists(path):
             logger.info(f'Reading existing file at: {path}')
@@ -47,7 +49,8 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
     tracemalloc.start()
     log_memory()
     if i == 0:
-        series_path = config.get_train_series_path() if training else config.get_test_series_path()
+        series_path = config.get_train_series_path(
+        ) if training else config.get_test_series_path()
         logger.info(f'No files found, reading from: {series_path}')
         processed = pd.read_parquet(series_path)
         logger.info(f'Data read from: {series_path}')
@@ -56,7 +59,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
     for j, step in enumerate(step_hashes[i:]):
         log_memory()
         logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
-        path = config.get_pp_out() + '/' + '_'.join(step_hashes[:i + j + 1]) + '.parquet'
+        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
@@ -72,6 +75,7 @@ def get_processed_data(config: ConfigLoader, training=True, save_output=True) ->
             processed.to_parquet(path)
             logger.info('--- Finished saving')
     log_memory()
-    logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+    logger.debug(
+        f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
     tracemalloc.stop()
     return processed

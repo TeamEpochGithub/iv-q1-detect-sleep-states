@@ -14,7 +14,8 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     param: 3d numpy array (channel, window_size) of event states for each timestep, 0=no state > 0=state
     param: thresh float, threshold for the prediction to be considered a state
     """
-    assert predictions.shape[0] == 2, "Predictions should be 3d array with shape (2, window_size)"
+    assert predictions.shape[
+        1] == 2, "Predictions should be 3d array with shape (window_size, 2)"
 
     # Set onset and awake to nan
     onset = np.nan
@@ -23,16 +24,16 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     awake_conf = np.nan
 
     # Get max of each channel
-    maxes = np.max(predictions, axis=1)
+    maxes = np.max(predictions, axis=0)
 
     # If onset is above threshold of making a prediction, set onset
     if maxes[0] > thresh:
-        onset = np.argmax(predictions[0])
+        onset = np.argmax(predictions[:, 0])
         onset_conf = maxes[0]
 
     # If awake is above threshold of making a prediction, set awake
     if maxes[1] > thresh:
-        awake = np.argmax(predictions[1])
+        awake = np.argmax(predictions[:, 1])
         awake_conf = maxes[1]
 
     # Return onset and awake and the max values of those indices
@@ -50,7 +51,8 @@ def find_events(pred: np.ndarray, median_filter_size: int = None) -> tuple:
 
     # Apply a median filter on pred with the median_filter parameter
     if median_filter_size is not None:
-        pred = np.convolve(pred, np.ones(median_filter_size), 'same') / median_filter_size
+        pred = np.convolve(pred, np.ones(median_filter_size),
+                           'same') / median_filter_size
 
     pred = np.round(pred)
 

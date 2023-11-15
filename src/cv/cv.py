@@ -69,7 +69,7 @@ def _get_scoring(scoring: str | Callable[[...], float] | list[str | Callable[[..
 
 class CV:
     def __init__(self, splitter: str, splitter_params: dict,
-                 scoring: str | Callable[[...], float] | list[str | Callable[[...], float]]) -> None:
+                 scoring: str | Callable[[...], float] | list[str | Callable[[...], float]], apply: bool) -> None:
         """Initialize the CV object
 
         :param splitter: the splitter used to split the data. See [README.md](./README.md) for all options.
@@ -81,7 +81,7 @@ class CV:
         except KeyError:
             logger.critical("Unknown CV splitter %s", splitter)
             raise CVException("Unknown CV splitter %s", splitter)
-
+        self.apply = apply
         self.scoring = _get_scoring(scoring)
 
     def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, train_df: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
@@ -121,7 +121,8 @@ class CV:
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(train_df, y_pred, validate_idx) for scorer in self.scoring]
+                score = [scorer(train_df, y_pred, validate_idx)
+                         for scorer in self.scoring]
             else:
                 score = self.scoring(train_df, y_pred, validate_idx)
 
@@ -132,6 +133,13 @@ class CV:
                 break
 
         return np.array(scores)
+
+    def get_apply(self) -> bool:
+        """
+        Get whether to apply the CV or not
+        :return: whether to apply the CV or not
+        """
+        return self.apply
 
 
 class CVException(Exception):

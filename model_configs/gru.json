@@ -1,0 +1,79 @@
+{
+    "name": "gru",
+    "preprocessing": [
+        {
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 0
+        },
+        {
+            "kind": "split_windows"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+        }
+    ],
+    "pretraining": {
+        "downsample": {
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+    "architecture": {
+        "activation_delay": 23,
+        "batch_size": 88,
+        "early_stopping": 19,
+        "epochs": 100,
+        "loss": "shrinkage-loss",
+        "lr": 0.00408247121596589,
+        "lr_schedule": {
+            "cycle_limit": 1,
+            "lr_min": 0.0000959350167860115,
+            "t_initial": 49,
+            "warmup_lr_init": 0.000001,
+            "warmup_t": 2
+        },
+        "network_params": {
+            "activation": "relu",
+            "hidden_size": 17,
+            "n_layers": 8
+        },
+        "optimizer": "adam-torch",
+        "threshold": 0,
+        "type": "event-res-gru"
+    }
+}

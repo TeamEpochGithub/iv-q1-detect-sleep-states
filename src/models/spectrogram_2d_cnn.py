@@ -308,6 +308,7 @@ class EventSegmentation2DCNN(Model):
             y_train_downsampled.append(np.array(downsampled_channels))
         y_train = torch.from_numpy(np.array(y_train_downsampled))
         del y_train_downsampled
+
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
         train_dataset = SpectrogramDataset(train_dataset, self.config)
@@ -497,7 +498,7 @@ class SpectrogramDataset(torch.utils.data.TensorDataset):
         # mask length will be 1/8 of the spectrogram length
         # iid_masks makes masks at different frequencies per channel
         # time masking will mask 1/128th ofthe spectrogram length
-        
+
         # create the list of augmentation methods that are in the config
         self.config = config
         self.transforms = transforms.Compose([

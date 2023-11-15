@@ -212,7 +212,7 @@ class Ensemble:
             model.load(model_filename_opt, only_hyperparameters=False)
         else:
             logger.critical("Not all models have been trained yet")
-            raise ValueError("Not all models have been trained yet")
+            raise ValueError(f"Not all models have been trained yet, missing {model_filename_opt}")
 
         model = model_config_loader.get_model()
         # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.

@@ -43,7 +43,6 @@ class SeBlock(nn.Module):
         x_se = self.relu(x_se)
         x_se = self.conv2(x_se)
         x_se = self.sigmoid(x_se)
-
         x_out = torch.add(x, x_se)
         return x_out
 
@@ -53,17 +52,19 @@ class ReBlock(nn.Module):
     Residual Block.
     """
 
-    def __init__(self, in_layer, out_layer, kernel_size, dilation):
+    def __init__(self, in_layer, out_layer, kernel_size, dilation, dropout):
         super(ReBlock, self).__init__()
 
         self.cbr1 = ConBrBlock(in_layer, out_layer, kernel_size, 1, dilation)
         self.cbr2 = ConBrBlock(out_layer, out_layer, kernel_size, 1, dilation)
         self.seblock = SeBlock(out_layer, out_layer)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         x_re = self.cbr1(x)
         x_re = self.cbr2(x_re)
         x_re = self.seblock(x_re)
+        x_re = self.dropout(x_re)
         x_out = torch.add(x, x_re)
         return x_out
 
@@ -74,7 +75,7 @@ class SegUnet1D(nn.Module):
     """
 
     def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str, activation: str = 'relu', hidden_layers: int = 8, kernel_size: int = 7,
-                 depth: int = 2):
+                 depth: int = 2, dropout: int = 0):
         super(SegUnet1D, self).__init__()
 
         # Set model dims
@@ -102,11 +103,11 @@ class SegUnet1D(nn.Module):
         self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=self.stride * self.stride, padding=self.padding)
         self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=self.stride * self.stride * self.stride, padding=self.padding)
 
-        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth)
-        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, self.depth)
-        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, self.stride, self.depth)
-        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, self.stride, self.depth)
-        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, self.stride, self.depth)
+        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth, dropout)
+        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, self.depth, dropout)
+        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, self.stride, self.depth, dropout)
+        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, self.stride, self.depth, dropout)
+        self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, self.stride, self.depth, dropout)
 
         self.cbr_up1 = ConBrBlock(int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
         self.cbr_up2 = ConBrBlock(int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
@@ -117,11 +118,11 @@ class SegUnet1D(nn.Module):
         self.relu = nn.ReLU()
         self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
 
-    def down_layer(self, input_layer, out_layer, kernel, stride, depth):
+    def down_layer(self, input_layer, out_layer, kernel, stride, depth, dropout):
         block = []
         block.append(ConBrBlock(input_layer, out_layer, kernel, stride, 1))
         for i in range(depth):
-            block.append(ReBlock(out_layer, out_layer, kernel, 1))
+            block.append(ReBlock(out_layer, out_layer, kernel, 1, dropout))
         return nn.Sequential(*block)
 
     def forward(self, x, use_activation=True):

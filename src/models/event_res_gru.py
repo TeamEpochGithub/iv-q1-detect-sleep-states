@@ -36,16 +36,19 @@ class EventResGRU(Model):
             self.device = torch.device("cpu")
         else:
             self.device = torch.device("cuda")
-            logger.info(f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
+            logger.info(
+                f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
         self.model_type = "segmentation"
         self.num_features = len(data_info.X_columns)
 
         # Create model
-        self.model = MultiResidualBiGRU(self.num_features, **config['network_params'])
+        self.model = MultiResidualBiGRU(
+            self.num_features, **config['network_params'])
         if wandb.run is not None:
             from torchsummary import summary
-            summary(self.model.cuda(), input_size=(data_info.window_size, self.num_features))
+            summary(self.model.cuda(), input_size=(
+                data_info.window_size, self.num_features))
 
         self.load_config(config)
 
@@ -60,8 +63,10 @@ class EventResGRU(Model):
         required = ["loss", "optimizer"]
         for req in required:
             if req not in config:
-                logger.critical("------ Config is missing required parameter: " + req)
-                raise ModelException("Config is missing required parameter: " + req)
+                logger.critical(
+                    "------ Config is missing required parameter: " + req)
+                raise ModelException(
+                    "Config is missing required parameter: " + req)
 
         # Get default_config
         default_config = self.get_default_config()
@@ -71,20 +76,29 @@ class EventResGRU(Model):
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
             if config["loss"] == "kldiv-torch":
-                config["loss"] = Loss.get_loss(config["loss"], reduction="batchmean")
+                config["loss"] = Loss.get_loss(
+                    config["loss"], reduction="batchmean")
             else:
-                config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
-        config["batch_size"] = config.get("batch_size", default_config["batch_size"])
+                config["loss"] = Loss.get_loss(
+                    config["loss"], reduction="mean")
+        config["batch_size"] = config.get(
+            "batch_size", default_config["batch_size"])
         config["lr"] = config.get("lr", default_config["lr"])
-        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], 0, self.model)
+        config["optimizer"] = Optimizer.get_optimizer(
+            config["optimizer"], config["lr"], 0, self.model)
         if "lr_schedule" in config:
-            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
-            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
+            config["lr_schedule"] = config.get(
+                "lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(
+                config["optimizer"], **self.config["lr_schedule"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
-        config["early_stopping"] = config.get("early_stopping", default_config["early_stopping"])
-        config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
+        config["early_stopping"] = config.get(
+            "early_stopping", default_config["early_stopping"])
+        config["activation_delay"] = config.get(
+            "activation_delay", default_config["activation_delay"])
         config["network_params"] = config.get("network_params", dict())
-        config["threshold"] = config.get("threshold", default_config["threshold"])
+        config["threshold"] = config.get(
+            "threshold", default_config["threshold"])
         self.config = config
 
     def get_default_config(self) -> dict:
@@ -104,7 +118,10 @@ class EventResGRU(Model):
             },
             "network_params": {
                 "activation": "relu",
-                "hidden_layers": 8
+                "hidden_layers": 8,
+                "flatten": False,
+                "bidir": True,
+
             }
         }
 
@@ -129,6 +146,7 @@ class EventResGRU(Model):
         optimizer = self.config["optimizer"]
         epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         if "scheduler" in self.config:
             scheduler = self.config["scheduler"]
         else:
@@ -136,37 +154,55 @@ class EventResGRU(Model):
         early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
         if early_stopping > 0:
-            logger.info(f"--- Early stopping enabled with patience of {early_stopping} epochs.")
+            logger.info(
+                f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
 
-        cols = np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])
-        y_train = torch.from_numpy(y_train[:, :, cols])
-        y_test = torch.from_numpy(y_test[:, :, cols])
+        # Get only the 2 event state features
+        if mask_unlabeled:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        else:
+            y_train = y_train[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+            y_test = y_test[:, :, np.array(
+                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
+        y_train = torch.from_numpy(y_train)
+        y_test = torch.from_numpy(y_test)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
         test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
 
         # Print the shapes and types of train and test
-        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
-        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
-        logger.info(f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
+        logger.info(
+            f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(
+            f"--- X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+        logger.info(
+            f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(
+            f"--- X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Create a dataloader from the dataset
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
-        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size)
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=batch_size)
 
         trainer = EventTrainer(
-            epochs, criterion, early_stopping=early_stopping)
+            epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
 
         if wandb.run is not None:
-            self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
+            self.log_train_test(
+                avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
         logger.info("--- Training of model complete!")
         self.config["total_epochs"] = total_epochs
@@ -195,20 +231,25 @@ class EventResGRU(Model):
 
         # Create a dataset from X and y
         X_train = torch.from_numpy(X_train)
-        cols = np.array([data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])
+        cols = np.array([data_info.y_columns["state-onset"],
+                        data_info.y_columns["state-wakeup"]])
         y_train = torch.from_numpy(y_train[:, :, cols])
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
 
         # Print the shapes and types of train and test
-        logger.info(f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
-        logger.info(f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+        logger.info(
+            f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        logger.info(
+            f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
         # Create a dataloader from the dataset
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
+        train_dataloader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size)
 
         # Train the model
-        logger.info("--- Training model full " + self.name + " for " + str(epochs) + " epochs")
+        logger.info("--- Training model full " + self.name +
+                    " for " + str(epochs) + " epochs")
         trainer = EventTrainer(epochs, criterion)
         trainer.fit(trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
                     activation_delay=activation_delay)
@@ -268,11 +309,13 @@ class EventResGRU(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred.T, thresh=self.config["threshold"])
+            events = pred_to_event_state(
+                pred.T, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:
-                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
+                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor %
+                          2 == 0 else downsampling_factor // 2)
             else:
                 offset = 0
             steps = (events[0] + offset, events[1] + offset)
@@ -324,7 +367,8 @@ class EventResGRU(Model):
             self.reset_weights()
             self.reset_optimizer()
             self.reset_scheduler()
-            logger.info("Loading hyperparameters and instantiate new model from: " + path)
+            logger.info(
+                "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -336,18 +380,20 @@ class EventResGRU(Model):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
-        self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])
+        self.model = MultiResidualBiGRU(
+            self.num_features, **self.config['network_params'])
 
     def reset_optimizer(self) -> None:
-
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(
+            self.model.parameters(), lr=self.config['lr'])
 
     def reset_scheduler(self) -> None:
         """
         Reset the scheduler to the initial state. Useful for retraining the model.
         """
         if 'scheduler' in self.config:
-            self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])
+            self.config['scheduler'] = CosineLRScheduler(
+                self.config['optimizer'], **self.config["lr_schedule"])

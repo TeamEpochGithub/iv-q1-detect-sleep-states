@@ -1,0 +1,144 @@
+{
+    "name": "config",
+    "log_to_wandb": true,
+    "pred_with_cpu": false,
+    "train_series_path": "data/raw/train_series.parquet",
+    "train_events_path": "data/raw/train_events.csv",
+    "test_series_path": "data/raw/test_series.parquet",
+    "fe_loc_out": "data/features",
+    "fe_loc_in": "data/processed",
+    "processed_loc_out": "data/processed",
+    "processed_loc_in": "data/raw",
+    "model_store_loc": "tm",
+    "data_info": {
+      "window_size": 17280,
+      "downsampling_factor": 12,
+      "latitude": 40.73061,
+      "longitude": -73.935242
+    },
+    "preprocessing": [
+      {
+        "kind": "mem_reduce",
+        "id_encoding_path": "series_id_encoding.json"
+      },
+      {
+        "kind": "similarity_nan",
+        "as_feature": true
+      },
+      {
+        "kind": "add_state_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv",
+        "use_similarity_nan": true,
+        "fill_limit": 8640,
+        "nan_tolerance_window": 5
+      },
+      {
+        "kind": "add_event_labels",
+        "id_encoding_path": "series_id_encoding.json",
+        "events_path": "data/raw/train_events.csv",
+        "smoothing": 0,
+        "steepness": 1
+      },
+      {
+        "kind": "split_windows"
+      }
+    ],
+    "feature_engineering": [
+      {
+        "kind": "sun",
+        "sun_features": [
+          "azimuth",
+          "altitude"
+        ]
+      },
+      {
+        "kind": "time",
+        "time_features": [
+          "hour",
+          "minute"
+        ]
+      },
+      {
+        "kind": "rotation",
+        "window_sizes": [12, 36, 72, 240, 360, 1000]
+      }
+    ],
+    "pretraining": {
+      "downsample": {
+        "features": [
+          "f_anglez",
+          "f_enmo"
+        ],
+        "methods": [
+          "min",
+          "max",
+          "mean",
+          "std",
+          "median",
+          "range",
+          "var"
+        ],
+        "standard": "mean"
+      },
+      "test_size": 0.2,
+      "scaler": {
+        "kind": "standard-scaler",
+        "copy": true
+      }
+    },
+    "hpo": "true",
+    "cv": {
+      "splitter": "group_k_fold",
+      "scoring": [
+        "score_full",
+        "score_clean"
+      ],
+      "splitter_params": {
+        "n_splits": 5
+      }
+    },
+    "models": {
+      "Sweep-GRU": {
+        "activation_delay": 23,
+        "batch_size": 88,
+        "early_stopping": 19,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.00408247121596589,
+        "lr_schedule": {
+          "cycle_limit": 1,
+          "lr_min": 0.0000959350167860115,
+          "t_initial": 49,
+          "warmup_lr_init": 0.000001,
+          "warmup_t": 2
+        },
+        "network_params": {
+          "activation": "relu",
+          "hidden_size": 17,
+          "n_layers": 8
+        },
+        "optimizer": "adam-torch",
+        "threshold": 0,
+        "type": "event-res-gru",
+        "mask_unlabeled": true
+      }
+    },
+    "ensemble": {
+      "models": [
+        "EventResGRU"
+      ],
+      "weights": [
+        1
+      ],
+      "comb_method": "addition"
+    },
+    "ensemble_loss": "mse-torch",
+    "train_for_submission": true,
+    "scoring": true,
+    "visualize_preds": {
+      "n": 0,
+      "browser_plot": false,
+      "save": true
+    }
+}

@@ -18,6 +18,7 @@ from src.util.get_pretrain_cache import get_pretrain_split_cache, get_pretrain_f
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from src.util.submissionformat import to_submission_format
+from sweep import play_mp3
 
 
 def main() -> None:
@@ -28,7 +29,6 @@ def main() -> None:
     logger.info("Start of main.py")
 
     global config_loader
-    config_loader.reset_globals()
     config_hash = hash_config(config_loader.get_config(), length=16)
     logger.info("Config hash encoding: " + config_hash)
 
@@ -47,6 +47,8 @@ def main() -> None:
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
+
+    config_loader.reset_globals()
 
     # Predict with CPU
     pred_cpu = config_loader.get_pred_with_cpu()
@@ -283,10 +285,21 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+
     import coloredlogs
 
     coloredlogs.install()
 
+    # Set seed for reproducibility
+    import torch
+    torch.manual_seed(42)
+
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("configs/2d-cnn-spectrogram.json")
+
+    #
+    if config_loader.get_hpo():
+        mp3_file_path = "gotta_sweep.mp3"  # Replace with the path to your MP3 file
+        play_mp3(mp3_file_path)
+
     main()

@@ -392,7 +392,10 @@ class EventSegmentation2DCNN(Model):
         i = 0
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
+            if pred.shape[0] == 3:
+                events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
+            else:
+                events = pred_to_event_state(pred, thresh=self.config["threshold"])
             # plt.plot(pred[0, :])
             # plt.plot(pred[1, :])
             # plt.plot(pred[2, :])

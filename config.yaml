@@ -1,5 +1,4 @@
-program: main.py
-command: 
+command:
   - ${env}
   - venv/Scripts/python.exe
   - ${program}
@@ -10,6 +9,7 @@ name: sweep-gru-ensemble-test
 metric:
   goal: maximize
   name: cv_score
+name: sweep-gru-3
 parameters:
   hpo_model:
     parameters:

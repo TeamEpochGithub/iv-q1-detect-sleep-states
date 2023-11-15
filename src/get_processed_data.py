@@ -9,6 +9,9 @@ from src.configs.load_model_config import ModelConfigLoader
 from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
 from src.preprocessing.pp import PP
+from src.util.hash_config import hash_config
+
+_STEP_HASH_LENGTH = 5
 
 
 def log_memory():
@@ -21,20 +24,19 @@ def log_memory():
 def get_processed_data(config: ModelConfigLoader, training=True, save_output=True) -> pd.DataFrame:
     # TODO Use the a hash of the string representations of each PP and FE step
     pp_steps: list[PP] = config.get_pp_steps(training=training)
-    pp_step_names: list[str] = [pp_step.kind for pp_step in pp_steps]
-
     fe_steps = config.get_fe_steps()
-    fe_step_names: list[str] = [fe_step.kind for fe_step in fe_steps]
 
-    step_names: list[str] = pp_step_names + fe_step_names
     steps: list[PP | FE] = pp_steps + fe_steps
+    step_names: list[str] = [step.__class__.__name__ for step in steps]
+    step_hashes: list[str] = [hash_config(step, _STEP_HASH_LENGTH) for step in
+                              steps]  # I think it looks a little silly to use hash_config here...
 
-    print(step_names)
+    logger.info(f'--- Running preprocessing & feature engineering steps: {steps}')
+
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()
-    for i in range(len(step_names), -1, -1):
-        path = config.get_processed_out() + '/' + \
-            '_'.join(step_names[:i]) + '.parquet'
+    for i in range(len(step_hashes), -1, -1):
+        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i]) + '.parquet'
         # check if the final result of the preprocessing exists
         if os.path.exists(path):
             logger.info(f'Reading existing file at: {path}')
@@ -54,16 +56,14 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         logger.info(f'Data read from: {series_path}')
 
     # now using i run the preprocessing steps that were not applied
-    for j, step in enumerate(step_names[i:]):
+    for j, step in enumerate(step_hashes[i:]):
         log_memory()
-        logger.debug(
-            f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
-        path = config.get_processed_out() + '/' + \
-            '_'.join(step_names[:i + j + 1]) + '.parquet'
+        logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
-        data_info.substage = step_names[i + j]
+        data_info.substage = step_hashes[i + j]
 
         processed = step.run(processed)
         gc.collect()

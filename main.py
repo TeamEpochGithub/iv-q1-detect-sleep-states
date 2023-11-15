@@ -8,6 +8,7 @@ from src.logger.logger import logger
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
 from main_utils import train_from_config, full_train_from_config, scoring
+from sweep import play_mp3
 
 
 def main() -> None:
@@ -20,7 +21,6 @@ def main() -> None:
 
     # Load config file and hash
     global config_loader
-    config_loader.reset_globals()
     config_hash = hash_config(config_loader.get_config(), length=16)
     logger.info("Config hash encoding: " + config_hash)
 
@@ -143,9 +143,16 @@ if __name__ == "__main__":
     import coloredlogs
     coloredlogs.install()
 
-    # Set torch seed
+    # Set seed for reproducibility
+    import torch
     torch.manual_seed(42)
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")
+
+    # Gotta sweep
+    if config_loader.get_hpo():
+        mp3_file_path = "gotta_sweep.mp3"  # Replace with the path to your MP3 file
+        play_mp3(mp3_file_path)
+
     main()

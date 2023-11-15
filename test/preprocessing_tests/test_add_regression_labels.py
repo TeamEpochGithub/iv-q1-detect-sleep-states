@@ -9,6 +9,9 @@ from src.preprocessing.pp import PPException
 class TestAddEventLabels(TestCase):
     pp = AddRegressionLabels('./dummy_event_path', './dummy_id_encoding_path')
 
+    def test_repr(self):
+        self.assertEqual("AddRegressionLabels(events_path='./dummy_event_path', id_encoding_path='./dummy_id_encoding_path')", self.pp.__repr__())
+
     def test_add_event_labels_crash(self):
         df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),
                    "enmo": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],

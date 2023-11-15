@@ -271,8 +271,11 @@ class EventResGRU(Model):
         all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+            # Pred should be 2d array with shape (window_size, 2)
+            assert pred.shape[1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred.T, thresh=self.config["threshold"])
+            events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:

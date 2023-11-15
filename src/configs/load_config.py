@@ -35,6 +35,7 @@ class ConfigLoader:
             self.set_ensemble()
         if self.config.get("hpo"):
             self.set_hpo_config()
+        self.name = self.config["name"]
 
     def get_config(self) -> dict:
         """
@@ -42,6 +43,12 @@ class ConfigLoader:
         :return: the full configuration dict
         """
         return self.config
+
+    def get_name(self) -> str:
+        """
+        Get the name of the config
+        :return: the name of the config
+        """
 
     def get_log_to_wandb(self) -> bool:
         """

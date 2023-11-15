@@ -55,7 +55,8 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
     logger.info("Splitting data into train and test...")
     data_info.substage = "pretrain_split"
 
-    x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(model_config, featured_data, save_output=True)
+    x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(
+        model_config, featured_data, save_output=True)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
         x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
@@ -78,6 +79,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
     cv = config_loader.get_cv()
 
     def run_cv():
+
         # ------------------------- #
         # Cross Validation Training #
         # ------------------------- #
@@ -95,9 +97,9 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
 
         # Log scores to wandb
         mean_scores = np.mean(scores, axis=0)
-        log_scores_to_wandb(mean_scores[0], mean_scores[1])
+        log_scores_to_wandb(mean_scores, data_info.scorings)
         logger.info(
-            f"Done CV for model: {model_name} with CV scores of \n {scores} and mean score of {np.round(np.mean(scores, axis=0), 4)}")
+            f"Done CV for model: {model_name} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
     # If this file exists, load instead of start training
     if os.path.isfile(model_filename_opt):
@@ -197,9 +199,8 @@ def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
     logger.info("Start scoring test predictions...")
 
     scores = [compute_score_full(
-            submission, solution), compute_score_clean(submission, solution)]
+        submission, solution), compute_score_clean(submission, solution)]
     log_scores_to_wandb(scores, data_info.scorings)
-
 
     # compute confusion matrix for making predictions or not
     window_offset['series_id'] = window_offset['series_id'].map(decoding)
@@ -236,7 +237,8 @@ def full_train_from_config(config_loader: ConfigLoader, model_config: ModelConfi
     pretrain: Pretrain = model_config.get_pretraining()
 
     # Retrain all models with optimal parameters
-    x_train, y_train, _ = get_pretrain_full_cache(config_loader, featured_data, save_output=True)
+    x_train, y_train, _ = get_pretrain_full_cache(
+        config_loader, featured_data, save_output=True)
 
     logger.info("Creating model using ModelConfigLoader")
     model = model_config.set_model()

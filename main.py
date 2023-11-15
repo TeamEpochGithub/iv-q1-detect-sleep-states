@@ -26,6 +26,13 @@ def main() -> None:
 
     # Initialize wandb
     if config_loader.get_log_to_wandb():
+        # Add models
+
+        # Get the hpo config
+        if config_loader.get_hpo():
+            config_loader.config["hpo_model"] = config_loader.get_hpo_config(
+            ).config
+
         # Initialize wandb
         wandb.init(
             project='detect-sleep-states',
@@ -33,21 +40,33 @@ def main() -> None:
             config=config_loader.get_config()
         )
         if config_loader.get_hpo():
+
             # Merge the config from the hpo config
             config_loader.config |= wandb.config
+
+            # Update the hpo config with the merged config
+            config_loader.get_hpo_config().config = config_loader.config.get("hpo_model")
 
             # Update hash as the config is different now
             config_hash = hash_config(config_loader.get_config(), length=16)
 
             # Update the wandb summary with the updated config
             wandb.run.summary.update(config_loader.get_config())
-            wandb.run.name.update(config_hash)
+            wandb.run.name = config_hash
+        else:
+            # Get the ensemble configs and add them to the config on wandb
+            ensemble = config_loader.get_ensemble()
+            models = ensemble.get_models()
+            for i, model_config in enumerate(models):
+                wandb.config[f"model_{i}"] = model_config.get_config()
 
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")
-        logger.info(
-            "If you want to use hpo with wandb, set log_to_wandb to True in config.json")
+
+        if config_loader.get_hpo():
+            logger.critical("HPO requires wandb")
+            raise Exception("HPO requires wandb")
 
     # Predict with CPU
     pred_cpu = config_loader.get_pred_with_cpu()

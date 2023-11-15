@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -16,12 +16,7 @@
         "latitude": 40.730610,
         "longitude": -73.935242
     },
-    "ensemble": {
-        "models": ["gru3.json"],
-        "weights": [1],
-        "comb_method": "confidence_average",
-        "pred_only": true
-    },
+    "hpo": "hpo_test.json",
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],

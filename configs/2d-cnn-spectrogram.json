@@ -23,7 +23,7 @@
         },
         {
             "kind": "similarity_nan",
-            "as_feature": true
+            "as_feature": false
         },
         {
             "kind": "add_state_labels",
@@ -45,14 +45,7 @@
         }
 
     ],
-    "feature_engineering": [{
-        "kind": "time",
-        "time_features": ["day", "hour", "minute", "second"]    
-    },
-    {
-        "kind": "rotation",
-        "window_sizes": [100]
-    }
+    "feature_engineering": [
     ],
 
     "pretraining": {
@@ -69,25 +62,27 @@
             "type": "Spectrogram_2D_Cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 200,
-            "batch_size": 16,
+            "epochs": 40,
+            "batch_size": 64,
             "lr": 0.0005,
             "hidden_layers": 8,
-            "early_stopping": 20,
+            "early_stopping": 8,
             "threshold": 0,
             "n_fft": 63,
-            "hop_length": 2,
-            "encoder_name": "resnext50_32x4d",
+            "hop_length": 6,
+            "encoder_name": "resnet34",
             "encoder_weights": "imagenet",
             "bilinear": false,
             "scale_factor": 2,
             "mask_unlabeled": false,
             "encoder_depth": 5,
+            "use_augmentation": true,
+            "clip_awake": false,
             "lr_schedule": {
                 "t_initial": 15,
                 "warmup_t": 5,
                 "warmup_lr_init": 0.005,
-                "lr_min": 2e-8
+                "lr_min": 2e-5
             } 
         }
         

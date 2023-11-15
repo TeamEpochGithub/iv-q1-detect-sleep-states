@@ -20,6 +20,7 @@ from ..util.state_to_event import pred_to_event_state
 import matplotlib.pyplot as plt
 import torchaudio.transforms as T
 from torch import nn
+from torchvision import transforms
 
 
 class EventSegmentation2DCNN(Model):
@@ -189,8 +190,9 @@ class EventSegmentation2DCNN(Model):
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
 
         # clip the awake state to 0 and 1
-        y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
-        y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
+        if self.config.get('clip_awake', False):
+            y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+            y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
 
         # our pretrain downsampling puts the median of 12 items into one item
         # this loop also does that
@@ -291,7 +293,8 @@ class EventSegmentation2DCNN(Model):
             y_train = y_train[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"], data_info.y_columns["awake"]])]
             # clip the awake state to 0 and 1
-            y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+            if self.config.get('clip_awake', False):
+                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
 
             # downsample the y data
             y_train_downsampled = []
@@ -486,10 +489,24 @@ class SpectrogramDataset(torch.utils.data.TensorDataset):
             T.AmplitudeToDB(top_db=80),
             SpecNormalize()
         )
+        # TODO parametrise these values in the config
+
+        # mask length will be 1/8 of the spectrogram length
+        # iid_masks makes masks at different frequencies per channel
+        # time masking will mask 1/128th ofthe spectrogram length
+        
+        # create the list of augmentation methods that are in the config
+        self.config = config
+        self.transforms = transforms.Compose([
+            T.FrequencyMasking(freq_mask_param=(config.get('n_fft', 127)+1)//(2*8), iid_masks=True),
+            T.TimeMasking(time_mask_param=17280//(128*config.get('hop_length', 1)), iid_masks=True)
+        ])
 
     def __getitem__(self, index):
         x, y = self.dataset[index]
         x = self.spectrogram(x)
+        if self.config.get('use_augmentation', False):
+            x = self.transforms(x)
         return x, y
 
     def __len__(self):

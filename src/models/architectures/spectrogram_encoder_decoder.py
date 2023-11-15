@@ -1,8 +1,7 @@
 from torch import nn
-import torchaudio.transforms as T
 from segmentation_models_pytorch import Unet
 from src.models.architectures.Unet_decoder import UNet1DDecoder
-from torch import cat
+
 
 # TODO if there are any features that work well with a spectrogram
 # Change the hard coded 2 from this code

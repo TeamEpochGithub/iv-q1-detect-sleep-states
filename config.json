@@ -16,7 +16,12 @@
         "latitude": 40.730610,
         "longitude": -73.935242
     },
-    "hpo": "hpo_test.json",
+    "ensemble": {
+        "models": ["gru.json", "gru2.json", "gru3.json"],
+        "weights": [1],
+        "comb_method": "confidence_average",
+        "pred_only": false
+    },
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],

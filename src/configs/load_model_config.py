@@ -20,7 +20,7 @@ from ..models.model import Model
 class ModelConfigLoader:
     """Class to load the model training configuration from a JSON file"""
 
-    def __init__(self, config_path: str, processed_out: str, processed_in: str, train_series: str, train_events: str, test_series: str) -> None:
+    def __init__(self, config_path: str, processed_out: str, processed_in: str, train_series: str, train_events: str, test_series: str, store_location: str = "") -> None:
         """
         Initialize the ModelConfigLoader class
         :param config_path: the path to the config.json file
@@ -30,6 +30,7 @@ class ModelConfigLoader:
         self.train_series = train_series
         self.train_events = train_events
         self.test_series = test_series
+        self.store_location = store_location
 
         # Read JSON from file
         with open(config_path, 'r') as f:
@@ -167,6 +168,19 @@ class ModelConfigLoader:
         """
         return self.train_events
 
+    def get_test_series_path(self) -> str:
+        """
+        Get the path to the test series
+        :return: the path to the test series
+        """
+        return self.test_series
+
+    def get_store_location(self) -> str:
+        """
+        Get the path to the model store directory
+        :return: the path to the model store directory
+        """
+        return self.store_location
 
 # ConfigException class
 class ConfigException(Exception):

@@ -13,7 +13,8 @@ from src.preprocessing.pp import PP
 
 def log_memory():
     size, peak = tracemalloc.get_traced_memory()
-    logger.debug(f"Current memory usage is {size / 10 ** 6:.2f} MB; Peak was {peak / 10 ** 6:.2f} MB")
+    logger.debug(
+        f"Current memory usage is {size / 10 ** 6:.2f} MB; Peak was {peak / 10 ** 6:.2f} MB")
     tracemalloc.reset_peak()
 
 
@@ -32,7 +33,8 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     i: int = 0
     processed: pd.DataFrame = pd.DataFrame()
     for i in range(len(step_names), -1, -1):
-        path = config.get_processed_out() + '/' + '_'.join(step_names[:i]) + '.parquet'
+        path = config.get_processed_out() + '/' + \
+            '_'.join(step_names[:i]) + '.parquet'
         # check if the final result of the preprocessing exists
         if os.path.exists(path):
             logger.info(f'Reading existing file at: {path}')
@@ -45,7 +47,8 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     tracemalloc.start()
     log_memory()
     if i == 0:
-        series_path = config.get_train_series_path() if training else config.get_test_series_path()
+        series_path = config.get_train_series_path(
+        ) if training else config.get_test_series_path()
         logger.info(f'No files found, reading from: {series_path}')
         processed = pd.read_parquet(series_path)
         logger.info(f'Data read from: {series_path}')
@@ -53,8 +56,10 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     # now using i run the preprocessing steps that were not applied
     for j, step in enumerate(step_names[i:]):
         log_memory()
-        logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
-        path = config.get_processed_out() + '/' + '_'.join(step_names[:i + j + 1]) + '.parquet'
+        logger.debug(
+            f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+        path = config.get_processed_out() + '/' + \
+            '_'.join(step_names[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
@@ -70,6 +75,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             processed.to_parquet(path)
             logger.info('--- Finished saving')
     log_memory()
-    logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+    logger.debug(
+        f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
     tracemalloc.stop()
     return processed

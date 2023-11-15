@@ -170,7 +170,8 @@ class ConfigLoader:
                 processed_in=self.get_processed_in(),
                 train_series=self.get_train_series_path(),
                 train_events=self.get_train_events_path(),
-                test_series=self.get_test_series_path()))
+                test_series=self.get_test_series_path(),
+                store_location=self.get_model_store_loc()))
 
         # Create ensemble
         ensemble = Ensemble(
@@ -183,6 +184,8 @@ class ConfigLoader:
         Get the ensemble from the config
         :return: the ensemble
         """
+        if not hasattr(self, "ensemble"):
+            return None
         return self.ensemble
 
     def get_train_optimal(self) -> bool:
@@ -222,7 +225,8 @@ class ConfigLoader:
             processed_in=self.get_processed_in(),
             train_series=self.get_train_series_path(),
             train_events=self.get_train_events_path(),
-            test_series=self.get_test_series_path())
+            test_series=self.get_test_series_path(),
+            store_location=self.get_model_store_loc())
 
     def get_hpo_config(self) -> dict:
         """

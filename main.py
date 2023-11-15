@@ -111,7 +111,7 @@ def main() -> None:
     data_info.substage = ""
 
     if config_loader.get_scoring():
-        scoring(config=config_loader, ensemble=ensemble)
+        scoring(config=config_loader)
     else:
         logger.info("Not scoring")
 

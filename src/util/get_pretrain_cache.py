@@ -20,8 +20,10 @@ def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_da
     :param save_output: whether to save the output to a cache
     :return: the train data, test data, train labels, test labels, train indices, test indices, and groups or None if the cache was not saved
     """
-    pretrain_config_hash: str = hash_config(model_config_loader.get_pretrain_config())
-    path: str = model_config_loader.get_processed_out() + '/pretrain_' + pretrain_config_hash + '.pkl'
+    pretrain_config_hash: str = hash_config(
+        model_config_loader.get_pretrain_config())
+    path: str = model_config_loader.get_processed_out() + '/pretrain_' + \
+        pretrain_config_hash + '.pkl'
 
     if os.path.exists(path):
         logger.info(f'Pretrain: Reading existing files from: {path}')
@@ -31,7 +33,8 @@ def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_da
         logger.info('Finished reading')
     else:
         logger.info(f"No pretrain cache found at {path}.")
-        logger.info("Get pretraining parameters from config and initialize pretrain")
+        logger.info(
+            "Get pretraining parameters from config and initialize pretrain")
         pretrain: Pretrain = model_config_loader.get_pretraining()
 
         logger.info(
@@ -41,12 +44,21 @@ def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_da
         logger.info("Splitting data into train and test...")
         data_info.substage = "pretrain_split"
 
-        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(featured_data)
+        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(
+            featured_data)
 
         if save_output:
             logger.info(f"Saving pretrain cache to {path}")
             pickle.dump((X_train, X_test, y_train, y_test, train_idx, test_idx, groups,
                          data_info.X_columns, data_info.y_columns), open(path, "wb"))
+
+        # Save scaler
+        initial_hash = hash_config(
+            model_config_loader.get_pretrain_config(), length=5)
+        scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
+            initial_hash + ".pkl"
+        logger.info(f"Saving scaler to {scaler_filename}")
+        pretrain.scaler.save(scaler_filename)
 
     return X_train, X_test, y_train, y_test, train_idx, test_idx, groups
 
@@ -60,16 +72,20 @@ def get_pretrain_full_cache(model_config_loader, featured_data: pd.DataFrame, sa
     :param save_output: whether to save the output to a cache
     :return: the train data and groups or None if the cache was not saved
     """
-    pretrain_config_hash: str = hash_config(model_config_loader.get_pretrain_config())
-    path: str = model_config_loader.get_pp_out() + '/pretrain_full' + pretrain_config_hash + '.pkl'
+    pretrain_config_hash: str = hash_config(
+        model_config_loader.get_pretrain_config())
+    path: str = model_config_loader.get_pp_out() + '/pretrain_full' + \
+        pretrain_config_hash + '.pkl'
 
     if os.path.exists(path):
         logger.info(f'Pretrain full: Reading existing files from: {path}')
-        X_train, y_train, groups, data_info.X_columns, data_info.y_columns = pickle.load(open(path, "rb"))
+        X_train, y_train, groups, data_info.X_columns, data_info.y_columns = pickle.load(
+            open(path, "rb"))
         logger.info('Finished reading')
     else:
         logger.info(f"No pretrain full cache found at {path}.")
-        logger.info("Get pretraining parameters from config and initialize pretrain")
+        logger.info(
+            "Get pretraining parameters from config and initialize pretrain")
         pretrain: Pretrain = model_config_loader.get_pretraining()
 
         logger.info(
@@ -80,11 +96,14 @@ def get_pretrain_full_cache(model_config_loader, featured_data: pd.DataFrame, sa
 
         if save_output:
             logger.info(f"Saving pretrain full cache to {path}")
-            pickle.dump((X_train, y_train, groups, data_info.X_columns, data_info.y_columns), open(path, "wb"))
+            pickle.dump((X_train, y_train, groups, data_info.X_columns,
+                        data_info.y_columns), open(path, "wb"))
 
         # Save scaler
-        initial_hash = hash_config(model_config_loader.get_pretrain_config(), length=5)
-        scaler_filename: str = model_config_loader.get_model_store_loc() + "/scaler-" + initial_hash + ".pkl"
+        initial_hash = hash_config(
+            model_config_loader.get_pretrain_config(), length=5)
+        scaler_filename: str = model_config_loader.get_model_store_loc() + "/scaler-" + \
+            initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
         logger.info(f"Saved scaler to {scaler_filename}")
 

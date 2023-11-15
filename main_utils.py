@@ -127,7 +127,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
     model.save(model_filename_opt)
 
 
-def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
+def scoring(config: ConfigLoader) -> None:
     logger.info("Making predictions with ensemble on test data")
     # Predict with CPU
     pred_cpu = config.get_pred_with_cpu()
@@ -135,6 +135,9 @@ def scoring(config: ConfigLoader, ensemble: Ensemble) -> None:
         logger.info("Predicting with CPU for inference")
     else:
         logger.info("Predicting with GPU for inference")
+
+    # Get ensemble
+    ensemble = config.get_ensemble()
 
     # Get config hash
     config_hash = hash_config(config.get_config(), length=16)

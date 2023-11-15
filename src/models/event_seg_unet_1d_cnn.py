@@ -52,10 +52,10 @@ class EventSegmentationUnet1DCNN(Model):
         self.load_config(config)
 
         # Print model summary
-        if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model.cuda(), input_size=(
-                len(data_info.X_columns), data_info.window_size))
+        # if wandb.run is not None:
+        #     from torchsummary import summary
+        #     summary(self.model.cuda(), input_size=(
+        #         len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -335,12 +335,13 @@ class EventSegmentationUnet1DCNN(Model):
                 predictions.append(batch_prediction)
 
         # Concatenate the predictions from all batches
-        predictions = np.concatenate(predictions, axis=0)
+        # Final shape is (windows, window_size, confidences), confidences are (onset, wakeup)
+        predictions = np.concatenate(predictions, axis=0).transpose(0, 2, 1)
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:
             predictions = np.repeat(
-                predictions, data_info.downsampling_factor, axis=2)
+                predictions, data_info.downsampling_factor, axis=1)
 
         # Return raw output if necessary
         if raw_output:
@@ -350,6 +351,9 @@ class EventSegmentationUnet1DCNN(Model):
         all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+            # Pred should be 2d array with shape (window_size, 2)
+            assert pred.shape[1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+            
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 

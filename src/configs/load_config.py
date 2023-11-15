@@ -1,8 +1,6 @@
 import json
 
 from src.cv.cv import CV
-from src.pretrain.pretrain import Pretrain
-
 from .. import data_info
 from ..ensemble.ensemble import Ensemble
 from .load_model_config import ModelConfigLoader

@@ -5,7 +5,6 @@ from src import data_info
 from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 from src.configs.load_model_config import ModelConfigLoader
-from src.ensemble.ensemble import Ensemble
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
 from src.score.nan_confusion import compute_nan_confusion_matrix

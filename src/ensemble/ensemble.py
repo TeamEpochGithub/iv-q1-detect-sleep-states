@@ -32,9 +32,10 @@ class Ensemble:
 
         if weight_matrix is None:
             weight_matrix = np.ones(len(self.model_configs))
-        
+
         # Apply softmax to weight matrix
-        self.weight_matrix = np.exp(weight_matrix) / np.sum(np.exp(weight_matrix))
+        self.weight_matrix = np.exp(
+            weight_matrix) / np.sum(np.exp(weight_matrix))
 
         if len(self.weight_matrix) != len(self.model_configs):
             logger.critical(
@@ -141,7 +142,13 @@ class Ensemble:
 
         return aggregate, aggregate_confidences
 
-    def pred_model(self, model_config_loader: ModelConfigLoader, store_location: str, pred_with_cpu: bool = True, training: bool = False) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
+    def pred_model(
+        self,
+        model_config_loader: ModelConfigLoader,
+        store_location: str,
+        pred_with_cpu: bool = True,
+        training: bool = False
+    ) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
 
         model_name = model_config_loader.get_name()
 
@@ -212,7 +219,8 @@ class Ensemble:
             model.load(model_filename_opt, only_hyperparameters=False)
         else:
             logger.critical("Not all models have been trained yet")
-            raise ValueError(f"Not all models have been trained yet, missing {model_filename_opt}")
+            raise ValueError(
+                f"Not all models have been trained yet, missing {model_filename_opt}")
 
         model = model_config_loader.get_model()
         # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.

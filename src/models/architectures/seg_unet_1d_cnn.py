@@ -121,6 +121,7 @@ class SegUnet1D(nn.Module):
 
         self.avg_pools: nn.ModuleList[nn.AvgPool1d] = nn.ModuleList([nn.AvgPool1d(kernel_size=5, stride=self.stride ** i, padding=self.padding) for i in range(1, self.n_layers - 1)])
         self.layers: nn.ModuleList[nn.Sequential] = nn.ModuleList([self.down_layer(int(self.hidden_layers * i) + int(self.in_channels), int(self.hidden_layers * (i + 1)), self.kernel_size, self.stride, self.depth, self.dropout) for i in range(self.n_layers)])
+        self.layers[0] = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth, self.dropout)  # Hardcode layer 0 here, not sure why this is necessary...
         self.layers[1] = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, self.depth, self.dropout)  # Hardcode layer 1 here
         self.cbrs: nn.ModuleList[ConBrBlock] = nn.ModuleList([ConBrBlock(int(self.hidden_layers * ((i * 2) + 1)), int(self.hidden_layers * (i + 1)), self.kernel_size, 1, 1) for i in range(1, self.n_layers)])
 
@@ -137,8 +138,8 @@ class SegUnet1D(nn.Module):
         # self.cbr_up1 = ConBrBlock(int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
         # self.cbr_up2 = ConBrBlock(int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
         # self.cbr_up3 = ConBrBlock(int(self.hidden_layers * 3), self.hidden_layers, self.kernel_size, 1, 1)
-        # self.upsample = nn.Upsample(scale_factor=self.stride, mode='nearest')
-        # self.upsample1 = nn.Upsample(scale_factor=self.stride, mode='nearest')
+        self.upsample = nn.Upsample(scale_factor=self.stride, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=self.stride, mode='nearest')
         self.softmax = nn.Softmax(dim=1)
         # self.relu = nn.ReLU()  # FIXME: This is not used
         self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
@@ -188,9 +189,13 @@ class SegUnet1D(nn.Module):
         # x = self.layer4(x)
 
         # Decoder
-        ups: list = []
+        ups: list = [encoder_outputs[-1]]
+
+
         for i, cbr in reversed(list(enumerate(self.cbrs))):
-            ups.append(cbr(torch.cat([self.upsample(encoder_outputs[i + 1]), encoder_outputs[i]], 1)))
+            up = self.upsample(ups[-1])
+            up2 = torch.cat([up, encoder_outputs[i]], 1)
+            ups.append(cbr(up2))
 
 
         # up = self.upsample(x)

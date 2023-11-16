@@ -76,7 +76,7 @@
         "mask_unlabeled": true,
         "network_params": {
             "activation": "relu",
-            "hidden_layers": 210,
+            "hidden_layers": 8,
             "kernel_size": 7,
             "depth": 2,
             "dropout": 0,

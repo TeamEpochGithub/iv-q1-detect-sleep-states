@@ -95,17 +95,12 @@ parameters:
           hop_length:
             values:
               - 2
-              - 3
               - 4
-              - 5
               - 6
-              - 8
               - 10
               - 12
-              - 16
               - 18
               - 20
-              - 24
           encoder_name: 
             value: "resnet34"
           encoder_weights:

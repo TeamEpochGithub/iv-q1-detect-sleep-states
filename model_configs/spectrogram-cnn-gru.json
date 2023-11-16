@@ -1,5 +1,5 @@
 {
-    "name": "2d-cnn-spectrogram-gru",
+    "name": "spectrogram-cnn-gru",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 1,
@@ -49,9 +49,9 @@
     },
 
     "architecture": {
-        "type": "Spectrogram_2D_Cnn_Gru",
+        "type": "Spectrogram_Cnn_Gru",
         "loss": "shrinkage-loss",
-        "optimizer": "adam-torch",
+        "optimizer": "adamw-torch",
         "epochs": 50,
         "batch_size": 64,
         "lr": 0.00001,
@@ -62,7 +62,6 @@
         "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
         "mask_unlabeled": true,
-        "use_augmentation": true,
         "clip_awake": true,
         "use_activation": true,
         "use_awake_channel": false,

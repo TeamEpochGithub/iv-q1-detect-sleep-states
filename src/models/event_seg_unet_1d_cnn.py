@@ -52,10 +52,10 @@ class EventSegmentationUnet1DCNN(Model):
         self.load_config(config)
 
         # Print model summary
-        if wandb.run is not None:
-            from torchsummary import summary
-            summary(self.model.cuda(), input_size=(
-                len(data_info.X_columns), data_info.window_size))
+        # if wandb.run is not None:
+        #     from torchsummary import summary
+        #     summary(self.model.cuda(), input_size=(
+        #         len(data_info.X_columns), data_info.window_size))
 
     def load_config(self, config: dict) -> None:
         """
@@ -81,9 +81,11 @@ class EventSegmentationUnet1DCNN(Model):
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
             if config["loss"] == "kldiv-torch":
-                config["loss"] = Loss.get_loss(config["loss"], reduction="batchmean")
+                config["loss"] = Loss.get_loss(
+                    config["loss"], reduction="batchmean")
             else:
-                config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+                config["loss"] = Loss.get_loss(
+                    config["loss"], reduction="mean")
         config["batch_size"] = config.get(
             "batch_size", default_config["batch_size"])
         config["epochs"] = config.get("epochs", default_config["epochs"])
@@ -94,12 +96,17 @@ class EventSegmentationUnet1DCNN(Model):
             "threshold", default_config["threshold"])
         config["weight_decay"] = config.get(
             "weight_decay", default_config["weight_decay"])
-        config["optimizer"] = Optimizer.get_optimizer(config["optimizer"], config["lr"], config["weight_decay"], self.model)
+        config["optimizer"] = Optimizer.get_optimizer(
+            config["optimizer"], config["lr"], config["weight_decay"], self.model)
         if "lr_schedule" in config:
-            config["lr_schedule"] = config.get("lr_schedule", default_config["lr_schedule"])
-            config["scheduler"] = CosineLRScheduler(config["optimizer"], **self.config["lr_schedule"])
-        config["activation_delay"] = config.get("activation_delay", default_config["activation_delay"])
-        config["network_params"] = config.get("network_params", default_config["network_params"])
+            config["lr_schedule"] = config.get(
+                "lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(
+                config["optimizer"], **self.config["lr_schedule"])
+        config["activation_delay"] = config.get(
+            "activation_delay", default_config["activation_delay"])
+        config["network_params"] = config.get(
+            "network_params", default_config["network_params"])
         self.config = config
 
     def load_network_params(self, config: dict) -> dict:
@@ -288,9 +295,10 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Log the results to wandb
         if wandb.run is not None:
-            self.log_train_test(avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
+            self.log_train_test(
+                avg_losses[:total_epochs], avg_val_losses[:total_epochs], total_epochs)
 
-    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabeled data (step, features)
@@ -335,17 +343,26 @@ class EventSegmentationUnet1DCNN(Model):
                 predictions.append(batch_prediction)
 
         # Concatenate the predictions from all batches
-        predictions = np.concatenate(predictions, axis=0)
+        # Final shape is (windows, window_size, confidences), confidences are (onset, wakeup)
+        predictions = np.concatenate(predictions, axis=0).transpose(0, 2, 1)
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:
             predictions = np.repeat(
-                predictions, data_info.downsampling_factor, axis=2)
+                predictions, data_info.downsampling_factor, axis=1)
+
+        # Return raw output if necessary
+        if raw_output:
+            return predictions
 
         all_predictions = []
         all_confidences = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+            # Pred should be 2d array with shape (window_size, 2)
+            assert pred.shape[
+                1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
@@ -456,11 +473,12 @@ class EventSegmentationUnet1DCNN(Model):
         Reset the scheduler to the initial state. Useful for retraining the model.
         """
         if 'scheduler' in self.config:
-            self.config['scheduler'] = CosineLRScheduler(self.config['optimizer'], **self.config["lr_schedule"])
+            self.config['scheduler'] = CosineLRScheduler(
+                self.config['optimizer'], **self.config["lr_schedule"])
 
     def reset_optimizer(self) -> None:
-
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer'] = type(self.config['optimizer'])(self.model.parameters(), lr=self.config['lr'])
+        self.config['optimizer'] = type(self.config['optimizer'])(
+            self.model.parameters(), lr=self.config['lr'])

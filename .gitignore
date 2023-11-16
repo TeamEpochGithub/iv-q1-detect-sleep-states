@@ -173,7 +173,7 @@ data/
 wandb/
 
 # Ignore zip files
-src.zip
+*.zip
 
 # Ignore submission files
 submission.csv
@@ -190,6 +190,9 @@ submission_zip/
 #Ignore trained models
 tm/
 tm.zip
+
+#Ignore configs
+./configs/
 
 #Ignore prediction plots
 prediction_plots/

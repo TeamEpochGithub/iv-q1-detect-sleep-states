@@ -257,7 +257,10 @@ class EventModel:
                 batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
-                batch_prediction, _ = self.model(batch_data)
+                if str(self.model).startswith("MultiResidualBiGRU"):
+                    batch_prediction, _ = self.model(batch_data)
+                else:
+                    batch_prediction = self.model(batch_data)
 
                 if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()

@@ -14,7 +14,7 @@ parameters:
   hpo_model:
     parameters:
       name:
-        value: gru_sweep
+        value: transformer_sweep
       data_info:
         parameters:
           downsampling_factor:
@@ -98,7 +98,7 @@ parameters:
             max: 50
             min: 1
           epochs:
-            value: 5
+            value: 250
           loss:
             values:
               - mse-torch
@@ -129,16 +129,32 @@ parameters:
               - false
           network_params:
             parameters:
-              activation:
-                values:
-                  - relu
-                  - gelu
-              hidden_size:
-                max: 64
-                min: 4
+              heads:
+                max: 16
+                min: 1
+              emb_dim:
+                max: 512
+                min: 16
+              forward_dim:
+                max: 1024
+                min: 16
               n_layers:
-                max: 10
-                min: 4
+                max: 32
+                min: 1
+              pooling:
+                value: "none"
+              tokenizer:
+                value: "patch"
+              tokenizer_args:
+                parameters:
+                  patch_size:
+                    max: 16
+                    min: 1
+              pe:
+                value: "fixed"
+              dropout:
+                max: 0.9
+                min: 0
           optimizer:
             values:
               - adam-torch
@@ -146,4 +162,4 @@ parameters:
           threshold:
             value: 0
           type:
-            value: event-res-gru
+            value: event-segmentation-transformer

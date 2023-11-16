@@ -63,7 +63,7 @@
         "activation_delay": 13,
         "batch_size": 32,
         "early_stopping": 10,
-        "epochs": 5,
+        "epochs": 25,
         "loss": "shrinkage-loss",
         "lr": 0.001,
         "lr_schedule": {

@@ -42,7 +42,7 @@ class FixedPositionalEncoding(nn.Module):
         :param x: Input tensor.
         :return: Output tensor.
         """
-        x = x + self.pe[: x.size(0), :]
+        x = x + self.pe.permute(1, 0, 2)
         return self.dropout(x)
 
 

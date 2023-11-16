@@ -70,7 +70,13 @@
         "mask_unlabeled": true,
         "network_params": {
             "activation": "relu",
-            "hidden_layers": 210
+            "hidden_layers": 210,
+            "kernel_size": 7,
+            "depth": 2,
+            "dropout": 0,
+            "stride": 2,
+            "padding": 2,
+            "n_layers": 4
         },
         "optimizer": "adamw-torch",
         "threshold": 0,

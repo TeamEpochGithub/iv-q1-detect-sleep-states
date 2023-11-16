@@ -52,7 +52,7 @@
         "type": "Spectrogram_2D_Cnn",
         "loss": "shrinkage-loss",
         "optimizer": "adam-torch",
-        "epochs": 50,
+        "epochs": 1,
         "batch_size": 64,
         "lr": 0.00002,
         "early_stopping": 20,

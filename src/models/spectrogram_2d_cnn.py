@@ -338,7 +338,7 @@ class EventSegmentation2DCNN(Model):
 
         logger.info("--- Full train complete!")
 
-    def pred(self, data: np.ndarray, pred_with_cpu: bool) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
+    def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[ndarray[Any, dtype[Any]], ndarray[Any, dtype[Any]]]:
         """
         Prediction function for the model.
         :param data: unlabelled data
@@ -367,7 +367,7 @@ class EventSegmentation2DCNN(Model):
         predictions = []
         with torch.no_grad():
             for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
-                batch_data = batch_data.to(device)
+                batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
                 batch_prediction = self.model(batch_data)
@@ -385,7 +385,10 @@ class EventSegmentation2DCNN(Model):
         # Apply upsampling to the predictions
         if self.config.get('hop_length', 1) > 1:
             predictions = np.repeat(
-                predictions, self.config.get('hop_length', 1), axis=2)
+                predictions, self.config.get('hop_length', 1), axis=1)
+
+        if raw_output:
+            return predictions
 
         all_predictions = []
         all_confidences = []

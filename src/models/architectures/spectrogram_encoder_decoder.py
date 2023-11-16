@@ -51,7 +51,7 @@ class SpectrogramEncoderDecoder(nn.Module):
         y = self.decoder(x_encoded)
         if self.config.get('use_activation', False):
             y = self.activation(y)
-        return y.permute(0, 2, 1)
+        return y
 
 
 class SpecNormalize(nn.Module):

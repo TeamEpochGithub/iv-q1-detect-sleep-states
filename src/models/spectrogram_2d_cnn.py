@@ -48,9 +48,12 @@ class EventSegmentation2DCNN(Model):
         self.model_type = "Spectrogram_2D_Cnn"
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-
-        self.model = SpectrogramEncoderDecoder(
-            in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
+        if self.config.get("use_awake_column", False):
+            self.model = SpectrogramEncoderDecoder(
+                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+        else:
+            self.model = SpectrogramEncoderDecoder(
+                in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
 
         # Load config
         self.load_config(config)
@@ -177,26 +180,28 @@ class EventSegmentation2DCNN(Model):
         X_train = X_train[:, desired_feature_order_indices, :]
         X_test = X_test[:, desired_feature_order_indices, :]
 
-        # Get only the 2 event state features and the awake state
+        # make a list to get which indices to use for the y data
         if mask_unlabeled:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            y_test = y_test[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            if self.config.get('clip_awake', False):
-                if y_train.shape[2] == 4:
-                    y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
-                    y_test[:, :, 3] = np.clip(y_test[:, :, 3], 0, 1)
+            index_list = [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]]
         else:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            y_test = y_test[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            if self.config.get('clip_awake', False):
-                if y_train.shape[2] == 3:
-                    y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
-                    y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
-        # clip the awake state to 0 and 1
+            index_list = [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]]
+
+        # add the awake column again if you want to use the awake channel
+        if self.config.get('use_awake_channel', False):
+            index_list.append(data_info.y_columns["awake"])
+
+        # Index the y data with the index list
+        y_train = y_train[:, :, np.array(index_list)]
+        y_test = y_test[:, :, np.array(index_list)]
+
+        # if clip awake clip the awake columns values
+        if self.config.get('clip_awake', False):
+            if y_train.shape[2] == 3:
+                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+                y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
+            elif y_train.shape[2] == 4:
+                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
+                y_test[:, :, 3] = np.clip(y_test[:, :, 3], 0, 1)
 
         # our pretrain downsampling puts the median of 12 items into one item
         # this loop also does that
@@ -487,8 +492,12 @@ class EventSegmentation2DCNN(Model):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
-        self.model = SpectrogramEncoderDecoder(
-            in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
+        if self.config.get("use_awake_column", False):
+            self.model = SpectrogramEncoderDecoder(
+                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+        else:
+            self.model = SpectrogramEncoderDecoder(
+                in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
 
 
 class SpectrogramDataset(torch.utils.data.TensorDataset):
@@ -509,8 +518,7 @@ class SpectrogramDataset(torch.utils.data.TensorDataset):
         # create the list of augmentation methods that are in the config
         self.config = config
         self.transforms = transforms.Compose([
-            T.FrequencyMasking(freq_mask_param=(config.get('n_fft', 127)+1)//(2*8), iid_masks=True),
-            T.TimeMasking(time_mask_param=17280//(128*config.get('hop_length', 1)), iid_masks=True)
+            T.FrequencyMasking(freq_mask_param=(config.get('n_fft', 127)+1)//(2*8), iid_masks=True)
         ])
 
     def __getitem__(self, index):

@@ -85,8 +85,8 @@ class SegUnet1D(nn.Module):
     """
 
     def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str,
-                 activation: str | None = 'relu', hidden_layers: int = 8, kernel_size: int = 7,
-                 depth: int = 2, dropout: float = 0, stride: int = 4, padding: int = 1, n_layers: int = 4) -> None:
+                 activation: str | None = 'relu', hidden_layers: int = 8, kernel_size: int = 7, depth: int = 2,
+                 dropout: float = 0, stride: int = 4, padding: int = 1, dilation: int = 1, n_layers: int = 4) -> None:
         super().__init__()
 
         # Set model dims
@@ -106,6 +106,7 @@ class SegUnet1D(nn.Module):
         self.dropout = dropout
         self.stride = stride
         self.padding = padding
+        self.dilation = dilation
 
         if n_layers < 2:
             logger.critical('Unet must have at least 2 layers')
@@ -163,7 +164,8 @@ class SegUnet1D(nn.Module):
     def down_layer(input_layer: int, out_layer: int, kernel: int | tuple[int], stride: int | tuple[int], depth: int,
                    dropout: float, dilation: int = 1) -> nn.Sequential:
         block: list[nn.Module] = [
-            ConBrBlock(in_layer=input_layer, out_layer=out_layer, kernel_size=kernel, stride=stride, dilation=1)]
+            ConBrBlock(in_layer=input_layer, out_layer=out_layer, kernel_size=kernel, stride=stride,
+                       dilation=dilation, padding=3)]
         for _ in range(depth):
             block.append(
                 ReBlock(in_layer=out_layer, out_layer=out_layer, kernel_size=kernel, dilation=1, dropout=dropout))

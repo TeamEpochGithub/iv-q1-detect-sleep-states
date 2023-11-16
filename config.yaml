@@ -89,8 +89,11 @@ parameters:
           threshold:
             value: 0.005
           n_fft:
-            max: 127
-            min: 15
+            values:
+              - 127
+              - 63
+              - 31
+              - 15
           hop_length:
             max: 24
             min: 2

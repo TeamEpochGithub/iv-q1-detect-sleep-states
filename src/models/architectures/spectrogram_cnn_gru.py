@@ -26,7 +26,7 @@ class SpectrogramCNNGRU(nn.Module):
         self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=(config.get('n_fft', 127)+1)//2, 
                                                        hidden_size=64, out_size=2, n_layers=5, bidir=True, activation='relu', 
                                                        flatten=False, dropout=0,
-                 internal_layers=1, model_name='')
+                                                       internal_layers=1, model_name='')
 
     def forward(self, x):
         # Pass only enmo and anglez to the spectrogram

@@ -241,9 +241,6 @@ class EventSegmentation2DCNN(Model):
 
         # Create a custom dataset class to apply the spectrogram to the data
 
-        train_dataset = SpectrogramDataset(train_dataset, self.config)
-        test_dataset = SpectrogramDataset(test_dataset, self.config)
-
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
         test_dataloader = torch.utils.data.DataLoader(
@@ -325,7 +322,6 @@ class EventSegmentation2DCNN(Model):
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
-        train_dataset = SpectrogramDataset(train_dataset, self.config)
 
         # Print the shapes and types of train and test
         logger.info(
@@ -368,7 +364,6 @@ class EventSegmentation2DCNN(Model):
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data).permute(0, 2, 1))
-        dataset = SpectrogramDataset(dataset, self.config)
         dataloader = DataLoader(dataset, batch_size=self.config.get('batch_size', 1), shuffle=False)
 
         # Onset predictions
@@ -490,53 +485,3 @@ class EventSegmentation2DCNN(Model):
         else:
             self.model = SpectrogramEncoderDecoder(
                 in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
-
-
-class SpectrogramDataset(torch.utils.data.TensorDataset):
-    def __init__(self, dataset, config):
-        super().__init__()
-        self.dataset = dataset
-        self.spectrogram = nn.Sequential(
-            T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
-            T.AmplitudeToDB(top_db=80),
-            SpecNormalize()
-        )
-        # TODO parametrise these values in the config
-
-        # mask length will be 1/8 of the spectrogram length
-        # iid_masks makes masks at different frequencies per channel
-        # time masking will mask 1/128th ofthe spectrogram length
-
-        # create the list of augmentation methods that are in the config
-        self.config = config
-        self.transforms = transforms.Compose([
-            T.FrequencyMasking(freq_mask_param=(config.get('n_fft', 127)+1)//(2*8), iid_masks=True)
-        ])
-
-    def __getitem__(self, index):
-        if len(self.dataset.tensors) == 2:
-            x, y = self.dataset[index]
-            x = self.spectrogram(x)
-            if self.config.get('use_augmentation', False):
-                x = self.transforms(x)
-            return x, y
-        else:
-            x = self.dataset[index]
-            x = self.spectrogram(x[0].unsqueeze(0)).squeeze(0)
-            return x
-
-    def __len__(self):
-        return len(self.dataset)
-
-
-class SpecNormalize(nn.Module):
-    def __init__(self, eps: float = 1e-8):
-        super().__init__()
-        self.eps = eps
-
-    def forward(self, x):
-        # x: (batch, channel, freq, time)
-        min_ = x.min(dim=-1, keepdim=True)[0].min(dim=-2, keepdim=True)[0]
-        max_ = x.max(dim=-1, keepdim=True)[0].max(dim=-2, keepdim=True)[0]
-
-        return (x - min_) / (max_ - min_ + self.eps)

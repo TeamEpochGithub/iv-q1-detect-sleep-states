@@ -57,8 +57,6 @@
             "copy": true
         }
     },
-    "hpo": {
-    },
     "models": {
         "Spectrogram_2D_Cnn": {
             "type": "Spectrogram_2D_Cnn",

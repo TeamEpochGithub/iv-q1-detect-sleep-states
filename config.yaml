@@ -101,7 +101,7 @@ parameters:
             max: 50
             min: 1
           epochs:
-            value: 250
+            value: 5
           loss:
             values:
               - mse-torch

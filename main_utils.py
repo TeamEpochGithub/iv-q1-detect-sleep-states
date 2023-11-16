@@ -103,18 +103,17 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
             f"Done CV for model: {model_name} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
     # If this file exists, load instead of start training
-    if os.path.isfile(model_filename_opt):
-        logger.info("Found existing trained optimal model: " +
-                    model_name + " with location " + model_filename_opt)
-        model.load(model_filename_opt, only_hyperparameters=False)
+    if hpo:
+        run_cv()
+        return
     else:
-        if hpo:
-            run_cv()
-            return
+        data_info.stage = "train"
+        data_info.substage = "optimal"
+        if os.path.isfile(model_filename_opt):
+            logger.info("Found existing trained optimal model: " +
+                        model_name + " with location " + model_filename_opt)
+            model.load(model_filename_opt, only_hyperparameters=False)
         else:
-            data_info.stage = "train"
-            data_info.substage = "optimal"
-
             logger.info("Training optimal model: " + model_name)
             model.train(x_train, x_test, y_train, y_test)
 

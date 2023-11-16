@@ -5,11 +5,17 @@
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
     "test_series_path": "data/raw/test_series.parquet",
-    "fe_loc_out": "data/features",
     "fe_loc_in": "data/processed",
     "processed_loc_out": "data/processed",
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
+    "model_config_loc": "model_configs",
+    "ensemble": {
+        "models": ["1_event_1d_unet_cnn.json"],
+        "weights": [1],
+        "comb_method": "addition",
+        "pred_only": true
+    },
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -69,7 +75,7 @@
     },
     "hpo": {
         "kind": "wandb_sweeps",
-        "apply": true,
+        "apply": false,
         "count": 2,
         "sweep_configuration": {
             "method": "random",

@@ -45,7 +45,6 @@ class SeBlock(nn.Module):
         x_se = self.relu(x_se)
         x_se = self.conv2(x_se)
         x_se = self.sigmoid(x_se)
-
         x_out = torch.add(x, x_se)
         return x_out
 
@@ -55,17 +54,19 @@ class ReBlock(nn.Module):
     Residual Block.
     """
 
-    def __init__(self, in_layer: int, out_layer: int, kernel_size: int | tuple[int], dilation: int | tuple[int]):
+    def __init__(self, in_layer: int, out_layer: int, kernel_size: int | tuple[int], dilation: int | tuple[int], dropout: float):
         super().__init__()
 
         self.cbr1 = ConBrBlock(in_layer, out_layer, kernel_size, 1, dilation)
         self.cbr2 = ConBrBlock(out_layer, out_layer, kernel_size, 1, dilation)
         self.seblock = SeBlock(out_layer, out_layer)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_re = self.cbr1(x)
         x_re = self.cbr2(x_re)
         x_re = self.seblock(x_re)
+        x_re = self.dropout(x_re)
         x_out = torch.add(x, x_re)
         return x_out
 
@@ -114,11 +115,11 @@ class SegUnet1D(nn.Module):
         self.AvgPool1D2 = nn.AvgPool1d(kernel_size=5, stride=self.stride ** 2, padding=self.padding)
         self.AvgPool1D3 = nn.AvgPool1d(kernel_size=5, stride=self.stride ** 3, padding=self.padding)
 
-        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth)
-        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, self.depth)
-        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, self.stride, self.depth)
-        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, self.stride, self.depth)
-        # self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, self.stride, self.depth)  # FIXME: This is not used?
+        self.layer1 = self.down_layer(self.in_channels, self.hidden_layers, self.kernel_size, 1, self.depth, self.dropout)
+        self.layer2 = self.down_layer(self.hidden_layers, int(self.hidden_layers * 2), self.kernel_size, self.stride, self.depth, self.dropout)
+        self.layer3 = self.down_layer(int(self.hidden_layers * 2) + int(self.in_channels), int(self.hidden_layers * 3), self.kernel_size, self.stride, self.depth, self.dropout)
+        self.layer4 = self.down_layer(int(self.hidden_layers * 3) + int(self.in_channels), int(self.hidden_layers * 4), self.kernel_size, self.stride, self.depth, self.dropout)
+        # self.layer5 = self.down_layer(int(self.hidden_layers * 4) + int(self.in_channels), int(self.hidden_layers * 5), self.kernel_size, self.stride, self.depth, self.dropout)  # FIXME: This is not used?
 
         self.cbr_up1 = ConBrBlock(int(self.hidden_layers * 7), int(self.hidden_layers * 3), self.kernel_size, 1, 1)
         self.cbr_up2 = ConBrBlock(int(self.hidden_layers * 5), int(self.hidden_layers * 2), self.kernel_size, 1, 1)
@@ -129,18 +130,17 @@ class SegUnet1D(nn.Module):
         # self.relu = nn.ReLU()  # FIXME: This is not used
         self.outcov = nn.Conv1d(self.hidden_layers, self.out_channels, kernel_size=self.kernel_size, stride=1, padding=3)
 
-        self.dropout = nn.Dropout(self.dropout)
-
     def verify_network_params(self) -> None:
         """Verify that the given parameters are valid."""
         # Verify that the window can be divides by the stride multiple times
         assert (self.window_size / (self.stride ** 4)).is_integer(), "The window size must be divisible by the stride for the number of layers"
         assert (self.window_size / (self.stride ** 1) == math.floor(self.window_size + 2 * self.padding - self.kernel_size) / self.stride + 1), "The first down and pooling layers must have the same size"
 
-    def down_layer(self, input_layer: int, out_layer: int, kernel: int | tuple[int], stride: int | tuple[int], depth: int) -> nn.Sequential:
+    def down_layer(self, input_layer: int, out_layer: int, kernel: int | tuple[int], stride: int | tuple[int], depth: int, dropout: float) -> nn.Sequential:
         block: list[nn.Module] = [ConBrBlock(input_layer, out_layer, kernel, stride, 1)]
         for _ in range(depth):
-            block.append(ReBlock(out_layer, out_layer, kernel, 1))
+            block.append(ReBlock(out_layer, out_layer, kernel, 1, dropout))
+
         return nn.Sequential(*block)
 
     def forward(self, x: torch.Tensor, use_activation: bool = True) -> torch.Tensor:

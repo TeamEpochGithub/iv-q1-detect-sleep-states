@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Final
 
 import pandas as pd
+import copy
 
 from ..logger.logger import logger
 
@@ -21,7 +22,8 @@ class FE(ABC):
         :param config: the config of a single feature engineering step
         :return: the specific feature engineering step
         """
-        kind: str = config.pop("kind", None)
+        config_copy = copy.deepcopy(config)
+        kind: str = config_copy.pop("kind", None)
 
         if kind is None:
             logger.critical("No kind specified for feature engineering step")
@@ -44,7 +46,7 @@ class FE(ABC):
         }
 
         try:
-            return _FEATURE_ENGINEERING_KINDS[kind](**config)
+            return _FEATURE_ENGINEERING_KINDS[kind](**config_copy)
         except KeyError:
             logger.critical(f"Unknown feature engineering step: {kind}")
             raise FEException(f"Unknown feature engineering step: {kind}")

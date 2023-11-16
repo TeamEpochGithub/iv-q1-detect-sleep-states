@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Final
 
 import pandas as pd
+import copy
 
 from ..logger.logger import logger
 
@@ -24,7 +25,8 @@ class PP(ABC):
         :param config: the config of a single preprocessing step
         :return: the specific preprocessing step
         """
-        kind: str = config.pop("kind", None)
+        config_copy = copy.deepcopy(config)
+        kind = config_copy.pop("kind", None)
 
         if kind is None:
             logger.critical("No kind specified for preprocessing step")
@@ -54,7 +56,7 @@ class PP(ABC):
         }
 
         try:
-            return _PREPROCESSING_KINDS[kind](**config)
+            return _PREPROCESSING_KINDS[kind](**config_copy)
         except KeyError:
             logger.critical(f"Unknown preprocessing step: {kind}")
             raise PPException(f"Unknown preprocessing step: {kind}")

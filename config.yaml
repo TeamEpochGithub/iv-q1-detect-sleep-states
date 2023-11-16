@@ -5,16 +5,31 @@ command:
   - ${args}
 method: bayes
 project: detect-sleep-states
-name: sweep-gru-ensemble-test
+program: main.py
+name: sweep-gru-4
 metric:
   goal: maximize
   name: cv_score
-name: sweep-gru-3
 parameters:
   hpo_model:
     parameters:
       name:
         value: gru_sweep
+      data_info:
+        parameters:
+          downsampling_factor:
+            values:
+              - 3
+              - 4
+              - 6
+              - 12
+              - 24
+          latitude:
+            value: 40.73061
+          longitude:
+            value: -73.935242
+          window_size:
+            value: 17280
       preprocessing:
         value: [
           {
@@ -86,7 +101,7 @@ parameters:
             max: 50
             min: 1
           epochs:
-            value: 5
+            value: 250
           loss:
             values:
               - mse-torch
@@ -98,7 +113,7 @@ parameters:
           lr_schedule:
             parameters:
               cycle_limit:
-                max: 5
+                max: 4
                 min: 1
               lr_min:
                 max: 0.01

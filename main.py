@@ -43,6 +43,7 @@ def main() -> None:
 
             # Merge the config from the hpo config
             config_loader.config |= wandb.config
+            assert config_loader.config["hpo_model"] == wandb.config["hpo_model"]
 
             # Update the hpo config with the merged config
             config_loader.get_hpo_config().config = config_loader.config.get("hpo_model")
@@ -88,7 +89,7 @@ def main() -> None:
     if config_loader.get_hpo():
         logger.info("Running HPO")
         train_from_config(config_loader.get_hpo_config(),
-                          config_loader, store_location, hpo=True)
+                          config_loader.get_cv(), store_location, hpo=True)
         return
 
     # Initialize models
@@ -97,7 +98,7 @@ def main() -> None:
     models = ensemble.get_models()
     if not ensemble.get_pred_only():
         for _, model_config in enumerate(models):
-            train_from_config(model_config, config_loader,
+            train_from_config(model_config, config_loader.get_cv(),
                               store_location, hpo=False)
     else:
         logger.info("Not training models")

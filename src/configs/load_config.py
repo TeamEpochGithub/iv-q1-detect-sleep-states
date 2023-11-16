@@ -28,12 +28,14 @@ class ConfigLoader:
             raise ConfigException(
                 "Config cannot have both ensemble and hpo")
 
-        self.set_globals()
         if self.config.get("ensemble"):
             self.set_ensemble()
         if self.config.get("hpo"):
             self.set_hpo_config()
         self.name = self.config["name"]
+
+        # Get pred_with_cpu from config
+        data_info.pred_with_cpu = self.config.get("pred_with_cpu", False)
 
     def get_config(self) -> dict:
         """
@@ -54,48 +56,6 @@ class ConfigLoader:
         :return: whether to log to Weights & Biases
         """
         return self.config["log_to_wandb"]
-
-    def set_globals(self) -> None:
-        """Set the global variables"""
-        data_info.window_size = self.config.get("data_info").get(
-            "window_size", data_info.window_size)
-        data_info.downsampling_factor = self.config.get("data_info").get(
-            "downsampling_factor", data_info.downsampling_factor)
-        data_info.plot_summary = self.config.get("data_info").get(
-            "plot_summary", data_info.plot_summary)
-        data_info.latitude = self.config.get(
-            "data_info").get("latitude", data_info.latitude)
-        data_info.longitude = self.config.get(
-            "data_info").get("longitude", data_info.longitude)
-
-    def reset_globals(self) -> None:
-        """Reset the global variables to the default values"""
-        data_info.pred_with_cpu = self.get_pred_with_cpu()
-        data_info.window_size_before = self.config.get(
-            "data_info").get("window_size", 17280)
-        data_info.window_size = data_info.window_size_before
-        data_info.downsampling_factor = self.config.get(
-            "data_info").get("downsampling_factor", 1)
-        data_info.stage = "load_config"
-        data_info.substage = "set_globals"
-        data_info.plot_summary = self.config.get(
-            "data_info").get("plot_summary", False)
-
-        data_info.latitude = self.config.get(
-            "data_info").get("latitude", 40.730610)
-        data_info.longitude = self.config.get(
-            "data_info").get("longitude", -73.935242)
-
-        data_info.X_columns = {}
-        data_info.y_columns = {}
-
-        data_info.cv_current_fold = 0
-        data_info.cv_unique_series = []
-
-        data_info.X_columns = {}
-        data_info.y_columns = {}
-
-        data_info.cv_current_fold = 0
 
     def get_train_series_path(self) -> str:
         """Get the path to the training series data
@@ -185,13 +145,6 @@ class ConfigLoader:
         if not hasattr(self, "ensemble"):
             return None
         return self.ensemble
-
-    def get_train_optimal(self) -> bool:
-        """
-        Train optimal model from the config
-        :return: whether to train optimal model
-        """
-        return self.config["train_optimal"]
 
     def cv(self) -> CV:
         """Get the cross validation method from the config

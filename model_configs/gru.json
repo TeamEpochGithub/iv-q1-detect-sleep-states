@@ -1,5 +1,11 @@
 {
     "name": "gru",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
     "preprocessing": [
         {
             "kind": "mem_reduce",

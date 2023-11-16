@@ -6,7 +6,7 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-gru-4
+name: sweep-transformer
 metric:
   goal: maximize
   name: cv_score
@@ -19,9 +19,6 @@ parameters:
         parameters:
           downsampling_factor:
             values:
-              - 3
-              - 4
-              - 6
               - 12
               - 24
           latitude:

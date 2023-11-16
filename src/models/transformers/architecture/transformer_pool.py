@@ -31,6 +31,13 @@ class TransformerPool(nn.Module):
         pe: str = "fixed", dropout: float = 0.1, t_type: str = "regression"
     ) -> None:
         super(TransformerPool, self).__init__()
+
+        # Ensure emb_dim is divisible by heads
+        emb_dim = emb_dim // heads * heads
+        if emb_dim < heads:
+            emb_dim = heads
+        assert emb_dim % heads == 0, "Embedding dimension must be divisible by number of heads"
+        forward_dim = forward_dim // emb_dim * emb_dim
         self.encoder = EncoderConfig(
             tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len)
         with torch.no_grad():
@@ -57,10 +64,14 @@ class TransformerPool(nn.Module):
             self.mlp_head = nn.Linear(self.e, num_class)
             self.last_layer = nn.Sigmoid()
         elif t_type == "event":
-            self.conbr_1 = ConBrBlock(emb_dim, emb_dim // 2, 3, 1, 1, padding=1)
-            self.conbr_2 = ConBrBlock(emb_dim // 2, emb_dim // 4, 3, 1, 1, padding=1)
-            self.upsample = nn.Upsample(scale_factor=(seq_len // self.l_e), mode='nearest')
-            self.outcov = nn.Conv1d(emb_dim // 4, num_class, kernel_size=3, stride=1, padding=1)
+            self.conbr_1 = ConBrBlock(
+                emb_dim, emb_dim // 2, 3, 1, 1, padding=1)
+            self.conbr_2 = ConBrBlock(
+                emb_dim // 2, emb_dim // 4, 3, 1, 1, padding=1)
+            self.upsample = nn.Upsample(scale_factor=(
+                seq_len // self.l_e), mode='nearest')
+            self.outcov = nn.Conv1d(
+                emb_dim // 4, num_class, kernel_size=3, stride=1, padding=1)
             self.last_layer = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

@@ -34,7 +34,7 @@ parameters:
           },
           {
               "kind": "similarity_nan",
-              "as_feature": true
+              "as_feature": false
           },
           {
               "kind": "add_state_labels",
@@ -93,8 +93,19 @@ parameters:
               - 127
               - 63
           hop_length:
-            max: 24
-            min: 2
+            values:
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+              - 8
+              - 10
+              - 12
+              - 16
+              - 18
+              - 20
+              - 24
           encoder_name: 
             value: "resnet34"
           encoder_weights:

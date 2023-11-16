@@ -48,7 +48,7 @@
         }
     },
 
-    "Spectrogram_2D_Cnn": {
+    "architecture": {
         "type": "Spectrogram_2D_Cnn",
         "loss": "shrinkage-loss",
         "optimizer": "adam-torch",
@@ -59,7 +59,7 @@
         "threshold": 0.005,
         "n_fft": 63,
         "hop_length": 6,
-        "encoder_name": "resnet34",
+        "encoder_name": "mobilenet_v2",
         "encoder_weights": "imagenet",
         "mask_unlabeled": true,
         "use_augmentation": true,

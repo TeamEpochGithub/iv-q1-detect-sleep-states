@@ -17,9 +17,6 @@ from ..loss.loss import Loss
 from ..optimizer.optimizer import Optimizer
 from timm.scheduler import CosineLRScheduler
 from ..util.state_to_event import pred_to_event_state
-import torchaudio.transforms as T
-from torch import nn
-from torchvision import transforms
 
 
 class EventSegmentation2DCNN(Model):

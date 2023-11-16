@@ -148,7 +148,7 @@ if __name__ == "__main__":
     torch.manual_seed(42)
 
     # Load config file
-    config_loader: ConfigLoader = ConfigLoader("configs/2d-cnn-spectrogram.json")
+    config_loader: ConfigLoader = ConfigLoader("config.json")
 
     # Gotta sweep
     if config_loader.get_hpo():

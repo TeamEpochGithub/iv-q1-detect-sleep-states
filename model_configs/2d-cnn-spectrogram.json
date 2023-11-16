@@ -52,9 +52,9 @@
         "type": "Spectrogram_2D_Cnn",
         "loss": "shrinkage-loss",
         "optimizer": "adam-torch",
-        "epochs": 1,
+        "epochs": 50,
         "batch_size": 64,
-        "lr": 0.00002,
+        "lr": 0.00001,
         "early_stopping": 20,
         "threshold": 0.005,
         "n_fft": 63,
@@ -66,12 +66,12 @@
         "clip_awake": true,
         "use_activation": true,
         "use_awake_channel": false,
-        "dropout_prob": 0.07,
+        "dropout_prob": 0.6,
         "lr_schedule": {
             "t_initial": 5,
             "warmup_t": 0,
-            "warmup_lr_init": 0.00002,
-            "lr_min": 0.000005
+            "warmup_lr_init": 0.00001,
+            "lr_min": 0.000003
         } 
     }
 }

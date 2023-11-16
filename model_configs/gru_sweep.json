@@ -1,8 +1,8 @@
 {
-    "name": "gru2",
+    "name": "gru_sweep",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 24,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
@@ -60,16 +60,16 @@
         }
     },
     "architecture": {
-        "activation_delay": 24,
-        "batch_size": 62,
-        "early_stopping": 28,
-        "epochs": 250,
-        "loss": "kldiv-torch",
-        "lr": 0.049981787868132795,
+        "activation_delay": 13,
+        "batch_size": 56,
+        "early_stopping": 37,
+        "epochs": 5,
+        "loss": "shrinkage-loss",
+        "lr": 0.00822546449394296,
         "lr_schedule": {
-            "cycle_limit": 2,
-            "lr_min": 0.003098641981914775,
-            "t_initial": 33,
+            "cycle_limit": 3,
+            "lr_min": 0.0028207485798287975,
+            "t_initial": 47,
             "warmup_lr_init": 0.000001,
             "warmup_t": 3
         },
@@ -77,7 +77,7 @@
         "network_params": {
             "activation": "gelu",
             "hidden_size": 16,
-            "n_layers": 9
+            "n_layers": 10
         },
         "optimizer": "adamw-torch",
         "threshold": 0,

@@ -3,9 +3,10 @@ from torch import nn
 from segmentation_models_pytorch import Unet
 import torchaudio.transforms as T
 
-class SpectrogramCNNGRU(nn.Module):
+
+class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
     def __init__(self, in_channels, out_channels, model_type, config):
-        super(SpectrogramCNNGRU, self).__init__()
+        super(MultiResidualBiGRUwSpectrogramCNN, self).__init__()
         self.config = config
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
@@ -32,6 +33,7 @@ class SpectrogramCNNGRU(nn.Module):
         x_encoded = self.encoder(x_spec).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
+        x_encoded = x_encoded.permute(0, 2, 1)
         y = self.GRU(x_encoded)
         return y
 

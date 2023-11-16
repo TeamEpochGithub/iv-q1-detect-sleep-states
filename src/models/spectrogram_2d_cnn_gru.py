@@ -17,7 +17,7 @@ from ..loss.loss import Loss
 from ..optimizer.optimizer import Optimizer
 from timm.scheduler import CosineLRScheduler
 from ..util.state_to_event import pred_to_event_state
-from .architecture.spectrogram_cnn_gru import SpectrogramCNNGRU
+from .architectures.spectrogram_cnn_gru import SpectrogramCNNGRU
 
 
 class EventSegmentation2DCNN(Model):
@@ -46,13 +46,13 @@ class EventSegmentation2DCNN(Model):
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         if self.config.get("use_awake_channel", False):
-            self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+            self.model = SpectrogramCNNGRU(in_channels=len(data_info.X_columns),
+                                            out_channels=3, model_type=self.model_type, config=self.config)
         else:
-            self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
+            self.model = SpectrogramCNNGRU(in_channels=len(data_info.X_columns), 
+                                           out_channels=2, model_type=self.model_type, config=self.config)
 
-        self.model = SpectrogramCNNGRU
+        
         # Load config
         self.load_config(config)
         # Print model summary
@@ -482,8 +482,8 @@ class EventSegmentation2DCNN(Model):
         Reset the weights of the model. Useful for retraining the model.
         """
         if self.config.get("use_awake_channel", False):
-            self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+            self.model = SpectrogramCNNGRU(in_channels=len(data_info.X_columns),
+                                            out_channels=3, model_type=self.model_type, config=self.config)
         else:
-            self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
+            self.model = SpectrogramCNNGRU(in_channels=len(data_info.X_columns), 
+                                           out_channels=2, model_type=self.model_type, config=self.config)

@@ -92,8 +92,6 @@ parameters:
             values:
               - 127
               - 63
-              - 31
-              - 15
           hop_length:
             max: 24
             min: 2

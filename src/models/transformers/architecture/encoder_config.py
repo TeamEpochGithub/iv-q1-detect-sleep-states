@@ -1,7 +1,7 @@
 import torch.nn as nn
 from .encoder import Encoder
 from .tokenizer import PatchTokenizer, ConvTokenizer, SimpleTokenizer
-from .positional_encoding import FixedPositionalEncoding
+from .positional_encoding import FixedPositionalEncoding, OtherPositionalEncoding
 import torch
 from src.logger.logger import logger
 
@@ -19,7 +19,7 @@ class EncoderConfig(nn.Module):
     """
 
     def __init__(self, tokenizer: str = "patch", tokenizer_args: dict = {}, pe: str = "fixed",
-                 emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, seq_len: int = 17280) -> None:
+                 emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, seq_len: int = 17280, dropout: float = 0.0) -> None:
         super().__init__()
         self.tokenizer = get_tokenizer(tokenizer, emb_dim, tokenizer_args)
         with torch.no_grad():
@@ -31,7 +31,7 @@ class EncoderConfig(nn.Module):
         self.pe = get_positional_encoding(pe, emb_dim=emb_dim, max_len=l_c)
         self.output_size = emb_dim * l_c
         self.model = Encoder(self.tokenizer, self.pe,
-                             emb_dim, forward_dim, n_layers, heads)
+                             emb_dim, forward_dim, n_layers, heads, dropout=dropout)
 
     def get_output_size(self) -> int:
         """
@@ -74,3 +74,5 @@ def get_positional_encoding(pe: str = "fixed", emb_dim: int = 92, max_len: int =
     """
     if pe == "fixed":
         return FixedPositionalEncoding(d_model=emb_dim, max_len=max_len)
+    elif pe == "other":
+        return OtherPositionalEncoding(emb_dim=emb_dim, max_len=max_len)

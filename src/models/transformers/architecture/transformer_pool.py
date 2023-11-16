@@ -38,8 +38,8 @@ class TransformerPool(nn.Module):
             emb_dim = heads
         assert emb_dim % heads == 0, "Embedding dimension must be divisible by number of heads"
         forward_dim = forward_dim // emb_dim * emb_dim
-        self.encoder = EncoderConfig(
-            tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim, forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len)
+        self.encoder = EncoderConfig(tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim,
+                                     forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len, dropout=dropout)
         with torch.no_grad():
             x = torch.randn([1, seq_len, tokenizer_args["channels"]])
             out = self.encoder(x)
@@ -74,7 +74,7 @@ class TransformerPool(nn.Module):
                 emb_dim // 4, num_class, kernel_size=3, stride=1, padding=1)
             self.last_layer = nn.ReLU()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, use_activation: bool = True) -> torch.Tensor:
         """
         Forward function for transformer encoder.
         :param x: Input tensor (bs, l, c).
@@ -100,6 +100,8 @@ class TransformerPool(nn.Module):
             x = self.conbr_2(x)
             # Perform outcov (bs, e_pool // 2, l) -> (bs, num_class, l)
             x = self.outcov(x)
+            if not use_activation:
+                return x.permute(0, 2, 1)
             # Last layer (bs, num_class, l) -> (bs, l, num_class)
             x = self.last_layer(x.permute(0, 2, 1))
         else:

@@ -25,11 +25,12 @@ class SpectrogramEncoderDecoder(nn.Module):
             classes=1,
             encoder_depth=config.get('encoder_depth', 5),
         )
+        self.dropout = nn.Dropout(config.get('dropout_prob', 0.05))
         self.decoder = UNet1DDecoder(
             n_channels=(config.get('n_fft', 127)+1)//2 + self.num_res_features,
             n_classes=out_channels,
-            bilinear=config.get('bilinear', True),
-            scale_factor=config.get('scale_factor', 1),
+            bilinear=config.get('bilinear', False),
+            scale_factor=config.get('scale_factor', 2),
             duration=17280//config.get('hop_length', 1),
         )
         self.activation = nn.GELU()
@@ -39,8 +40,8 @@ class SpectrogramEncoderDecoder(nn.Module):
         x_encoded = self.encoder(x).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
+        x_encoded = self.dropout(x_encoded)
         y = self.decoder(x_encoded)
         if self.config.get('use_activation', False):
             y = self.activation(y)
         return y.permute(0, 2, 1)
-

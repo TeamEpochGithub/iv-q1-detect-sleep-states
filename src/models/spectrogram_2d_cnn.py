@@ -48,7 +48,7 @@ class EventSegmentation2DCNN(Model):
         self.model_type = "Spectrogram_2D_Cnn"
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        if self.config.get("use_awake_column", False):
+        if self.config.get("use_awake_channel", False):
             self.model = SpectrogramEncoderDecoder(
                 in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
         else:
@@ -296,17 +296,23 @@ class EventSegmentation2DCNN(Model):
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
 
         if mask_unlabeled:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            if self.config.get('clip_awake', False):
-                if y_train.shape[2] == 4:
-                    y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
+            index_list = [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]]
         else:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            if self.config.get('clip_awake', False):
-                if y_train.shape[2] == 3:
-                    y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+            index_list = [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]]
+
+        # add the awake column again if you want to use the awake channel
+        if self.config.get('use_awake_channel', False):
+            index_list.append(data_info.y_columns["awake"])
+
+        # Index the y data with the index list
+        y_train = y_train[:, :, np.array(index_list)]
+
+        # if clip awake clip the awake columns values
+        if self.config.get('clip_awake', False):
+            if y_train.shape[2] == 3:
+                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+            elif y_train.shape[2] == 4:
+                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
 
         # downsample the y data
         y_train_downsampled = []
@@ -492,7 +498,7 @@ class EventSegmentation2DCNN(Model):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
-        if self.config.get("use_awake_column", False):
+        if self.config.get("use_awake_channel", False):
             self.model = SpectrogramEncoderDecoder(
                 in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
         else:

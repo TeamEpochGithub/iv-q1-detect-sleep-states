@@ -70,7 +70,7 @@ class Ensemble:
         """
         return self.test_idx
 
-    def pred(self, config_loader, pred_with_cpu: bool, training: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -82,7 +82,6 @@ class Ensemble:
         """
 
         # Initialize models
-        store_location = config_loader.get_model_store_loc()
         logger.info("Model store location: " + store_location)
         logger.info("Predicting with ensemble")
 
@@ -92,7 +91,7 @@ class Ensemble:
         # model_pred is (onset, wakeup) tuples for each window
         for _, model_config in enumerate(self.model_configs):
 
-            config_loader.reset_globals()
+            model_config.reset_globals()
             model_pred = self.pred_model(
                 model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training)
 
@@ -151,6 +150,7 @@ class Ensemble:
     ) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
 
         model_name = model_config_loader.get_name()
+        print_section_separator("Model: " + model_name, spacing=0)
 
         # ------------------------------------------- #
         #    Preprocessing and feature Engineering    #
@@ -182,7 +182,7 @@ class Ensemble:
         data_info.substage = "pretrain_split"
 
         if training:
-            x_train, x_test, y_train, y_test, train_idx, test_idx, groups = get_pretrain_split_cache(
+            x_train, x_test, y_train, y_test, _, test_idx, _ = get_pretrain_split_cache(
                 model_config_loader, featured_data, save_output=True)
             self.test_idx = test_idx
 
@@ -190,6 +190,9 @@ class Ensemble:
                 x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
             logger.info("X Test data shape (size, window_size, features): " + str(
                 x_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
+
+            assert x_train.shape[1] == y_train.shape[1] == x_test.shape[1] == y_test.shape[
+                1], "The window size of the train and test data should be the same"
         else:
             # Hash of concatenated string of preprocessing, feature engineering and pretraining
             scaler_hash = hash_config(
@@ -199,6 +202,7 @@ class Ensemble:
                     store_location + "/scaler-" + scaler_hash + ".pkl")
 
             x_test = pretrain.preprocess(featured_data)
+            assert x_test.shape[1] == data_info.window_size, "The window size of the test data should be the same as the window size of the training data"
 
         logger.info("Creating model using ModelConfigLoader")
         model = model_config_loader.set_model()
@@ -222,7 +226,6 @@ class Ensemble:
             raise ValueError(
                 f"Not all models have been trained yet, missing {model_filename_opt}")
 
-        model = model_config_loader.get_model()
         # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
         if hasattr(model, 'device'):
             model_pred = model.pred(

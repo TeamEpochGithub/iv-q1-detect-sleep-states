@@ -15,6 +15,7 @@ from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 from ..models.model import Model
+from .. import data_info
 
 
 class ModelConfigLoader:
@@ -36,6 +37,9 @@ class ModelConfigLoader:
         with open(config_path, 'r') as f:
             self.config = json.load(f)
 
+        # Set the global variables
+        self.set_globals()
+
     def get_config(self) -> dict:
         """
         Get the full configuration
@@ -49,6 +53,47 @@ class ModelConfigLoader:
         :return: the name of the model
         """
         return self.config["name"]
+
+    def set_globals(self) -> None:
+        """Set the global variables"""
+        data_info.window_size = self.config.get("data_info").get(
+            "window_size", data_info.window_size)
+        data_info.downsampling_factor = self.config.get("data_info").get(
+            "downsampling_factor", data_info.downsampling_factor)
+        data_info.plot_summary = self.config.get("data_info").get(
+            "plot_summary", data_info.plot_summary)
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", data_info.latitude)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", data_info.longitude)
+
+    def reset_globals(self) -> None:
+        """Reset the global variables to the default values"""
+        data_info.window_size_before = self.config.get(
+            "data_info").get("window_size", 17280)
+        data_info.window_size = data_info.window_size_before
+        data_info.downsampling_factor = self.config.get(
+            "data_info").get("downsampling_factor", 1)
+        data_info.stage = "load_config"
+        data_info.substage = "set_globals"
+        data_info.plot_summary = self.config.get(
+            "data_info").get("plot_summary", False)
+
+        data_info.latitude = self.config.get(
+            "data_info").get("latitude", 40.730610)
+        data_info.longitude = self.config.get(
+            "data_info").get("longitude", -73.935242)
+
+        data_info.X_columns = {}
+        data_info.y_columns = {}
+
+        data_info.cv_current_fold = 0
+        data_info.cv_unique_series = []
+
+        data_info.X_columns = {}
+        data_info.y_columns = {}
+
+        data_info.cv_current_fold = 0
 
     def get_pp_steps(self, training: bool) -> list[PP]:
         """

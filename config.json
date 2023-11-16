@@ -10,27 +10,14 @@
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
-    "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12,
-        "latitude": 40.730610,
-        "longitude": -73.935242
-    },
-    "ensemble": {
-        "models": ["unet.json"],
-        "weights": [1],
-        "comb_method": "confidence_average",
-        "pred_only": false
-    },
+    "hpo": "gru_sweep.json",
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],
         "splitter_params": {
             "n_splits": 3
-        },
-        "apply": false
+        }
     },
-    "train_optimal": true,
     "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {

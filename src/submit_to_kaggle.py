@@ -29,10 +29,10 @@ def submit(config_loader: ConfigLoader, submit=False) -> None:
         raise ValueError("No ensemble found in config")
 
     # Make predictions on test data
-    predictions = ensemble.pred(config_loader, pred_with_cpu=pred_cpu, training=False)
+    predictions = ensemble.pred(config_loader.get_model_store_loc(), pred_with_cpu=pred_cpu, training=False)
 
     # Get featured data for model 1, should not give any problems as all models should have the same columns excluding features
-    config_loader.reset_globals()
+    ensemble.get_models()[0].reset_globals()
     featured_data = get_processed_data(
         ensemble.get_models()[0], training=False, save_output=False)
 

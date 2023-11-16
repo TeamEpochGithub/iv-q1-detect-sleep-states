@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 from src import data_info
+from src.cv.cv import CV
 from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 from src.configs.load_model_config import ModelConfigLoader
@@ -12,17 +13,16 @@ from src.util.get_pretrain_cache import get_pretrain_full_cache, get_pretrain_sp
 from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
 import numpy as np
-import wandb
 from src.util.submissionformat import to_submission_format
 import json
 from src.score.compute_score import compute_score_full, compute_score_clean, log_scores_to_wandb
 from src.score.visualize_preds import plot_preds_on_series
 
 
-def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoader, store_location: str, hpo: bool = False) -> None:
+def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, store_location: str, hpo: bool = False) -> None:
 
     # Initialisation
-    config_loader.reset_globals()
+    model_config.reset_globals()
     model_name = model_config.get_name()
 
     # ------------------------------------------- #
@@ -61,8 +61,10 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
         x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
     logger.info("X Test data shape (size, window_size, features): " + str(
         x_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
-
     logger.info("Creating model using ModelConfigLoader")
+
+    assert x_test.shape[1] == data_info.window_size_before // data_info.downsampling_factor == data_info.window_size == y_test.shape[1] == x_train.shape[1] == y_train.shape[1]
+
     model = model_config.set_model()
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
@@ -75,7 +77,7 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
         model_name + "-" + initial_hash + model.hash + ".pt"
 
     # Get cv object
-    cv = config_loader.get_cv()
+    cv = cross_validation
 
     def run_cv():
 
@@ -101,27 +103,19 @@ def train_from_config(model_config: ModelConfigLoader, config_loader: ConfigLoad
             f"Done CV for model: {model_name} with CV scores of \n {scores} and mean score of {np.mean(scores, axis=0)}")
 
     # If this file exists, load instead of start training
-    if os.path.isfile(model_filename_opt):
-        logger.info("Found existing trained optimal model: " +
-                    model_name + " with location " + model_filename_opt)
-        model.load(model_filename_opt, only_hyperparameters=False)
+    if hpo:
+        run_cv()
+        return
     else:
-        if hpo:
-            run_cv()
-            return
-        elif config_loader.get_train_optimal():
-            data_info.stage = "train"
-            data_info.substage = "optimal"
-
+        data_info.stage = "train"
+        data_info.substage = "optimal"
+        if os.path.isfile(model_filename_opt):
+            logger.info("Found existing trained optimal model: " +
+                        model_name + " with location " + model_filename_opt)
+            model.load(model_filename_opt, only_hyperparameters=False)
+        else:
             logger.info("Training optimal model: " + model_name)
             model.train(x_train, x_test, y_train, y_test)
-        else:
-            logger.info("Not training optimal model: " + model_name)
-            # Exit from main as the model is not trained optimally
-            if config_loader.get_log_to_wandb():
-                wandb.finish()
-                logger.info("Finished logging to wandb")
-            return
 
     model.save(model_filename_opt)
 
@@ -142,11 +136,11 @@ def scoring(config: ConfigLoader) -> None:
     config_hash = hash_config(config.get_config(), length=16)
 
     # Make predictions on test data
-    predictions = ensemble.pred(config, pred_with_cpu=pred_cpu)
+    predictions = ensemble.pred(config.get_model_store_loc(), pred_with_cpu=pred_cpu)
     test_idx = ensemble.get_test_idx()
 
     # Get featured data for model 1, should not give any problems as all models should have the same columns excluding features
-    config.reset_globals()
+    ensemble.get_models()[0].reset_globals()
     featured_data = get_processed_data(
         ensemble.get_models()[0], training=True, save_output=True)
 

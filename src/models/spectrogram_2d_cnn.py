@@ -17,7 +17,6 @@ from ..loss.loss import Loss
 from ..optimizer.optimizer import Optimizer
 from timm.scheduler import CosineLRScheduler
 from ..util.state_to_event import pred_to_event_state
-import matplotlib.pyplot as plt
 import torchaudio.transforms as T
 from torch import nn
 from torchvision import transforms
@@ -399,24 +398,12 @@ class EventSegmentation2DCNN(Model):
         all_predictions = []
         all_confidences = []
         # Convert to events
-        y_test_from_main = np.load('y_test.npy')
-        i = 0
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             if pred.shape[0] == 3:
                 events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
             else:
                 events = pred_to_event_state(pred, thresh=self.config["threshold"])
-            # plt.plot(pred[0, :])
-            # plt.plot(pred[1, :])
-            # plt.plot(pred[2, :])
-            # plt.vlines(events[0], 0, 1, colors='r', linestyles='dashed')
-            # plt.vlines(events[1], 0, 1, colors='g', linestyles='dashed')
-            # plt.plot(y_test_from_main[i, :, 0], color='r', alpha=0.5)
-            # plt.plot(y_test_from_main[i, :, 1], color='g', alpha=0.5)
-            # plt.plot(y_test_from_main[i, :, 2], color='b', alpha=0.5)
-            # plt.legend(['onset', 'wake-up', 'awake', 'onset_event', 'wake-up_event', 'y_test_onset', 'y_test_wake-up', 'y_test_awake'])
-            # plt.show()
             # Add step offset based on repeat factor.
             if self.config.get('hop_length', 1) <= 1:
                 offset = 0
@@ -428,7 +415,6 @@ class EventSegmentation2DCNN(Model):
             confidences = (events[2], events[3])
             all_predictions.append(steps)
             all_confidences.append(confidences)
-            i += 1
         # Return numpy array
         return np.array(all_predictions), np.array(all_confidences)
 

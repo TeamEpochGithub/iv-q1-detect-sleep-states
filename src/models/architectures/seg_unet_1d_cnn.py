@@ -119,8 +119,7 @@ class SegUnet1D(nn.Module):
 
         self.layers: nn.ModuleList[nn.Sequential] = nn.ModuleList([
             self.down_layer(input_layer=self.in_channels, out_layer=self.hidden_layers, kernel=self.kernel_size,
-                            stride=1, depth=self.depth, dropout=self.dropout),
-            # Hardcoded layer 0
+                            stride=1, depth=self.depth, dropout=self.dropout),  # Hardcoded layer 0
             self.down_layer(input_layer=self.hidden_layers, out_layer=int(self.hidden_layers * 2),
                             kernel=self.kernel_size, stride=self.stride, depth=self.depth,
                             dropout=self.dropout),  # Hardcoded layer 1
@@ -157,7 +156,9 @@ class SegUnet1D(nn.Module):
         layer_sizes: list = [self.window_size,
                              *[self.window_size / (self.stride ** i) for i in range(1, self.n_layers)]]
         for i in range(1, self.n_layers):
-            if layer_sizes[i] != math.floor(layer_sizes[i - 1] + 2 * self.padding - self.kernel_size) / self.stride + 1:
+            out_layer_size = math.floor(
+                ((layer_sizes[i - 1] + 2 * 3 - self.dilation * (self.kernel_size - 1) - 1) / self.stride) + 1)
+            if layer_sizes[i] != out_layer_size:
                 logger.warning(f"The down and pooling layer {i} must have the same size. Model may crash!")
 
     @staticmethod
@@ -184,13 +185,13 @@ class SegUnet1D(nn.Module):
             encoder_outputs.append(layer(x))
 
         # Decoder
-        ups: list = [encoder_outputs[-1]]
+        decoder_outputs: list = [encoder_outputs[-1]]
 
         for i, cbr in reversed(list(enumerate(self.cbrs))):
-            up = self.upsample(ups[-1])
-            ups.append(cbr(torch.cat([up, encoder_outputs[i]], 1)))
+            up = torch.cat([self.upsample(decoder_outputs[-1]), encoder_outputs[i]], 1)
+            decoder_outputs.append(cbr(up))
 
-        out = self.outcov(ups[-1])
+        out = self.outcov(decoder_outputs[-1])
 
         if self.model_type == "state-segmentation":
             out = self.softmax(out)

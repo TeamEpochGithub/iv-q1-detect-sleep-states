@@ -56,7 +56,7 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
 
     x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(
         model_config, featured_data, save_output=True)
-
+    np.save("y_test.npy", y_test)
     logger.info("X Train data shape (size, window_size, features): " + str(
         x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
     logger.info("X Test data shape (size, window_size, features): " + str(

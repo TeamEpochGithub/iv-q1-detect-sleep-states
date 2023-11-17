@@ -372,7 +372,7 @@ class EventSegmentation2DCNNGRU(Model):
                 batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
-                batch_prediction = self.model(batch_data)
+                batch_prediction, _ = self.model(batch_data)
 
                 if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
@@ -388,7 +388,7 @@ class EventSegmentation2DCNNGRU(Model):
         if self.config.get('hop_length', 1) > 1:
             predictions = np.repeat(
                 predictions, self.config.get('hop_length', 1), axis=1)
-
+        y_test = np.load('y_test.npy')
         if raw_output:
             return predictions
 
@@ -397,8 +397,8 @@ class EventSegmentation2DCNNGRU(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            if pred.shape[0] == 3:
-                events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
+            if pred.shape[1] == 3:
+                events = pred_to_event_state(pred[:, :-1], thresh=self.config["threshold"])
             else:
                 events = pred_to_event_state(pred, thresh=self.config["threshold"])
             # Add step offset based on repeat factor.

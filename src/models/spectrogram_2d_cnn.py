@@ -386,7 +386,7 @@ class EventSegmentation2DCNN(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
-            if pred.shape[0] == 3:
+            if pred.shape[1] == 3:
                 events = pred_to_event_state(pred[:, :-1], thresh=self.config["threshold"])
             else:
                 events = pred_to_event_state(pred, thresh=self.config["threshold"])

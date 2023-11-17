@@ -41,6 +41,10 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         if os.path.exists(path):
             logger.info(f'Reading existing file at: {path}')
             processed = pd.read_parquet(path)
+            # if cache is read it will be read as a df
+            # if it was the last cahced file it wont go through the loop
+            # so need to define processed_df too
+            processed_df = processed
             logger.info('Finished reading')
             break
         else:
@@ -57,8 +61,13 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
 
     # now using i run the preprocessing steps that were not applied
     for j, step in enumerate(step_hashes[i:]):
+        if isinstance(processed, pd.DataFrame):
+            # if cache or raw data is read processed will be a df
+            processed_df = processed
+        else:
+            processed_df = pd.concat(processed.values(), axis=0)
         log_memory()
-        logger.debug(f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+        logger.debug(f'Memory usage of processed dataframe: {processed_df.memory_usage().sum() / 1e6:.2f} MB')
         path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i + j + 1]) + '.parquet'
         # step is the string name of the step to apply
         step = steps[i + j]
@@ -72,10 +81,13 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         logger.info('--- Step was applied')
         if save_output:
             logger.info(f'--- Saving to: {path}')
-            processed.to_parquet(path)
+            # processed is a dict of smaller dfs so we need to merge them first
+
+            # save the merged df
+            processed_df.to_parquet(path)
             logger.info('--- Finished saving')
     log_memory()
     logger.debug(
-        f'Memory usage of processed dataframe: {processed.memory_usage().sum() / 1e6:.2f} MB')
+        f'Memory usage of processed dataframe: {processed_df.memory_usage().sum() / 1e6:.2f} MB')
     tracemalloc.stop()
-    return processed
+    return processed_df

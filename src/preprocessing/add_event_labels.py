@@ -66,23 +66,26 @@ class AddEventLabels(PP):
         """
 
         # Initialize the awake column as 42, to catch errors later (-1 not possible in uint8)
-        data['state-onset'] = 0.0
-        data["state-wakeup"] = 0.0
+        # loop over the series ids
+        for i in data.keys():
+            data[i]['state-onset'] = 0.0
+            data[i]["state-wakeup"] = 0.0
 
         # apply encoding to events
         self._events['series_id'] = self._events['series_id'].map(self._id_encoding)
 
         # iterate over the series and set the awake column
         tqdm.pandas()
-        data = (data
-                .groupby('series_id')
-                .progress_apply(lambda x: self.fill_series_labels(x))
-                .reset_index(drop=True))
+        # data = (data
+        #         .groupby('series_id')
+        #         .progress_apply(lambda x: self.fill_series_labels(x))
+        #         .reset_index(drop=True))
+        for i in data.keys():
+            data[i].progress_apply(lambda x: self.fill_series_labels(x, i)).reset_index(drop=True)
         return data
 
     # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array
-    def fill_series_labels(self, series: pd.DataFrame) -> pd.DataFrame:
-        series_id = series['series_id'].iloc[0]
+    def fill_series_labels(self, series: pd.DataFrame, series_id: int) -> pd.DataFrame:
         current_events = self._events[self._events["series_id"] == series_id]
 
         # Only get non-nan values and convert to int

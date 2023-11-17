@@ -80,5 +80,6 @@ class MemReduce(PP):
                     'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
         data = data.astype(pad_type)
         gc.collect()
-
-        return data
+        # make a dictionary of the series id and the data
+        dfs_dict = {key: group for key, group in data.groupby('series_id')}
+        return dfs_dict

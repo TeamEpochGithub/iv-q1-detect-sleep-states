@@ -50,7 +50,7 @@
         "type": "Spectrogram_Cnn_Gru",
         "loss": "shrinkage-loss",
         "optimizer": "adamw-torch",
-        "epochs": 50,
+        "epochs": 5,
         "batch_size": 32,
         "lr": 0.0001,
         "early_stopping": 20,

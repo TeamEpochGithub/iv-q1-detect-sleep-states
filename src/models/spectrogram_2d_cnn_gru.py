@@ -49,9 +49,10 @@ class EventSegmentation2DCNNGRU(Model):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
                                            out_channels=3, model_type=self.model_type, config=self.config)
         else:
-            self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns), 
+            self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
                                            out_channels=2, model_type=self.model_type, config=self.config)
-
+        data_info.downsampling_factor = self.config.get('hop_length', 1)
+        data_info.window_size = 17280//data_info.downsampling_factor
         # Load config
         self.load_config(config)
         # Print model summary

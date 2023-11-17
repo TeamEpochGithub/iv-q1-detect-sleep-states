@@ -323,12 +323,16 @@ class EventTrainer:
         unlabeled_mask = unlabeled_mask ^ 1
 
         if str(self.criterion) == "KLDivLoss()":
+            # Outputs should be given the label when the mask is 0
+            outputs = outputs * unlabeled_mask + labels * (1 - unlabeled_mask)
+
             loss_unreduced = self.criterion(log_softmax(
                 outputs, dim=1), softmax(labels, dim=1))
+            loss_unreduced = loss_unreduced.sum() / loss_unreduced.shape[0]
+            return loss_unreduced
         else:
             loss_unreduced = self.criterion(outputs, labels)
 
         loss_masked = loss_unreduced * unlabeled_mask
-
         loss = torch.sum(loss_masked) / (torch.sum(unlabeled_mask) + 1)
         return loss

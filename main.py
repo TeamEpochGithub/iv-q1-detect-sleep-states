@@ -158,7 +158,7 @@ if __name__ == "__main__":
             main()
         except Exception as e:
             if config_loader.get_log_to_wandb():
-                wandb.log({"cv_score": -1})
+                wandb.log({"cv_score": -0.1})
                 wandb.log({"exception": str(e)})
     else:
         main()

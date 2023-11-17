@@ -1,28 +1,16 @@
-import copy
-import numpy as np
 import torch
-import wandb
 
 from src.logger.logger import logger
-from src.loss.loss import Loss
 from src.models.event_model import EventModel
-from src.util.state_to_event import pred_to_event_state
-from timm.scheduler import CosineLRScheduler
-
-from torch import nn
-from tqdm import tqdm
-from numpy import ndarray, dtype
-from typing import Any
 from .architecture.transformer_pool import TransformerPool
-from .base_transformer import BaseTransformer
 from ... import data_info
-from torch.utils.data import TensorDataset, DataLoader
 
 
 class EventSegmentationTransformer(EventModel):
     """
     This is the model file for the event segmentation transformer model.
     """
+
     def __init__(self, config: dict, name: str) -> None:
         """
         Init function of the event segmentation transformer model
@@ -65,7 +53,7 @@ class EventSegmentationTransformer(EventModel):
             "threshold": 0.0,
             "mask_unlabeled": False,
             "lr_schedule": {
-                "t_initial": 100, 
+                "t_initial": 100,
                 "warmup_t": 5,
                 "warmup_lr_init": 0.000001,
                 "lr_min": 2e-8

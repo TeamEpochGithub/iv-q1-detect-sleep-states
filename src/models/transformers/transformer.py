@@ -10,6 +10,7 @@ from torch import nn
 from tqdm import tqdm
 
 from src.logger.logger import logger
+from src.models.model_exception import ModelException
 from src.models.transformers.trainers.base_trainer import Trainer
 from .architecture.transformer_pool import TransformerPool
 from ..model import Model

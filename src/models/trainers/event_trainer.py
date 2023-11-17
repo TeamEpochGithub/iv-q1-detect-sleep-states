@@ -13,41 +13,6 @@ from ... import data_info
 from ...logger.logger import logger
 
 
-def masked_loss(criterion, outputs, y):
-    assert y.shape[1] > 1, "Masked loss only works with shape (batch_size, 2 | 3 depending on both awake and onset, seq_len)"
-
-    if y.shape[1] > y.shape[2]:
-        y = y.permute(0, 2, 1)
-    if outputs.shape[1] > outputs.shape[2]:
-        outputs = outputs.permute(0, 2, 1)
-    labels = y[:, 1:, :]
-    labels = labels.squeeze()
-
-    # Get the mask from y (shape (batch_size, 2, seq_len)) if y.shape[1] == 3 else (batch_size, 1, seq_len)
-    if y.shape[1] == 3:
-        # Mask is should be two times y[:,0,:] so shape is (batch_size, 2, seq_len)
-        unlabeled_mask = torch.stack([y[:, 0, :], y[:, 0, :]], dim=1)
-    else:
-        # Mask is should be one time y[:,0,:] so shape is (batch_size, 1, seq_len)
-        unlabeled_mask = y[:, 0, :]
-
-    # If the mask is 1, keep data, else set to 0
-    # Do this if value is 3 (unlabeled), else set to 1
-    unlabeled_mask = unlabeled_mask == 3
-    # Set true to 0 and false to 1
-    unlabeled_mask = unlabeled_mask ^ 1
-
-    if str(criterion) == "KLDivLoss()":
-        loss_unreduced = criterion(log_softmax(outputs, dim=1), softmax(labels, dim=1))
-    else:
-        loss_unreduced = criterion(outputs, labels)
-
-    loss_masked = loss_unreduced * unlabeled_mask
-
-    loss = torch.sum(loss_masked) / (torch.sum(unlabeled_mask) + 1)
-    return loss
-
-
 class EventTrainer:
     """
     Trainer class for the models that predict events.
@@ -80,7 +45,6 @@ class EventTrainer:
             testloader: torch.utils.data.DataLoader,
             model: nn.Module,
             optimizer: torch.optim.Optimizer,
-
             name: str,
             scheduler: CosineLRScheduler = None,
             activation_delay: int = None
@@ -145,7 +109,8 @@ class EventTrainer:
                     wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss,
                                f"{data_info.substage} - Validation {str(self.criterion)} of {name}": val_loss, "epoch": epoch})
                 else:
-                    wandb.log({f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss, "epoch": epoch})
+                    wandb.log(
+                        {f"{data_info.substage} - Train {str(self.criterion)} of {name}": train_loss, "epoch": epoch})
 
             # Save model if validation loss is lower than previous lowest validation loss
             if not full_train and val_loss < lowest_val_loss:
@@ -157,7 +122,8 @@ class EventTrainer:
                 if counter >= max_counter:
                     model.load_state_dict(best_model)
                     trained_epochs = (epoch - counter + 1)
-                    logger.info(f"--- Early stopping achieved at {epoch} ---, loading model from epoch {trained_epochs}")
+                    logger.info(
+                        f"--- Early stopping achieved at {epoch} ---, loading model from epoch {trained_epochs}")
                     break
 
             trained_epochs = epoch + 1
@@ -228,24 +194,31 @@ class EventTrainer:
         if use_activation is not None:
             # If it is an GRU Model, ignore the second output
             if str(model).startswith("MultiResidualBiGRU"):
-                output, _ = model(data[0].to(self.device), use_activation=use_activation)
+                output, _ = model(data[0].to(self.device),
+                                  use_activation=use_activation)
             else:
-                output = model(data[0].to(self.device), use_activation=use_activation)
+                output = model(data[0].to(self.device),
+                               use_activation=use_activation)
         else:
             if str(model).startswith("MultiResidualBiGRU"):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
 
-        # Squeeze output
-        output = output.squeeze()
+        # Assert output is in correct format
+        assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
+        assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
+        assert output.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
 
         # Calculate loss
         if self.mask_unlabeled:
-            loss = masked_loss(self.criterion, output, data[1])
+            assert data[1].shape[2] == 3, "Masked loss only works with y shape (batch_size, seq_len, 3)"
+            loss = self.masked_loss(output, data[1])
         else:
+            assert data[1].shape[2] == 2, "Data shape is not equal to 2 (2 classes)"
             if str(self.criterion) == "KLDivLoss()":
-                loss = self.criterion(log_softmax(output, dim=1), softmax(data[1], dim=1))
+                loss = self.criterion(log_softmax(
+                    output, dim=1), softmax(data[1], dim=1))
             else:
                 loss = self.criterion(output, data[1])
 
@@ -281,7 +254,8 @@ class EventTrainer:
                 losses = self._val_one_loop(
                     data=data, losses=losses, model=model)
                 tepoch.set_description(f"Epoch {epoch_no}")
-                tepoch.set_postfix(loss=sum(losses) / (len(losses) + 0.0000001))
+                tepoch.set_postfix(loss=sum(losses) /
+                                   (len(losses) + 0.0000001))
         return losses
 
     def _val_one_loop(
@@ -309,15 +283,52 @@ class EventTrainer:
             else:
                 output = model(data[0].to(self.device))
 
-            output = output.squeeze()
+            # Assert output is in correct format
+            assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
+            assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
+            assert output.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
 
             # Calculate loss
             if self.mask_unlabeled:
-                loss = masked_loss(self.criterion, output, data[1])
+                loss = self.masked_loss(output, data[1])
             else:
                 if str(self.criterion) == "KLDivLoss()":
-                    loss = self.criterion(log_softmax(output, dim=1), softmax(data[1], dim=1))
+                    loss = self.criterion(log_softmax(
+                        output, dim=1), softmax(data[1], dim=1))
                 else:
                     loss = self.criterion(output, data[1])
             losses.append(loss.item())
         return losses
+
+    def masked_loss(self, outputs, y):
+        assert y.shape[2] == 3, "Masked loss only works with y shape (batch_size, seq_len, 3)"
+        assert y.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
+        assert outputs.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
+        assert outputs.shape[0] == y.shape[0], "Output shape is not equal to target shape (0)"
+        assert outputs.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
+
+        # Get the event labels
+        labels = y[:, :, 1:]
+        assert labels.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
+        assert labels.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
+
+        # Get the mask from y (shape (batch_size, seq_len, 2))
+        unlabeled_mask = torch.stack([y[:, :, 0], y[:, :, 0]], dim=2)
+        assert unlabeled_mask.shape == labels.shape, "Unlabeled mask shape is not equal to labels shape"
+
+        # If the mask is 1, keep data, else set to 0
+        # Do this if value is 3 (unlabeled), else set to 1
+        unlabeled_mask = unlabeled_mask == 3
+        # Set true to 0 and false to 1
+        unlabeled_mask = unlabeled_mask ^ 1
+
+        if str(self.criterion) == "KLDivLoss()":
+            loss_unreduced = self.criterion(log_softmax(
+                outputs, dim=1), softmax(labels, dim=1))
+        else:
+            loss_unreduced = self.criterion(outputs, labels)
+
+        loss_masked = loss_unreduced * unlabeled_mask
+
+        loss = torch.sum(loss_masked) / (torch.sum(unlabeled_mask) + 1)
+        return loss

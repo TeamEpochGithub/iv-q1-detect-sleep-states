@@ -148,8 +148,14 @@ parameters:
               tokenizer_args:
                 parameters:
                   patch_size:
-                    max: 16
-                    min: 1
+                    values:
+                    - 2
+                    - 4
+                    - 6
+                    - 8
+                    - 16
+                    - 24
+                    - 32
               pe:
                 value: "fixed"
               dropout:

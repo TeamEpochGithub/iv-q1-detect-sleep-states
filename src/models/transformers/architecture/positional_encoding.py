@@ -22,7 +22,7 @@ class FixedPositionalEncoding(nn.Module):
     ) -> None:
         super(FixedPositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
-
+        self.max_len = max_len
         pe = torch.zeros(max_len, d_model)  # positional encoding
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
@@ -30,7 +30,12 @@ class FixedPositionalEncoding(nn.Module):
             (-math.log(10000.0) / d_model)
         )
         pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
+        # If d_model is uneven, we have to remove the last value
+        cosine_pos = torch.cos(position * div_term)
+        if d_model % 2 == 0:
+            pe[:, 1::2] = cosine_pos
+        else:
+            pe[:, 1::2] = cosine_pos[:, :-1]
         pe = scale_factor * pe.unsqueeze(0).transpose(0, 1)
         self.register_buffer(
             "pe", pe
@@ -39,10 +44,11 @@ class FixedPositionalEncoding(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the fixed positional encoding layer.
-        :param x: Input tensor.
-        :return: Output tensor.
+        :param x: Input tensor. (bs, l, c)
+        :return: Output tensor. (bs, l, c)
         """
-        x = x + self.pe.permute(1, 0, 2)
+        assert x.size(1) <= self.max_len, "Input sequence too long"
+        x = x + self.pe.permute(1, 0, 2)  # (l, bs, c) -> (bs, l, c)
         return self.dropout(x)
 
 

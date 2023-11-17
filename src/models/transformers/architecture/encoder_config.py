@@ -21,6 +21,9 @@ class EncoderConfig(nn.Module):
     def __init__(self, tokenizer: str = "patch", tokenizer_args: dict = {}, pe: str = "fixed",
                  emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, seq_len: int = 17280, dropout: float = 0.0) -> None:
         super().__init__()
+
+        if tokenizer == "patch":
+            assert seq_len % tokenizer_args["patch_size"] == 0, "Sequence length must be divisible by patch size"
         self.tokenizer = get_tokenizer(tokenizer, emb_dim, tokenizer_args)
         with torch.no_grad():
             x = torch.randn([1, seq_len, tokenizer_args["channels"]])

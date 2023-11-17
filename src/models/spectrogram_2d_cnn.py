@@ -59,6 +59,9 @@ class EventSegmentation2DCNN(Model):
                 from torchsummary import summary
                 summary(self.model.cuda(), input_size=(
                     len(data_info.X_columns), data_info.window_size))
+        # the downsample rate for the spectrogram models is the hop length
+        # change the data info global downsample rate to be the hop length
+        data_info.downsampling_factor = self.config.get('hop_length', 1)
 
     def load_config(self, config: dict) -> None:
         """
@@ -159,12 +162,7 @@ class EventSegmentation2DCNN(Model):
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
         # Use the optimal threshold when the threshold is set to a negative value
-        use_optimal_threshold = self.config["threshold"] < 0
 
-        # Only copy if we need to find the optimal threshold later
-        if use_optimal_threshold:
-            X_train_start = X_train.copy()
-            Y_train_start = y_train.copy()
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
@@ -207,7 +205,7 @@ class EventSegmentation2DCNN(Model):
             for j in range(y_train.shape[2]):
                 downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_train_downsampled.append(np.array(downsampled_channels))
-        y_train = torch.from_numpy(np.array(y_train_downsampled))
+        y_train = torch.from_numpy(np.array(y_train_downsampled)).permute(0, 2, 1)
         del y_train_downsampled
 
         # same loop as above to downsample the test data
@@ -217,7 +215,7 @@ class EventSegmentation2DCNN(Model):
             for j in range(y_test.shape[2]):
                 downsampled_channels.append(np.median(y_test[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_test_downsampled.append(np.array(downsampled_channels))
-        y_test = torch.from_numpy(np.array(y_test_downsampled))
+        y_test = torch.from_numpy(np.array(y_test_downsampled)).permute(0, 2, 1)
         del y_test_downsampled
 
         # Create a dataset from X and y
@@ -257,16 +255,6 @@ class EventSegmentation2DCNN(Model):
 
         # Set total_epochs in config if broken by the early stopping
         self.config["total_epochs"] = total_epochs
-
-        # Find optimal threshold if necessary
-        if use_optimal_threshold:
-            logger.info("--- Finding optimal threshold for model.")
-            self.find_optimal_threshold(X_train_start, Y_train_start)
-            logger.info(
-                f"--- Optimal threshold is {self.config['threshold']:.4f}.")
-        else:
-            logger.info(
-                f"--- Using threshold of {self.config['threshold']:.4f} from the config.")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
@@ -388,7 +376,10 @@ class EventSegmentation2DCNN(Model):
                 predictions, self.config.get('hop_length', 1), axis=1)
 
         if raw_output:
-            return predictions
+            if predictions.shape[2] == 3:
+                return predictions[:, :, :2]
+            else:
+                return predictions
 
         all_predictions = []
         all_confidences = []
@@ -396,7 +387,7 @@ class EventSegmentation2DCNN(Model):
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             if pred.shape[0] == 3:
-                events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
+                events = pred_to_event_state(pred[:, :-1], thresh=self.config["threshold"])
             else:
                 events = pred_to_event_state(pred, thresh=self.config["threshold"])
             # Add step offset based on repeat factor.

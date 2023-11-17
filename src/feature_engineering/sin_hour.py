@@ -3,10 +3,12 @@ import pandas as pd
 from .feature_engineering import FE
 from ..logger.logger import logger
 import numpy as np
+from dataclasses import dataclass
 
 
+@dataclass
 class SinHour(FE):
-    """Base class for features that need a rolling window.
+    """
 
     # This step will take the hour from the column with the datetime
     and map the hours between 0-2*pi and take the sin of it
@@ -14,7 +16,7 @@ class SinHour(FE):
     """
 
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Process the data. This method should be overridden by the child class.
+        """Process the data. This method should be overritten by the child class.
 
         :param data: the data to process
         :return: the processed data

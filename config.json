@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -10,7 +10,12 @@
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
-    "hpo": "gru_sweep.json",
+    "ensemble": {
+        "models": ["2d-cnn-spectrogram.json"],
+        "weights":[1],
+        "comb_method": "confidence_average",
+        "pred_only": false
+    },
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],

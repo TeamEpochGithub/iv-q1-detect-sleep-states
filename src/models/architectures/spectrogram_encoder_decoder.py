@@ -16,7 +16,7 @@ class SpectrogramEncoderDecoder(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, model_type: str, config: dict):
         super(SpectrogramEncoderDecoder, self).__init__()
         self.config = config
-        # for now there are no residual features but 
+        # for now there are no residual features but
         # that should be a future issue beacuse it needs experimenting to get them to be significant
         self.num_res_features = in_channels - 3
         self.encoder = Unet(

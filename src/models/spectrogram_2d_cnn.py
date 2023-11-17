@@ -162,12 +162,7 @@ class EventSegmentation2DCNN(Model):
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
         # Use the optimal threshold when the threshold is set to a negative value
-        use_optimal_threshold = self.config["threshold"] < 0
 
-        # Only copy if we need to find the optimal threshold later
-        if use_optimal_threshold:
-            X_train_start = X_train.copy()
-            Y_train_start = y_train.copy()
         X_train = torch.from_numpy(X_train).permute(0, 2, 1)
         X_test = torch.from_numpy(X_test).permute(0, 2, 1)
 
@@ -260,16 +255,6 @@ class EventSegmentation2DCNN(Model):
 
         # Set total_epochs in config if broken by the early stopping
         self.config["total_epochs"] = total_epochs
-
-        # Find optimal threshold if necessary
-        if use_optimal_threshold:
-            logger.info("--- Finding optimal threshold for model.")
-            self.find_optimal_threshold(X_train_start, Y_train_start)
-            logger.info(
-                f"--- Optimal threshold is {self.config['threshold']:.4f}.")
-        else:
-            logger.info(
-                f"--- Using threshold of {self.config['threshold']:.4f} from the config.")
 
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """

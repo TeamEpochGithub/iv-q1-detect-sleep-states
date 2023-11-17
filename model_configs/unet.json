@@ -41,10 +41,6 @@
         {
             "kind": "sun",
             "sun_features": ["azimuth", "altitude"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
         }
     ],
     "pretraining": {
@@ -82,7 +78,6 @@
             "dropout": 0,
             "stride": 2,
             "padding": 2,
-            "dilation": 1,
             "n_layers": 6
         },
         "optimizer": "adamw-torch",

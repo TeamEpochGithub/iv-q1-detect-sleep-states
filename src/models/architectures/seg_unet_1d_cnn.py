@@ -86,7 +86,7 @@ class SegUnet1D(nn.Module):
 
     def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str,
                  activation: str | None = 'relu', hidden_layers: int = 8, kernel_size: int = 7, depth: int = 2,
-                 dropout: float = 0, stride: int = 4, padding: int = 1, dilation: int = 1, n_layers: int = 4) -> None:
+                 dropout: float = 0, stride: int = 4, padding: int = 1, n_layers: int = 4) -> None:
         super().__init__()
 
         # Set model dims
@@ -106,7 +106,7 @@ class SegUnet1D(nn.Module):
         self.dropout = dropout
         self.stride = stride
         self.padding = padding
-        self.dilation = dilation
+        # self.dilation = dilation
 
         if n_layers < 2:
             logger.critical('Unet must have at least 2 layers')
@@ -148,18 +148,21 @@ class SegUnet1D(nn.Module):
         TODO Expand this function to verify all parameters
         TODO Run this in the config checker instead #190
         """
-        # Verify that the window can be divides by the stride multiple times
-        if not (self.window_size / (self.stride ** (self.n_layers - 1))).is_integer():
-            logger.warning("The window size must be divisible by the stride for the number of layers. Model may crash!")
 
         # Verify that each down layer's output has the same size as the next layer's input
         layer_sizes: list = [self.window_size,
                              *[self.window_size / (self.stride ** i) for i in range(1, self.n_layers)]]
+
+        final_pool_layer_size = math.floor((self.window_size + 2 * self.padding - 5) / (self.stride ** (self.n_layers - 1)) + 1)
+        if layer_sizes[-1] != final_pool_layer_size:
+            logger.warning(f"The final pooling layer ({final_pool_layer_size}) must have the same size as the last down layer ({layer_sizes[-1]}). Model may crash!")
+
         for i in range(1, self.n_layers):
             out_layer_size = math.floor(
-                ((layer_sizes[i - 1] + 2 * 3 - self.dilation * (self.kernel_size - 1) - 1) / self.stride) + 1)
+                ((layer_sizes[i - 1] + 2 * 3 - 1 * (self.kernel_size - 1) - 1) / self.stride) + 1)
             if layer_sizes[i] != out_layer_size:
-                logger.warning(f"The down and pooling layer {i} must have the same size. Model may crash!")
+                logger.warning(f"The down input layer {i} ({layer_sizes[i]}) and it's previous layer ({out_layer_size}) must have the same size. Model may crash!")
+
 
     @staticmethod
     def down_layer(input_layer: int, out_layer: int, kernel: int | tuple[int], stride: int | tuple[int], depth: int,

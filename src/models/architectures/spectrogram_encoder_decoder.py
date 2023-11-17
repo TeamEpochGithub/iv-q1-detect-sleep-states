@@ -4,24 +4,24 @@ from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torchaudio.transforms as T
 from torch import cat
 
-# TODO if there are any features that work well with a spectrogram
-# Change the hard coded 2 from this code
-
 
 class SpectrogramEncoderDecoder(nn.Module):
     """
-    Pytorch implementation of a really simple baseline model.
+    The implementation of the 0.707 notebooks model
+    It first takes the spectrogram of the given data and then normalizes it, then passes it to a Unet encoder
+    Then to a Unet decoder that outputs the event segmentation
+    If activation is set to true it will pass it thorugh a gelu activation function
     """
 
-    def __init__(self, in_channels, out_channels, model_type, config):
+    def __init__(self, in_channels: int, out_channels: int, model_type: str, config: dict):
         super(SpectrogramEncoderDecoder, self).__init__()
         self.config = config
+        # for now there are no residual features but
+        # that should be a future issue beacuse it needs experimenting to get them to be significant
         self.num_res_features = in_channels - 3
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
-            # The channels used by the encoder are for now only anglez and enmo
-            # so this is hardcoded to 2 for now
             in_channels=in_channels,
             classes=1,
             encoder_depth=config.get('encoder_depth', 5),

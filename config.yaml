@@ -6,7 +6,7 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-gru-4
+name: sweep-transformer
 metric:
   goal: maximize
   name: cv_score
@@ -14,14 +14,11 @@ parameters:
   hpo_model:
     parameters:
       name:
-        value: gru_sweep
+        value: transformer_sweep
       data_info:
         parameters:
           downsampling_factor:
             values:
-              - 3
-              - 4
-              - 6
               - 12
               - 24
           latitude:
@@ -101,7 +98,7 @@ parameters:
             max: 50
             min: 1
           epochs:
-            value: 5
+            value: 250
           loss:
             values:
               - mse-torch
@@ -132,16 +129,39 @@ parameters:
               - false
           network_params:
             parameters:
-              activation:
-                values:
-                  - relu
-                  - gelu
-              hidden_size:
-                max: 64
-                min: 4
+              heads:
+                max: 16
+                min: 1
+              emb_dim:
+                max: 512
+                min: 16
+              forward_dim:
+                max: 1024
+                min: 16
               n_layers:
-                max: 10
-                min: 4
+                max: 32
+                min: 1
+              pooling:
+                value: "none"
+              tokenizer:
+                value: "patch"
+              tokenizer_args:
+                parameters:
+                  patch_size:
+                    values:
+                    - 2
+                    - 4
+                    - 6
+                    - 8
+                    - 12
+                    - 16
+                    - 24
+                    - 32
+              pe:
+                value: "fixed"
+              dropout:
+                max: 0.9
+                min: 0
           optimizer:
             values:
               - adam-torch
@@ -149,4 +169,4 @@ parameters:
           threshold:
             value: 0
           type:
-            value: event-res-gru
+            value: event-segmentation-transformer

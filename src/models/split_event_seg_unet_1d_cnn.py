@@ -45,9 +45,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(config))
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.config.get("network_params", {}))
         self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(config))
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.config.get("network_params", {}))
 
         # Load config
         self.load_config(config)
@@ -478,9 +478,9 @@ class SplitEventSegmentationUnet1DCNN(Model):
         Reset the weights of the model. Useful for retraining the model.
         """
         self.model_onset = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(self.config))
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.config.get("network_params", {}))
         self.model_awake = SegUnet1D(
-            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.load_network_params(self.config))
+            in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=1, model_type=self.model_type, **self.config.get("network_params", {}))
 
     def reset_scheduler(self) -> None:
         """

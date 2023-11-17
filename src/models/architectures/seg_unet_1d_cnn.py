@@ -125,8 +125,8 @@ class SegUnet1D(nn.Module):
                             dropout=self.dropout),  # Hardcoded layer 1
             *[self.down_layer(input_layer=int(self.hidden_layers * i) + int(self.in_channels),
                               out_layer=int(self.hidden_layers * (i + 1)),
-                              kernel=self.kernel_size, stride=self.stride, depth=self.depth, dropout=self.dropout) for i
-              in range(2, self.n_layers)]
+                              kernel=self.kernel_size, stride=self.stride, depth=self.depth, dropout=self.dropout)
+              for i in range(2, self.n_layers)]
         ])
 
         self.cbrs: nn.ModuleList[ConBrBlock] = nn.ModuleList(
@@ -153,16 +153,18 @@ class SegUnet1D(nn.Module):
         layer_sizes: list = [self.window_size,
                              *[self.window_size / (self.stride ** i) for i in range(1, self.n_layers)]]
 
-        final_pool_layer_size = math.floor((self.window_size + 2 * self.padding - 5) / (self.stride ** (self.n_layers - 1)) + 1)
+        final_pool_layer_size = math.floor(
+            (self.window_size + 2 * self.padding - 5) / (self.stride ** (self.n_layers - 1)) + 1)
         if layer_sizes[-1] != final_pool_layer_size:
-            logger.warning(f"The final pooling layer ({final_pool_layer_size}) must have the same size as the last down layer ({layer_sizes[-1]}). Model may crash!")
+            logger.warning(
+                f"The final pooling layer ({final_pool_layer_size}) must have the same size as the last down layer ({layer_sizes[-1]}). Model may crash!")
 
         for i in range(1, self.n_layers):
             out_layer_size = math.floor(
                 ((layer_sizes[i - 1] + 2 * 3 - 1 * (self.kernel_size - 1) - 1) / self.stride) + 1)
             if layer_sizes[i] != out_layer_size:
-                logger.warning(f"The down input layer {i} ({layer_sizes[i]}) and it's previous layer ({out_layer_size}) must have the same size. Model may crash!")
-
+                logger.warning(
+                    f"The down input layer {i} ({layer_sizes[i]}) and it's previous layer ({out_layer_size}) must have the same size. Model may crash!")
 
     @staticmethod
     def down_layer(input_layer: int, out_layer: int, kernel: int | tuple[int], stride: int | tuple[int], depth: int,

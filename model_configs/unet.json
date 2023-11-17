@@ -40,8 +40,16 @@
         },
         {
             "kind": "sun",
-            "sun_features": ["azimuth", "altitude"]
+            "sun_features": [
+                "azimuth",
+                "altitude"
+            ]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
         }
+
     ],
     "pretraining": {
         "downsample": {

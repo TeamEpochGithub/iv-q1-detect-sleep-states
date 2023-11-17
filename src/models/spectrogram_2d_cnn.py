@@ -59,6 +59,9 @@ class EventSegmentation2DCNN(Model):
                 from torchsummary import summary
                 summary(self.model.cuda(), input_size=(
                     len(data_info.X_columns), data_info.window_size))
+        # the downsample rate for the spectrogram models is the hop length
+        # change the data info global downsample rate to be the hop length
+        data_info.downsampling_factor = self.config.get('hop_length', 1)
 
     def load_config(self, config: dict) -> None:
         """
@@ -388,7 +391,10 @@ class EventSegmentation2DCNN(Model):
                 predictions, self.config.get('hop_length', 1), axis=1)
 
         if raw_output:
-            return predictions
+            if predictions.shape[2] == 3:
+                return predictions[:, :, :2]
+            else:
+                return predictions
 
         all_predictions = []
         all_confidences = []

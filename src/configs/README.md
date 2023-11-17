@@ -643,7 +643,7 @@ by setting the following to true:
 Configures how plots are generated. 
 - "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
 - "browser_plot": Boolean that if set to True creates plotly plots
-- "save": Boolean that if set to True   
+- "save": Boolean that if set to True saves the images  
 
 ```
 "visualize_preds": {

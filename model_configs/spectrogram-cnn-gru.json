@@ -36,8 +36,6 @@
 
     ],
     "feature_engineering": [
-        {"kind": "rotation",
-        "window_sizes": [360]}
     ],
 
     "pretraining": {

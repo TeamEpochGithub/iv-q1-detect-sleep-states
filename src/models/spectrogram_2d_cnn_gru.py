@@ -52,7 +52,6 @@ class EventSegmentation2DCNNGRU(Model):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns), 
                                            out_channels=2, model_type=self.model_type, config=self.config)
 
-        
         # Load config
         self.load_config(config)
         # Print model summary
@@ -209,7 +208,7 @@ class EventSegmentation2DCNNGRU(Model):
             for j in range(y_train.shape[2]):
                 downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_train_downsampled.append(np.array(downsampled_channels))
-        y_train = torch.from_numpy(np.array(y_train_downsampled))
+        y_train = torch.from_numpy(np.array(y_train_downsampled)).permute(0, 2, 1)
         del y_train_downsampled
 
         # same loop as above to downsample the test data
@@ -219,7 +218,7 @@ class EventSegmentation2DCNNGRU(Model):
             for j in range(y_test.shape[2]):
                 downsampled_channels.append(np.median(y_test[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_test_downsampled.append(np.array(downsampled_channels))
-        y_test = torch.from_numpy(np.array(y_test_downsampled))
+        y_test = torch.from_numpy(np.array(y_test_downsampled)).permute(0, 2, 1)
         del y_test_downsampled
 
         # Create a dataset from X and y

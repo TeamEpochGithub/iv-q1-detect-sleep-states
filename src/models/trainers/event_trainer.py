@@ -13,6 +13,21 @@ from ... import data_info
 from ...logger.logger import logger
 
 
+def masked_loss(criterion, outputs, y):
+    labels = y[:, :, :3]
+
+    unlabeled_mask = y[:, :, 3]
+    unlabeled_mask = 1 - unlabeled_mask
+    unlabeled_mask = unlabeled_mask.unsqueeze(1).repeat(1, 1, 3)
+
+    loss_unreduced = criterion(outputs, labels)
+
+    loss_masked = loss_unreduced * unlabeled_mask
+
+    loss = torch.sum(loss_masked) / torch.sum(unlabeled_mask)
+    return loss
+
+
 class EventTrainer:
     """
     Trainer class for the models that predict events.

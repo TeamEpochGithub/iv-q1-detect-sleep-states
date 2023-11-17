@@ -108,6 +108,7 @@ class Ensemble:
             predictions = np.average(predictions, axis=3)
             all_predictions = []
             all_confidences = []
+            y_test = np.load('y_test.npy')
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
                 # Convert to relative window event timestamps
                 events = pred_to_event_state(pred, thresh=0)
@@ -123,7 +124,7 @@ class Ensemble:
                 confidences = (events[2], events[3])
                 all_predictions.append(steps)
                 all_confidences.append(confidences)
-
+            
             # Return numpy array
             return np.array(all_predictions), np.array(all_confidences)
 

@@ -250,7 +250,8 @@ class EventSegmentation2DCNNGRU(Model):
         trainer = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler)
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler, 
+            activation_delay=self.config.get('activation_delay', 10))
 
         # Log full train and test plot
         if wandb.run is not None:

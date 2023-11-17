@@ -49,8 +49,8 @@
     "architecture": {
         "type": "Spectrogram_Cnn_Gru",
         "loss": "shrinkage-loss",
-        "optimizer": "adamw-torch",
-        "epochs": 5,
+        "optimizer": "adam-torch",
+        "epochs": 15,
         "batch_size": 32,
         "lr": 0.0001,
         "early_stopping": 20,
@@ -63,6 +63,7 @@
         "clip_awake": true,
         "use_activation": true,
         "use_awake_channel": false,
+        "activation_delay": 10,
         "dropout_prob": 0.6,
         "lr_schedule": {
             "t_initial": 5,

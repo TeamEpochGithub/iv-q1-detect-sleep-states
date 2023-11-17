@@ -23,18 +23,18 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
             SpecNormalize()
         )
         self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=(config.get('n_fft', 127)+1)//2,
-                                                       hidden_size=64, out_size=out_channels, n_layers=5, bidir=True, activation='relu', 
+                                                       hidden_size=64, out_size=out_channels, n_layers=5, bidir=True, activation='relu',
                                                        flatten=False, dropout=0,
                                                        internal_layers=1, model_name='')
 
-    def forward(self, x):
+    def forward(self, x, use_activation=True):
         # Pass only enmo and anglez to the spectrogram
         x_spec = self.spectrogram(x)
         x_encoded = self.encoder(x_spec).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
         x_encoded = x_encoded.permute(0, 2, 1)
-        y = self.GRU(x_encoded)
+        y = self.GRU(x_encoded, use_activation=use_activation)
         return y
 
 

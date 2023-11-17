@@ -207,7 +207,7 @@ class EventSegmentation2DCNN(Model):
             for j in range(y_train.shape[2]):
                 downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_train_downsampled.append(np.array(downsampled_channels))
-        y_train = torch.from_numpy(np.array(y_train_downsampled))
+        y_train = torch.from_numpy(np.array(y_train_downsampled)).permute(0, 2, 1)
         del y_train_downsampled
 
         # same loop as above to downsample the test data
@@ -217,7 +217,7 @@ class EventSegmentation2DCNN(Model):
             for j in range(y_test.shape[2]):
                 downsampled_channels.append(np.median(y_test[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_test_downsampled.append(np.array(downsampled_channels))
-        y_test = torch.from_numpy(np.array(y_test_downsampled))
+        y_test = torch.from_numpy(np.array(y_test_downsampled)).permute(0, 2, 1)
         del y_test_downsampled
 
         # Create a dataset from X and y
@@ -396,7 +396,7 @@ class EventSegmentation2DCNN(Model):
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Convert to relative window event timestamps
             if pred.shape[0] == 3:
-                events = pred_to_event_state(pred[:-1, :], thresh=self.config["threshold"])
+                events = pred_to_event_state(pred[:, :-1], thresh=self.config["threshold"])
             else:
                 events = pred_to_event_state(pred, thresh=self.config["threshold"])
             # Add step offset based on repeat factor.

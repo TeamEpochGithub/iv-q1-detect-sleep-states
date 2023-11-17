@@ -22,8 +22,6 @@ class SpectrogramEncoderDecoder(nn.Module):
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
-            # The channels used by the encoder are for now only anglez and enmo
-            # so this is hardcoded to 2 for now
             in_channels=in_channels,
             classes=1,
             encoder_depth=config.get('encoder_depth', 5),

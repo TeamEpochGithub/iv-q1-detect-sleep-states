@@ -8,6 +8,7 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
     def __init__(self, in_channels, out_channels, model_type, config):
         super(MultiResidualBiGRUwSpectrogramCNN, self).__init__()
         self.config = config
+        self.gru_params = config.get('gru_params', {})
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
@@ -23,7 +24,9 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
             SpecNormalize()
         )
         self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=(config.get('n_fft', 127)+1)//2,
-                                                       hidden_size=64, out_size=out_channels, n_layers=5, bidir=True, activation='relu',
+                                                       hidden_size=self.gru_params.get("hidden_size",64), 
+                                                       out_size=out_channels, n_layers=self.gru_params.get("n_layers", 5), 
+                                                       bidir=True, activation=self.gru_params.get("activation", "relu"),
                                                        flatten=False, dropout=0,
                                                        internal_layers=1, model_name='')
 

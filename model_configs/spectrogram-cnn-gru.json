@@ -70,6 +70,11 @@
             "warmup_t": 0,
             "warmup_lr_init": 0.0001,
             "lr_min": 0.00003
+        },
+        "gru_params":{
+            "activation": "gelu",
+            "hidden_size": 16,
+            "n_layers": 10
         } 
     }
 }

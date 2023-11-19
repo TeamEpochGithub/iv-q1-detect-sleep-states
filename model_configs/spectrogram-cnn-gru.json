@@ -73,7 +73,7 @@
         },
         "gru_params":{
             "activation": "gelu",
-            "hidden_size": 64,
+            "hidden_size": 128,
             "n_layers": 10
         } 
     }

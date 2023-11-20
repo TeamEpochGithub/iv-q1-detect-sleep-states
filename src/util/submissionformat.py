@@ -61,6 +61,9 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     df['step'] = df['step'].astype(float)
     df["score"] = df["score"].astype(float)
 
+    # Drop all rows that have a step value < 0
+    df = df[df['step'] >= 0]
+
     with open('./series_id_encoding.json', 'r') as f:
         encoding = json.load(f)
     decoding = {v: k for k, v in encoding.items()}

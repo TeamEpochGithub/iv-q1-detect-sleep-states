@@ -110,7 +110,7 @@ class Ensemble:
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
                 # Convert to relative window event timestamps
-                events = pred_to_event_state(pred, thresh=0, n_events=1)
+                events = pred_to_event_state(pred, thresh=0, n_events=10)
 
                 # Add step offset based on repeat factor.
                 if data_info.downsampling_factor <= 1:

@@ -2,7 +2,7 @@
     "name": "cmon",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 6,
         "latitude": 40.730610,
         "longitude": -73.935242
     },

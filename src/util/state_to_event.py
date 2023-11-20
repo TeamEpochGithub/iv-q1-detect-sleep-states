@@ -48,9 +48,9 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 
 
 
     # Find peaks in the predictions
-    o_peaks, o_properties = find_peaks(predictions[:, 0], height=thresh, width=20)
+    o_peaks, o_properties = find_peaks(predictions[:, 0], height=thresh, width=24,distance=100)
 
-    a_peaks, a_properties = find_peaks(predictions[:, 1], height=thresh, width=20)
+    a_peaks, a_properties = find_peaks(predictions[:, 1], height=thresh, width=24, distance=100)
 
     # Sort the o_peaks indices based on the peak_heights
     o_sorted = np.argsort(o_properties["peak_heights"])[::-1]

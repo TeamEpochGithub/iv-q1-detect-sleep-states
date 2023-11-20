@@ -339,6 +339,8 @@ This contains all the models and their hyperparameters that are implemented. The
     - loss (required)
     - optimizer (required)
     - early_stopping
+    - mask_unlabeled
+    - use_auxiliary_awake
     - network_params (hidden_size, n_layers, activation)
     - activation_delay (number of epochs to wait before applying activation to last layer)
     - lr
@@ -351,6 +353,8 @@ This contains all the models and their hyperparameters that are implemented. The
     - loss (required)
     - optimizer (required)
     - early_stopping
+    - mask_unlabeled
+    - use_auxiliary_awake
     - network_params (heads, emb_dim, forward_dim": 96,
         "n_layers": 6,
         "pooling": "none",
@@ -391,6 +395,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "optimizer": "adam-torch",
     "lr": 0.00035,
     "batch_size": 16,
+    "mask_unlabeled": false,
+    "use_auxiliary_awake": false,
     "network_params": {
         "heads": 8,
         "emb_dim": 48,
@@ -431,6 +437,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "batch_size": 32,
     "optimizer": "adam-torch",
     "early_stopping": 10,
+    "mask_unlabeled": false,
+    "use_auxiliary_awake": false,
     "network_params": {
       "hidden_size": 64,
       "n_layers": 5,

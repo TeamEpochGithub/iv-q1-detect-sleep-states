@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
+from src.models.trainers.event_state_trainer import EventStateTrainer
 
 from src.util.state_to_event import pred_to_event_state
 import wandb
@@ -61,6 +62,8 @@ class EventModel:
 
         # Get default_config
         default_config = self.get_default_config()
+        config["use_auxiliary_awake"] = config.get(
+            "use_auxiliary_awake", default_config["use_auxiliary_awake"])
         config["mask_unlabeled"] = config.get(
             "mask_unlabeled", default_config["mask_unlabeled"])
         if config["mask_unlabeled"]:
@@ -121,6 +124,7 @@ class EventModel:
             scheduler = None
         early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
+        use_auxiliary_awake = self.config["use_auxiliary_awake"]
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -129,18 +133,28 @@ class EventModel:
         X_test = torch.from_numpy(X_test)
 
         # Get only the 2 event state features
+        labels_list = [data_info.y_columns["state-onset"],
+                       data_info.y_columns["state-wakeup"]]
         if mask_unlabeled:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            y_test = y_test[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        else:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            y_test = y_test[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        y_train = torch.from_numpy(y_train)
-        y_test = torch.from_numpy(y_test)
+            # Add awake label to front of the list
+            labels_list.insert(0, data_info.y_columns["awake"])
+        if use_auxiliary_awake:
+            # Add awake label to end of the list
+            labels_list.append(data_info.y_columns["awake"])
+        labels_list = np.array(labels_list)
+
+        y_train = torch.from_numpy(y_train[:, :, labels_list])
+        y_test = torch.from_numpy(y_test[:, :, labels_list])
+
+        # Clip the labels to 0 and 1
+        # if clip awake clip the awake columns values
+        if use_auxiliary_awake:
+            if y_train.shape[2] == 3:
+                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
+                y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
+            elif y_train.shape[2] == 4:
+                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
+                y_test[:, :, 3] = np.clip(y_test[:, :, 3], 0, 1)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -162,8 +176,12 @@ class EventModel:
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset, batch_size=batch_size)
 
-        trainer = EventTrainer(
-            epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        if use_auxiliary_awake:
+            trainer = EventStateTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        else:
+            trainer = EventTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
@@ -186,22 +204,35 @@ class EventModel:
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
-        epochs = self.config["total_epochs"]
-        batch_size = self.config["batch_size"]
         optimizer = self.config["optimizer"]
-        self.reset_scheduler()
+        epochs = self.config["epochs"]
+        batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         if "scheduler" in self.config:
             scheduler = self.config["scheduler"]
         else:
             scheduler = None
-
+        early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
+        use_auxiliary_awake = self.config["use_auxiliary_awake"]
+        if early_stopping > 0:
+            logger.info(
+                f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
-        # Create a dataset from X and y
         x_train = torch.from_numpy(x_train)
-        cols = np.array([data_info.y_columns["state-onset"],
-                        data_info.y_columns["state-wakeup"]])
-        y_train = torch.from_numpy(y_train[:, :, cols])
+
+        # Get only the 2 event state features
+        labels_list = [data_info.y_columns["state-onset"],
+                       data_info.y_columns["state-wakeup"]]
+        if mask_unlabeled:
+            # Add awake label to front of the list
+            labels_list.insert(0, data_info.y_columns["awake"])
+        if use_auxiliary_awake:
+            # Add awake label to end of the list
+            labels_list.append(data_info.y_columns["awake"])
+        labels_list = np.array(labels_list)
+
+        y_train = torch.from_numpy(y_train[:, :, labels_list])
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(x_train, y_train)
@@ -211,16 +242,20 @@ class EventModel:
             f"--- X_train shape: {x_train.shape}, y_train shape: {y_train.shape}")
         logger.info(
             f"--- X_train type: {x_train.dtype}, y_train type: {y_train.dtype}")
+
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
 
-        # Train the model
-        logger.info("--- Training model full " + self.name +
-                    " for " + str(epochs) + " epochs")
-        trainer = EventTrainer(epochs, criterion)
-        trainer.fit(trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
-                    activation_delay=activation_delay)
+        if use_auxiliary_awake:
+            trainer = EventStateTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        else:
+            trainer = EventTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer.fit(
+            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            activation_delay=activation_delay)
         logger.info("Full train complete!")
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -260,6 +295,10 @@ class EventModel:
                     batch_prediction, _ = self.model(batch_data)
                 else:
                     batch_prediction = self.model(batch_data)
+
+                # If auxiliary awake is used, remove the last column
+                if self.config["use_auxiliary_awake"]:
+                    batch_prediction = batch_prediction[:, :, :-1]
 
                 if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()

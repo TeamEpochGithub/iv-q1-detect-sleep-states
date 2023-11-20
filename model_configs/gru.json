@@ -64,11 +64,12 @@
         "batch_size": 88,
         "early_stopping": 19,
         "epochs": 100,
-        "loss": "shrinkage-loss",
-        "lr": 0.00408247121596589,
+        "loss": "mse-torch",
+        "lr": 0.01,
+        "use_auxiliary_awake": true,
         "lr_schedule": {
             "cycle_limit": 1,
-            "lr_min": 0.0000959350167860115,
+            "lr_min": 0.0001,
             "t_initial": 49,
             "warmup_lr_init": 0.000001,
             "warmup_t": 2

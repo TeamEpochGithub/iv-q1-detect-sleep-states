@@ -209,15 +209,15 @@ class EventStateTrainer:
         # Assert output is in correct format
         assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
         assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-        assert output.shape[2] == 3, "Output shape is not equal to 3 (3 classes)"
+        assert output.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
         # Calculate loss
         if self.mask_unlabeled:
             assert data[1].shape[
-                2] == 4, "Masked loss only works with y shape (batch_size, seq_len, 4)"
+                2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 6)"
             loss = self.masked_loss(output, data[1])
         else:
-            assert data[1].shape[2] == 3, "Data shape is not equal to 2 (2 classes)"
+            assert data[1].shape[2] == 5, "Data shape is not equal to 2 (2 classes)"
             if str(self.criterion) == "KLDivLoss()":
                 loss = self.criterion(log_softmax(
                     output, dim=1), softmax(data[1], dim=1))
@@ -288,7 +288,7 @@ class EventStateTrainer:
             # Assert output is in correct format
             assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
             assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-            assert output.shape[2] == 3, "Output shape is not equal to 3 (3 classes)"
+            assert output.shape[2] == 5, "Output shape is not equal to 3 (3 classes)"
 
             # Calculate loss
             if self.mask_unlabeled:
@@ -299,21 +299,22 @@ class EventStateTrainer:
                         output, dim=1), softmax(data[1], dim=1))
                 else:
                     loss = self.criterion(output, data[1])
+
             losses.append(loss.item())
         return losses
 
     def masked_loss(self, outputs, y):
-        assert y.shape[2] == 4, "Masked loss only works with y shape (batch_size, seq_len, 4)"
+        assert y.shape[2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 4)"
         assert y.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
         assert outputs.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
         assert outputs.shape[0] == y.shape[
             0], "Output shape is not equal to target shape (0)"
-        assert outputs.shape[2] == 3, "Output shape is not equal to 2 (2 classes)"
+        assert outputs.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
         # Get the event labels
         labels = y[:, :, 1:]
         assert labels.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
-        assert labels.shape[2] == 3, "Output shape is not equal to 2 (2 classes)"
+        assert labels.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
         # Get the mask from y (shape (batch_size, seq_len, 2))
         unlabeled_mask = torch.stack([y[:, :, 0], y[:, :, 0]], dim=2)

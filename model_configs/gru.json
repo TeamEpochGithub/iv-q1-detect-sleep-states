@@ -65,7 +65,7 @@
         "early_stopping": 19,
         "epochs": 100,
         "loss": "mse-torch",
-        "lr": 0.01,
+        "lr": 0.001,
         "use_auxiliary_awake": true,
         "lr_schedule": {
             "cycle_limit": 1,
@@ -76,7 +76,7 @@
         },
         "network_params": {
             "activation": "relu",
-            "hidden_size": 17,
+            "hidden_size": 30,
             "n_layers": 8
         },
         "optimizer": "adam-torch",

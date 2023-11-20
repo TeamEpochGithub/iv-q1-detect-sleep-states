@@ -32,9 +32,9 @@ class EventResGRU(EventModel):
 
         # Create model
         if config.get("use_auxiliary_awake", False):
-            config['network_params']["out_size"] = 3
+            self.config['network_params']["out_size"] = 5
         self.model = MultiResidualBiGRU(
-            self.num_features, **config['network_params'])
+            self.num_features, **self.config['network_params'])
 
         self.load_config(config)
 

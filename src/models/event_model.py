@@ -32,7 +32,8 @@ class EventModel:
         if config is None:
             self.config = None
         else:
-            self.config = config
+            # Deepcopy config
+            self.config = copy.deepcopy(config)
             self.hash = hash_config(config, length=5)
 
         self.name = name
@@ -146,15 +147,21 @@ class EventModel:
         y_train = torch.from_numpy(y_train[:, :, labels_list])
         y_test = torch.from_numpy(y_test[:, :, labels_list])
 
-        # Clip the labels to 0 and 1
-        # if clip awake clip the awake columns values
+        # Turn last column into one hot encoding of awake so that it can be used as auxiliary awake
         if use_auxiliary_awake:
-            if y_train.shape[2] == 3:
-                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
-                y_test[:, :, 2] = np.clip(y_test[:, :, 2], 0, 1)
-            elif y_train.shape[2] == 4:
-                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
-                y_test[:, :, 3] = np.clip(y_test[:, :, 3], 0, 1)
+            # Change all 3's for last column to 2's
+            y_train[:, :, -1] = torch.where(
+                y_train[:, :, -1] == 3, torch.tensor(2), y_train[:, :, -1])
+            y_test[:, :, -1] = torch.where(
+                y_test[:, :, -1] == 3, torch.tensor(2), y_test[:, :, -1])
+
+            awake = y_train[:, :, -1]
+            awake = torch.nn.functional.one_hot(awake.to(torch.int64))
+            y_train = torch.cat((y_train[:, :, :-1], awake.float()), dim=2)
+
+            awake = y_test[:, :, -1]
+            awake = torch.nn.functional.one_hot(awake.to(torch.int64))
+            y_test = torch.cat((y_test[:, :, :-1], awake.float()), dim=2)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -296,9 +303,9 @@ class EventModel:
                 else:
                     batch_prediction = self.model(batch_data)
 
-                # If auxiliary awake is used, remove the last column
+                # If auxiliary awake is used, take only the first 2 columns
                 if self.config["use_auxiliary_awake"]:
-                    batch_prediction = batch_prediction[:, :, :-1]
+                    batch_prediction = batch_prediction[:, :, :2]
 
                 if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()

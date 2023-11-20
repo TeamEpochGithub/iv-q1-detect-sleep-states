@@ -36,6 +36,7 @@ class FE(ABC):
         from .rotation import Rotation
         from .sun import Sun
         from .sin_hour import SinHour
+        from .add_holidays import AddHolidays
 
         _FEATURE_ENGINEERING_KINDS: Final[dict[str, type[FE]]] = {
             "kurtosis": Kurtosis,
@@ -44,7 +45,8 @@ class FE(ABC):
             "time": Time,
             "rotation": Rotation,
             "sun": Sun,
-            "sin_hour": SinHour
+            "sin_hour": SinHour,
+            "add_holidays": AddHolidays,
         }
 
         try:

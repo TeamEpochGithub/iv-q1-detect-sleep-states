@@ -1,12 +1,13 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Final
 
 import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 
-_TIME_FEATURES: set[str] = {"year", "month", "week", "weekday", "day", "hour", "minute", "second", "microsecond"}
+_TIME_FEATURES: Final[set[str]] = {"year", "month", "week", "weekday", "day", "hour", "minute", "second", "microsecond"}
 
 
 @dataclass

@@ -16,12 +16,12 @@ class Test(TestCase):
 
         data_after = self.add_holidays.feature_engineering(data_before)
 
-        self.assertEqual(data_after["holiday"].iloc[0], 1)
-        self.assertEqual(data_after["holiday"].iloc[69], 1)
-        self.assertEqual(data_after["holiday"].iloc[70], 0)
-        self.assertEqual(data_after["holiday"].iloc[71], 0)
-        self.assertEqual(data_after["holiday"].iloc[102], 0)
-        self.assertEqual(data_after["holiday"].iloc[103], 1)
+        self.assertEqual(1, data_after["f_holiday"].iloc[0])
+        self.assertEqual(1, data_after["f_holiday"].iloc[69])
+        self.assertEqual(0, data_after["f_holiday"].iloc[70])
+        self.assertEqual(0, data_after["f_holiday"].iloc[71])
+        self.assertEqual(0, data_after["f_holiday"].iloc[102])
+        self.assertEqual(1, data_after["f_holiday"].iloc[103])
 
     def test_add_holidays_middle_school(self) -> None:
         data_before: pd.DataFrame = pd.DataFrame({
@@ -30,8 +30,8 @@ class Test(TestCase):
 
         data_after = self.add_holidays.feature_engineering(data_before)
 
-        self.assertEqual(data_after["holiday"].iloc[0], 2)
-        self.assertEqual(data_after["holiday"].iloc[1], 0)
+        self.assertEqual(2, data_after["f_holiday"].iloc[0])
+        self.assertEqual(0, data_after["f_holiday"].iloc[1])
 
     def test_add_holidays_high_school(self) -> None:
         data_before: pd.DataFrame = pd.DataFrame({
@@ -40,5 +40,5 @@ class Test(TestCase):
 
         data_after = self.add_holidays.feature_engineering(data_before)
 
-        self.assertEqual(data_after["holiday"].iloc[0], 3)
-        self.assertEqual(data_after["holiday"].iloc[1], 0)
+        self.assertEqual(3, data_after["f_holiday"].iloc[0])
+        self.assertEqual(0, data_after["f_holiday"].iloc[1])

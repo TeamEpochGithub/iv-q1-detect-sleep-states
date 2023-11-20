@@ -81,7 +81,7 @@ class AddEventLabels(PP):
         #         .progress_apply(lambda x: self.fill_series_labels(x))
         #         .reset_index(drop=True))
         for i in data.keys():
-            data[i].progress_apply(lambda x: self.fill_series_labels(x, i)).reset_index(drop=True)
+            data[i] = self.fill_series_labels(data[i], i).reset_index(drop=True)
         return data
 
     # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array

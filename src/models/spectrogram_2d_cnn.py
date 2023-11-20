@@ -444,12 +444,14 @@ class EventSegmentation2DCNN(Model):
         if only_hyperparameters:
             self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
 
     def reset_optimizer(self) -> None:

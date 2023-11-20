@@ -27,7 +27,7 @@ class Sun(FE):
             logger.critical(f"Unknown sun features: {self.sun_features}")
             raise FEException(f"Unknown sun features: {self.sun_features}")
 
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
         """Add the selected sun columns.
 
         :param data: the original data with at least the "series_id", "window", and "timestamp" columns

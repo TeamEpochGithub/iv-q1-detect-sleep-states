@@ -25,13 +25,14 @@ class Time(FE):
             logger.critical(f"Unknown time features: {self.time_features}")
             raise FEException(f"Unknown time features: {self.time_features}")
 
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
         """Add the selected time columns.
 
         :param data: the original data
         :return: the data with the selected time data added
         """
         for time_feature in self.time_features:
-            data[f"f_{time_feature}"] = data["timestamp"].dt.__getattribute__(time_feature)
+            for sid in data.keys():
+                data[sid][f"f_{time_feature}"] = data[sid]["timestamp"].dt.__getattribute__(time_feature)
 
         return data

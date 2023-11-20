@@ -28,11 +28,11 @@ class MyTestCase(unittest.TestCase):
         window_1_start = int(24 * 60 * 60 / 5)
         window_2_start = window_1_start + int(24 * 60 * 60 / 5)
 
-        df = split_windows.preprocess(df)
+        df = split_windows.preprocess({0: df})
 
         # verify the two windows
-        window0 = df.loc[0:window_1_start-1, 'window']
-        window1 = df.loc[window_1_start:window_2_start-1, 'window']
+        window0 = df[0].loc[0:window_1_start-1, 'window']
+        window1 = df[0].loc[window_1_start:window_2_start-1, 'window']
         self.assertTrue((window0 == 0).all())
         self.assertTrue((window1 == 1).all())
 
@@ -53,10 +53,10 @@ class MyTestCase(unittest.TestCase):
         window_1_start = int(24 * 60 * 60 / 5)
         window_2_start = window_1_start + int(24 * 60 * 60 / 5)
 
-        df = split_windows.preprocess(df)
+        df = split_windows.preprocess({0: df})
 
         # verify the two windows
-        window0 = df.loc[0:window_1_start-1, 'window']
-        window1 = df.loc[window_1_start:window_2_start-1, 'window']
+        window0 = df[0].loc[0:window_1_start-1, 'window']
+        window1 = df[0].loc[window_1_start:window_2_start-1, 'window']
         self.assertTrue((window0 == 0).all())
         self.assertTrue((window1 == 1).all())

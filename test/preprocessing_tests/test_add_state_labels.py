@@ -36,7 +36,7 @@ class TestAddStateLabels(TestCase):
         pp.events = events
         pp.id_encoding = id_encoding
 
-        result = pp.preprocess(data)
+        result = pp.preprocess({0: data})
 
         # check that the result is as expected
         expected = pd.DataFrame({
@@ -45,7 +45,7 @@ class TestAddStateLabels(TestCase):
                       1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
         })
 
-        self.assertEquals(result.to_dict(), expected.to_dict())
+        self.assertEquals(result[0].to_dict(), expected.to_dict())
 
     def test_preprocess_unlabeled(self):
         # make a test data frame with one series of 10 steps

@@ -38,14 +38,14 @@
         {
             "kind": "split_windows",
             "start_hour": 15
-        },
-        {
-            "kind": "add_regression_labels",
-            "id_encoding_path": "series_id_encoding.json",
-            "events_path": "data/raw/train_events.csv"
         }
     ],
     "feature_engineering": [
+        {
+        "kind": "kurtosis",
+        "window_sizes": [5, 10],
+        "features": ["anglez", "enmo"]
+    }
     ],
     "pretraining": {
         "downsample": {

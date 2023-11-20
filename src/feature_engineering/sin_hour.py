@@ -30,10 +30,8 @@ class SinHour(FE):
 
             # map the hour to a value between 0-2*pi
             hour = hour.map(lambda x: x / 24 * 2 * np.pi)
-            logger.debug('------ Mapped hour to radians')
             sin_hour = np.sin(hour)
-            logger.debug('------ Took the sin of the hour')
             data[sid]['f_sin_hour'] = sin_hour
-            logger.debug('------ Added sin hour to dataframe')
+            logger.debug('------ Added sin hour feature to series')
             gc.collect()
         return data

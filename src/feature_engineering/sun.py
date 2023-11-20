@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pandas as pd
+import gc
 from tqdm import tqdm
 
 from .feature_engineering import FE, FEException
@@ -35,20 +36,25 @@ class Sun(FE):
         """
 
         # Group by series_id and window and if 4 in data['utc'] replace 0 with 4
-        tqdm.pandas()
-        data = data.groupby(['series_id', 'window']).progress_apply(lambda x: self.fill_padding(x)).reset_index(drop=True)
-
-        times = data['timestamp'] + pd.to_timedelta(data['utc'], unit='h')
-
-        sun_data = pd.DataFrame(get_position(times, data_info.longitude, data_info.latitude))
-        sun_data.columns = ['azimuth', 'altitude']
-        # Concat features if they are in self.sun_features and rename them to f_
-        if 'azimuth' in self.sun_features:
-            data = pd.concat([data, sun_data['azimuth']], axis=1)
-            data = data.rename(columns={'azimuth': 'f_azimuth'})
-        if 'altitude' in self.sun_features:
-            data = pd.concat([data, sun_data['altitude']], axis=1)
-            data = data.rename(columns={'altitude': 'f_altitude'})
+        times = {}
+        sun_data = {}
+        for sid in tqdm(data.keys()):
+            data[sid] = data[sid].groupby('window').apply(lambda x: self.fill_padding(x)).reset_index(drop=True)
+            times[sid] = data[sid]['timestamp'] + pd.to_timedelta(data[sid]['utc'], unit='h')
+            sun_data[sid] = pd.DataFrame(get_position(times[sid], data_info.longitude, data_info.latitude))
+            sun_data[sid].columns = ['azimuth', 'altitude']
+            gc.collect()
+            # Concat features if they are in self.sun_features and rename them to f_
+            if 'azimuth' in self.sun_features:
+                data[sid]['azimuth'] = sun_data[sid]['azimuth']
+                data[sid] = data[sid].rename(columns={'azimuth': 'f_azimuth'})
+                del sun_data[sid]['azimuth']
+                gc.collect()
+            if 'altitude' in self.sun_features:
+                data[sid]['altitude'] = sun_data[sid]['altitude']
+                data[sid] = data[sid].rename(columns={'altitude': 'f_altitude'})
+                del sun_data[sid]['altitude']
+                gc.collect()
 
         return data
 

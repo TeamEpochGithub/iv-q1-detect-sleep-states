@@ -51,6 +51,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             for k in ids.values():
                 filename = path + '/' + str(k) + '.parquet'
                 processed[k] = pd.read_parquet(filename)
+            gc.collect()
             logger.info('Finished reading')
             break
         else:

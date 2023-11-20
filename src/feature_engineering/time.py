@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger

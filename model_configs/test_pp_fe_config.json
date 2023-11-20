@@ -41,7 +41,11 @@
         }
     ],
     "feature_engineering": [
-        {
+    {
+        "kind": "sun",
+        "sun_features": ["altitude", "azimuth"]
+    },
+    {
         "kind": "kurtosis",
         "window_sizes": [5, 10],
         "features": ["anglez", "enmo"]
@@ -67,6 +71,7 @@
         "kind": "time",
         "time_features": ["day", "hour", "minute", "second"]    
     }
+    
     ],
     "pretraining": {
         "downsample": {

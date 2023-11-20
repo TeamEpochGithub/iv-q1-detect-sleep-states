@@ -347,19 +347,23 @@ This contains all the models and their hyperparameters that are implemented. The
 
 #### Transformers
 - transformer / segmentation-transformer / event-segmentation-transformer
-    - epochs (required)
+    - epochs (required) 
     - loss (required)
     - optimizer (required)
+    - early_stopping
+    - network_params (heads, emb_dim, forward_dim": 96,
+        "n_layers": 6,
+        "pooling": "none",
+        "tokenizer": "patch",
+        "tokenizer_args": {
+            "patch_size": 12
+        },
+        "pe": "other",
+        "dropout": 0.0)
+    - activation_delay (number of epochs to wait before applying activation to last layer)
     - lr
-    - tokenizer
-    - tokenizer_args
-    - pe
-    - emb_dim
-    - forward_dim
-    - batch_size
-    - pooling
-    - n_layers
-    - heads
+    - lr_schedule (config for learning rate schedule, see [CosineLRWithRestarts](https://timm.fast.ai/SGDR))
+    - threshold
   
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
@@ -379,25 +383,29 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
     "batch_size": 64,
     "lr": 0.01
 }
+
 "GeneralTransformer": {
     "type": "transformer" / "segmentation-transformer" / "event-segmentation-transformer",
     "epochs": 5,
     "loss": "event-regression-rmse",
     "optimizer": "adam-torch",
     "lr": 0.00035,
-    "tokenizer": "patch",
-    "tokenizer_args": {
-        "channels": 4,
-        "patch_size": 36
-    },
-    "pe": "other",
-    "emb_dim": 48,
-    "forward_dim": 96,
     "batch_size": 16,
-    "pooling": "none",
-    "n_layers": 6,
-    "heads": 8
+    "network_params": {
+        "heads": 8,
+        "emb_dim": 48,
+        "forward_dim": 96,
+        "n_layers": 6,
+        "pooling": "none",
+        "tokenizer": "patch",
+        "tokenizer_args": {
+            "patch_size": 12
+        },
+        "pe": "other",
+        "dropout": 0.0
+    }
 }
+
 "Classic-baseline": {
     "type": "classic-base-model",
     "median_window": 100,
@@ -635,7 +643,7 @@ by setting the following to true:
 Configures how plots are generated. 
 - "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
 - "browser_plot": Boolean that if set to True creates plotly plots
-- "save": Boolean that if set to True   
+- "save": Boolean that if set to True saves the images  
 
 ```
 "visualize_preds": {

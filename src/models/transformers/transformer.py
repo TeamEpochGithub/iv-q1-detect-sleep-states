@@ -10,12 +10,14 @@ from torch import nn
 from tqdm import tqdm
 
 from src.logger.logger import logger
+from src.models.model_exception import ModelException
 from src.models.transformers.trainers.base_trainer import Trainer
 from .architecture.transformer_pool import TransformerPool
 from ..model import Model
 from ... import data_info
 from ...loss.loss import Loss
 from ...optimizer.optimizer import Optimizer
+from timm.scheduler import CosineLRScheduler
 
 
 class Transformer(Model):
@@ -34,11 +36,13 @@ class Transformer(Model):
         self.name = name
         self.transformer_config = self.load_transformer_config(config).copy()
         self.transformer_config["seq_len"] = data_info.window_size
-        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
+        self.transformer_config["tokenizer_args"]["channels"] = len(
+            data_info.X_columns)
         self.model = TransformerPool(tokenizer_args=self.transformer_config["tokenizer_args"],
                                      **((self.transformer_config, self.transformer_config.pop("tokenizer_args"))[0]))
         self.transformer_config = self.load_transformer_config(config).copy()
-        self.transformer_config["tokenizer_args"]["channels"] = len(data_info.X_columns)
+        self.transformer_config["tokenizer_args"]["channels"] = len(
+            data_info.X_columns)
         self.load_config(**config)
         self.config["trained_epochs"] = self.config["epochs"]
         self.config["seq_len"] = data_info.window_size
@@ -52,39 +56,53 @@ class Transformer(Model):
             logger.info(
                 f"--- Device set to model {self.name}: " + torch.cuda.get_device_name(0))
 
-    def load_config(self, loss: str, epochs: int, optimizer: str, **kwargs: dict) -> None:
+    def load_config(self, config: dict) -> None:
         """
         Load config function for the model.
-        :param loss: loss function
-        :param epochs: number of epochs
-        :param optimizer: optimizer
-        :param kwargs: other parameters
+        :param config: configuration to set up the model
         """
+        config = copy.deepcopy(config)
+
+        # Error checks. Check if all necessary parameters are in the config.
+        required = ["loss", "optimizer"]
+        for req in required:
+            if req not in config:
+                logger.critical(
+                    "------ Config is missing required parameter: " + req)
+                raise ModelException(
+                    "Config is missing required parameter: " + req)
 
         # Get default_config
         default_config = self.get_default_config()
-
-        # Copy kwargs
-        config = copy.deepcopy(kwargs)
-
-        # Add parameters
-        config["batch_size"] = config.get(
-            "batch_size", default_config["batch_size"])
-        config["lr"] = config.get("lr", default_config["lr"])
-        config["patch_size"] = config.get(
-            "patch_size", default_config["patch_size"])
-
-        # Add loss, epochs and optimizer to config
         config["mask_unlabeled"] = config.get(
             "mask_unlabeled", default_config["mask_unlabeled"])
         if config["mask_unlabeled"]:
             config["loss"] = Loss.get_loss(config["loss"], reduction="none")
         else:
-            config["loss"] = Loss.get_loss(config["loss"], reduction="mean")
+            if config["loss"] == "kldiv-torch":
+                config["loss"] = Loss.get_loss(
+                    config["loss"], reduction="batchmean")
+            else:
+                config["loss"] = Loss.get_loss(
+                    config["loss"], reduction="mean")
+        config["batch_size"] = config.get(
+            "batch_size", default_config["batch_size"])
+        config["lr"] = config.get("lr", default_config["lr"])
         config["optimizer"] = Optimizer.get_optimizer(
-            optimizer, config["lr"], model=self.model)
-        config["epochs"] = epochs
-
+            config["optimizer"], config["lr"], 0, self.model)
+        if "lr_schedule" in config:
+            config["lr_schedule"] = config.get(
+                "lr_schedule", default_config["lr_schedule"])
+            config["scheduler"] = CosineLRScheduler(
+                config["optimizer"], **self.config["lr_schedule"])
+        config["epochs"] = config.get("epochs", default_config["epochs"])
+        config["early_stopping"] = config.get(
+            "early_stopping", default_config["early_stopping"])
+        config["activation_delay"] = config.get(
+            "activation_delay", default_config["activation_delay"])
+        config["network_params"] = config.get("network_params", dict())
+        config["threshold"] = config.get(
+            "threshold", default_config["threshold"])
         self.config = config
 
     def get_default_config(self) -> dict[str, int | str]:
@@ -157,8 +175,10 @@ class Transformer(Model):
             f"X_test type: {X_test.dtype}, y_test type: {y_test.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
-        y_test = y_test[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"],
+                          data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
+        y_test = y_test[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"],
+                        data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         X_test = torch.from_numpy(X_test)
@@ -212,7 +232,8 @@ class Transformer(Model):
             f"X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
 
         # Remove labels
-        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"], data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
+        y_train = y_train[:, :, data_info.y_columns["hot-asleep"], data_info.y_columns["hot-awake"],
+                          data_info.y_columns["hot-NaN"], data_info.y_columns["hot-unlabeled"]]
 
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train)

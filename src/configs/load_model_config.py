@@ -10,6 +10,7 @@ from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
 from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
 from ..models.transformers.segmentation_transformer import SegmentationTransformer
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
+from ..models.spectrogram_2d_cnn import EventSegmentation2DCNN
 from ..models.event_res_gru import EventResGRU
 from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
@@ -170,6 +171,8 @@ class ModelConfigLoader:
             case "split-event-seg-unet-1d-cnn":
                 curr_model = SplitEventSegmentationUnet1DCNN(
                     model_config, model_name)
+            case "Spectrogram_2D_Cnn":
+                curr_model = EventSegmentation2DCNN(model_config, model_name)
             case _:
                 logger.critical("Model not found: " + model_config["type"])
                 raise ConfigException(

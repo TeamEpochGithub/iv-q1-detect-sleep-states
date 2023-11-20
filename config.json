@@ -1,6 +1,6 @@
 {
     "name": "config",
-    "log_to_wandb": true,
+    "log_to_wandb": false,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -15,7 +15,7 @@
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],
         "splitter_params": {
-            "n_splits": 3
+            "n_splits": 5
         }
     },
     "train_for_submission": false,

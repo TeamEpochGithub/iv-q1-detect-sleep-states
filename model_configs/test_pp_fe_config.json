@@ -24,7 +24,21 @@
         {
             "kind": "add_noise"
         },
-        
+        {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_segmentation_labels"
+        },
+        {
+            "kind": "split_windows",
+            "start_hour": 15
+        },
         {
             "kind": "add_regression_labels",
             "id_encoding_path": "series_id_encoding.json",

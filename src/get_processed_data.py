@@ -3,6 +3,7 @@ import os
 import tracemalloc
 
 import pandas as pd
+import numpy as np
 import json
 
 from src import data_info
@@ -100,6 +101,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     # add back the removd series_id column
     for sid in processed.keys():
         processed[sid]['series_id'] = sid
+    processed[sid].astype(np.uint16)
     # combine the dataframes in the dict in to a single df
     # while adding back the series id column to them
     processed_df = pd.concat(processed.values(), ignore_index=True)

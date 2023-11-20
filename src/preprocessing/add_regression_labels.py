@@ -26,7 +26,7 @@ class AddRegressionLabels(PP):
     _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
     _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict) -> dict:
         """Run the preprocessing step.
         :param data: the data to preprocess
         :return: the preprocessed data with the event labels columns ("onset", "wakeup", "onset-NaN", "wakeup-NaN")
@@ -36,14 +36,14 @@ class AddRegressionLabels(PP):
 
         # If window column is present, raise an exception
         NO_WINDOW_COLUMN_ERROR = "No window column. Did you run SplitWindows before?"
-        if "window" not in data.columns:
+        if "window" not in data[0].columns:
             logger.critical(NO_WINDOW_COLUMN_ERROR)
             raise PPException(NO_WINDOW_COLUMN_ERROR)
-        if "hot-asleep" in data.columns:
+        if "hot-asleep" in data[0].columns:
             logger.warning(
                 "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep) for state segmentation models. This can cause issues when also adding regression labels."
                 "Make sure your model takes the correct features.")
-        if "state-onset" in data.columns:
+        if "state-onset" in data[0].columns:
             logger.warning(
                 "State-onset column is present, for state segmentation models. This can cause issues when also adding regression labels."
                 "Make sure your model takes the correct features.")
@@ -54,7 +54,7 @@ class AddRegressionLabels(PP):
         del self._events
         return res
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Adds the event labels to the data.
 
         We add the onset and wakeup event label to the window.
@@ -68,10 +68,11 @@ class AddRegressionLabels(PP):
         """
 
         # Set onset and wakeup to -1
-        data["onset"] = np.int16(-1)
-        data["wakeup"] = np.int16(-1)
-        data["onset-NaN"] = np.int8(1)
-        data["wakeup-NaN"] = np.int8(1)
+        for sid in data.keys():
+            data[sid]["onset"] = np.int16(-1)
+            data[sid]["wakeup"] = np.int16(-1)
+            data[sid]["onset-NaN"] = np.int8(1)
+            data[sid]["wakeup-NaN"] = np.int8(1)
 
         # apply encoding to events
         self._events['series_id'] = self._events['series_id'].map(
@@ -79,10 +80,8 @@ class AddRegressionLabels(PP):
 
         # iterate over the series and set the awake column
         tqdm.pandas()
-        data = (data
-                .groupby('series_id')
-                .progress_apply(self.fill_series_labels)
-                .reset_index(drop=True))
+        for sid in tqdm(data.keys()):
+            data[sid] = self.fill_series_labels(data[sid])
         return data
 
     def fill_series_labels(self, series: pd.DataFrame) -> pd.DataFrame:

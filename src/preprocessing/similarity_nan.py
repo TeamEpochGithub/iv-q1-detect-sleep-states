@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 from src import data_info
@@ -16,11 +15,10 @@ class SimilarityNan(PP):
 
     as_feature: bool = False
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         tqdm.pandas()
-        data = (data.groupby('series_id')
-                .progress_apply(self.similarity_nan)
-                .reset_index(0, drop=True))
+        for sid in data.keys():
+            data[sid] = self.similarity_nan(data[sid])
         return data
 
     def similarity_nan(self, series):

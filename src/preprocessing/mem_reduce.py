@@ -83,4 +83,5 @@ class MemReduce(PP):
         # make a dictionary of the series id and the data
         # without the series_id column because it is the key for that series anyway
         dfs_dict = {key: group.iloc[:, 1:] for key, group in data.groupby('series_id')}
+        gc.collect()
         return dfs_dict

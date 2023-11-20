@@ -97,12 +97,14 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     tracemalloc.stop()
     # once processing is done we need to return a single dataframe
     logger.info('--- Combining dataframes')
+    # add back the removd series_id column
     for sid in processed.keys():
         processed[sid]['series_id'] = sid
     # combine the dataframes in the dict in to a single df
     # while adding back the series id column to them
     processed_df = pd.concat(processed.values(), ignore_index=True)
-    # gc.collect()
+    del processed
+    gc.collect()
     logger.info('--- Finished combining dataframes')
     return processed_df
 

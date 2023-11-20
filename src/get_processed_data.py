@@ -34,17 +34,17 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     logger.info(f'--- Running preprocessing & feature engineering steps: {steps}')
 
     i: int = 0
-    processed: pd.DataFrame = pd.DataFrame()
+    processed: dict = {}
     for i in range(len(step_hashes), -1, -1):
-        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i]) + '.parquet'
+        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i])
         # check if the final result of the preprocessing exists
-        if os.path.exists(path):
-            logger.info(f'Reading existing file at: {path}')
-            processed = pd.read_parquet(path)
-            # if cache is read it will be read as a df
-            # if it was the last cahced file it wont go through the loop
-            # so need to define processed_df too
-            processed_df = processed
+        if os.path.exists(path) and i != 0:
+            logger.info(f'Reading existing files at: {path}')
+            # read the files within the folder in to a dict of dfs
+            # hardcoded number of series we have
+            for k in range(277):
+                filename = path + '/' + str(k) + '.parquet'
+                processed[k] = pd.read_parquet(filename)
             logger.info('Finished reading')
             break
         else:
@@ -56,24 +56,23 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         series_path = config.get_train_series_path(
         ) if training else config.get_test_series_path()
         logger.info(f'No files found, reading from: {series_path}')
+        # read the raw data
         processed = pd.read_parquet(series_path)
         logger.info(f'Data read from: {series_path}')
 
     # now using i run the preprocessing steps that were not applied
     for j, step in enumerate(step_hashes[i:]):
-        if isinstance(processed, pd.DataFrame):
-            # if cache or raw data is read processed will be a df
-            processed_df = processed
-        else:
-            processed_df = pd.concat(processed.values(), axis=0)
+        # for the raw dataframe logging memeory takes so long that it is not worth it
+        if isinstance(processed, dict):
+            logger.debug(f'Memory usage of processed data: {mem_usage(processed) / 1e6:.2f} MB')
         log_memory()
-        logger.debug(f'Memory usage of processed dataframe: {processed_df.memory_usage().sum() / 1e6:.2f} MB')
-        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i + j + 1]) + '.parquet'
+        path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i + j + 1])
         # step is the string name of the step to apply
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
         data_info.substage = step_hashes[i + j]
-
+        # only mem reduce uses the datfarme input and the rest will use dicts so this
+        # should be fine as long as mem_reduce is used first
         processed = step.run(processed)
         gc.collect()
 
@@ -81,13 +80,18 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         logger.info('--- Step was applied')
         if save_output:
             logger.info(f'--- Saving to: {path}')
-            # processed is a dict of smaller dfs so we need to merge them first
+            if not os.path.exists(path):
+                os.makedirs(path)
+            for sid in processed.keys():
+                processed[sid].to_parquet(path + '/' + str(sid) + '.parquet')
 
-            # save the merged df
-            processed_df.to_parquet(path)
             logger.info('--- Finished saving')
     log_memory()
     logger.debug(
-        f'Memory usage of processed dataframe: {processed_df.memory_usage().sum() / 1e6:.2f} MB')
+        f'Memory usage of processed dataframe: {mem_usage(processed).sum() / 1e6:.2f} MB')
     tracemalloc.stop()
-    return processed_df
+    return processed
+
+
+def mem_usage(data: dict | pd.DataFrame) -> int:
+    return sum(df.memory_usage().sum() for df in data.values())

@@ -145,7 +145,7 @@ if __name__ == "__main__":
     coloredlogs.install()
 
     # Set seed for reproducibility
-    torch.manual_seed(42)
+    # torch.manual_seed(42)
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import find_peaks
 
 
 def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
@@ -9,13 +10,13 @@ def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
     return np.argmax(one_hot, axis=0)
 
 
-def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
+def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 1) -> tuple:
     """Convert an event segmentation prediction to an onset and event. Normally used for predictions.
     param: 3d numpy array (channel, window_size) of event states for each timestep, 0=no state > 0=state
     param: thresh float, threshold for the prediction to be considered a state
+    param: n_events int, number of events to return
     """
-    assert predictions.shape[
-        1] == 2, "Predictions should be 3d array with shape (window_size, 2)"
+    assert predictions.shape[1] == 2, "Predictions should be 3d array with shape (window_size, 2)"
 
     # Set onset and awake to nan
     onset = np.nan
@@ -26,18 +27,62 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float) -> tuple:
     # Get max of each channel
     maxes = np.max(predictions, axis=0)
 
-    # If onset is above threshold of making a prediction, set onset
-    if maxes[0] > thresh:
-        onset = np.argmax(predictions[:, 0])
-        onset_conf = maxes[0]
+    # If n_events is 1, return the max of each channel
+    if n_events == 1:
 
-    # If awake is above threshold of making a prediction, set awake
-    if maxes[1] > thresh:
-        awake = np.argmax(predictions[:, 1])
-        awake_conf = maxes[1]
+        # If onset is above threshold of making a prediction, set onset
+        if maxes[0] > thresh:
+            onset = np.argmax(predictions[:, 0])
+            onset_conf = maxes[0]
+
+        # If awake is above threshold of making a prediction, set awake
+        if maxes[1] > thresh:
+            awake = np.argmax(predictions[:, 1])
+            awake_conf = maxes[1]
+
+        return np.array([onset]), np.array([awake]), np.array([onset_conf]), np.array([awake_conf])
+
+    # Return every step as a prediction
+    if n_events == -1:
+        return np.arange(len(predictions[:, 0])), np.arange(len(predictions[:, 1])), predictions[:, 0], predictions[:, 1]
+
+
+    # Find peaks in the predictions
+    o_peaks, o_properties = find_peaks(predictions[:, 0], height=thresh, width=20)
+
+    a_peaks, a_properties = find_peaks(predictions[:, 1], height=thresh, width=20)
+
+    # Sort the o_peaks indices based on the peak_heights
+    o_sorted = np.argsort(o_properties["peak_heights"])[::-1]
+    a_sorted = np.argsort(a_properties["peak_heights"])[::-1]
+
+    # Sort o_peaks according to the sorted indices
+    o_peaks = o_peaks[o_sorted]
+    a_peaks = a_peaks[a_sorted]
+
+    # Get the top n_events
+    o_peaks = o_peaks[:n_events]
+    a_peaks = a_peaks[:n_events]
+
+    # Get the confidences of the indices of o_peaks and a_peaks
+    onset_conf = predictions[o_peaks, 0]
+    awake_conf = predictions[a_peaks, 1]
+
+    start_a = len(o_peaks) if len(o_peaks) > 0 else 0
+    # Make sure that all after each onset there is an awake. Do this by adding o_peaks[i] + 1 to a_peaks list for every i. And insert from the beginning
+    # Give this a confidence value of 0
+    for i in range(len(o_peaks)):
+        a_peaks = np.insert(a_peaks, i, o_peaks[i] + 1)
+        awake_conf = np.insert(awake_conf, i, 0)
+
+    # Make sure that all after each awake there is an onset. Do this by adding a_peaks[i] - 1 to o_peaks list for every i.
+    for i in range(start_a, len(a_peaks)):
+        o_peaks = np.append(o_peaks, a_peaks[i] - 1)
+        onset_conf = np.append(onset_conf, 0)
 
     # Return onset and awake and the max values of those indices
-    return onset, awake, onset_conf, awake_conf
+    assert len(o_peaks) == len(a_peaks), "Onset and awake peaks should be the same length"
+    return o_peaks, a_peaks, onset_conf, awake_conf
 
 
 def find_events(pred: np.ndarray, median_filter_size: int = None) -> tuple:

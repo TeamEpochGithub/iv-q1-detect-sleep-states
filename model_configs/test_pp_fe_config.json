@@ -45,6 +45,11 @@
         "kind": "kurtosis",
         "window_sizes": [5, 10],
         "features": ["anglez", "enmo"]
+    },
+    {
+        "kind": "mean",
+        "window_sizes": [5, 10],
+        "features": ["anglez", "enmo"]
     }
     ],
     "pretraining": {

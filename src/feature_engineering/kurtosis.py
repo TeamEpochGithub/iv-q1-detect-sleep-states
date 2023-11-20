@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import gc
 from tqdm import tqdm
 
 from .rolling_window import RollingWindow
@@ -40,5 +41,5 @@ class Kurtosis(RollingWindow):
                     "f_kurtosis_" + feature + "_" + str(window_size)].std(),
                 upper=data[sid]["f_kurtosis_" + feature + "_" + str(window_size)].mean() + 5 * data[sid][
                     "f_kurtosis_" + feature + "_" + str(window_size)].std())
-
+            gc.collect()
         return data

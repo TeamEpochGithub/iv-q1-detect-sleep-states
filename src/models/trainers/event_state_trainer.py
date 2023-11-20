@@ -222,7 +222,8 @@ class EventStateTrainer:
                 loss = self.criterion(log_softmax(
                     output, dim=1), softmax(data[1], dim=1))
             else:
-                loss = self.criterion(output, data[1])
+                loss = self.criterion(output[:, :, 2:], data[1][:, :, 2:]) * \
+                    0.01 + self.criterion(output[:, :, :2], data[1][:, :, :2])
 
         # Backpropagate loss and update weights with gradient clipping
         loss.backward()
@@ -298,26 +299,29 @@ class EventStateTrainer:
                     loss = self.criterion(log_softmax(
                         output, dim=1), softmax(data[1], dim=1))
                 else:
-                    loss = self.criterion(output, data[1])
+                    loss = self.criterion(output[:, :, 2:], data[1][:, :, 2:]) * \
+                        0.01 + \
+                        self.criterion(output[:, :, :2], data[1][:, :, :2])
 
             losses.append(loss.item())
         return losses
 
-    def masked_loss(self, outputs, y):
+    def masked_loss(self, output, y):
         assert y.shape[2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 4)"
         assert y.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
-        assert outputs.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-        assert outputs.shape[0] == y.shape[
+        assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
+        assert output.shape[0] == y.shape[
             0], "Output shape is not equal to target shape (0)"
-        assert outputs.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
+        assert output.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
         # Get the event labels
         labels = y[:, :, 1:]
         assert labels.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
         assert labels.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
-        # Get the mask from y (shape (batch_size, seq_len, 2))
-        unlabeled_mask = torch.stack([y[:, :, 0], y[:, :, 0]], dim=2)
+        # Get the mask from y (shape (batch_size, seq_len, 2)), stack it labels.shape[2] times
+        unlabeled_mask = torch.stack(
+            [y[:, :, 0] for _ in range(labels.shape[2])], dim=2)
         assert unlabeled_mask.shape == labels.shape, "Unlabeled mask shape is not equal to labels shape"
 
         # If the mask is 1, keep data, else set to 0
@@ -328,14 +332,15 @@ class EventStateTrainer:
 
         if str(self.criterion) == "KLDivLoss()":
             # Outputs should be given the label when the mask is 0
-            outputs = outputs * unlabeled_mask + labels * (1 - unlabeled_mask)
+            output = output * unlabeled_mask + labels * (1 - unlabeled_mask)
 
             loss_unreduced = self.criterion(log_softmax(
-                outputs, dim=1), softmax(labels, dim=1))
+                output, dim=1), softmax(labels, dim=1))
             loss_unreduced = loss_unreduced.sum() / loss_unreduced.shape[0]
             return loss_unreduced
         else:
-            loss_unreduced = self.criterion(outputs, labels)
+            loss_unreduced = self.criterion(output[:, :, 2:], labels[:, :, 2:]) * \
+                0.01 + self.criterion(output[:, :, :2], labels[:, :, :2])
 
         loss_masked = loss_unreduced * unlabeled_mask
         loss = torch.sum(loss_masked) / (torch.sum(unlabeled_mask) + 1)

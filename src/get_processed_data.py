@@ -3,6 +3,7 @@ import os
 import tracemalloc
 
 import pandas as pd
+import json
 
 from src import data_info
 from src.configs.load_model_config import ModelConfigLoader
@@ -10,6 +11,7 @@ from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
 from src.preprocessing.pp import PP
 from src.util.hash_config import hash_config
+
 
 _STEP_HASH_LENGTH = 5
 
@@ -33,6 +35,8 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
 
     logger.info(f'--- Running preprocessing & feature engineering steps: {steps}')
 
+    assert config.config['preprocessing'][0]['kind'] == 'mem_reduce', 'The first preprocessing step must be mem_reduce'
+
     i: int = 0
     processed: dict = {}
     for i in range(len(step_hashes), -1, -1):
@@ -40,9 +44,10 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         # check if the final result of the preprocessing exists
         if os.path.exists(path) and i != 0:
             logger.info(f'Reading existing files at: {path}')
+            # The test data will have different ids so we need to read the encoding
+            ids = json.load(open(config.config['preprocessing'][0]['id_encoding_path']))
             # read the files within the folder in to a dict of dfs
-            # hardcoded number of series we have
-            for k in range(277):
+            for k in ids.values():
                 filename = path + '/' + str(k) + '.parquet'
                 processed[k] = pd.read_parquet(filename)
             logger.info('Finished reading')

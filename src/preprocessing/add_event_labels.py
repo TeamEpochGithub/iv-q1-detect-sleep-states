@@ -30,7 +30,7 @@ class AddEventLabels(PP):
     _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
     _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict) -> dict:
         """Run the preprocessing step.
 
         :param data: the data to preprocess
@@ -39,15 +39,15 @@ class AddEventLabels(PP):
         """
 
         # If window column is present, raise an exception
-        if "window" in data.columns:
+        if "window" in data[0].columns:
             logger.critical("Window column is present, this preprocessing step should be run before SplitWindows")
             raise PPException("Window column is present, this preprocessing step should be run before SplitWindows")
-        if "hot-awake" in data.columns:
+        if "hot-awake" in data[0].columns:
             logger.warning(
                 "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep, hot-unlabeled)"
                 " for state segmentation models. This can cause issues when also adding event labels."
                 "Make sure your model takes the correct features.")
-        if "onset" in data.columns:
+        if "onset" in data[0].columns:
             logger.warning("Onset column is present, for regression models. "
                            "This can cause issues when also adding event labels."
                            "Make sure your model takes the correct features.")
@@ -58,7 +58,7 @@ class AddEventLabels(PP):
         del self._events
         return res
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Preprocess the data by adding state labels to each row of the data.
 
         :param data: the data without state labels

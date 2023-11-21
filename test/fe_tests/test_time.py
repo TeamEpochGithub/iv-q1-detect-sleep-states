@@ -71,3 +71,35 @@ class TestTime(TestCase):
         self.assertEqual(18, data["f_second"][0])
         self.assertEqual(19, data["f_second"][1])
         self.assertEqual(20, data["f_second"][2])
+
+    def test_time_feature_engineering_week(self):
+        data = pd.DataFrame({
+            "timestamp": pd.to_datetime(["2021-01-04 12:15:18", "2022-02-05 13:16:19", "2023-03-06 14:17:20"])
+        })
+
+        time = Time(["week"])
+        data = time.feature_engineering(data)
+
+        self.assertEqual(2, len(data.columns))
+        self.assertEqual("timestamp", data.columns[0])
+        self.assertEqual("f_week", data.columns[1])
+
+        self.assertEqual(1, data["f_week"][0])
+        self.assertEqual(5, data["f_week"][1])
+        self.assertEqual(10, data["f_week"][2])
+
+    def test_time_feature_engineering_weekday(self):
+        data = pd.DataFrame({
+            "timestamp": pd.to_datetime(["2021-01-04 12:15:18", "2022-02-05 13:16:19", "2023-03-06 14:17:20"])
+        })
+
+        time = Time(["weekday"])
+        data = time.feature_engineering(data)
+
+        self.assertEqual(2, len(data.columns))
+        self.assertEqual("timestamp", data.columns[0])
+        self.assertEqual("f_weekday", data.columns[1])
+
+        self.assertEqual(0, data["f_weekday"][0])
+        self.assertEqual(5, data["f_weekday"][1])
+        self.assertEqual(0, data["f_weekday"][2])

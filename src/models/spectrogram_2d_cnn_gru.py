@@ -8,7 +8,6 @@ from numpy import ndarray, dtype
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
-from .architectures.spectrogram_encoder_decoder import SpectrogramEncoderDecoder
 from .model import Model, ModelException
 from .trainers.event_trainer import EventTrainer
 from .. import data_info
@@ -47,10 +46,10 @@ class EventSegmentation2DCNNGRU(Model):
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         if self.config.get("use_awake_channel", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                           out_channels=3, model_type=self.model_type, config=self.config)
+                                                           out_channels=3, model_type=self.model_type, config=self.config)
         else:
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                           out_channels=2, model_type=self.model_type, config=self.config)
+                                                           out_channels=2, model_type=self.model_type, config=self.config)
         data_info.downsampling_factor = self.config.get('hop_length', 1)
         data_info.window_size = 17280//data_info.downsampling_factor
         # Load config
@@ -250,8 +249,9 @@ class EventSegmentation2DCNNGRU(Model):
         trainer = EventTrainer(
             epochs, criterion, mask_unlabeled, early_stopping)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler, 
-            activation_delay=self.config.get('activation_delay', 10))
+            trainloader=train_dataloader, testloader=test_dataloader,
+            model=self.model, optimizer=optimizer, name=self.name,
+            scheduler=scheduler, activation_delay=self.config.get('activation_delay', 10))
 
         # Log full train and test plot
         if wandb.run is not None:
@@ -337,7 +337,8 @@ class EventSegmentation2DCNNGRU(Model):
         logger.info("--- Training model full " + self.name)
         trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
         trainer.fit(trainloader=train_dataloader, testloader=None,
-                    model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler)
+                    model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+                    activation_delay=self.config.get('activation_delay', 10))
 
         logger.info("--- Full train complete!")
 
@@ -389,7 +390,6 @@ class EventSegmentation2DCNNGRU(Model):
         if self.config.get('hop_length', 1) > 1:
             predictions = np.repeat(
                 predictions, self.config.get('hop_length', 1), axis=1)
-        y_test = np.load('y_test.npy')
         if raw_output:
             return predictions
 
@@ -456,12 +456,14 @@ class EventSegmentation2DCNNGRU(Model):
         if only_hyperparameters:
             self.reset_weights()
             self.reset_optimizer()
+            self.reset_scheduler()
             logger.info(
                 "Loading hyperparameters and instantiate new model from: " + path)
             return
 
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.reset_optimizer()
+        self.reset_scheduler()
         logger.info("Model fully loaded from: " + path)
 
     def reset_optimizer(self) -> None:
@@ -484,7 +486,7 @@ class EventSegmentation2DCNNGRU(Model):
         """
         if self.config.get("use_awake_channel", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                            out_channels=3, model_type=self.model_type, config=self.config)
+                                                           out_channels=3, model_type=self.model_type, config=self.config)
         else:
-            self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns), 
-                                           out_channels=2, model_type=self.model_type, config=self.config)
+            self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
+                                                           out_channels=2, model_type=self.model_type, config=self.config)

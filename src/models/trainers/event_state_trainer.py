@@ -1,24 +1,25 @@
 import copy
-from typing import List
 
 import numpy as np
 import torch
 import wandb
-from numpy import ndarray
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
 from tqdm import tqdm
+
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 from ... import data_info
 from ...logger.logger import logger
 
 
-class EventTrainer:
+class EventStateTrainer:
     """
-    Trainer class for the models that predict events.
+    Trainer class for the models that predict events and uses state for auxiliary loss.
     :param epochs: The number of epochs to train for.
     :param criterion: The loss function to use.
-    :param maskUnlabeled: Whether to mask the unlabeled data or not. (If true shape should be (batch_size, 4, seq_len))
+    :param maskUnlabeled: Whether to mask the unlabeled data or not. (If true shape should be (batch_size, seq_len, 3))
+    :param early_stopping: The number of epochs to wait before early stopping.
     """
 
     def __init__(
@@ -49,7 +50,7 @@ class EventTrainer:
             scheduler: CosineLRScheduler = None,
             activation_delay: int = None
 
-    ) -> tuple[ndarray[float], ndarray[float], int]:
+    ) -> tuple[list[float], list[float], int]:
         """
         Train the model on the training set and validate on the test set.
         :param trainloader: The training set.
@@ -59,10 +60,12 @@ class EventTrainer:
         :param name: The name of the model.
         :param scheduler: The optional LR scheduler to use.
         :param activation_delay: The optional activation delay to use.
+        :return: The training and validation losses and the number of epochs trained.
         """
 
         # Setup model for training
         model = model.to(self.device)
+        model.train()
         model.float()
 
         # Wandb logging
@@ -74,9 +77,7 @@ class EventTrainer:
                 f"{data_info.substage} - Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         # Check if full training or not
-        full_train = False
-        if testloader is None:
-            full_train = True
+        full_train = testloader is None
 
         # Train and validate
         avg_train_losses = []
@@ -143,7 +144,7 @@ class EventTrainer:
             scheduler: CosineLRScheduler = None,
             use_activation: bool = None
 
-    ) -> ndarray[float]:
+    ) -> list[float]:
         """
         Train the model on the training set for one epoch and return training losses
         :param dataloader: The training set.
@@ -153,28 +154,26 @@ class EventTrainer:
         :param disable_tqdm: Whether to disable tqdm or not.
         :param scheduler: The optional LR scheduler to use.
         :param use_activation: The optional activation delay to use.
+        :return: The training losses.
         """
 
         # Loop through batches and return losses
         losses = []
-
-        # Set model to train mode
-        model.train()
 
         # Step the scheduler
         if scheduler is not None:
             scheduler.step(epoch_no)
 
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
-            for _, data in enumerate(tepoch):
+            for data in tepoch:
                 losses = self._train_one_loop(
                     data=data, losses=losses, model=model, optimizer=optimizer, use_activation=use_activation)
                 tepoch.set_description(f"Epoch {epoch_no}")
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
         return losses
 
-    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer,
-                        use_activation: bool = None) -> List[float]:
+    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: list[float], model: nn.Module, optimizer: torch.optim.Optimizer,
+                        use_activation: bool = None) -> list[float]:
         """
         Train the model on one batch and return the loss.
         :param data: The batch to train on.
@@ -195,35 +194,36 @@ class EventTrainer:
         # Forward pass with model and optional activation delay
         if use_activation is not None:
             # If it is an GRU Model, ignore the second output
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device),
                                   use_activation=use_activation)
             else:
                 output = model(data[0].to(self.device),
                                use_activation=use_activation)
         else:
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
 
         # Assert output is in correct format
-        assert output.shape[1] == data[1].shape[1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
-        assert output.shape[1] == data_info.window_size, \
-            f"Output shape {tuple(output.shape[1])} is not equal to window size {data_info.window_size}, check if model output is correct"
-        assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"  # TODO: Describe magic number 2
+        assert output.shape[1] == data[1].shape[1], "Output window length is not equal to target length"
+        assert output.shape[1] == data_info.window_size, "Output window length is not equal to window size, check if model output is correct"
+        assert output.shape[2] == 5, "Output classes is not equal to 5 (5 classes)"
 
         # Calculate loss
         if self.mask_unlabeled:
-            assert data[1].shape[2] == 3, f"Masked loss only works with y shape (batch_size, seq_len, 3), but shape is {tuple(data[1].shape)}"
+            assert data[1].shape[
+                2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 6)"
             loss = self.masked_loss(output, data[1])
         else:
-            assert data[1].shape[2] == 2, f"Data shape {tuple(data[1].shape[2])} does not have 2 classes"  # TODO: Describe magic number 2
-            if str(self.criterion) == "KLDivLoss()":
+            assert data[1].shape[2] == 5, "Data shape is not equal to 5 (5 classes)"
+            if isinstance(self.criterion, nn.KLDivLoss):
                 loss = self.criterion(log_softmax(
                     output, dim=1), softmax(data[1], dim=1))
             else:
-                loss = self.criterion(output, data[1])
+                loss = self.criterion(output[:, :, 2:], data[1][:, :, 2:]) * \
+                    0.01 + self.criterion(output[:, :, :2], data[1][:, :, :2])
 
         # Backpropagate loss and update weights with gradient clipping
         loss.backward()
@@ -240,7 +240,7 @@ class EventTrainer:
             dataloader: torch.utils.data.DataLoader,
             epoch_no: int, model: nn.Module,
             disable_tqdm: bool = False
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Run the model on the test set and return validation loss
         :param dataloader: The test set.
@@ -252,12 +252,8 @@ class EventTrainer:
 
         # Loop through batches and return losses
         losses = []
-
-        # Set model to eval mode
-        model.eval()
-
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
-            for _, data in enumerate(tepoch):
+            for data in tepoch:
                 losses = self._val_one_loop(
                     data=data, losses=losses, model=model)
                 tepoch.set_description(f"Epoch {epoch_no}")
@@ -268,9 +264,9 @@ class EventTrainer:
     def _val_one_loop(
             self,
             data: torch.utils.data.DataLoader,
-            losses: List[float],
+            losses: list[float],
             model: nn.Module
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Validate the model on one batch and return the loss.
         :param data: The batch to validate on.
@@ -285,45 +281,47 @@ class EventTrainer:
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
 
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
 
             # Assert output is in correct format
-            assert output.shape[1] == data[1].shape[1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
-            assert output.shape[1] == data_info.window_size, \
-                f"Output shape {tuple(output.shape[1])} is not equal to window size {data_info.window_size}, check if model output is correct"
-            assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"  # TODO: Describe magic number 2
+            assert output.shape[1] == data[1].shape[1], "Output window length is not equal to target length"
+            assert output.shape[1] == data_info.window_size, "Output window length is not equal to window size, check if model output is correct"
+            assert output.shape[2] == 5, "Output classes is not equal to 5 (5 classes)"
 
             # Calculate loss
             if self.mask_unlabeled:
                 loss = self.masked_loss(output, data[1])
             else:
-                if str(self.criterion) == "KLDivLoss()":
+                if isinstance(self.criterion, nn.KLDivLoss):
                     loss = self.criterion(log_softmax(
                         output, dim=1), softmax(data[1], dim=1))
                 else:
-                    loss = self.criterion(output, data[1])
+                    loss = self.criterion(output[:, :, 2:], data[1][:, :, 2:]) * \
+                        0.01 + \
+                        self.criterion(output[:, :, :2], data[1][:, :, :2])
+
             losses.append(loss.item())
         return losses
 
-    def masked_loss(self, outputs, y):
-        assert y.shape[2] == 3, "Masked loss only works with y shape (batch_size, seq_len, 3)"
-        assert y.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
-        assert outputs.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-        assert outputs.shape[0] == y.shape[
-            0], "Output shape is not equal to target shape (0)"
-        assert outputs.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
+    def masked_loss(self, output: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        assert y.shape[2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 6)"
+        assert y.shape[1] == data_info.window_size, "Target shape [1] is not equal to window size, check if targets is correct"
+        assert output.shape[1] == data_info.window_size, "Output shape [1] is not equal to window size, check if model output is correct"
+        assert output.shape[0] == y.shape[0], "Output shape is not equal to target shape (0), Batch size is not equal"
+        assert output.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
         # Get the event labels
         labels = y[:, :, 1:]
-        assert labels.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
-        assert labels.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
+        assert labels.shape[1] == data_info.window_size, "Labels shape [1] is not equal to window size, check if targets is correct"
+        assert labels.shape[2] == 5, "Target shape is not equal to 5 (5 classes)"
 
-        # Get the mask from y (shape (batch_size, seq_len, 2))
-        unlabeled_mask = torch.stack([y[:, :, 0], y[:, :, 0]], dim=2)
-        assert unlabeled_mask.shape == labels.shape, "Unlabeled mask shape is not equal to labels shape"
+        # Get the mask from y (shape (batch_size, seq_len, 2)), stack it labels.shape[2] times
+        unlabeled_mask = torch.stack(
+            [y[:, :, 0] for _ in range(labels.shape[2])], dim=2)
+        assert unlabeled_mask.shape == labels.shape, f"Unlabeled mask shape {tuple(unlabeled_mask.shape)} is not equal to labels shape {tuple(labels.shape)}"
 
         # If the mask is 1, keep data, else set to 0
         # Do this if value is 3 (unlabeled), else set to 1
@@ -331,16 +329,17 @@ class EventTrainer:
         # Set true to 0 and false to 1
         unlabeled_mask = unlabeled_mask ^ 1
 
-        if str(self.criterion) == "KLDivLoss()":
+        if isinstance(self.criterion, nn.KLDivLoss):
             # Outputs should be given the label when the mask is 0
-            outputs = outputs * unlabeled_mask + labels * (1 - unlabeled_mask)
+            output = output * unlabeled_mask + labels * (1 - unlabeled_mask)
 
             loss_unreduced = self.criterion(log_softmax(
-                outputs, dim=1), softmax(labels, dim=1))
+                output, dim=1), softmax(labels, dim=1))
             loss_unreduced = loss_unreduced.sum() / loss_unreduced.shape[0]
             return loss_unreduced
         else:
-            loss_unreduced = self.criterion(outputs, labels)
+            loss_unreduced = self.criterion(output[:, :, 2:], labels[:, :, 2:]) * \
+                0.01 + self.criterion(output[:, :, :2], labels[:, :, :2])
 
         loss_masked = loss_unreduced * unlabeled_mask
         loss = torch.sum(loss_masked) / (torch.sum(unlabeled_mask) + 1)

@@ -70,7 +70,8 @@
             "warmup_lr_init": 0.000001,
             "warmup_t": 3
         },
-        "mask_unlabeled": true,
+        "mask_unlabeled": false,
+        "use_auxiliary_awake": true,
         "network_params": {
             "heads": 8,
             "emb_dim": 64,

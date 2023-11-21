@@ -63,7 +63,6 @@ class EventTrainer:
 
         # Setup model for training
         model = model.to(self.device)
-        model.train()
         model.float()
 
         # Wandb logging
@@ -159,6 +158,9 @@ class EventTrainer:
         # Loop through batches and return losses
         losses = []
 
+        # Set model to train mode
+        model.train()
+
         # Step the scheduler
         if scheduler is not None:
             scheduler.step(epoch_no)
@@ -249,6 +251,10 @@ class EventTrainer:
 
         # Loop through batches and return losses
         losses = []
+
+        # Set model to eval mode
+        model.eval()
+
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
             for _, data in enumerate(tepoch):
                 losses = self._val_one_loop(

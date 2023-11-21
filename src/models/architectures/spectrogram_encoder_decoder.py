@@ -1,5 +1,8 @@
+import wandb
 from torch import nn
-from segmentation_models_pytorch import Unet
+
+if wandb.run is not None:
+    from segmentation_models_pytorch import Unet
 from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torchaudio.transforms as T
 from torch import cat
@@ -19,13 +22,16 @@ class SpectrogramEncoderDecoder(nn.Module):
         # for now there are no residual features but
         # that should be a future issue beacuse it needs experimenting to get them to be significant
         self.num_res_features = in_channels - 3
-        self.encoder = Unet(
-            encoder_name=config.get('encoder_name', 'resnet34'),
-            encoder_weights=config.get('encoder_weights', 'imagenet'),
-            in_channels=in_channels,
-            classes=1,
-            encoder_depth=config.get('encoder_depth', 5),
-        )
+        if wandb.run is not None:
+            self.encoder = Unet(
+                encoder_name=config.get('encoder_name', 'resnet34'),
+                encoder_weights=config.get('encoder_weights', 'imagenet'),
+                in_channels=in_channels,
+                classes=1,
+                encoder_depth=config.get('encoder_depth', 5),
+            )
+        else:
+            self.encoder = None
         self.spectrogram = nn.Sequential(
             T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
             T.AmplitudeToDB(top_db=80),
@@ -33,11 +39,11 @@ class SpectrogramEncoderDecoder(nn.Module):
         )
         self.dropout = nn.Dropout(config.get('dropout_prob', 0.05))
         self.decoder = UNet1DDecoder(
-            n_channels=(config.get('n_fft', 127)+1)//2 + self.num_res_features,
+            n_channels=(config.get('n_fft', 127) + 1) // 2 + self.num_res_features,
             n_classes=out_channels,
             bilinear=config.get('bilinear', False),
             scale_factor=config.get('scale_factor', 2),
-            duration=17280//config.get('hop_length', 1),
+            duration=17280 // config.get('hop_length', 1),
         )
         self.activation = nn.GELU()
 

@@ -1,8 +1,8 @@
 {
-    "name": "unet",
+    "name": "transformer_optimal",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 24,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
@@ -40,16 +40,12 @@
         },
         {
             "kind": "sun",
-            "sun_features": [
-                "azimuth",
-                "altitude"
-            ]
+            "sun_features": ["azimuth", "altitude"]
         },
         {
             "kind": "rotation",
             "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
         }
-
     ],
     "pretraining": {
         "downsample": {
@@ -64,32 +60,35 @@
         }
     },
     "architecture": {
-        "activation_delay": 45,
-        "batch_size": 128,
-        "early_stopping": 17,
-        "epochs": 10,
-        "loss": "mse-torch",
-        "lr": 0.005239752600594687,
+        "activation_delay": 40,
+        "batch_size": 64,
+        "early_stopping": 32,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.01,
         "lr_schedule": {
             "cycle_limit": 3,
-            "lr_min": 0.00009666150325794088,
-            "t_initial": 25,
+            "lr_min": 0.002,
+            "t_initial": 32,
             "warmup_lr_init": 0.000001,
-            "warmup_t": 4
+            "warmup_t": 6
         },
         "mask_unlabeled": true,
         "network_params": {
-            "activation": "relu",
-            "hidden_layers": 8,
-            "kernel_size": 7,
-            "depth": 2,
-            "dropout": 0,
-            "stride": 2,
-            "padding": 2,
-            "n_layers": 5
+            "heads": 5,
+            "emb_dim": 128,
+            "forward_dim": 768,
+            "n_layers": 6,
+            "pooling": "none",
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 4
+            },
+            "pe": "fixed",
+            "dropout": 0.2
         },
         "optimizer": "adamw-torch",
         "threshold": 0,
-        "type": "event-seg-unet-1d-cnn"
+        "type": "event-segmentation-transformer"
     }
 }

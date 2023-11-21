@@ -34,14 +34,17 @@ class EventSegmentationTransformer(EventModel):
 
         # Load transformer config and model
         config["network_params"]["t_type"] = "event"
-        config["network_params"]["num_class"] = 2
+        if config.get("use_auxiliary_awake", False):
+            config["network_params"]["num_class"] = 3
+        else:
+            config["network_params"]["num_class"] = 2
         config['network_params']["seq_len"] = data_info.window_size
         config['network_params']["tokenizer_args"]["channels"] = len(
             data_info.X_columns)
-        self.model = TransformerPool(**config['network_params'])
+        self.model = TransformerPool(**self.config['network_params'])
 
         # Load model class config
-        self.load_config(config)
+        self.load_config(self.config)
 
     def get_default_config(self) -> dict:
         return {
@@ -52,6 +55,7 @@ class EventSegmentationTransformer(EventModel):
             "activation_delay": 0,
             "threshold": 0.0,
             "mask_unlabeled": False,
+            "use_auxiliary_awake": False,
             "lr_schedule": {
                 "t_initial": 100,
                 "warmup_t": 5,

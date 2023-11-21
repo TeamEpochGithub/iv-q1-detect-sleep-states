@@ -1,5 +1,5 @@
 {
-    "name": "unet",
+    "name": "cmon",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -27,7 +27,8 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 5,
+            "steepness": 2
         },
         {
             "kind": "split_windows"
@@ -36,20 +37,12 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["hour","minute"]
+            "time_features": ["hour", "minute"]
         },
         {
             "kind": "sun",
-            "sun_features": [
-                "azimuth",
-                "altitude"
-            ]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+            "sun_features": ["azimuth", "altitude"]
         }
-
     ],
     "pretraining": {
         "downsample": {
@@ -64,32 +57,26 @@
         }
     },
     "architecture": {
-        "activation_delay": 45,
-        "batch_size": 128,
-        "early_stopping": 17,
-        "epochs": 10,
-        "loss": "mse-torch",
-        "lr": 0.005239752600594687,
-        "lr_schedule": {
-            "cycle_limit": 3,
-            "lr_min": 0.00009666150325794088,
-            "t_initial": 25,
-            "warmup_lr_init": 0.000001,
-            "warmup_t": 4
-        },
-        "mask_unlabeled": true,
+        "type": "event-res-gru",
+        "loss": "shrinkage-loss",
+        "epochs": 100,
+        "batch_size": 32,
+        "optimizer": "adam-torch",
+        "early_stopping": 15,
+        "activation_delay": 15,
+        "lr": 0.01,
         "network_params": {
-            "activation": "relu",
-            "hidden_layers": 8,
-            "kernel_size": 7,
-            "depth": 2,
-            "dropout": 0,
-            "stride": 2,
-            "padding": 2,
-            "n_layers": 5
+            "hidden_size": 8,
+            "n_layers": 5,
+            "activation": "relu"
         },
-        "optimizer": "adamw-torch",
-        "threshold": 0,
-        "type": "event-seg-unet-1d-cnn"
+        "lr_schedule": {
+            "t_initial": 25,
+            "warmup_t": 5,
+            "warmup_lr_init": 0.000001,
+            "lr_min": 0.00001,
+            "cycle_limit": 3
+        },
+        "threshold": 0
     }
 }

@@ -105,7 +105,7 @@ class Ensemble:
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
         if self.combination_method == "confidence_average":
-            predictions = np.average(predictions, axis=3)
+            predictions = np.average(predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):

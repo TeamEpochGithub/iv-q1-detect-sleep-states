@@ -64,5 +64,5 @@ class EventResGRU(EventModel):
         """
         Reset the weights of the model. Useful for retraining the model.
         """
-        # torch.manual_seed(42)
+        torch.manual_seed(42)
         self.model = MultiResidualBiGRU(self.num_features, **self.config['network_params'])

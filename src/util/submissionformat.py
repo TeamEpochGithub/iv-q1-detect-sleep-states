@@ -53,7 +53,6 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     # Remove duplicate events
     df = df.drop(df[df['event'].eq(df['event'].shift())].index)
 
-
     # create the row_id index
     df.reset_index(drop=True, inplace=True)
     df.index.name = 'row_id'

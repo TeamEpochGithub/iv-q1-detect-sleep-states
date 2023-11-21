@@ -1,13 +1,12 @@
-# This file does the training of the models
 import torch
 
 import wandb
+from main_utils import train_from_config, full_train_from_config, scoring
 from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
-from main_utils import train_from_config, full_train_from_config, scoring
 from sweep import play_mp3
 
 
@@ -142,10 +141,11 @@ if __name__ == "__main__":
 
     # Set up logging
     import coloredlogs
+
     coloredlogs.install()
 
     # Set seed for reproducibility
-    # torch.manual_seed(42)
+    torch.manual_seed(42)
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")

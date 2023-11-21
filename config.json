@@ -12,7 +12,7 @@
     "model_config_loc": "model_configs",
     "ensemble": {
         "models": ["cmon.json","cmon2.json"],
-        "weights": [1,2],
+        "weights": [0.6, 0.4],
         "comb_method": "confidence_average",
         "pred_only": false
     },
@@ -23,7 +23,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

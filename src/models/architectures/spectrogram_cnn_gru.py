@@ -18,14 +18,15 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
             classes=1,
             encoder_depth=config.get('encoder_depth', 5),
         )
+        self.linear = nn.Linear((config.get('n_fft', 127)+1)//2, in_channels)
         self.spectrogram = nn.Sequential(
             T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
             T.AmplitudeToDB(top_db=80),
             SpecNormalize()
         )
         self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=(config.get('n_fft', 127)+1)//2,
-                                                       hidden_size=self.gru_params.get("hidden_size",64), 
-                                                       out_size=out_channels, n_layers=self.gru_params.get("n_layers", 5), 
+                                                       hidden_size=self.gru_params.get("hidden_size", 64),
+                                                       out_size=out_channels, n_layers=self.gru_params.get("n_layers", 5),
                                                        bidir=True, activation=self.gru_params.get("activation", "relu"),
                                                        flatten=False, dropout=0,
                                                        internal_layers=1, model_name='')
@@ -37,7 +38,10 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
         x_encoded = x_encoded.permute(0, 2, 1)
-        y = self.GRU(x_encoded, use_activation=use_activation)
+        # shrink the enoced to be the same size as the input features
+        x_encoded = self.linear(x_encoded)
+        # GRU with residual connections
+        y = self.GRU(x_encoded + x, use_activation=use_activation)
         return y
 
 

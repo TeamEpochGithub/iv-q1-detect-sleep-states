@@ -354,6 +354,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - network_params (heads, emb_dim, forward_dim": 96,
         "n_layers": 6,
         "pooling": "none",
+        "pooling_args": { (Dependent on model chosen for pooling) }
         "tokenizer": "patch",
         "tokenizer_args": {
             "patch_size": 12
@@ -397,6 +398,8 @@ Example of an example-fc-model configuration and a 1D-CNN configuration
         "forward_dim": 96,
         "n_layers": 6,
         "pooling": "none",
+        "pooling_args": {
+        },
         "tokenizer": "patch",
         "tokenizer_args": {
             "patch_size": 12

@@ -30,7 +30,7 @@ class TransformerPool(nn.Module):
     def __init__(
         self, heads: int = 8, emb_dim: int = 92, forward_dim: int = 2048,
         n_layers: int = 6,
-        seq_len: int = 17280, num_class: int = 2, pooling: str = "none", tokenizer: str = "patch", tokenizer_args: dict = {},
+        seq_len: int = 17280, num_class: int = 2, pooling: str = "none", pooling_args: dict = {}, tokenizer: str = "patch", tokenizer_args: dict = {},
         pe: str = "fixed", dropout: float = 0.1, t_type: str = "regression"
     ) -> None:
         super(TransformerPool, self).__init__()
@@ -40,6 +40,9 @@ class TransformerPool(nn.Module):
         self.seq_len = seq_len
         self.patch_size = tokenizer_args.get("patch_size", 1)
         self.no_features = len(data_info.X_columns)
+        self.pooling_args = pooling_args
+        self.pooling_args["input_size"] = self.no_features
+        self.pooling_args["out_size"] = num_class
 
         # Ensure emb_dim is divisible by heads
         emb_dim = emb_dim // heads * heads
@@ -85,8 +88,7 @@ class TransformerPool(nn.Module):
                 emb_dim // 4, num_class, kernel_size=3, stride=1, padding=1)
             self.last_layer = nn.ReLU()
             if pooling == "gru":
-                self.gru = MultiResidualBiGRU(input_size=self.no_features, hidden_size=16, out_size=num_class,
-                                              n_layers=4, bidir=True, activation="gelu", dropout=dropout, internal_layers=1)
+                self.gru = MultiResidualBiGRU(**self.pooling_args)
                 self.before_res = nn.Linear(
                     in_features=emb_dim, out_features=self.no_features)
 

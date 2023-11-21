@@ -20,6 +20,7 @@ List of options and their config options:
 - `sun`
     -  `sun_features`: a list of sun features to include
       - Options: `elevation`, `azimuth`
+- `add_holidays`
 
 
 Example:
@@ -51,6 +52,9 @@ Example:
         {
             "kind": "sun",
             "sun_features": ["elevation", "azimuth"]
+        },
+        {
+            "kind": "add_holidays"
         }
 ]
 ```

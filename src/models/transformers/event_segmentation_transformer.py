@@ -33,15 +33,15 @@ class EventSegmentationTransformer(EventModel):
         self.model_type = "event-segmentation-transformer"
 
         # Load transformer config and model
-        config["network_params"]["t_type"] = "event"
-        config["network_params"]["num_class"] = 2
-        config['network_params']["seq_len"] = data_info.window_size
-        config['network_params']["tokenizer_args"]["channels"] = len(
+        self.config["network_params"]["t_type"] = "event"
+        self.config["network_params"]["num_class"] = 2
+        self.config['network_params']["seq_len"] = data_info.window_size
+        self.config['network_params']["tokenizer_args"]["channels"] = len(
             data_info.X_columns)
-        self.model = TransformerPool(**config['network_params'])
+        self.model = TransformerPool(**self.config['network_params'])
 
         # Load model class config
-        self.load_config(config)
+        self.load_config(self.config)
 
     def get_default_config(self) -> dict:
         return {

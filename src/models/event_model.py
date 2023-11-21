@@ -31,7 +31,7 @@ class EventModel:
         if config is None:
             self.config = None
         else:
-            self.config = config
+            self.config = copy.deepcopy(config)
             self.hash = hash_config(config, length=5)
 
         self.name = name

@@ -63,7 +63,7 @@ def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_da
     return X_train, X_test, y_train, y_test, train_idx, test_idx, groups
 
 
-def get_pretrain_full_cache(model_config_loader, featured_data: pd.DataFrame, save_output: bool = True) \
+def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_data: pd.DataFrame, save_output: bool = True) \
         -> (np.array, np.array, np.array):
     """Get the pretrain_full data, either from the cache or by preprocessing the data
 
@@ -74,7 +74,7 @@ def get_pretrain_full_cache(model_config_loader, featured_data: pd.DataFrame, sa
     """
     pretrain_config_hash: str = hash_config(
         model_config_loader.get_pretrain_config())
-    path: str = model_config_loader.get_pp_out() + '/pretrain_full' + \
+    path: str = model_config_loader.get_processed_out() + '/pretrain_full' + \
         pretrain_config_hash + '.pkl'
 
     if os.path.exists(path):
@@ -102,7 +102,7 @@ def get_pretrain_full_cache(model_config_loader, featured_data: pd.DataFrame, sa
         # Save scaler
         initial_hash = hash_config(
             model_config_loader.get_pretrain_config(), length=5)
-        scaler_filename: str = model_config_loader.get_model_store_loc() + "/scaler-" + \
+        scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
             initial_hash + ".pkl"
         pretrain.scaler.save(scaler_filename)
         logger.info(f"Saved scaler to {scaler_filename}")

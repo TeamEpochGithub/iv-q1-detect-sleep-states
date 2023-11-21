@@ -76,61 +76,56 @@ def main() -> None:
     else:
         logger.info("Predicting with GPU for inference")
 
-    # ------------------------------------------- #
-    #                 Ensemble                    #
-    # ------------------------------------------- #
-
-    # Initialize models
+    # Store location
     store_location = config_loader.get_model_store_loc()
     logger.info("Model store location: " + store_location)
 
-    # If hpo is enabled, run hpo instead
-    # This can be done via terminal and a sweep or a local cross validation run
-    if config_loader.get_hpo():
-        logger.info("Running HPO")
-        train_from_config(config_loader.get_hpo_config(),
-                          config_loader.get_cv(), store_location, hpo=True)
-        return
+    if not config_loader.get_train_for_submission():
+        # ------------------------------------------- #
+        #                 Ensemble                    #
+        # ------------------------------------------- #
 
-    # Initialize models
-    logger.info("Initializing models...")
-    ensemble = config_loader.get_ensemble()
-    models = ensemble.get_models()
-    if not ensemble.get_pred_only():
-        for _, model_config in enumerate(models):
-            train_from_config(model_config, config_loader.get_cv(),
-                              store_location, hpo=False)
+        # If hpo is enabled, run hpo instead
+        # This can be done via terminal and a sweep or a local cross validation run
+        if config_loader.get_hpo():
+            logger.info("Running HPO")
+            train_from_config(config_loader.get_hpo_config(),
+                              config_loader.get_cv(), store_location, hpo=True)
+            return
+
+        # Initialize models
+        logger.info("Initializing models...")
+        ensemble = config_loader.get_ensemble()
+        models = ensemble.get_models()
+        if not ensemble.get_pred_only():
+            for _, model_config in enumerate(models):
+                train_from_config(model_config, config_loader.get_cv(),
+                                  store_location, hpo=False)
+        else:
+            logger.info("Not training models")
+
+        # ------------------------------------------------------- #
+        #                    Scoring                              #
+        # ------------------------------------------------------- #
+
+        print_section_separator("Scoring", spacing=0)
+        data_info.stage = "scoring"
+        data_info.substage = ""
+
+        if config_loader.get_scoring():
+            scoring(config=config_loader)
+        else:
+            logger.info("Not scoring")
     else:
-        logger.info("Not training models")
+        # ------------------------------------------------------- #
+        #                    Train for submission                 #
+        # ------------------------------------------------------- #
 
-    # ------------------------------------------------------- #
-    #                    Scoring                              #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Scoring", spacing=0)
-    data_info.stage = "scoring"
-    data_info.substage = ""
-
-    if config_loader.get_scoring():
-        scoring(config=config_loader)
-    else:
-        logger.info("Not scoring")
-
-    # ------------------------------------------------------- #
-    #                    Train for submission                 #
-    # ------------------------------------------------------- #
-
-    print_section_separator("Train for submission", spacing=0)
-    data_info.stage = "train for submission"
-
-    if config_loader.get_train_for_submission():
+        print_section_separator("Train for submission", spacing=0)
+        data_info.stage = "train for submission"
         data_info.substage = "Full"
         for model_config in ensemble.get_models():
-            config_loader.reset_globals()
-            full_train_from_config(config_loader, model_config, store_location)
-        logger.info("Retraining models for submission")
-    else:
-        logger.info("Not training best model for submission")
+            full_train_from_config(model_config, store_location)
 
     # [optional] finish the wandb run, necessary in notebooks
     if config_loader.get_log_to_wandb():

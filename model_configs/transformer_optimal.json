@@ -1,8 +1,8 @@
 {
-    "name": "gru",
+    "name": "transformer_optimal",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 24,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
@@ -60,27 +60,35 @@
         }
     },
     "architecture": {
-        "activation_delay": 15,
-        "batch_size": 16,
-        "early_stopping": 20,
-        "epochs": 100,
-        "loss": "mse-torch",
-        "lr": 0.001,
-        "use_auxiliary_awake": true,
+        "activation_delay": 40,
+        "batch_size": 64,
+        "early_stopping": 32,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.01,
         "lr_schedule": {
-            "cycle_limit": 1,
-            "lr_min": 0.000002,
-            "t_initial": 50,
+            "cycle_limit": 3,
+            "lr_min": 0.002,
+            "t_initial": 32,
             "warmup_lr_init": 0.000001,
-            "warmup_t": 5
+            "warmup_t": 6
         },
+        "mask_unlabeled": true,
         "network_params": {
-            "activation": "gelu",
-            "hidden_size": 16,
-            "n_layers": 4
+            "heads": 5,
+            "emb_dim": 128,
+            "forward_dim": 768,
+            "n_layers": 6,
+            "pooling": "none",
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 4
+            },
+            "pe": "fixed",
+            "dropout": 0.2
         },
-        "optimizer": "adam-torch",
+        "optimizer": "adamw-torch",
         "threshold": 0,
-        "type": "event-res-gru"
+        "type": "event-segmentation-transformer"
     }
 }

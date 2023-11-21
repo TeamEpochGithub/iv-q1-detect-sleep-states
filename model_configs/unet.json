@@ -86,7 +86,7 @@
             "dropout": 0,
             "stride": 2,
             "padding": 2,
-            "n_layers": 6
+            "n_layers": 5
         },
         "optimizer": "adamw-torch",
         "threshold": 0,

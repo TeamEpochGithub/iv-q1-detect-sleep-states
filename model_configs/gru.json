@@ -36,7 +36,7 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["hour","minute"]
+            "time_features": ["weekday", "hour", "minute"]
         },
         {
             "kind": "sun",
@@ -45,6 +45,9 @@
         {
             "kind": "rotation",
             "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+        },
+        {
+            "kind": "add_school_hours"
         }
     ],
     "pretraining": {

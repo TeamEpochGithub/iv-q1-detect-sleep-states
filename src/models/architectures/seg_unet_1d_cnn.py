@@ -159,4 +159,4 @@ class SegUnet1D(nn.Module):
         elif self.model_type == "event-segmentation":
             if use_activation:
                 out = self.activation(out)
-        return out
+        return out.permute(0, 2, 1)

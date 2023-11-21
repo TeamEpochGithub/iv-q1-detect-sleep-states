@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-import pandas as pd
 
 from src.feature_engineering.time import Time
 

@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-import pandas as pd
 
 from src.preprocessing.add_segmentation_labels import AddSegmentationLabels
 

@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-import numpy as np
-import pandas as pd
 
 from src.preprocessing.add_state_labels import AddStateLabels
 

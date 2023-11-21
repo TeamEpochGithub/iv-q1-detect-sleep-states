@@ -1,10 +1,8 @@
 from unittest import TestCase
 
 import numpy as np
-import pandas as pd
 
 from src.preprocessing.add_event_labels import AddEventLabels
-from src.preprocessing.pp import PPException
 
 
 class TestAddEventSegmentationLabels(TestCase):

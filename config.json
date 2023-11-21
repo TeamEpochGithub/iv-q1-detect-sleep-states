@@ -15,7 +15,7 @@
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],
         "splitter_params": {
-            "n_splits": 3
+            "n_splits": 5
         }
     },
     "train_for_submission": false,

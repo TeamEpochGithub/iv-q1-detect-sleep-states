@@ -31,8 +31,10 @@ class EventResGRU(EventModel):
         self.num_features = len(data_info.X_columns)
 
         # Create model
+        if config.get("use_auxiliary_awake", False):
+            self.config['network_params']["out_size"] = 5
         self.model = MultiResidualBiGRU(
-            self.num_features, **config['network_params'])
+            self.num_features, **self.config['network_params'])
 
         self.load_config(config)
 
@@ -45,6 +47,7 @@ class EventResGRU(EventModel):
             "activation_delay": 0,
             "threshold": 0.0,
             "mask_unlabeled": False,
+            "use_auxiliary_awake": False,
             "lr_schedule": {
                 "t_initial": 100,
                 "warmup_t": 5,
@@ -56,7 +59,6 @@ class EventResGRU(EventModel):
                 "hidden_layers": 8,
                 "flatten": False,
                 "bidir": True,
-
             }
         }
 

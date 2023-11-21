@@ -45,8 +45,8 @@ class EventSegmentationUnet1DCNN(Model):
         self.model_type = "event-segmentation"
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2, model_type=self.model_type,
-                               **self.load_network_params(config))
+        self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
+                               model_type=self.model_type, **self.config.get("network_params", {}))
 
         # Load config
         self.load_config(config)
@@ -108,9 +108,6 @@ class EventSegmentationUnet1DCNN(Model):
         config["network_params"] = config.get(
             "network_params", default_config["network_params"])
         self.config = config
-
-    def load_network_params(self, config: dict) -> dict:
-        return config["network_params"] | self.get_default_config()["network_params"]
 
     def get_default_config(self) -> dict:
         """
@@ -465,7 +462,7 @@ class EventSegmentationUnet1DCNN(Model):
         Reset the weights of the model.
         """
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=2,
-                               model_type=self.model_type, **self.load_network_params(self.config))
+                               model_type=self.model_type, **self.config.get("network_params", {}))
 
     def reset_scheduler(self) -> None:
         """

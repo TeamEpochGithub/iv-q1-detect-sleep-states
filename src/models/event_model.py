@@ -304,7 +304,7 @@ class EventModel:
         res_sinc = np.sinc(sincM)
 
         for channel_idx in range(predictions.shape[2]):
-            for row_idx in tqdm(range(predictions.shape[0])):
+            for row_idx in tqdm(range(predictions.shape[0]), "Upsampling using sinc interpolation", unit="window"):
                 y_sinc = np.dot(predictions[row_idx, :, channel_idx], res_sinc)
                 upsampled_data[row_idx, :, channel_idx] = y_sinc
 

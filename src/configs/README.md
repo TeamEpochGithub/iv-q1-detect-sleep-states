@@ -180,7 +180,7 @@ List of options and their config options:
     -  `sun_features`: a list of sun features to include based the longitude and latitude that should be specified in the data_info.
     Currently, NYC location is used.
     - Options: `elevation`, `azimuth`
-
+- `add_holidays`
 
 Example:
 ```JSON
@@ -215,6 +215,9 @@ Example:
         {
             "kind": "sun",
             "sun_features": ["altitude", "azimuth"]
+        },
+        {
+            "kind": "add_holidays"
         }
 ]
 ```

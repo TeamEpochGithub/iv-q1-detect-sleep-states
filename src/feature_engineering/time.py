@@ -1,23 +1,24 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Final
 
 import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 
-_TIME_FEATURES: list[str] = ["year", "month", "day", "hour", "minute", "second", "microsecond"]
+_TIME_FEATURES: Final[set[str]] = {"year", "month", "week", "weekday", "day", "hour", "minute", "second", "microsecond"}
 
 
 @dataclass
 class Time(FE):
     """Add time features to the data
 
-    The following time-related features can be added: "year", "month", "day", "hour", "minute", "second", "microsecond".
-    # TODO Add "weekday" and "week"
+    The following time-related features can be added: "year", "month", "week", "weekday", "day", "hour", "minute", "second", "microsecond".
 
     :param time_features: the time features to add
     """
-    time_features: list[str]
+    time_features: Iterable[str]
 
     def __post_init__(self) -> None:
         """Check if the time features are supported"""
@@ -32,6 +33,12 @@ class Time(FE):
         :return: the data with the selected time data added
         """
         for time_feature in self.time_features:
-            data[f"f_{time_feature}"] = data["timestamp"].dt.__getattribute__(time_feature)
+            match time_feature:
+                case "week":
+                    data["f_week"] = data["timestamp"].dt.isocalendar().week.astype("uint8")
+                case "weekday":
+                    data["f_weekday"] = data["timestamp"].dt.weekday.astype("uint8")
+                case _:
+                    data[f"f_{time_feature}"] = data["timestamp"].dt.__getattribute__(time_feature)
 
         return data

@@ -217,8 +217,8 @@ class EventStateTrainer:
                 2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 6)"
             loss = self.masked_loss(output, data[1])
         else:
-            assert data[1].shape[2] == 5, "Data shape is not equal to 2 (2 classes)"
-            if str(self.criterion) == "KLDivLoss()":
+            assert data[1].shape[2] == 5, "Data shape is not equal to 5 (5 classes)"
+            if isinstance(self.criterion, nn.KLDivLoss):
                 loss = self.criterion(log_softmax(
                     output, dim=1), softmax(data[1], dim=1))
             else:

@@ -60,6 +60,7 @@ class EventStateTrainer:
         :param name: The name of the model.
         :param scheduler: The optional LR scheduler to use.
         :param activation_delay: The optional activation delay to use.
+        :return: The training and validation losses and the number of epochs trained.
         """
 
         # Setup model for training
@@ -155,6 +156,7 @@ class EventStateTrainer:
         :param disable_tqdm: Whether to disable tqdm or not.
         :param scheduler: The optional LR scheduler to use.
         :param use_activation: The optional activation delay to use.
+        :return: The training losses.
         """
 
         # Loop through batches and return losses
@@ -306,7 +308,7 @@ class EventStateTrainer:
             losses.append(loss.item())
         return losses
 
-    def masked_loss(self, output, y):
+    def masked_loss(self, output: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         assert y.shape[2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 4)"
         assert y.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
         assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"

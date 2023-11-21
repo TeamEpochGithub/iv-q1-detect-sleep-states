@@ -81,7 +81,6 @@ class CV:
         except KeyError:
             logger.critical("Unknown CV splitter %s", splitter)
             raise CVException("Unknown CV splitter %s", splitter)
-
         self.scoring = _get_scoring(scoring)
 
     def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, train_df: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
@@ -121,7 +120,8 @@ class CV:
 
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(train_df, y_pred, validate_idx) for scorer in self.scoring]
+                score = [scorer(train_df, y_pred, validate_idx)
+                         for scorer in self.scoring]
             else:
                 score = self.scoring(train_df, y_pred, validate_idx)
 

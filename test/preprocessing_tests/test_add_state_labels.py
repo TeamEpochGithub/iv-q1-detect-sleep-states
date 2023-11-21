@@ -7,6 +7,12 @@ from src.preprocessing.add_state_labels import AddStateLabels
 
 
 class TestAddStateLabels(TestCase):
+    def test_repr(self) -> None:
+        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path',
+                            use_similarity_nan=True, fill_limit=10)
+        self.assertEqual(
+            "AddStateLabels(events_path='./dummy_event_path', id_encoding_path='./dummy_id_encoding_path', use_similarity_nan=True, fill_limit=10, nan_tolerance_window=1)",
+            pp.__repr__())
 
     def test_preprocess_one_night(self):
         # make a test data frame with two series of 10 steps
@@ -144,7 +150,7 @@ class TestAddStateLabels(TestCase):
         # make a test data frame with two series of 10 steps
         data = pd.DataFrame({
             'series_id': [0] * 20,
-            'similarity_nan': [42] * 15 + [0]*5,
+            'similarity_nan': [42] * 15 + [0] * 5,
         })
 
         # make a test events data frame with two events per series
@@ -168,7 +174,7 @@ class TestAddStateLabels(TestCase):
         # check that the result is as expected
         expected = pd.DataFrame({
             'series_id': [0] * 20,
-            'similarity_nan': [42] * 15 + [0]*5,
+            'similarity_nan': [42] * 15 + [0] * 5,
             'awake': [1, 1, 0, 0, 0, 0, 0, 0, 1, 1,
                       3, 3, 3, 3, 3, 2, 2, 2, 2, 2],
         })
@@ -179,7 +185,7 @@ class TestAddStateLabels(TestCase):
         # make a test data frame with two series of 10 steps
         data = pd.DataFrame({
             'series_id': [0] * 20,
-            'similarity_nan': [42] * 15 + [0]*5,
+            'similarity_nan': [42] * 15 + [0] * 5,
         })
 
         # make a test events data frame with two events per series
@@ -203,7 +209,7 @@ class TestAddStateLabels(TestCase):
         # check that the result is as expected
         expected = pd.DataFrame({
             'series_id': [0] * 20,
-            'similarity_nan': [42] * 15 + [0]*5,
+            'similarity_nan': [42] * 15 + [0] * 5,
             'awake': [1, 1, 0, 0, 0, 0, 0, 0, 1, 1,
                       1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
         })

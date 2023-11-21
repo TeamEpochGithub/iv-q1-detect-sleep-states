@@ -1,36 +1,30 @@
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Final
+
 import pandas as pd
 
 from .feature_engineering import FE, FEException
+from ..logger.logger import logger
 
-_TIME_FEATURES: list[str] = ["year", "month", "day", "hour", "minute", "second", "microsecond"]
+_TIME_FEATURES: Final[set[str]] = {"year", "month", "week", "weekday", "day", "hour", "minute", "second", "microsecond"}
 
 
+@dataclass
 class Time(FE):
     """Add time features to the data
 
-    The following time-related features can be added: "year", "month", "day", "hour", "minute", "second", "microsecond".
+    The following time-related features can be added: "year", "month", "week", "weekday", "day", "hour", "minute", "second", "microsecond".
 
-    # TODO Add "weekday" and "week"
+    :param time_features: the time features to add
     """
+    time_features: Iterable[str]
 
-    def __init__(self, time_features: str | list[str], **kwargs: dict) -> None:
-        """Initialize the Time class
-
-        :param time_features: the time features to add
-        """
-        super().__init__(**kwargs | {"kind": "time"})
-
-        if isinstance(time_features, list):
-            self.time_features = time_features
-        else:
-            self.time_features = [time_features]
-
+    def __post_init__(self) -> None:
+        """Check if the time features are supported"""
         if any(time_feature not in _TIME_FEATURES for time_feature in self.time_features):
-            raise FEException(f"Unknown time features: {time_features}")
-
-    def __repr__(self) -> str:
-        """Return a string representation of a Time object"""
-        return f"{self.__class__.__name__}(time_features={self.time_features})"
+            logger.critical(f"Unknown time features: {self.time_features}")
+            raise FEException(f"Unknown time features: {self.time_features}")
 
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         """Add the selected time columns.
@@ -39,6 +33,12 @@ class Time(FE):
         :return: the data with the selected time data added
         """
         for time_feature in self.time_features:
-            data[f"f_{time_feature}"] = data["timestamp"].dt.__getattribute__(time_feature)
+            match time_feature:
+                case "week":
+                    data["f_week"] = data["timestamp"].dt.isocalendar().week.astype("uint8")
+                case "weekday":
+                    data["f_weekday"] = data["timestamp"].dt.weekday.astype("uint8")
+                case _:
+                    data[f"f_{time_feature}"] = data["timestamp"].dt.__getattribute__(time_feature)
 
         return data

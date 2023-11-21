@@ -15,7 +15,7 @@ class Encoder(nn.Module):
     :param heads: Number of heads in the multihead attention.
     """
 
-    def __init__(self, tokenizer: nn.Module, pe: nn.Module, emb_dim: int = 92, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8) -> None:
+    def __init__(self, tokenizer: nn.Module, pe: nn.Module, emb_dim: int = 92, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, dropout: float = 0.0) -> None:
         super().__init__()
         self.n_layers = n_layers
         self.tokenizer = tokenizer
@@ -23,7 +23,7 @@ class Encoder(nn.Module):
         encoders = []
         for _ in range(0, n_layers):
             encoders.append(
-                EncoderLayer(emb_dim, heads, forward_dim)
+                EncoderLayer(emb_dim, heads, forward_dim, dropout=dropout)
             )
         self.encoder_stack = nn.Sequential(*encoders)
         self.norm = BatchNorm1d(emb_dim)

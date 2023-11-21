@@ -1,20 +1,15 @@
+from dataclasses import dataclass
+
 import pandas as pd
 
 from .rolling_window import RollingWindow
 from ..logger.logger import logger
 
 
+@dataclass
 class Skewness(RollingWindow):
     # TODO Add docstrings for the class, feature_engineering and mean functions
     # TODO Add tests
-
-    def __init__(self, **kwargs: dict) -> None:
-        """Initialize the Skewness class"""
-        super().__init__(**kwargs | {"kind": "skewness"})
-
-    def __repr__(self) -> str:
-        """Return a string representation of a Skewness object"""
-        return f"{self.__class__.__name__}(window_sizes={self.window_sizes}, features={self.features})"
 
     def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
         # Loop through window sizes

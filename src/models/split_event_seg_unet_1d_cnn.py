@@ -203,7 +203,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             test_dataset_onset = torch.utils.data.TensorDataset(
                 X_test, y_test[:, data_info.y_columns["state-onset"], :])
 
-        # Dataset for awake
+        # Dataset for wakeup
         if mask_unlabeled:
             train_dataset_awake = torch.utils.data.TensorDataset(
                 X_train, y_train[:, (data_info.y_columns["awake"], data_info.y_columns["state-wakeup"]), :])
@@ -215,7 +215,7 @@ class SplitEventSegmentationUnet1DCNN(Model):
             test_dataset_awake = torch.utils.data.TensorDataset(
                 X_test, y_test[:, data_info.y_columns["state-wakeup"], :])
 
-        # Create dataloaders for awake and onset
+        # Create dataloaders for wakeup and onset
         train_dataloader_onset = torch.utils.data.DataLoader(
             train_dataset_onset, batch_size=batch_size)
         test_dataloader_onset = torch.utils.data.DataLoader(
@@ -470,8 +470,8 @@ class SplitEventSegmentationUnet1DCNN(Model):
         """
         Reset the optimizer to the initial state. Useful for retraining the model.
         """
-        self.config['optimizer_onset'] = type(self.config['optimizer'])(self.model_onset.parameters(), lr=self.config['lr'])
-        self.config['optimizer_awake'] = type(self.config['optimizer'])(self.model_awake.parameters(), lr=self.config['lr'])
+        self.config['optimizer_onset'] = type(self.config['optimizer_onset'])(self.model_onset.parameters(), lr=self.config['lr'])
+        self.config['optimizer_awake'] = type(self.config['optimizer_awake'])(self.model_awake.parameters(), lr=self.config['lr'])
 
     def reset_weights(self) -> None:
         """

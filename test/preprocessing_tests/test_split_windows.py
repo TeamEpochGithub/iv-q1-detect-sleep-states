@@ -8,6 +8,9 @@ from src.preprocessing.split_windows import SplitWindows
 
 
 class MyTestCase(unittest.TestCase):
+    def test_repr(self):
+        self.assertEqual("SplitWindows(start_hour=1)", SplitWindows(1).__repr__())
+
     def test_split_windows(self):
         data_info.window_size = 17280
         split_windows = SplitWindows(15)

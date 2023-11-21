@@ -1,0 +1,77 @@
+{
+    "name": "2d-cnn-spectrogram",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 1,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
+    "preprocessing": [
+        {
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": false
+        },
+        {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5,
+            "steepness": 2
+        },
+        {
+            "kind": "split_windows"
+        }
+
+    ],
+    "feature_engineering": [
+        {"kind": "rotation",
+        "window_sizes": [360]}
+    ],
+
+    "pretraining": {
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+
+    "architecture": {
+        "type": "Spectrogram_2D_Cnn",
+        "loss": "shrinkage-loss",
+        "optimizer": "adam-torch",
+        "epochs": 1,
+        "batch_size": 64,
+        "lr": 0.00001,
+        "early_stopping": 20,
+        "threshold": 0.005,
+        "n_fft": 63,
+        "hop_length": 6,
+        "encoder_name": "mobilenet_v2",
+        "encoder_weights": "imagenet",
+        "mask_unlabeled": false,
+        "use_augmentation": true,
+        "clip_awake": true,
+        "use_activation": true,
+        "use_awake_channel": true,
+        "dropout_prob": 0.6,
+        "lr_schedule": {
+            "t_initial": 5,
+            "warmup_t": 0,
+            "warmup_lr_init": 0.00001,
+            "lr_min": 0.000003
+        } 
+    }
+}

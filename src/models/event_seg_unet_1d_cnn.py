@@ -191,8 +191,8 @@ class EventSegmentationUnet1DCNN(Model):
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
             y_test = y_test[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
-        y_test = torch.from_numpy(y_test).permute(0, 2, 1)
+        y_train = torch.from_numpy(y_train)
+        y_test = torch.from_numpy(y_test)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -267,7 +267,7 @@ class EventSegmentationUnet1DCNN(Model):
         else:
             y_train = y_train[:, :, np.array(
                 [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        y_train = torch.from_numpy(y_train).permute(0, 2, 1)
+        y_train = torch.from_numpy(y_train)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -341,7 +341,7 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Concatenate the predictions from all batches
         # Final shape is (windows, window_size, confidences), confidences are (onset, wakeup)
-        predictions = np.concatenate(predictions, axis=0).transpose(0, 2, 1)
+        predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:
@@ -357,8 +357,7 @@ class EventSegmentationUnet1DCNN(Model):
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Pred should be 2d array with shape (window_size, 2)
-            assert pred.shape[
-                1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+            assert pred.shape[1] == 2, f"Prediction should be 2d array with shape (window_size, 2) but is {tuple(pred.shape)}"
 
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])

@@ -202,4 +202,4 @@ class SegUnet1D(nn.Module):
             out = self.softmax(out)
         elif self.model_type == "event-segmentation" and use_activation:
             out = self.activation(out)
-        return out
+        return out.permute(0, 2, 1)

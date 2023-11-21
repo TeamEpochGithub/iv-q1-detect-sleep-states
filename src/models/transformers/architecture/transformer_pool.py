@@ -1,5 +1,8 @@
 from torch import nn
 import torch
+from src import data_info
+
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 # Base imports
 from .pooling import SeqPool, LSTMPooling, NoPooling
@@ -32,12 +35,20 @@ class TransformerPool(nn.Module):
     ) -> None:
         super(TransformerPool, self).__init__()
 
+        # Selfs
+        self.pooling = pooling
+        self.seq_len = seq_len
+        self.patch_size = tokenizer_args.get("patch_size", 1)
+        self.no_features = len(data_info.X_columns)
+
         # Ensure emb_dim is divisible by heads
         emb_dim = emb_dim // heads * heads
         if emb_dim < heads:
             emb_dim = heads
         assert emb_dim % heads == 0, "Embedding dimension must be divisible by number of heads"
         forward_dim = forward_dim // emb_dim * emb_dim
+        self.emb_dim = emb_dim
+        self.forward_dim = forward_dim
         self.encoder = EncoderConfig(tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim,
                                      forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len, dropout=dropout)
         with torch.no_grad():
@@ -73,6 +84,11 @@ class TransformerPool(nn.Module):
             self.outcov = nn.Conv1d(
                 emb_dim // 4, num_class, kernel_size=3, stride=1, padding=1)
             self.last_layer = nn.ReLU()
+            if pooling == "gru":
+                self.gru = MultiResidualBiGRU(input_size=self.no_features, hidden_size=16, out_size=num_class,
+                                              n_layers=4, bidir=True, activation="gelu", dropout=dropout, internal_layers=1)
+                self.before_res = nn.Linear(
+                    in_features=emb_dim, out_features=self.no_features)
 
     def forward(self, x: torch.Tensor, use_activation: bool = True) -> torch.Tensor:
         """
@@ -81,21 +97,34 @@ class TransformerPool(nn.Module):
         :return: Output tensor (bs, num_class).
         """
         # Pass x through encoder (bs, l, c) -> (bs, l_e, e)
-        x = self.encoder(x)
+        curr_x = self.encoder(x)
+        assert curr_x.shape[2] == self.e
 
         if self.t_type == "state":
             # Perform sequential pooling (bs, l_e, e) -> (bs, len, num_class)
             # Untokenize (bs, l_e, e) -> (bs, l, e)
-            x = self.untokenize(x.permute(0, 2, 1)).permute(0, 2, 1)
+            x = self.untokenize(curr_x.permute(0, 2, 1)).permute(0, 2, 1)
             # MLP head used to get logits (bs, l, e) -> (bs, l, num_class)
             x = self.mlp_head(x)
             # Softmax (bs, l, num_class) -> (bs, l, num_class)
             x = self.last_layer(x)
         elif self.t_type == "event":
+            # Perform gru (bs, l_e, e) -> (bs, l, num_class)
+            if self.pooling == "gru":
+                curr_x = self.upsample(curr_x.permute(0, 2, 1))
+                curr_x = self.before_res(curr_x.permute(0, 2, 1))
+                x += curr_x
+                x, _ = self.gru(x, use_activation=use_activation)
+                return x
+
             # Perform conbr_1 (bs, l_e, e) -> (bs, e // 2, l_e)
-            x = self.conbr_1(x.permute(0, 2, 1))
+            x = self.conbr_1(curr_x.permute(0, 2, 1))
+            assert x.shape[2] == self.l_e
+
             # Upsample (bs, e_pool, l_e) -> (bs, e_pool, l)
             x = self.upsample(x)
+            assert x.shape[2] == self.seq_len
+
             # Perform conbr_2 (bs, e_pool, l) -> (bs, e_pool // 2, l)
             x = self.conbr_2(x)
             # Perform outcov (bs, e_pool // 2, l) -> (bs, num_class, l)
@@ -106,7 +135,7 @@ class TransformerPool(nn.Module):
             x = self.last_layer(x.permute(0, 2, 1))
         else:
             # Perform sequential pooling (bs, l_e, e) -> (bs, e_pool)
-            x = self.seq_pool(x)
+            x = self.seq_pool(curr_x)
             # MLP head used to get logits (bs, e_pool) -> (bs, num_class)
             x = self.mlp_head(x)
 

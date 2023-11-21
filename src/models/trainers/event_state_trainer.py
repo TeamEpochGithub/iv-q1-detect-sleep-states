@@ -1,13 +1,13 @@
 import copy
-from typing import List
 
 import numpy as np
 import torch
 import wandb
-from numpy import ndarray
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
 from tqdm import tqdm
+
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 from ... import data_info
 from ...logger.logger import logger
@@ -50,7 +50,7 @@ class EventStateTrainer:
             scheduler: CosineLRScheduler = None,
             activation_delay: int = None
 
-    ) -> tuple[ndarray[float], ndarray[float], int]:
+    ) -> tuple[list[float], list[float], int]:
         """
         Train the model on the training set and validate on the test set.
         :param trainloader: The training set.
@@ -77,9 +77,7 @@ class EventStateTrainer:
                 f"{data_info.substage} - Validation {str(self.criterion)} of {name}", step_metric="epoch")
 
         # Check if full training or not
-        full_train = False
-        if testloader is None:
-            full_train = True
+        full_train = testloader is None
 
         # Train and validate
         avg_train_losses = []
@@ -146,7 +144,7 @@ class EventStateTrainer:
             scheduler: CosineLRScheduler = None,
             use_activation: bool = None
 
-    ) -> ndarray[float]:
+    ) -> list[float]:
         """
         Train the model on the training set for one epoch and return training losses
         :param dataloader: The training set.
@@ -167,15 +165,15 @@ class EventStateTrainer:
             scheduler.step(epoch_no)
 
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
-            for _, data in enumerate(tepoch):
+            for data in tepoch:
                 losses = self._train_one_loop(
                     data=data, losses=losses, model=model, optimizer=optimizer, use_activation=use_activation)
                 tepoch.set_description(f"Epoch {epoch_no}")
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 1))
         return losses
 
-    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: List[float], model: nn.Module, optimizer: torch.optim.Optimizer,
-                        use_activation: bool = None) -> List[float]:
+    def _train_one_loop(self, data: torch.utils.data.DataLoader, losses: list[float], model: nn.Module, optimizer: torch.optim.Optimizer,
+                        use_activation: bool = None) -> list[float]:
         """
         Train the model on one batch and return the loss.
         :param data: The batch to train on.
@@ -196,22 +194,22 @@ class EventStateTrainer:
         # Forward pass with model and optional activation delay
         if use_activation is not None:
             # If it is an GRU Model, ignore the second output
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device),
                                   use_activation=use_activation)
             else:
                 output = model(data[0].to(self.device),
                                use_activation=use_activation)
         else:
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
 
         # Assert output is in correct format
-        assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
-        assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-        assert output.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
+        assert output.shape[1] == data[1].shape[1], "Output window length is not equal to target length"
+        assert output.shape[1] == data_info.window_size, "Output window length is not equal to window size, check if model output is correct"
+        assert output.shape[2] == 5, "Output classes is not equal to 5 (5 classes)"
 
         # Calculate loss
         if self.mask_unlabeled:
@@ -242,7 +240,7 @@ class EventStateTrainer:
             dataloader: torch.utils.data.DataLoader,
             epoch_no: int, model: nn.Module,
             disable_tqdm: bool = False
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Run the model on the test set and return validation loss
         :param dataloader: The test set.
@@ -255,7 +253,7 @@ class EventStateTrainer:
         # Loop through batches and return losses
         losses = []
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
-            for _, data in enumerate(tepoch):
+            for data in tepoch:
                 losses = self._val_one_loop(
                     data=data, losses=losses, model=model)
                 tepoch.set_description(f"Epoch {epoch_no}")
@@ -266,9 +264,9 @@ class EventStateTrainer:
     def _val_one_loop(
             self,
             data: torch.utils.data.DataLoader,
-            losses: List[float],
+            losses: list[float],
             model: nn.Module
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Validate the model on one batch and return the loss.
         :param data: The batch to validate on.
@@ -283,21 +281,21 @@ class EventStateTrainer:
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
 
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
 
             # Assert output is in correct format
-            assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
-            assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-            assert output.shape[2] == 5, "Output shape is not equal to 3 (3 classes)"
+            assert output.shape[1] == data[1].shape[1], "Output window length is not equal to target length"
+            assert output.shape[1] == data_info.window_size, "Output window length is not equal to window size, check if model output is correct"
+            assert output.shape[2] == 5, "Output classes is not equal to 5 (5 classes)"
 
             # Calculate loss
             if self.mask_unlabeled:
                 loss = self.masked_loss(output, data[1])
             else:
-                if str(self.criterion) == "KLDivLoss()":
+                if isinstance(self.criterion, nn.KLDivLoss):
                     loss = self.criterion(log_softmax(
                         output, dim=1), softmax(data[1], dim=1))
                 else:
@@ -309,22 +307,21 @@ class EventStateTrainer:
         return losses
 
     def masked_loss(self, output: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        assert y.shape[2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 4)"
-        assert y.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
-        assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-        assert output.shape[0] == y.shape[
-            0], "Output shape is not equal to target shape (0)"
+        assert y.shape[2] == 6, "Masked loss only works with y shape (batch_size, seq_len, 6)"
+        assert y.shape[1] == data_info.window_size, "Target shape [1] is not equal to window size, check if targets is correct"
+        assert output.shape[1] == data_info.window_size, "Output shape [1] is not equal to window size, check if model output is correct"
+        assert output.shape[0] == y.shape[0], "Output shape is not equal to target shape (0), Batch size is not equal"
         assert output.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
 
         # Get the event labels
         labels = y[:, :, 1:]
-        assert labels.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if targets is correct"
-        assert labels.shape[2] == 5, "Output shape is not equal to 5 (5 classes)"
+        assert labels.shape[1] == data_info.window_size, "Labels shape [1] is not equal to window size, check if targets is correct"
+        assert labels.shape[2] == 5, "Target shape is not equal to 5 (5 classes)"
 
         # Get the mask from y (shape (batch_size, seq_len, 2)), stack it labels.shape[2] times
         unlabeled_mask = torch.stack(
             [y[:, :, 0] for _ in range(labels.shape[2])], dim=2)
-        assert unlabeled_mask.shape == labels.shape, "Unlabeled mask shape is not equal to labels shape"
+        assert unlabeled_mask.shape == labels.shape, f"Unlabeled mask shape {tuple(unlabeled_mask.shape)} is not equal to labels shape {tuple(labels.shape)}"
 
         # If the mask is 1, keep data, else set to 0
         # Do this if value is 3 (unlabeled), else set to 1
@@ -332,7 +329,7 @@ class EventStateTrainer:
         # Set true to 0 and false to 1
         unlabeled_mask = unlabeled_mask ^ 1
 
-        if str(self.criterion) == "KLDivLoss()":
+        if isinstance(self.criterion, nn.KLDivLoss):
             # Outputs should be given the label when the mask is 0
             output = output * unlabeled_mask + labels * (1 - unlabeled_mask)
 

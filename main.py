@@ -50,15 +50,26 @@ def main() -> None:
             # Update hash as the config is different now
             config_hash = hash_config(config_loader.get_config(), length=16)
 
-            # Update the wandb summary with the updated config
-            wandb.run.summary.update(config_loader.get_config())
             wandb.run.name = config_hash
+
+            # Update the wandb summary with the updated config
+            curr_config = config_loader.get_config()
         else:
             # Get the ensemble configs and add them to the config on wandb
             ensemble = config_loader.get_ensemble()
             models = ensemble.get_models()
             for i, model_config in enumerate(models):
                 wandb.config[f"model_{i}"] = model_config.get_config()
+
+            # Update the wandb summary also with the ensemble configs
+            curr_config = config_loader.get_config()
+            model_names = config_loader.get_config()["ensemble"]["models"]
+
+            for name, model in zip(model_names, models):
+                curr_config[name] = model.config
+
+        # Update the wandb summary with the updated config
+        wandb.run.summary.update(curr_config)
 
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:

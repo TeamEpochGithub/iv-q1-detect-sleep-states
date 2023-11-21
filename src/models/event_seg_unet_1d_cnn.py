@@ -344,7 +344,7 @@ class EventSegmentationUnet1DCNN(Model):
 
         # Concatenate the predictions from all batches
         # Final shape is (windows, window_size, confidences), confidences are (onset, wakeup)
-        predictions = np.concatenate(predictions, axis=0).transpose(0, 2, 1)
+        predictions = np.concatenate(predictions, axis=0)
 
         # Apply upsampling to the predictions
         if data_info.downsampling_factor > 1:

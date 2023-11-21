@@ -59,7 +59,7 @@ class SegmentationUnet1DCNN(Model):
         # Load config and model
         self.load_config(config)
         self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size, out_channels=3,
-                               model_type=self.model_type, config=self.config)
+                               model_type=self.model_type, **self.config.get("network_params", {}))
 
         # Load optimizer
         self.load_optimizer()
@@ -467,7 +467,7 @@ class SegmentationUnet1DCNN(Model):
         self.config = checkpoint['config']
         if only_hyperparameters:
             self.model = SegUnet1D(in_channels=len(data_info.X_columns), window_size=data_info.window_size,
-                                   out_channels=3, model_type=self.model_type, config=self.config)
+                                   out_channels=3, model_type=self.model_type, **self.config.get("network_params", {}))
             self.reset_optimizer()
             logger.info("Loading hyperparameters and instantiate new model from: " + path)
             return

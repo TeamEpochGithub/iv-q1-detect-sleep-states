@@ -206,16 +206,17 @@ class EventTrainer:
                 output = model(data[0].to(self.device))
 
         # Assert output is in correct format
-        assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
-        assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-        assert output.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
+        assert output.shape[1] == data[1].shape[1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
+        assert output.shape[1] == data_info.window_size, \
+            f"Output shape {tuple(output.shape[1])} is not equal to window size {data_info.window_size}, check if model output is correct"
+        assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"  # TODO: Describe magic number 2
 
         # Calculate loss
         if self.mask_unlabeled:
-            assert data[1].shape[2] == 3, "Masked loss only works with y shape (batch_size, seq_len, 3)"
+            assert data[1].shape[2] == 3, f"Masked loss only works with y shape (batch_size, seq_len, 3), but shape is {tuple(data[1].shape)}"
             loss = self.masked_loss(output, data[1])
         else:
-            assert data[1].shape[2] == 2, "Data shape is not equal to 2 (2 classes)"
+            assert data[1].shape[2] == 2, f"Data shape {tuple(data[1].shape[2])} does not have 2 classes"  # TODO: Describe magic number 2
             if str(self.criterion) == "KLDivLoss()":
                 loss = self.criterion(log_softmax(
                     output, dim=1), softmax(data[1], dim=1))
@@ -284,9 +285,10 @@ class EventTrainer:
                 output = model(data[0].to(self.device))
 
             # Assert output is in correct format
-            assert output.shape[1] == data[1].shape[1], "Output shape is not equal to target shape"
-            assert output.shape[1] == data_info.window_size, "Output shape is not equal to window size, check if model output is correct"
-            assert output.shape[2] == 2, "Output shape is not equal to 2 (2 classes)"
+            assert output.shape[1] == data[1].shape[1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
+            assert output.shape[1] == data_info.window_size, \
+                f"Output shape {tuple(output.shape[1])} is not equal to window size {data_info.window_size}, check if model output is correct"
+            assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"  # TODO: Describe magic number 2
 
             # Calculate loss
             if self.mask_unlabeled:

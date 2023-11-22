@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+import warnings
 from tqdm import tqdm
 
 from ..logger.logger import logger
@@ -38,7 +39,7 @@ class AddStateLabels(PP):
             logger.critical("fill_limit is required when using similarity NaN")
             raise PPException("fill_limit is required when using similarity NaN")
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict) -> dict:
         """Run the preprocessing step.
 
         :param data: the data to preprocess
@@ -51,7 +52,7 @@ class AddStateLabels(PP):
         del self.events
         return res
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Preprocess the data by adding state labels to each row of the data.
 
         :param data: the data without state labels
@@ -59,8 +60,9 @@ class AddStateLabels(PP):
         """
 
         # Initialize the awake column as 42, to catch errors later (-1 not possible in uint8)
-        data['awake'] = 42
-        data['awake'] = data['awake'].astype('uint8')
+        for sid in data.keys():
+            data[sid]['awake'] = 42
+            data[sid]['awake'] = data[sid]['awake'].astype('uint8')
 
         # apply encoding to events
         self.events['series_id'] = self.events['series_id'].map(self.id_encoding)
@@ -72,27 +74,23 @@ class AddStateLabels(PP):
 
         # iterate over the series and set the awake column
         if self.use_similarity_nan:
-            similarity_cols = [col for col in data.columns if col.endswith('similarity_nan')]
+            similarity_cols = [col for col in data[0].columns if col.endswith('similarity_nan')]
             if len(similarity_cols) == 0:
                 raise Exception("No (f_)similarity_nan column found, but use_similarity_nan is set to True")
             tqdm.pandas()
-            data = (data
-                    .groupby('series_id')
-                    .progress_apply(lambda x: self.set_awake_with_similarity(x, similarity_cols[0]))
-                    .reset_index(drop=True))
+            for sid in data.keys():
+                data[sid] = self.set_awake_with_similarity(data[sid], similarity_cols[0], sid).reset_index(drop=True)
         else:
             tqdm.pandas()
-            data = (data
-                    .groupby('series_id')
-                    .progress_apply(lambda x: self.set_awake(x, weird_series_encoded))
-                    .reset_index(drop=True))
+            for sid in data.keys():
+                data[sid] = self.set_awake(data[sid], weird_series_encoded, sid).reset_index(drop=True)
 
         return data
 
     # TODO Add type hints and (better) PyDoc comments to set_awake, set_awake_with_similarity, fill_backward and fill_forward
-    def set_awake(self, series, weird_series_encoded):
+    def set_awake(self, series, weird_series_encoded, sid):
         awake_col = series.columns.get_loc('awake')
-        series_id = series['series_id'].iloc[0]
+        series_id = sid
         current_events = self.events[self.events["series_id"] == series_id]
         if len(current_events) == 0:
             series['awake'] = 2
@@ -134,10 +132,10 @@ class AddStateLabels(PP):
         # TODO: shift?
         return series
 
-    def set_awake_with_similarity(self, series, similarity_col_name):
+    def set_awake_with_similarity(self, series, similarity_col_name, sid):
         """Set awake using nan_similarity, adds labels of 2 (nan) or 3 (unlabeled)"""
         awake_col = series.columns.get_loc('awake')
-        series_id = series['series_id'].iloc[0]
+        series_id = sid
         current_events = self.events[self.events["series_id"] == series_id]
         if len(current_events) == 0:
             series['awake'] = 2
@@ -145,7 +143,9 @@ class AddStateLabels(PP):
 
         # initialize as unlabeled, and set nan based on similarity_nan
         series['awake'] = 3
-        series['awake'][series[similarity_col_name] == 0] = 2
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            series['awake'][series[similarity_col_name] == 0] = 2
 
         # iterate over event labels and fill in the awake column segment by segment
         prev_step = 0

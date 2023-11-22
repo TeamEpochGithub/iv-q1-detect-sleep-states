@@ -30,7 +30,7 @@ class AddEventLabels(PP):
     _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
     _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict) -> dict:
         """Run the preprocessing step.
 
         :param data: the data to preprocess
@@ -39,15 +39,15 @@ class AddEventLabels(PP):
         """
 
         # If window column is present, raise an exception
-        if "window" in data.columns:
+        if "window" in data[0].columns:
             logger.critical("Window column is present, this preprocessing step should be run before SplitWindows")
             raise PPException("Window column is present, this preprocessing step should be run before SplitWindows")
-        if "hot-awake" in data.columns:
+        if "hot-awake" in data[0].columns:
             logger.warning(
                 "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep, hot-unlabeled)"
                 " for state segmentation models. This can cause issues when also adding event labels."
                 "Make sure your model takes the correct features.")
-        if "onset" in data.columns:
+        if "onset" in data[0].columns:
             logger.warning("Onset column is present, for regression models. "
                            "This can cause issues when also adding event labels."
                            "Make sure your model takes the correct features.")
@@ -58,7 +58,7 @@ class AddEventLabels(PP):
         del self._events
         return res
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Preprocess the data by adding state labels to each row of the data.
 
         :param data: the data without state labels
@@ -66,23 +66,26 @@ class AddEventLabels(PP):
         """
 
         # Initialize the awake column as 42, to catch errors later (-1 not possible in uint8)
-        data['state-onset'] = 0.0
-        data["state-wakeup"] = 0.0
+        # loop over the series ids
+        for i in data.keys():
+            data[i]['state-onset'] = 0.0
+            data[i]["state-wakeup"] = 0.0
 
         # apply encoding to events
         self._events['series_id'] = self._events['series_id'].map(self._id_encoding)
 
         # iterate over the series and set the awake column
         tqdm.pandas()
-        data = (data
-                .groupby('series_id')
-                .progress_apply(lambda x: self.fill_series_labels(x))
-                .reset_index(drop=True))
+        # data = (data
+        #         .groupby('series_id')
+        #         .progress_apply(lambda x: self.fill_series_labels(x))
+        #         .reset_index(drop=True))
+        for i in data.keys():
+            data[i] = self.fill_series_labels(data[i], i).reset_index(drop=True)
         return data
 
     # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array
-    def fill_series_labels(self, series: pd.DataFrame) -> pd.DataFrame:
-        series_id = series['series_id'].iloc[0]
+    def fill_series_labels(self, series: pd.DataFrame, series_id: int) -> pd.DataFrame:
         current_events = self._events[self._events["series_id"] == series_id]
 
         # Only get non-nan values and convert to int

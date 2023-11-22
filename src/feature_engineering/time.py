@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Final
 
-import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
@@ -26,19 +25,20 @@ class Time(FE):
             logger.critical(f"Unknown time features: {self.time_features}")
             raise FEException(f"Unknown time features: {self.time_features}")
 
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
         """Add the selected time columns.
 
         :param data: the original data
         :return: the data with the selected time data added
         """
         for time_feature in self.time_features:
-            match time_feature:
-                case "week":
-                    data["f_week"] = data["timestamp"].dt.isocalendar().week.astype("uint8")
-                case "weekday":
-                    data["f_weekday"] = data["timestamp"].dt.weekday.astype("uint8")
-                case _:
-                    data[f"f_{time_feature}"] = data["timestamp"].dt.__getattribute__(time_feature)
+            for sid in data.keys():
+                match time_feature:
+                    case "week":
+                        data[sid]["f_week"] = data[sid]["timestamp"].dt.isocalendar().week.astype("uint8")
+                    case "weekday":
+                        data[sid]["f_weekday"] = data[sid]["timestamp"].dt.weekday.astype("uint8")
+                    case _:
+                        data[sid][f"f_{time_feature}"] = data[sid]["timestamp"].dt.__getattribute__(time_feature)
 
         return data

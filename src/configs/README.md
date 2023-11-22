@@ -214,7 +214,7 @@ Example:
         },
         {
             "kind": "sun",
-            "sun_features": ["elevation", "azimuth"]
+            "sun_features": ["altitude", "azimuth"]
         },
         {
             "kind": "add_holidays"

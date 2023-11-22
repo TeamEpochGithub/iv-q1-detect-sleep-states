@@ -36,22 +36,18 @@ class PP(ABC):
         from .mem_reduce import MemReduce
         from .add_noise import AddNoise
         from .similarity_nan import SimilarityNan
-        from .add_regression_labels import AddRegressionLabels
         from .add_segmentation_labels import AddSegmentationLabels
         from .add_event_labels import AddEventLabels
         from .add_state_labels import AddStateLabels
-        from .remove_unlabeled import RemoveUnlabeled
         from .split_windows import SplitWindows
 
         _PREPROCESSING_KINDS: Final[dict[str | type[PP]]] = {
             "mem_reduce": MemReduce,
             "add_noise": AddNoise,
             "similarity_nan": SimilarityNan,
-            "add_regression_labels": AddRegressionLabels,
             "add_segmentation_labels": AddSegmentationLabels,
             "add_event_labels": AddEventLabels,
             "add_state_labels": AddStateLabels,
-            "remove_unlabeled": RemoveUnlabeled,
             "split_windows": SplitWindows
         }
 

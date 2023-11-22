@@ -52,7 +52,7 @@
 
     "architecture": {
         "type": "Spectrogram_2D_Cnn",
-        "loss": "mse-torch",
+        "loss": "shrinkage-loss",
         "optimizer": "adamw-torch",
         "epochs": 50,
         "batch_size": 64,
@@ -68,7 +68,7 @@
         "early_stopping": 30,
         "threshold": 0,
         "n_fft": 63,
-        "hop_length": 18,
+        "hop_length": 12,
         "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
         "bilinear": false,

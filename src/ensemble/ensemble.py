@@ -105,7 +105,8 @@ class Ensemble:
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
         if self.combination_method == "confidence_average":
-            predictions = np.average(predictions, axis=3, weights=self.weight_matrix)
+            predictions = np.average(
+                predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
@@ -213,18 +214,22 @@ class Ensemble:
         data_info.substage = f"training model: {model_name}"
 
         # Get filename of model
-        model_filename_opt = store_location + "/optimal_" + \
-            model_name + "-" + initial_hash + model.hash + ".pt"
+        if training:
+            model_filename = store_location + "/optimal_" + \
+                model_name + "-" + initial_hash + model.hash + ".pt"
+        else:
+            model_filename = store_location + "/submit_" + \
+                model_name + "-" + initial_hash + model.hash + ".pt"
 
         # If this file exists, load instead of start training
-        if os.path.isfile(model_filename_opt):
+        if os.path.isfile(model_filename):
             logger.info("Found existing trained optimal model: " +
-                        model_name + " with location " + model_filename_opt)
-            model.load(model_filename_opt, only_hyperparameters=False)
+                        model_name + " with location " + model_filename)
+            model.load(model_filename, only_hyperparameters=False)
         else:
             logger.critical("Not all models have been trained yet")
             raise ValueError(
-                f"Not all models have been trained yet, missing {model_filename_opt}")
+                f"Not all models have been trained yet, missing {model_filename}")
 
         # If the model has the device attribute, it is a pytorch model and we want to pass the pred_cpu argument.
         if hasattr(model, 'device'):

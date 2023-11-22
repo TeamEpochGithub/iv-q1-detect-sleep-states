@@ -37,7 +37,7 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["month", "weekday", "hour", "minute"]
+            "time_features": ["hour", "minute"]
         },
         {
             "kind": "sun",
@@ -77,7 +77,6 @@
             "lr_min": 0.00001,
             "cycle_limit": 3
         },
-        "use_auxiliary_awake": true,
         "threshold": 0
     }
 }

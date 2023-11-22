@@ -42,9 +42,6 @@ class Ensemble:
                 "Weight matrix length does not match number of models")
             raise ValueError(
                 "Weight matrix length does not match number of models")
-        elif np.sum(self.weight_matrix) != 1:
-            logger.critical("Weight matrix must sum to 1")
-            raise ValueError("Weight matrix must sum to 1")
         elif np.any(self.weight_matrix) <= 0:
             logger.critical("Weight matrix must be positive")
             raise ValueError("Weight matrix must be positive")

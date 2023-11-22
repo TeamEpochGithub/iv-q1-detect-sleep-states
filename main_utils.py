@@ -248,12 +248,15 @@ def full_train_from_config(model_config_loader: ModelConfigLoader, store_locatio
         initial_hash + ".pkl"
     pretrain.scaler.save(scaler_filename)
 
+    model_filename_opt = store_location + "/optimal_" + \
+        model_name + "-" + initial_hash + model.hash + ".pt"
     model_filename_submit = store_location + "/submit_" + \
         model_name + "-" + initial_hash + model.hash + ".pt"
     if os.path.isfile(model_filename_submit):
         logger.info("Found existing fully trained submit model: " +
                     model_name + " with location " + model_filename_submit)
     else:
+        model.load(model_filename_opt, only_hyperparameters=True)
         logger.info("Training fully trained submit model: " + model_name)
         model.train_full(x_train, y_train)
         model.save(model_filename_submit)

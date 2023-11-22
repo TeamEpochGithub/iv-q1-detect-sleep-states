@@ -218,7 +218,7 @@ class EventModel:
         # Train the model
         logger.info("--- Training model full " + self.name +
                     " for " + str(epochs) + " epochs")
-        trainer = EventTrainer(epochs, criterion)
+        trainer = EventTrainer(epochs, criterion, mask_unlabeled=False, early_stopping=0)
         trainer.fit(trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
                     activation_delay=activation_delay)
         logger.info("Full train complete!")

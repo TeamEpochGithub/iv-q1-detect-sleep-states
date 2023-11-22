@@ -81,6 +81,7 @@ def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_dat
         logger.info(f'Pretrain full: Reading existing files from: {path}')
         X_train, y_train, groups, data_info.X_columns, data_info.y_columns = pickle.load(
             open(path, "rb"))
+        data_info.window_size = data_info.window_size // data_info.downsampling_factor
         logger.info('Finished reading')
     else:
         logger.info(f"No pretrain full cache found at {path}.")

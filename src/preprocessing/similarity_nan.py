@@ -26,8 +26,7 @@ class SimilarityNan(PP):
         col_name = 'f_similarity_nan' if self.as_feature else 'similarity_nan'
 
         if len(series) < data_info.window_size:
-            logger.warning(f"Series {series.iloc[0]['series_id']} is shorter than a day,"
-                           f" setting similarity to 1. Should never happen...")
+            logger.warning("Series is shorter than a day, setting similarity to 1. Should never happen...")
             series['f_similarity_nan'] = 1
             return series
 

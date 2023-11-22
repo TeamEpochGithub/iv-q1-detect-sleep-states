@@ -38,11 +38,7 @@
     "feature_engineering": [
         {
             "kind": "rotation",
-            "window_sizes": [12, 36, 100, 360]
-        },
-        {
-            "kind": "sun",
-            "sun_features": ["altitude", "azimuth"]
+            "window_sizes": [360]
         }
     ],
 

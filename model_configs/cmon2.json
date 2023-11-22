@@ -37,11 +37,22 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["hour", "minute"]
+            "time_features": ["weekday", "hour", "minute"]
         },
         {
             "kind": "sun",
             "sun_features": ["azimuth", "altitude"]
+        },
+        {
+            "kind": "add_holidays"
+        },
+        {
+            "kind": "add_school_hours"
+        },
+        {
+            "kind": "add_weather",
+            "weather_data_path": "./data/raw/weather.csv",
+            "weather_features": ["temp", "dwpt", "rhum", "prcp", "snow", "wdir", "wspd", "wpgt", "pres", "tsun", "coco"]
         }
     ],
     "pretraining": {

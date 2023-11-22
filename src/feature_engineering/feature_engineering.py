@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Final
 
 import pandas as pd
@@ -8,7 +9,7 @@ import copy
 
 from ..logger.logger import logger
 
-
+@dataclass
 class FE(ABC):
     """
     Base class for feature engineering (FE) steps.
@@ -38,6 +39,7 @@ class FE(ABC):
         from .sin_hour import SinHour
         from .add_holidays import AddHolidays
         from .add_school_hours import AddSchoolHours
+        from .add_weather import AddWeather
 
         _FEATURE_ENGINEERING_KINDS: Final[dict[str, type[FE]]] = {
             "kurtosis": Kurtosis,
@@ -49,6 +51,7 @@ class FE(ABC):
             "sin_hour": SinHour,
             "add_holidays": AddHolidays,
             "add_school_hours": AddSchoolHours,
+            "add_weather": AddWeather,
         }
 
         try:
@@ -68,7 +71,7 @@ class FE(ABC):
         """
         return [FE.from_config_single(fe_step) for fe_step in config_list]
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
         """Run the feature engineering step.
 
         :param data: the data to process
@@ -77,14 +80,13 @@ class FE(ABC):
         return self.feature_engineering(data)
 
     @abstractmethod
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
         """Process the data. This method should be overridden by the child class.
 
         :param data: the data to process
         :return: the processed data
         """
-        logger.critical("Feature engineering method not implemented. Did you forget to override it?")
-        raise FEException("Feature engineering method not implemented. Did you forget to override it?")
+        pass
 
 
 class FEException(Exception):

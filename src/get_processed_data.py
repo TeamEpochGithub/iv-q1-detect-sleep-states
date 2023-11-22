@@ -12,6 +12,7 @@ from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
 from src.preprocessing.pp import PP
 from src.util.hash_config import hash_config
+from tqdm import tqdm
 
 
 _STEP_HASH_LENGTH = 5
@@ -90,7 +91,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             logger.info(f'--- Saving to: {path}')
             if not os.path.exists(path):
                 os.makedirs(path)
-            for sid in processed.keys():
+            for sid in tqdm(processed.keys()):
                 processed[sid].to_parquet(path + '/' + str(sid) + '.parquet')
 
             logger.info('--- Finished saving')

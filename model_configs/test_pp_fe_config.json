@@ -55,22 +55,7 @@
         "window_sizes": [5, 10],
         "features": ["anglez", "enmo"]
     },
-    {
-        "kind": "rotation",
-        "window_sizes": [100]
-    },
-    {
-        "kind": "sin_hour"
-    },
-    {
-        "kind": "skewness",
-        "window_sizes": [5, 10],
-        "features": ["anglez", "enmo"]
-    },
-    {
-        "kind": "time",
-        "time_features": ["day", "hour", "minute", "second"]    
-    },
+
     {
         "kind": "add_holidays"
     }

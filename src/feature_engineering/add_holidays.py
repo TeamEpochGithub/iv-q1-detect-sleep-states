@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Final
+from tqdm import tqdm
 
 import pandas as pd
 
@@ -86,12 +87,13 @@ class AddHolidays(FE):
         :return: the data with the holiday column added
         """
         # Add holidays
-        for sid in data.keys():
-            data["f_holiday"] = 0
-            data[sid].loc[data["timestamp"].dt.floor("D").isin(HOLIDAYS_DATES), "f_holiday"] = 1
-            data[sid].loc[data["timestamp"].dt.floor("D").isin(MIDDLE_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 2
-            data[sid].loc[data["timestamp"].dt.floor("D").isin(HIGH_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 3
+        assert "timestamp" in data[0].columns, "The timestamp column is missing"
+        for sid in tqdm(data.keys()):
+            data[sid]["f_holiday"] = 0
+            data[sid].loc[data[sid]["timestamp"].dt.floor("D").isin(HOLIDAYS_DATES), "f_holiday"] = 1
+            data[sid].loc[data[sid]["timestamp"].dt.floor("D").isin(MIDDLE_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 2
+            data[sid].loc[data[sid]["timestamp"].dt.floor("D").isin(HIGH_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 3
 
             # Convert to uint8
-            data[sid]["f_holiday"] = data["f_holiday"].astype("uint8")
+            data[sid]["f_holiday"] = data[sid]["f_holiday"].astype("uint8")
         return data

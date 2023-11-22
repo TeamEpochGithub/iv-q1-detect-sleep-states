@@ -35,7 +35,7 @@ class EventSegmentationTransformer(EventModel):
         # Load transformer config and model
         self.config["network_params"]["t_type"] = "event"
         if self.config.get("use_auxiliary_awake", False):
-            self.config["network_params"]["num_class"] = 3
+            self.config["network_params"]["num_class"] = 5
         else:
             self.config["network_params"]["num_class"] = 2
         self.config['network_params']["seq_len"] = data_info.window_size

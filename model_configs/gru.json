@@ -47,6 +47,9 @@
             "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
         },
         {
+            "kind": "add_holidays"
+        },
+        {
             "kind": "add_school_hours"
         }
     ],

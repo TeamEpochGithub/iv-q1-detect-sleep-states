@@ -25,7 +25,7 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
             T.AmplitudeToDB(top_db=80),
             SpecNormalize()
         )
-        self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=(config.get('n_fft', 127)+1)//2,
+        self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=in_channels,
                                                        hidden_size=self.gru_params.get("hidden_size", 64),
                                                        out_size=out_channels, n_layers=self.gru_params.get("n_layers", 5),
                                                        bidir=True, activation=self.gru_params.get("activation", "relu"),
@@ -48,7 +48,8 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         # downsample the input features to the same shape as the encoded features
         x = x[:, :, ::self.config.get('hop_length')]
         # now sum the residual features x and the encoded features x
-        x_encoded += x
+        x_encoded += x.permute(0, 2, 1)
+
         y = self.GRU(x_encoded, use_activation=use_activation)
         return y
 

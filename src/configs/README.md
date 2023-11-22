@@ -171,7 +171,7 @@ List of options and their config options:
     - `features`: Any existing numerical features
 - `time`
     - `time_features`: a list of time features to include
-      - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
+      - Options: `year`, `month`, `week`, `weekday`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 - `similarity_nan`

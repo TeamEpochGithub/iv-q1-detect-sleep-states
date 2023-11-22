@@ -59,6 +59,7 @@ class AddWeather(FE):
         """
         assert "timestamp" in next(iter(data.values())).columns, "The timestamp column is missing!"
 
+        # TODO Crashes when there is a series affected by DST (first occurrence at index 7)
         for sid, _ in tqdm(data.items()):
             data[sid] = pd.merge_asof(data[sid], self._weather_data[["timestamp"] + self.weather_features], on="timestamp", direction="nearest")
 

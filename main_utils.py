@@ -255,8 +255,11 @@ def full_train_from_config(model_config_loader: ModelConfigLoader, store_locatio
     if os.path.isfile(model_filename_submit):
         logger.info("Found existing fully trained submit model: " +
                     model_name + " with location " + model_filename_submit)
-    else:
+    elif os.path.isfile(model_filename_opt):
         model.load(model_filename_opt, only_hyperparameters=True)
         logger.info("Training fully trained submit model: " + model_name)
         model.train_full(x_train, y_train)
         model.save(model_filename_submit)
+    else:
+        raise ValueError(
+            f"Could not find optimal model: {model_name} with location {model_filename_opt}")

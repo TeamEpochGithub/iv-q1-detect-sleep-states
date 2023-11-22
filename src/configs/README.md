@@ -181,6 +181,7 @@ List of options and their config options:
     Currently, NYC location is used.
     - Options: `elevation`, `azimuth`
 - `add_holidays`
+- `add_school_hours`
 
 Example:
 ```JSON
@@ -218,6 +219,9 @@ Example:
         },
         {
             "kind": "add_holidays"
+        },
+        {
+            "kind": "add_school_hours"
         }
 ]
 ```

@@ -21,6 +21,7 @@ List of options and their config options:
     -  `sun_features`: a list of sun features to include
       - Options: `elevation`, `azimuth`
 - `add_holidays`
+- `add_school_hours`
 
 
 Example:
@@ -55,6 +56,9 @@ Example:
         },
         {
             "kind": "add_holidays"
+        },
+        {
+            "kind": "add_school_hours"
         }
 ]
 ```

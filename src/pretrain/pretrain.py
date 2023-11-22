@@ -112,6 +112,8 @@ class Pretrain:
         # Apply downsampling
         if self.downsampler is not None:
             logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
+            data_info.window_size_before = data_info.window_size
+            data_info.window_size = data_info.window_size // data_info.downsampling_factor
             X_train = self.downsampler.downsampleX(X_train)
             y_train = self.downsampler.downsampleY(y_train)
 

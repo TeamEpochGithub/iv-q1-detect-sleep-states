@@ -43,16 +43,16 @@
             "kind": "parser",
             "feats": [
                 "anglez_diff_abs_median_1000",
-                "anglez_diff_abs_clip_skew_1000",
-                "anglez_diff_abs_clip_savgol_180",
-                "anglez_diff_abs_clip_median_180",
+                "anglez_diff_abs_clip_10_skew_1000",
+                "anglez_diff_abs_clip_10_savgol_180",
+                "anglez_diff_abs_clip_10_median_180",
                 "enmo_std_90",
-                "anglez_diff_abs_clip_max_36",
+                "anglez_diff_abs_clip_10_max_36",
                 "enmo_std_50",
-                "anglez_diff_abs_clip_mean_1000",
-                "anglez_diff_abs_clip_savgol_180_diff",
-                "anglez_diff_abs_clip_savgol_1000_diff",
-                "anglez_diff_abs_clip_median_360"
+                "anglez_diff_abs_clip_10_mean_1000",
+                "anglez_diff_abs_clip_10_savgol_180_diff",
+                "anglez_diff_abs_clip_10_savgol_1000_diff",
+                "anglez_diff_abs_clip_10_median_360"
             ]
         },
         {

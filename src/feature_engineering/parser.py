@@ -1,14 +1,16 @@
 import gc
-from dataclasses import field
+from dataclasses import field, dataclass
 
 from scipy.signal import savgol_filter
 import numpy as np
 import pandas as pd
 
+from tqdm import tqdm
 from .feature_engineering import FE
 
 
-class Parser:
+@dataclass
+class Parser(FE):
     """Parser class for feature engineering. Computes multiple features based on strings. Example:
     anglez_diff_abs_clip_10_rolling_median_100.
     It progressively builds up the feature and stores intermediate steps for reuse.
@@ -25,13 +27,11 @@ class Parser:
     <prev> can be an original feature, or it will be recursively computed with the same scheme.
     """
 
-    def __init__(self, feats: list[str]):
-        super().__init__()
-        self.feats = feats
-        self.available_lookup = dict()
+    feats: list[str]
+    available_lookup: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def feature_engineering(self, data: dict) -> dict:
-        for sid in data.keys():
+        for sid in tqdm(data.keys(), desc="Computing parsed features"):
             data[sid] = self.feature_engineering_single(data[sid])
         return data
 

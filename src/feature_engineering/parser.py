@@ -46,7 +46,7 @@ class Parser:
 
         # loop over the features to add each one
         for feat in self.feats:
-            self.add_feature(feat)
+            self.add_feature_and_save(feat)
 
         # only keep the features we want
         for feat in self.feats:

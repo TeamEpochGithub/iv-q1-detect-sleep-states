@@ -26,7 +26,7 @@ def log_memory():
 
 
 def get_processed_data(config: ModelConfigLoader, training=True, save_output=True) -> pd.DataFrame:
-    # TODO Use the a hash of the string representations of each PP and FE step
+    # Get the preprocessing and feature engineering steps
     pp_steps: list[PP] = config.get_pp_steps(training=training)
     fe_steps = config.get_fe_steps()
 

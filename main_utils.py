@@ -135,7 +135,8 @@ def scoring(config: ConfigLoader) -> None:
     config_hash = hash_config(config.get_config(), length=16)
 
     # Make predictions on test data
-    predictions = ensemble.pred(config.get_model_store_loc(), pred_with_cpu=pred_cpu)
+    predictions = ensemble.pred(
+        config.get_model_store_loc(), pred_with_cpu=pred_cpu)
     test_idx = ensemble.get_test_idx()
 
     # Get featured data for model 1, should not give any problems as all models should have the same columns excluding features
@@ -215,28 +216,31 @@ def scoring(config: ConfigLoader) -> None:
                          show_plot=config.get_browser_plot(), save_figures=config.get_store_plots())
 
 
-def full_train_from_config(config_loader: ConfigLoader, model_config: ModelConfigLoader, store_location: str) -> None:
+def full_train_from_config(model_config_loader: ModelConfigLoader, store_location: str) -> None:
     """
     Full train the model with the optimal parameters
-    :param model_config: the model config
+    :param model_config_loader: the model config
     :param store_location: the store location of the models
     """
-    model_name = model_config.get_name()
+    # Initialisation
+    model_config_loader.reset_globals()
+    model_name = model_config_loader.get_name()
+
     initial_hash = hash_config(
-        model_config.get_pp_fe_pretrain(), length=5)
+        model_config_loader.get_pp_fe_pretrain(), length=5)
 
     featured_data = get_processed_data(
-        model_config, training=True, save_output=True)
+        model_config_loader, training=True, save_output=True)
 
     # Get pretrain
-    pretrain: Pretrain = model_config.get_pretraining()
+    pretrain: Pretrain = model_config_loader.get_pretraining()
 
     # Retrain all models with optimal parameters
     x_train, y_train, _ = get_pretrain_full_cache(
-        config_loader, featured_data, save_output=True)
+        model_config_loader, featured_data, save_output=True)
 
     logger.info("Creating model using ModelConfigLoader")
-    model = model_config.set_model()
+    model = model_config_loader.set_model()
 
     # Save scaler
     scaler_filename: str = store_location + "/scaler-" + \
@@ -250,8 +254,12 @@ def full_train_from_config(config_loader: ConfigLoader, model_config: ModelConfi
     if os.path.isfile(model_filename_submit):
         logger.info("Found existing fully trained submit model: " +
                     model_name + " with location " + model_filename_submit)
-    else:
+    elif os.path.isfile(model_filename_opt):
         model.load(model_filename_opt, only_hyperparameters=True)
-        logger.info("Retraining model: " + model)
+        logger.info("Training fully trained submit model: " + model_name)
         model.train_full(x_train, y_train)
         model.save(model_filename_submit)
+    else:
+        raise ValueError(
+            f"Could not find optimal model: {model_name} with location {model_filename_opt}." +
+            " Please train the optimal model first by setting train_for_submission to false and then try again.")

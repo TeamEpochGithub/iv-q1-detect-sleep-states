@@ -1,5 +1,5 @@
 {
-    "name": "gru_test",
+    "name": "transformer_gru",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -37,15 +37,11 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["month", "weekday", "week", "hour", "minute"]
+            "time_features": ["hour","minute"]
         },
         {
             "kind": "sun",
             "sun_features": ["azimuth", "altitude"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
         }
     ],
     "pretraining": {
@@ -61,29 +57,42 @@
         }
     },
     "architecture": {
-        "type": "event-res-gru",
-        "loss": "shrinkage-loss",
-        "epochs": 99,
+        "activation_delay": 13,
         "batch_size": 32,
-        "optimizer": "adam-torch",
-        "early_stopping": 15,
-        "activation_delay": 15,
-        "lr": 0.01,
-        "network_params": {
-            "hidden_size": 8,
-            "n_layers": 5,
-            "activation": "relu"
-        },
+        "early_stopping": 10,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.005,
         "lr_schedule": {
-            "t_initial": 25,
-            "warmup_t": 5,
+            "cycle_limit": 3,
+            "lr_min": 0.002,
+            "t_initial": 30,
             "warmup_lr_init": 0.000001,
-            "lr_min": 0.00001,
-            "cycle_limit": 3
+            "warmup_t": 3
         },
-        "threshold": 0
+        "mask_unlabeled": true,
+        "network_params": {
+            "heads": 8,
+            "emb_dim": 64,
+            "forward_dim": 256,
+            "n_layers": 6,
+            "pooling": "gru",
+            "pooling_args": {
+                "hidden_size": 32,
+                "n_layers": 5,
+                "bidir": true,
+                "activation": "gelu",
+                "dropout": 0.0
+            },
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 6
+            },
+            "pe": "fixed",
+            "dropout": 0.0
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
     }
 }
-
-
-

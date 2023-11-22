@@ -11,8 +11,8 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["transformer_gru.json"],
-        "weights": [1],
+        "models": ["cmon.json","cmon2.json"],
+        "weights": [0.6, 0.4],
         "comb_method": "confidence_average",
         "pred_only": false
     },

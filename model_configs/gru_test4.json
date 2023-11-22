@@ -1,8 +1,8 @@
 {
-    "name": "gru_test",
+    "name": "gru_sweep",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 24,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
@@ -27,8 +27,7 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0,
-            "steepness": 2
+            "smoothing": 0
         },
         {
             "kind": "split_windows"
@@ -37,7 +36,7 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["month", "weekday", "week", "hour", "minute"]
+            "time_features": ["hour", "minute"]
         },
         {
             "kind": "sun",
@@ -63,7 +62,7 @@
     "architecture": {
         "type": "event-res-gru",
         "loss": "shrinkage-loss",
-        "epochs": 99,
+        "epochs": 105,
         "batch_size": 32,
         "optimizer": "adam-torch",
         "early_stopping": 15,
@@ -84,6 +83,3 @@
         "threshold": 0
     }
 }
-
-
-

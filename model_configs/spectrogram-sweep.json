@@ -68,7 +68,7 @@
         "early_stopping": 30,
         "threshold": 0,
         "n_fft": 63,
-        "hop_length": 12,
+        "hop_length": 18,
         "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
         "bilinear": false,

@@ -1,9 +1,9 @@
-import pandas as pd
-
 from .feature_engineering import FE
 from ..logger.logger import logger
 import numpy as np
 from dataclasses import dataclass
+from tqdm import tqdm
+import gc
 
 
 @dataclass
@@ -15,23 +15,23 @@ class SinHour(FE):
     Unless this is done the hour features spectrogram will have harmonics
     """
 
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
         """Process the data. This method should be overritten by the child class.
 
         :param data: the data to process
         :return: the processed data
         """
         # assert that the data has a timestamp column
-        assert "timestamp" in data.columns, "dataframe has no timestamp column"
+        assert "timestamp" in data[0].columns, "dataframe has no timestamp column"
 
         # get the hour from the datetime column
-        hour = data['timestamp'].dt.hour
+        for sid in tqdm(data.keys()):
+            hour = data[sid]['timestamp'].dt.hour
 
-        # map the hour to a value between 0-2*pi
-        hour = hour.map(lambda x: x / 24 * 2 * np.pi)
-        logger.debug('------ Mapped hour to radians')
-        sin_hour = np.sin(hour)
-        logger.debug('------ Took the sin of the hour')
-        data['f_sin_hour'] = sin_hour
-        logger.debug('------ Added sin hour to dataframe')
+            # map the hour to a value between 0-2*pi
+            hour = hour.map(lambda x: x / 24 * 2 * np.pi)
+            sin_hour = np.sin(hour)
+            data[sid]['f_sin_hour'] = sin_hour
+            logger.debug('------ Added sin hour feature to series')
+            gc.collect()
         return data

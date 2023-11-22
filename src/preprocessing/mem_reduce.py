@@ -55,7 +55,6 @@ class MemReduce(PP):
         else:
             logger.debug(f"------ Saving series encoding to {self.id_encoding_path}")
 
-            # TODO Don't write the file here to make this method testable
             with open(self.id_encoding_path, 'w') as f:
                 json.dump(encoding, f)
 
@@ -80,5 +79,13 @@ class MemReduce(PP):
                     'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
         data = data.astype(pad_type)
         gc.collect()
-
-        return data
+        # make a dictionary of the series id and the data
+        # without the series_id column because it is the key for that series anyway
+        dfs_dict = {}
+        # uses less memeory than this
+        # dfs_dict = {key: group.iloc[:, 1:] for key, group in data.groupby('series_id')}
+        for sid in encoding.values():
+            dfs_dict[sid] = data[data['series_id'] == sid].drop(columns=['series_id'])
+        del data
+        gc.collect()
+        return dfs_dict

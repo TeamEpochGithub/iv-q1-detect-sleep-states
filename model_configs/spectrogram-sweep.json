@@ -54,8 +54,8 @@
             "type": "Spectrogram_2D_Cnn",
             "loss": "mse-torch",
             "optimizer": "adam-torch",
-            "epochs": 1,
-            "batch_size": 32,
+            "epochs": 50,
+            "batch_size": 48,
             "lr": 0.0005,
             "hidden_layers": 8,
             "early_stopping": 15,
@@ -66,6 +66,6 @@
             "encoder_weights": "imagenet",
             "bilinear": false,
             "scale_factor": 2,
-            "use_auxiliary_awake": false
+            "use_auxiliary_awake": true
     }
 }

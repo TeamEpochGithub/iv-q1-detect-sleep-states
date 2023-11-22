@@ -42,9 +42,9 @@ class EventSegmentation2DCNN(EventModel):
         self.model_type = "Spectrogram_2D_Cnn"
         data_info.window_size /= self.config.get('hop_length', 1)
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        if self.config.get("use_awake_channel", False):
+        if self.config.get("use_auxiliary_awake", False):
             self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+                in_channels=len(data_info.X_columns), out_channels=5, model_type=self.model_type, config=self.config)
         else:
             self.model = SpectrogramEncoderDecoder(
                 in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)
@@ -199,42 +199,44 @@ class EventSegmentation2DCNN(EventModel):
     # TODO refactor to overwrite event trainer
     def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
         """
-        Train the model on the full dataset.
+        Train function for the model.
         :param X_train: the training data
+        :param X_test: the test data
         :param y_train: the training labels
+        :param y_test: the test labels
         """
+        # Get hyperparameters from config (epochs, lr, optimizer)
+        # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.config["total_epochs"]
+        epochs = self.config["epochs"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
         if "scheduler" in self.config:
             scheduler = self.config["scheduler"]
         else:
             scheduler = None
+        early_stopping = self.config["early_stopping"]
+        activation_delay = self.config["activation_delay"]
+        use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
+        if early_stopping > 0:
+            logger.info(
+                f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
-        logger.info("--- Running for " + str(epochs) + " epochs.")
+        x_train = torch.from_numpy(x_train)
 
-        X_train = torch.from_numpy(X_train).permute(0, 2, 1)
-
+        # Get only the 2 event state features
+        labels_list = [data_info.y_columns["state-onset"],
+                       data_info.y_columns["state-wakeup"]]
         if mask_unlabeled:
-            index_list = [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]]
-        else:
-            index_list = [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]]
+            # Add awake label to front of the list
+            labels_list.insert(0, data_info.y_columns["awake"])
+        if use_auxiliary_awake:
+            # Add awake label to end of the list
+            labels_list.append(data_info.y_columns["awake"])
+        labels_list = np.array(labels_list)
 
-        # add the awake column again if you want to use the awake channel
-        if self.config.get('use_awake_channel', False):
-            index_list.append(data_info.y_columns["awake"])
-
-        # Index the y data with the index list
-        y_train = y_train[:, :, np.array(index_list)]
-
-        # if clip awake clip the awake columns values
-        if self.config.get('clip_awake', False):
-            if y_train.shape[2] == 3:
-                y_train[:, :, 2] = np.clip(y_train[:, :, 2], 0, 1)
-            elif y_train.shape[2] == 4:
-                y_train[:, :, 3] = np.clip(y_train[:, :, 3], 0, 1)
+        y_train = torch.from_numpy(y_train[:, :, labels_list])
 
         # downsample the y data
         y_train_downsampled = []
@@ -259,13 +261,16 @@ class EventSegmentation2DCNN(EventModel):
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
 
-        # Train the model
-        logger.info("--- Training model full " + self.name)
-        trainer = EventTrainer(epochs, criterion, mask_unlabeled, -1)
-        trainer.fit(trainloader=train_dataloader, testloader=None,
-                    model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler)
-
-        logger.info("--- Full train complete!")
+        if use_auxiliary_awake:
+            trainer = EventStateTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        else:
+            trainer = EventTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer.fit(
+            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            activation_delay=activation_delay)
+        logger.info("Full train complete!")
 
     def reset_weights(self) -> None:
         """

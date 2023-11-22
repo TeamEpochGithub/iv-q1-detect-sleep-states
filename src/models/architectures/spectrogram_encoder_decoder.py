@@ -23,6 +23,7 @@ class SpectrogramEncoderDecoder(nn.Module):
         # that should be a future issue beacuse it needs experimenting to get them to be significant
         self.num_res_features = in_channels - 3
         if wandb.run is not None:
+            from segmentation_models_pytorch import Unet
             self.encoder = Unet(
                 encoder_name=config.get('encoder_name', 'resnet34'),
                 encoder_weights=config.get('encoder_weights', 'imagenet'),

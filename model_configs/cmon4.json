@@ -33,6 +33,12 @@
             "kind": "split_windows"
         }
     ],
+    "feature_engineering": [
+        {
+            "kind": "rotation",
+            "window_sizes": [360]
+        }
+    ],
     "pretraining": {
         "scaler": {
             "copy": true,

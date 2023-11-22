@@ -65,6 +65,7 @@
         "early_stopping": 15,
         "activation_delay": 15,
         "lr": 0.01,
+        "use_auxiliary_awake": false,
         "network_params": {
             "hidden_size": 8,
             "n_layers": 5,

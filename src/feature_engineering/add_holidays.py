@@ -77,7 +77,7 @@ class AddHolidays(FE):
     the end of the school year in 2020.
     """
 
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
         """Add the holiday column.
 
         The values are 0 for no holiday, 1 for holiday, 2 for middle school holiday, and 3 for high school holiday.
@@ -86,11 +86,12 @@ class AddHolidays(FE):
         :return: the data with the holiday column added
         """
         # Add holidays
-        data["f_holiday"] = 0
-        data.loc[data["timestamp"].dt.floor("D").isin(HOLIDAYS_DATES), "f_holiday"] = 1
-        data.loc[data["timestamp"].dt.floor("D").isin(MIDDLE_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 2
-        data.loc[data["timestamp"].dt.floor("D").isin(HIGH_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 3
+        for sid in data.keys():
+            data["f_holiday"] = 0
+            data[sid].loc[data["timestamp"].dt.floor("D").isin(HOLIDAYS_DATES), "f_holiday"] = 1
+            data[sid].loc[data["timestamp"].dt.floor("D").isin(MIDDLE_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 2
+            data[sid].loc[data["timestamp"].dt.floor("D").isin(HIGH_SCHOOL_HOLIDAYS_DATES), "f_holiday"] = 3
 
-        # Convert to uint8
-        data["f_holiday"] = data["f_holiday"].astype("uint8")
+            # Convert to uint8
+            data[sid]["f_holiday"] = data["f_holiday"].astype("uint8")
         return data

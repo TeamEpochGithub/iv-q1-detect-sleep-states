@@ -70,6 +70,9 @@
     {
         "kind": "time",
         "time_features": ["day", "hour", "minute", "second"]    
+    },
+    {
+        "kind": "add_holidays"
     }
     
     ],

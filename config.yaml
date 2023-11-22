@@ -55,6 +55,10 @@ parameters:
           }]
       feature_engineering:
         value: [
+          {
+            "kind": "rotation",
+            "window_sizes": [100,360]
+          }
           ]
       pretraining:
         parameters:
@@ -73,7 +77,8 @@ parameters:
               - adam-torch
               - adamw-torch
           epochs:
-            value: 30
+            min: 15
+            max: 100
           batch_size:
             max: 64
             min: 16
@@ -81,10 +86,10 @@ parameters:
             max: 0.1
             min: 1e-06
           early_stopping:
-            max: 50
-            min: 1
+            max: 25
+            min: 15
           threshold:
-            value: 0.005
+            value: 0.0
           n_fft:
             values:
               - 127
@@ -104,21 +109,10 @@ parameters:
             values:
               - true
               - false
-          clip_awake:
+          use_auxiliary_awake:
             values:
               - true
               - false
-          use_activation:
-            values:
-              - true
-              - false
-          use_awake_channel:
-            values:
-              - true
-              - false
-          dropout_prob:
-            value: 0
-          
           loss:
             values:
               - mse-torch
@@ -127,7 +121,7 @@ parameters:
           lr_schedule:
             parameters:
               cycle_limit:
-                max: 4
+                max: 2
                 min: 1
               lr_min:
                 max: 0.01

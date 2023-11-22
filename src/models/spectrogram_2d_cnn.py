@@ -1,12 +1,6 @@
-import copy
-from typing import Any
-
 import numpy as np
 import torch
 import wandb
-from numpy import ndarray, dtype
-from torch.utils.data import TensorDataset, DataLoader
-from tqdm import tqdm
 from src.models.trainers.event_state_trainer import EventStateTrainer
 
 from .architectures.spectrogram_encoder_decoder import SpectrogramEncoderDecoder
@@ -78,7 +72,8 @@ class EventSegmentation2DCNN(EventModel):
             "weight_decay": 0.0,
             "mask_unlabeled": False,
             "use_auxiliary_awake": False,
-            "activation_delay": 0
+            "activation_delay": 0,
+            "lr_schedule": None
         }
 
     def train(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> None:
@@ -197,7 +192,7 @@ class EventSegmentation2DCNN(EventModel):
         self.config["total_epochs"] = total_epochs
 
     # TODO refactor to overwrite event trainer
-    def train_full(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
+    def train_full(self, x_train: np.ndarray, y_train: np.ndarray) -> None:
         """
         Train function for the model.
         :param X_train: the training data
@@ -249,13 +244,13 @@ class EventSegmentation2DCNN(EventModel):
         del y_train_downsampled
 
         # Create a dataset from X and y
-        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+        train_dataset = torch.utils.data.TensorDataset(x_train, y_train)
 
         # Print the shapes and types of train and test
         logger.info(
-            f"--- X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+            f"--- X_train shape: {x_train.shape}, y_train shape: {y_train.shape}")
         logger.info(
-            f"--- X_train type: {X_train.dtype}, y_train type: {y_train.dtype}")
+            f"--- X_train type: {x_train.dtype}, y_train type: {y_train.dtype}")
 
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(

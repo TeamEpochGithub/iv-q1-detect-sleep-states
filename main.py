@@ -1,13 +1,12 @@
-# This file does the training of the models
 import torch
 
 import wandb
+from main_utils import train_from_config, full_train_from_config, scoring
 from src import data_info
 from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
-from main_utils import train_from_config, full_train_from_config, scoring
 from sweep import play_mp3
 
 
@@ -51,15 +50,26 @@ def main() -> None:
             # Update hash as the config is different now
             config_hash = hash_config(config_loader.get_config(), length=16)
 
-            # Update the wandb summary with the updated config
-            wandb.run.summary.update(config_loader.get_config())
             wandb.run.name = config_hash
+
+            # Update the wandb summary with the updated config
+            curr_config = config_loader.get_config()
         else:
             # Get the ensemble configs and add them to the config on wandb
             ensemble = config_loader.get_ensemble()
             models = ensemble.get_models()
             for i, model_config in enumerate(models):
                 wandb.config[f"model_{i}"] = model_config.get_config()
+
+            # Update the wandb summary also with the ensemble configs
+            curr_config = config_loader.get_config()
+            model_names = config_loader.get_config()["ensemble"]["models"]
+
+            for name, model in zip(model_names, models):
+                curr_config[name] = model.config
+
+        # Update the wandb summary with the updated config
+        wandb.run.summary.update(curr_config)
 
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
@@ -137,6 +147,7 @@ if __name__ == "__main__":
 
     # Set up logging
     import coloredlogs
+
     coloredlogs.install()
 
     # Set seed for reproducibility

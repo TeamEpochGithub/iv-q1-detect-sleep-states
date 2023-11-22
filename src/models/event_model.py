@@ -3,17 +3,17 @@ import copy
 import numpy as np
 import pandas as pd
 import torch
+import wandb
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
+from src.models.trainers.event_state_trainer import EventStateTrainer
 
-from src.util.state_to_event import pred_to_event_state
-import wandb
 from src.loss.loss import Loss
 from src.models.model_exception import ModelException
 from src.models.trainers.event_trainer import EventTrainer
 from src.optimizer.optimizer import Optimizer
-from timm.scheduler import CosineLRScheduler
-
+from src.util.state_to_event import pred_to_event_state
 from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
@@ -31,6 +31,7 @@ class EventModel:
         if config is None:
             self.config = None
         else:
+            # Deepcopy config
             self.config = copy.deepcopy(config)
             self.hash = hash_config(config, length=5)
 
@@ -61,6 +62,8 @@ class EventModel:
 
         # Get default_config
         default_config = self.get_default_config()
+        config["use_auxiliary_awake"] = config.get(
+            "use_auxiliary_awake", default_config["use_auxiliary_awake"])
         config["mask_unlabeled"] = config.get(
             "mask_unlabeled", default_config["mask_unlabeled"])
         if config["mask_unlabeled"]:
@@ -121,6 +124,7 @@ class EventModel:
             scheduler = None
         early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
+        use_auxiliary_awake = self.config["use_auxiliary_awake"]
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")
@@ -129,18 +133,34 @@ class EventModel:
         X_test = torch.from_numpy(X_test)
 
         # Get only the 2 event state features
+        labels_list = [data_info.y_columns["state-onset"],
+                       data_info.y_columns["state-wakeup"]]
         if mask_unlabeled:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            y_test = y_test[:, :, np.array(
-                [data_info.y_columns["awake"], data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        else:
-            y_train = y_train[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-            y_test = y_test[:, :, np.array(
-                [data_info.y_columns["state-onset"], data_info.y_columns["state-wakeup"]])]
-        y_train = torch.from_numpy(y_train)
-        y_test = torch.from_numpy(y_test)
+            # Add awake label to front of the list
+            labels_list.insert(0, data_info.y_columns["awake"])
+        if use_auxiliary_awake:
+            # Add awake label to end of the list
+            labels_list.append(data_info.y_columns["awake"])
+        labels_list = np.array(labels_list)
+
+        y_train = torch.from_numpy(y_train[:, :, labels_list])
+        y_test = torch.from_numpy(y_test[:, :, labels_list])
+
+        # Turn last column into one hot encoding of awake so that it can be used as auxiliary awake
+        if use_auxiliary_awake:
+            # Change all 3's for last column to 2's
+            y_train[:, :, -1] = torch.where(
+                y_train[:, :, -1] == 3, torch.tensor(2), y_train[:, :, -1])
+            y_test[:, :, -1] = torch.where(
+                y_test[:, :, -1] == 3, torch.tensor(2), y_test[:, :, -1])
+
+            awake = y_train[:, :, -1]
+            awake = torch.nn.functional.one_hot(awake.to(torch.int64))
+            y_train = torch.cat((y_train[:, :, :-1], awake.float()), dim=2)
+
+            awake = y_test[:, :, -1]
+            awake = torch.nn.functional.one_hot(awake.to(torch.int64))
+            y_test = torch.cat((y_test[:, :, :-1], awake.float()), dim=2)
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
@@ -162,8 +182,12 @@ class EventModel:
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset, batch_size=batch_size)
 
-        trainer = EventTrainer(
-            epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        if use_auxiliary_awake:
+            trainer = EventStateTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        else:
+            trainer = EventTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
@@ -186,22 +210,35 @@ class EventModel:
         # Get hyperparameters from config (epochs, lr, optimizer)
         # Load hyperparameters
         criterion = self.config["loss"]
-        epochs = self.config["total_epochs"]
-        batch_size = self.config["batch_size"]
         optimizer = self.config["optimizer"]
-        self.reset_scheduler()
+        epochs = self.config["epochs"]
+        batch_size = self.config["batch_size"]
+        mask_unlabeled = self.config["mask_unlabeled"]
         if "scheduler" in self.config:
             scheduler = self.config["scheduler"]
         else:
             scheduler = None
-
+        early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
+        use_auxiliary_awake = self.config["use_auxiliary_awake"]
+        if early_stopping > 0:
+            logger.info(
+                f"--- Early stopping enabled with patience of {early_stopping} epochs.")
 
-        # Create a dataset from X and y
         x_train = torch.from_numpy(x_train)
-        cols = np.array([data_info.y_columns["state-onset"],
-                        data_info.y_columns["state-wakeup"]])
-        y_train = torch.from_numpy(y_train[:, :, cols])
+
+        # Get only the 2 event state features
+        labels_list = [data_info.y_columns["state-onset"],
+                       data_info.y_columns["state-wakeup"]]
+        if mask_unlabeled:
+            # Add awake label to front of the list
+            labels_list.insert(0, data_info.y_columns["awake"])
+        if use_auxiliary_awake:
+            # Add awake label to end of the list
+            labels_list.append(data_info.y_columns["awake"])
+        labels_list = np.array(labels_list)
+
+        y_train = torch.from_numpy(y_train[:, :, labels_list])
 
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(x_train, y_train)
@@ -211,16 +248,20 @@ class EventModel:
             f"--- X_train shape: {x_train.shape}, y_train shape: {y_train.shape}")
         logger.info(
             f"--- X_train type: {x_train.dtype}, y_train type: {y_train.dtype}")
+
         # Create a dataloader from the dataset
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
 
-        # Train the model
-        logger.info("--- Training model full " + self.name +
-                    " for " + str(epochs) + " epochs")
-        trainer = EventTrainer(epochs, criterion, mask_unlabeled=False, early_stopping=0)
-        trainer.fit(trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
-                    activation_delay=activation_delay)
+        if use_auxiliary_awake:
+            trainer = EventStateTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        else:
+            trainer = EventTrainer(
+                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer.fit(
+            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            activation_delay=activation_delay)
         logger.info("Full train complete!")
 
     def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -261,6 +302,10 @@ class EventModel:
                 else:
                     batch_prediction = self.model(batch_data)
 
+                # If auxiliary awake is used, take only the first 2 columns
+                if self.config["use_auxiliary_awake"]:
+                    batch_prediction = batch_prediction[:, :, :2]
+
                 if pred_with_cpu:
                     batch_prediction = batch_prediction.numpy()
                 else:
@@ -271,10 +316,45 @@ class EventModel:
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
-        # Apply upsampling to the predictions
+        # # Apply upsampling to the predictions
         downsampling_factor = data_info.downsampling_factor
-        if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=1)
+
+        # TODO Try other interpolation methods (linear / cubic)
+        # if downsampling_factor > 1:
+        #     predictions = np.repeat(predictions, downsampling_factor, axis=1)
+
+        # # Define the original time points
+        # original_time_points = np.linspace(0, 1, data_info.window_size)
+        #
+        # # Define the new time points for upsampled data
+        # upsampled_time_points = np.linspace(0, 1, data_info.window_size_before)
+        #
+        # # Create an array to store upsampled data
+        # upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
+        #
+        # # Apply interpolation along axis=1 for each channel
+        # for channel_idx in range(predictions.shape[2]):
+        #     for row_idx in range(predictions.shape[0]):
+        #         interpolation_function = interp1d(original_time_points, predictions[row_idx, :, channel_idx], kind='linear', fill_value='extrapolate')
+        #         upsampled_data[row_idx, :, channel_idx] = interpolation_function(upsampled_time_points)
+
+        steps_sinc = np.arange(0, data_info.window_size_before, data_info.downsampling_factor)
+        u_sinc = np.arange(0, data_info.window_size_before, 1)
+
+        upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
+
+        # Find the period
+        T = steps_sinc[1] - steps_sinc[0]
+        # Use broadcasting correctly
+        sincM = (u_sinc - steps_sinc[:, np.newaxis]) / T
+        res_sinc = np.sinc(sincM)
+
+        for channel_idx in range(predictions.shape[2]):
+            for row_idx in tqdm(range(predictions.shape[0]), "Upsampling using sinc interpolation", unit="window"):
+                y_sinc = np.dot(predictions[row_idx, :, channel_idx], res_sinc)
+                upsampled_data[row_idx, :, channel_idx] = y_sinc
+
+        predictions = upsampled_data
 
         # Return raw output if necessary
         if raw_output:
@@ -286,15 +366,14 @@ class EventModel:
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Pred should be 2d array with shape (window_size, 2)
             assert pred.shape[
-                1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+                       1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
 
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:
-                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor %
-                          2 == 0 else downsampling_factor // 2)
+                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
             else:
                 offset = 0
             steps = (events[0] + offset, events[1] + offset)
@@ -402,8 +481,7 @@ class EventModel:
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": data_info.substage +
-                           " - Train and validation loss of model " + self.name + "_" + name}
+            string_fields={"title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
             wandb.log({f"{data_info.substage, name}": custom_plot})

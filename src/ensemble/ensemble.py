@@ -105,12 +105,12 @@ class Ensemble:
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
         if self.combination_method == "confidence_average":
-            predictions = np.average(predictions, axis=3)
+            predictions = np.average(predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
                 # Convert to relative window event timestamps
-                events = pred_to_event_state(pred, thresh=0)
+                events = pred_to_event_state(pred, thresh=0, n_events=10)
 
                 # Add step offset based on repeat factor.
                 if data_info.downsampling_factor <= 1:
@@ -124,8 +124,8 @@ class Ensemble:
                 all_predictions.append(steps)
                 all_confidences.append(confidences)
 
-            # Return numpy array
-            return np.array(all_predictions), np.array(all_confidences)
+            # Return tuple
+            return all_predictions, all_confidences
 
         # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 

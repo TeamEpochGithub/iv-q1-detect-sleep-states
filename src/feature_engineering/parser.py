@@ -8,7 +8,7 @@ import pandas as pd
 from .feature_engineering import FE
 
 
-class Parser(FE):
+class Parser:
     """Parser class for feature engineering. Computes multiple features based on strings. Example:
     anglez_diff_abs_clip_10_rolling_median_100.
     It progressively builds up the feature and stores intermediate steps for reuse.
@@ -25,15 +25,19 @@ class Parser(FE):
     <prev> can be an original feature, or it will be recursively computed with the same scheme.
     """
 
-    window_sizes: list[int] = field(default_factory=lambda: [100])
-
     def __init__(self, feats: list[str]):
         super().__init__()
         self.feats = feats
         self.available_lookup = dict()
 
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
+        for sid in data.keys():
+            data[sid] = self.feature_engineering_single(data[sid])
+        return data
+
+    def feature_engineering_single(self, data: pd.DataFrame) -> pd.DataFrame:
         """Feature engineering for the parser class. This will add the features to the dataframe.
+        Use for a single series.
         """
 
         # add the existing columns to the available lookup
@@ -48,8 +52,8 @@ class Parser(FE):
         for feat in self.feats:
             data[feat] = self.available_lookup[feat]
 
-        # clean up after itself
-        del self.available_lookup
+        # reset the lookup and collect the garbage memory
+        self.available_lookup = dict()
         gc.collect()
 
         return data

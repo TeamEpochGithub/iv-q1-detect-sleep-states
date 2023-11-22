@@ -71,7 +71,6 @@
             "warmup_t": 3
         },
         "mask_unlabeled": true,
-        "use_auxiliary_awake": false,
         "network_params": {
             "heads": 8,
             "emb_dim": 64,

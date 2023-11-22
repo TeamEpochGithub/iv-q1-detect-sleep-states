@@ -3,18 +3,17 @@ import copy
 import numpy as np
 import pandas as pd
 import torch
+import wandb
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 from src.models.trainers.event_state_trainer import EventStateTrainer
 
-from src.util.state_to_event import pred_to_event_state
-import wandb
 from src.loss.loss import Loss
 from src.models.model_exception import ModelException
 from src.models.trainers.event_trainer import EventTrainer
 from src.optimizer.optimizer import Optimizer
-from timm.scheduler import CosineLRScheduler
-
+from src.util.state_to_event import pred_to_event_state
 from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
@@ -317,10 +316,45 @@ class EventModel:
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
-        # Apply upsampling to the predictions
+        # # Apply upsampling to the predictions
         downsampling_factor = data_info.downsampling_factor
-        if downsampling_factor > 1:
-            predictions = np.repeat(predictions, downsampling_factor, axis=1)
+
+        # TODO Try other interpolation methods (linear / cubic)
+        # if downsampling_factor > 1:
+        #     predictions = np.repeat(predictions, downsampling_factor, axis=1)
+
+        # # Define the original time points
+        # original_time_points = np.linspace(0, 1, data_info.window_size)
+        #
+        # # Define the new time points for upsampled data
+        # upsampled_time_points = np.linspace(0, 1, data_info.window_size_before)
+        #
+        # # Create an array to store upsampled data
+        # upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
+        #
+        # # Apply interpolation along axis=1 for each channel
+        # for channel_idx in range(predictions.shape[2]):
+        #     for row_idx in range(predictions.shape[0]):
+        #         interpolation_function = interp1d(original_time_points, predictions[row_idx, :, channel_idx], kind='linear', fill_value='extrapolate')
+        #         upsampled_data[row_idx, :, channel_idx] = interpolation_function(upsampled_time_points)
+
+        steps_sinc = np.arange(0, data_info.window_size_before, data_info.downsampling_factor)
+        u_sinc = np.arange(0, data_info.window_size_before, 1)
+
+        upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
+
+        # Find the period
+        T = steps_sinc[1] - steps_sinc[0]
+        # Use broadcasting correctly
+        sincM = (u_sinc - steps_sinc[:, np.newaxis]) / T
+        res_sinc = np.sinc(sincM)
+
+        for channel_idx in range(predictions.shape[2]):
+            for row_idx in tqdm(range(predictions.shape[0]), "Upsampling using sinc interpolation", unit="window"):
+                y_sinc = np.dot(predictions[row_idx, :, channel_idx], res_sinc)
+                upsampled_data[row_idx, :, channel_idx] = y_sinc
+
+        predictions = upsampled_data
 
         # Return raw output if necessary
         if raw_output:
@@ -332,15 +366,14 @@ class EventModel:
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Pred should be 2d array with shape (window_size, 2)
             assert pred.shape[
-                1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+                       1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
 
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"])
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:
-                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor %
-                          2 == 0 else downsampling_factor // 2)
+                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
             else:
                 offset = 0
             steps = (events[0] + offset, events[1] + offset)
@@ -448,8 +481,7 @@ class EventModel:
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": data_info.substage +
-                           " - Train and validation loss of model " + self.name + "_" + name}
+            string_fields={"title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
             wandb.log({f"{data_info.substage, name}": custom_plot})

@@ -1,5 +1,5 @@
 {
-    "name": "cmon2",
+    "name": "gru_features",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 6,
@@ -36,12 +36,17 @@
     ],
     "feature_engineering": [
         {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        },
+        {
             "kind": "time",
-            "time_features": ["hour", "minute"]
+            "time_features": ["weekday", "month", "hour", "minute"]
         },
         {
             "kind": "parser",
             "feats": [
+                "anglez_diff_abs",
                 "anglez_diff_abs_median_1000",
                 "anglez_diff_abs_clip_10_skew_1000",
                 "anglez_diff_abs_clip_10_savgol_180",
@@ -54,15 +59,11 @@
                 "anglez_diff_abs_clip_10_savgol_1000_diff",
                 "anglez_diff_abs_clip_10_median_360"
             ]
-        },
-        {
-            "kind": "sun",
-            "sun_features": ["azimuth", "altitude"]
         }
     ],
     "pretraining": {
         "downsample": {
-            "features": ["f_anglez", "f_enmo"],
+            "features": ["f_anglez_diff_abs", "f_enmo"],
             "methods": ["min", "max", "mean", "std", "median", "range", "var"],
             "standard": "mean"
         },
@@ -82,7 +83,7 @@
         "activation_delay": 15,
         "lr": 0.01,
         "network_params": {
-            "hidden_size": 8,
+            "hidden_size": 12,
             "n_layers": 5,
             "activation": "relu"
         },
@@ -91,7 +92,8 @@
             "warmup_t": 5,
             "warmup_lr_init": 0.000001,
             "lr_min": 0.00001,
-            "cycle_limit": 3
+            "cycle_limit": 3,
+            "cycle_decay": 0.5
         },
         "threshold": 0
     }

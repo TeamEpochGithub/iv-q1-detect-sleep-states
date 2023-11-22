@@ -50,7 +50,7 @@ class Parser(FE):
 
         # only keep the features we want
         for feat in self.feats:
-            data[feat] = self.available_lookup[feat]
+            data['f_'+feat] = self.available_lookup[feat]
 
         # reset the lookup and collect the garbage memory
         self.available_lookup = dict()

@@ -65,7 +65,7 @@
           "warmup_t": 10
         },
         "hidden_layers": 8,
-        "early_stopping": 15,
+        "early_stopping": 30,
         "threshold": 0,
         "n_fft": 63,
         "hop_length": 18,

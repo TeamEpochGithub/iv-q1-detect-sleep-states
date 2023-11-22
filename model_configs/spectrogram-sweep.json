@@ -38,7 +38,7 @@
     "feature_engineering": [
         {
             "kind": "rotation",
-            "window_sizes": [18, 100, 360]   
+            "window_sizes": [100, 360]   
         }
     ],
 

@@ -3,7 +3,6 @@ from torch import nn
 from src.external.segmentation_models_pytorch import Unet
 from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torchaudio.transforms as T
-from torch import cat
 
 
 class SpectrogramEncoderDecoder(nn.Module):
@@ -19,7 +18,6 @@ class SpectrogramEncoderDecoder(nn.Module):
         self.config = config
         # for now there are no residual features but
         # that should be a future issue beacuse it needs experimenting to get them to be significant
-        self.num_res_features = in_channels - 3
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
@@ -34,7 +32,7 @@ class SpectrogramEncoderDecoder(nn.Module):
         )
         self.dropout = nn.Dropout(config.get('dropout_prob', 0.05))
         self.decoder = UNet1DDecoder(
-            n_channels=(config.get('n_fft', 127) + 1) // 2 + self.num_res_features,
+            n_channels=(config.get('n_fft', 127) + 1) // 2,
             n_classes=out_channels,
             bilinear=config.get('bilinear', False),
             scale_factor=config.get('scale_factor', 2),
@@ -45,11 +43,10 @@ class SpectrogramEncoderDecoder(nn.Module):
     def forward(self, x, use_activation=True):
         # Pass only enmo and anglez to the spectrogram
         x = x.permute(0, 2, 1)
-        x_spec = self.spectrogram(x[:, 0:3, :])
+        x_spec = self.spectrogram(x)
         x_encoded = self.encoder(x_spec).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
-        y = self.decoder(cat((x_encoded, x[:, 3:, ::self.config.get('hop_length')]), dim=1))
         y = self.decoder(x_encoded)
         if use_activation:
             y = self.activation(y)

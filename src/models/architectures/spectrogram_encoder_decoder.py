@@ -1,8 +1,6 @@
-import wandb
 from torch import nn
 
-if wandb.run is not None:
-    from segmentation_models_pytorch import Unet
+from src.external.segmentation_models_pytorch import Unet
 from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torchaudio.transforms as T
 from torch import cat
@@ -22,16 +20,13 @@ class SpectrogramEncoderDecoder(nn.Module):
         # for now there are no residual features but
         # that should be a future issue beacuse it needs experimenting to get them to be significant
         self.num_res_features = in_channels - 3
-        if wandb.run is not None:
-            self.encoder = Unet(
-                encoder_name=config.get('encoder_name', 'resnet34'),
-                encoder_weights=config.get('encoder_weights', 'imagenet'),
-                in_channels=in_channels,
-                classes=1,
-                encoder_depth=config.get('encoder_depth', 5),
-            )
-        else:
-            self.encoder = None
+        self.encoder = Unet(
+            encoder_name=config.get('encoder_name', 'resnet34'),
+            encoder_weights=config.get('encoder_weights', 'imagenet'),
+            in_channels=in_channels,
+            classes=1,
+            encoder_depth=config.get('encoder_depth', 5),
+        )
         self.spectrogram = nn.Sequential(
             T.Spectrogram(n_fft=config.get('n_fft', 127), hop_length=config.get('hop_length', 1)),
             T.AmplitudeToDB(top_db=80),
@@ -47,15 +42,16 @@ class SpectrogramEncoderDecoder(nn.Module):
         )
         self.activation = nn.GELU()
 
-    def forward(self, x):
+    def forward(self, x, use_activation=True):
         # Pass only enmo and anglez to the spectrogram
+        x = x.permute(0, 2, 1)
         x_spec = self.spectrogram(x[:, 0:3, :])
         x_encoded = self.encoder(x_spec).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
         y = self.decoder(cat((x_encoded, x[:, 3:, ::self.config.get('hop_length')]), dim=1))
         y = self.decoder(x_encoded)
-        if self.config.get('use_activation', False):
+        if use_activation:
             y = self.activation(y)
         return y
 

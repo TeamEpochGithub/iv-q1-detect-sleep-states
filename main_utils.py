@@ -220,7 +220,7 @@ def scoring(config: ConfigLoader) -> None:
 def full_train_from_config(model_config_loader: ModelConfigLoader, store_location: str) -> None:
     """
     Full train the model with the optimal parameters
-    :param model_config: the model config
+    :param model_config_loader: the model config
     :param store_location: the store location of the models
     """
     # Initialisation
@@ -262,4 +262,5 @@ def full_train_from_config(model_config_loader: ModelConfigLoader, store_locatio
         model.save(model_filename_submit)
     else:
         raise ValueError(
-            f"Could not find optimal model: {model_name} with location {model_filename_opt}")
+            f"Could not find optimal model: {model_name} with location {model_filename_opt}." +
+            " Please train the optimal model first by setting train_for_submission to false and then try again.")

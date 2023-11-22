@@ -55,10 +55,10 @@
         "loss": "mse-torch",
         "optimizer": "adamw-torch",
         "epochs": 50,
-        "batch_size": 96,
+        "batch_size": 64,
         "lr": 0.004310136911348807,
         "lr_schedule": {
-          "cycle_limit": 4,
+          "cycle_limit": 1,
           "lr_min": 0.002028958470471434,
           "t_initial": 19,
           "warmup_lr_init": 0.000001,

@@ -220,7 +220,7 @@ class EventModel:
             scheduler = None
         early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
-        use_auxiliary_awake = self.config["use_auxiliary_awake"]
+        use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
         if early_stopping > 0:
             logger.info(
                 f"--- Early stopping enabled with patience of {early_stopping} epochs.")

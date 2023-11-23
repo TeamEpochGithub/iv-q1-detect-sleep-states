@@ -41,13 +41,13 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
 
     i: int = 0
     processed: dict = {}
-    assert os.path.exists(config.config['preprocessing'][0]['id_encoding_path']), 'The id encoding file does not exist, run mem_reduce again'
     for i in range(len(step_hashes), -1, -1):
         path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i])
         # check if the final result of the preprocessing exists
         if os.path.exists(path) and i != 0:
             logger.info(f'Reading existing files at: {path}')
             # The test data will have different ids so we need to read the encoding
+            assert os.path.exists(config.config['preprocessing'][0]['id_encoding_path']), 'The id encoding file does not exist, run mem_reduce again'
             ids = json.load(open(config.config['preprocessing'][0]['id_encoding_path']))
             # read the files within the folder in to a dict of dfs
             for k in ids.values():

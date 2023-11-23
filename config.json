@@ -11,10 +11,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["gru.json"],
+        "models": ["gru_features.json"],
         "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": false
+        "pred_only": true
     },
     "cv": {
         "splitter": "group_k_fold",
@@ -23,7 +23,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

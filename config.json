@@ -1,5 +1,6 @@
 {
     "name": "config",
+    "is_kaggle": false,
     "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
@@ -11,8 +12,8 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["gru_features.json"],
-        "weights": [1],
+        "models": ["cmon.json", "cmon2.json", "transformer_gru.json"],
+        "weights": [0.6, 0.4, 0.2],
         "comb_method": "confidence_average",
         "pred_only": true
     },

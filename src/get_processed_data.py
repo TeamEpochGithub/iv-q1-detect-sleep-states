@@ -46,7 +46,6 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
 
     i: int = 0
     processed: dict = {}
-
     # iterate backwards through steps to find the last step that is already cached
     for i in range(len(step_hashes), -1, -1):
         path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i])

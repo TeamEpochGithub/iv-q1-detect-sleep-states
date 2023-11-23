@@ -1,8 +1,6 @@
 import wandb
 from torch import nn
 
-if wandb.run is not None:
-    from segmentation_models_pytorch import Unet
 from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torchaudio.transforms as T
 from torch import cat

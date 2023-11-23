@@ -28,13 +28,14 @@ def submit(config_loader: ConfigLoader, submit=False) -> None:
     if not ensemble:
         raise ValueError("No ensemble found in config")
 
+    is_kaggle = config_loader.config.get("is_kaggle", False)
     # Make predictions on test data
-    predictions = ensemble.pred(config_loader.get_model_store_loc(), pred_with_cpu=pred_cpu, training=False)
+    predictions = ensemble.pred(config_loader.get_model_store_loc(), pred_with_cpu=pred_cpu, training=False, is_kaggle=is_kaggle)
 
     # Get featured data for model 1, should not give any problems as all models should have the same columns excluding features
     ensemble.get_models()[0].reset_globals()
     featured_data = get_processed_data(
-        ensemble.get_models()[0], training=False, save_output=False)
+        ensemble.get_models()[0], training=False, save_output=not is_kaggle)
 
     logger.info("Formatting predictions...")
 

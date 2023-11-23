@@ -67,7 +67,7 @@ class Ensemble:
         """
         return self.test_idx
 
-    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -75,6 +75,8 @@ class Ensemble:
 
         :param data: 3D tensor with shape (window, n_timesteps, n_features)
         :param pred_with_cpu: whether to use the cpu for prediction
+        :param training: whether to train the model
+        :param is_kaggle: whether to submit to kaggle
         :return: 3D array with shape (window, 2), with onset and wakeup steps (nan if no detection)
         """
 
@@ -90,7 +92,7 @@ class Ensemble:
         for _, model_config in enumerate(self.model_configs):
             model_config.reset_globals()
             model_pred = self.pred_model(
-                model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training)
+                model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training, is_kaggle=is_kaggle)
 
             # Model_pred is tuple of np.array(onset, awake) for each window
             # Split the series of tuples into two column
@@ -148,7 +150,8 @@ class Ensemble:
             model_config_loader: ModelConfigLoader,
             store_location: str,
             pred_with_cpu: bool = True,
-            training: bool = False
+            training: bool = False,
+            is_kaggle: bool = False
     ) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
 
         model_name = model_config_loader.get_name()
@@ -161,8 +164,9 @@ class Ensemble:
         print_section_separator(
             "Preprocessing and feature engineering", spacing=0)
         data_info.stage = "preprocessing & feature engineering"
-        featured_data = get_processed_data(
-            model_config_loader, training=training, save_output=True)
+
+        logger.info(f"Saving output is {not is_kaggle}, since kaggle submission is {is_kaggle}")
+        featured_data = get_processed_data(model_config_loader, training=training, save_output=not is_kaggle)
 
         # ------------------------ #
         #         Pretrain         #

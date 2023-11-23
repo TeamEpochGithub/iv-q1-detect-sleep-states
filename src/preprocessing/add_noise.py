@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-import pandas as pd
 
 from ..preprocessing.pp import PP
 
@@ -13,7 +12,7 @@ class AddNoise(PP):
     Adds random Gaussian distributed noise to the "anglez" column.
     """
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Preprocess the data by adding noise to the data.
 
         It creates a new column with the cumulative sum of the anglez column
@@ -21,5 +20,6 @@ class AddNoise(PP):
         :param data: the data without noise
         :return: the data with noise added to the "anglez" column
         """
-        data['anglez'] = data['anglez'] + np.random.normal(0, 0.1, len(data['anglez']))
+        for sid in data.keys():
+            data[sid]['anglez'] = data[sid]['anglez'] + np.random.normal(0, 0.1, len(data[sid]['anglez']))
         return data

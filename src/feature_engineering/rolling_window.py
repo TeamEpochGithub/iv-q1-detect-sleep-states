@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-import pandas as pd
 
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
@@ -24,7 +23,7 @@ class RollingWindow(FE, ABC):
         self.features.sort()
 
     @abstractmethod
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> dict:
         """Process the data. This method should be overridden by the child class.
 
         :param data: the data to process

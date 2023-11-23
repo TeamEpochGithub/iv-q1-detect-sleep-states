@@ -22,7 +22,7 @@ class Test(TestCase):
         print('data usage of test_series before mem_reduce:', series_mem_used_before)
         # now do the mem_reduce
 
-        series_mem_used_after = mem_reducer.reduce_mem_usage(train_series).memory_usage().sum()
+        series_mem_used_after = mem_reducer.reduce_mem_usage(train_series)[0].memory_usage().sum()
         print('data usage of test_series after mem_reduce:', series_mem_used_after)
 
         # assert that memory usage for both dataframes went down

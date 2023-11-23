@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 from src import data_info
@@ -16,11 +15,10 @@ class SimilarityNan(PP):
 
     as_feature: bool = False
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         tqdm.pandas()
-        data = (data.groupby('series_id')
-                .progress_apply(self.similarity_nan)
-                .reset_index(0, drop=True))
+        for sid in data.keys():
+            data[sid] = self.similarity_nan(data[sid])
         return data
 
     def similarity_nan(self, series):
@@ -28,8 +26,7 @@ class SimilarityNan(PP):
         col_name = 'f_similarity_nan' if self.as_feature else 'similarity_nan'
 
         if len(series) < data_info.window_size:
-            logger.warning(f"Series {series.iloc[0]['series_id']} is shorter than a day,"
-                           f" setting similarity to 1. Should never happen...")
+            logger.warning("Series is shorter than a day, setting similarity to 1. Should never happen...")
             series['f_similarity_nan'] = 1
             return series
 

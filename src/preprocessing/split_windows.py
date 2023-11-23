@@ -28,7 +28,7 @@ class SplitWindows(PP):
         """Return a string representation of a SplitWindows object"""
         return f"{self.__class__.__name__}(start_hour={self.start_hour})"
 
-    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the data by splitting it into 24h windows.
 
         :param df: the data without windows
@@ -37,17 +37,13 @@ class SplitWindows(PP):
 
         # Pad the series with 0s
         # Loop through the series_ids
-        tqdm.pandas()
 
-        df = df.groupby('series_id').progress_apply(
-            self.pad_series).reset_index(drop=True)
-
-        # Split the data into 24 hour windows per series_id
-        df = df.groupby('series_id').progress_apply(
-            self.preprocess_series).reset_index(0, drop=True)
+        for sid in tqdm(data.keys()):
+            data[sid] = self.pad_series(data[sid]).reset_index(0, drop=True)
+            data[sid] = self.preprocess_series(data[sid]).reset_index(0, drop=True)
 
         # df = self.clip_enmo_df(df)
-        return df
+        return data
 
     def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:
         series['window'] = series.reset_index(
@@ -66,7 +62,7 @@ class SplitWindows(PP):
         gc.collect()
 
         # Pad types
-        pad_type = {'step': np.int32, 'series_id': np.uint16,
+        pad_type = {'step': np.int32,
                     'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
 
         optionals = {  # (data_type, default_val for padding)
@@ -82,9 +78,6 @@ class SplitWindows(PP):
         for col, (data_type, default_val) in optionals.items():
             if col in group.columns:
                 pad_type[col] = data_type
-
-        # Get current series_id
-        curr_series_id = group['series_id'].iloc[0]
 
         # Find the timestamp of the first row for each series_id
         first_time = group['timestamp'].iloc[0]
@@ -113,8 +106,7 @@ class SplitWindows(PP):
                                      'enmo': np.zeros(amount_of_padding_start),
                                      'anglez': np.zeros(amount_of_padding_start),
                                      'utc': np.zeros(amount_of_padding_start),
-                                     'step': step,
-                                     'series_id': np.full(amount_of_padding_start, curr_series_id)})
+                                     'step': step})
 
         # only pad the optional columns if they exist
         for col, (data_type, default_val) in optionals.items():
@@ -140,8 +132,7 @@ class SplitWindows(PP):
                                    'enmo': np.zeros(amount_of_padding_end),
                                    'anglez': np.zeros(amount_of_padding_end),
                                    'utc': np.zeros(amount_of_padding_end),
-                                   'step': step,
-                                   'series_id': np.full(amount_of_padding_end, curr_series_id)})
+                                   'step': step})
 
         # only pad the optional columns if they exist
         for col, (data_type, default_val) in optionals.items():

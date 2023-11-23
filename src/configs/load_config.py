@@ -163,6 +163,14 @@ class ConfigLoader:
         data_info.hpo = self.config.get("hpo")
         return self.config.get("hpo")
 
+
+    def get_ensemble_hpo(self) -> bool:
+        """
+        Get the hyperparameter optimization parameters from the config
+        :return: the hyperparameter optimization parameters
+        """
+        data_info.ensemble_hpo = self.config.get("ensemble_hpo")
+        return self.config.get("ensemble_hpo")
     def set_hpo_config(self) -> dict:
         """
         Set the hyperparameter optimization parameters from the config

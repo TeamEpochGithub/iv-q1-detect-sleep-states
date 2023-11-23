@@ -26,9 +26,16 @@ def main() -> None:
     # Initialize wandb
     if config_loader.get_log_to_wandb():
         # Add models
+        is_hpo = config_loader.get_hpo()
+        is_ensemble_hpo = config_loader.get_ensemble_hpo()
+
+        if is_hpo and is_ensemble_hpo:
+            logger.critical("Cannot have both hpo and ensemble hpo")
+            raise Exception("Cannot have both hpo and ensemble hpo")
+
 
         # Get the hpo config
-        if config_loader.get_hpo():
+        if is_hpo:
             config_loader.config["hpo_model"] = config_loader.get_hpo_config(
             ).config
 
@@ -38,7 +45,7 @@ def main() -> None:
             name=config_hash,
             config=config_loader.get_config()
         )
-        if config_loader.get_hpo():
+        if is_hpo:
 
             # Merge the config from the hpo config
             config_loader.config |= wandb.config

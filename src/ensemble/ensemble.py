@@ -88,7 +88,6 @@ class Ensemble:
         # model_pred is (onset, wakeup) tuples for each window
 
         for _, model_config in enumerate(self.model_configs):
-            print_section_separator(f"Ensemble - {model_config.config['name']}", spacing=0)
             model_config.reset_globals()
             model_pred = self.pred_model(
                 model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training)
@@ -145,11 +144,11 @@ class Ensemble:
         return aggregate, aggregate_confidences
 
     def pred_model(
-        self,
-        model_config_loader: ModelConfigLoader,
-        store_location: str,
-        pred_with_cpu: bool = True,
-        training: bool = False
+            self,
+            model_config_loader: ModelConfigLoader,
+            store_location: str,
+            pred_with_cpu: bool = True,
+            training: bool = False
     ) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
 
         model_name = model_config_loader.get_name()
@@ -179,12 +178,10 @@ class Ensemble:
         logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
                     " and test size of " + str(pretrain.test_size))
 
-        # Split data into train/test and validation
-        # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-        logger.info("Splitting data into train and test...")
-        data_info.substage = "pretrain_split"
-
+        # This is train optimal, so we want to split the data into train and test. If not we do predictions only (submit_to_kaggle)
         if training:
+            logger.info("Splitting data into train and test...")
+            data_info.substage = "pretrain_split"
             x_train, x_test, y_train, y_test, _, test_idx, _ = get_pretrain_split_cache(
                 model_config_loader, featured_data, save_output=True)
             self.test_idx = test_idx
@@ -197,7 +194,7 @@ class Ensemble:
             assert x_train.shape[1] == y_train.shape[1] == x_test.shape[1] == y_test.shape[
                 1], "The window size of the train and test data should be the same"
         else:
-            # Hash of concatenated string of preprocessing, feature engineering and pretraining
+            # Load scaler from submit model
             scaler_hash = hash_config(
                 model_config_loader.get_pretrain_config(), length=5)
             if pretrain.scaler.scaler:
@@ -211,21 +208,25 @@ class Ensemble:
         model = model_config_loader.set_model()
 
         # Hash of concatenated string of preprocessing, feature engineering and pretraining
+        # FIXME Should be datainfo, preprocessing, feature engineering and pretraining (get_pretrain_config)
         initial_hash = hash_config(
             model_config_loader.get_pp_fe_pretrain(), length=5)
         data_info.substage = f"training model: {model_name}"
 
         # Get filename of model
+        model_type = None
         if training:
             model_filename = store_location + "/optimal_" + \
-                model_name + "-" + initial_hash + model.hash + ".pt"
+                             model_name + "-" + initial_hash + model.hash + ".pt"
+            model_type = "optimal"
         else:
             model_filename = store_location + "/submit_" + \
-                model_name + "-" + initial_hash + model.hash + ".pt"
+                             model_name + "-" + initial_hash + model.hash + ".pt"
+            model_type = "submit"
 
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename):
-            logger.info("Found existing trained optimal model: " +
+            logger.info(f"Found existing trained {model_type} model: " +
                         model_name + " with location " + model_filename)
             model.load(model_filename, only_hyperparameters=False)
         else:

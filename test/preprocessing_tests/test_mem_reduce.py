@@ -27,3 +27,15 @@ class Test(TestCase):
 
         # assert that memory usage for both dataframes went down
         self.assertTrue(series_mem_used_before > series_mem_used_after)
+
+    def test_timestamp_convert(self) -> None:
+        data = pd.DataFrame({
+            "series_id": ["038441c925bb", "038441c925bb"],
+            "timestamp": ["2018-08-14T15:30:00-0400", "2018-12-18T12:56:50-0500"],
+            "step": [0, 1],
+            "enmo": [0.0, 0.0],
+            "anglez": [0.0, 0.0],
+        })
+
+        mem_reducer = MemReduce(id_encoding_path=None)
+        data = mem_reducer.preprocess(data)

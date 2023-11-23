@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Meteostat is not added to requirements.txt because it is not available on Kaggle
@@ -12,12 +12,12 @@ FILE_NAME = Path(__file__).parent.parent.parent / 'data' / 'raw' / 'weather.csv'
 
 def download_weather_data() -> None:
     """Download the weather data and save it to a CSV file"""
-    data = Hourly(LOCATION, START_DATE, END_DATE)
+    data = Hourly(LOCATION, START_DATE, END_DATE, timezone='US/Eastern')
     data = data.fetch()
 
     # Save data to a CSV file
     data.to_csv(FILE_NAME)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     download_weather_data()

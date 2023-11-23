@@ -1,4 +1,6 @@
 # Config variables
+import pandas as pd
+
 pred_with_cpu: bool = False  # Whether to use CPU or GPU for prediction
 window_size_before: int = 17280  # The size of the window in steps before donwsampling. Default is 24 * 60 * 12 = 17280
 window_size: int = 17280  # The size of the window in steps, potentially after downsampling. Default is 24 * 60 * 12 = 17280
@@ -22,3 +24,7 @@ y_columns: dict[str, int] = {}  # The names of the labels
 # Cross Validation data
 cv_current_fold: int = 0  # The current fold of the cross validation
 cv_unique_series: list[str] = []
+
+# Info necessary for converting predictions to submission format
+# Contains columns series_id, window, step
+window_info: pd.DataFrame

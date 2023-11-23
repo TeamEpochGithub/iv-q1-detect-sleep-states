@@ -1,8 +1,9 @@
+import gc
 import json
 
 import numpy as np
 import pandas as pd
-
+from src import data_info
 
 def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> pd.DataFrame:
     """ Combine predictions with window info to create a dataframe suitable for submission.csv or scoring
@@ -20,6 +21,7 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     wakeup_conf = [x[1] for x in confidences]
 
     # Add the predictions
+    window_info = window_info.copy()
     window_info['onset'] = onsets
     window_info['wakeup'] = wakeups
 
@@ -69,3 +71,25 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     df['series_id'] = df['series_id'].map(decoding)
 
     return df
+
+
+def set_window_info(data: dict) -> None:
+    """Given the dictionary of processed series, set the global variable window_info.
+    If set for a second time, instead of overwriting, confirm that it is the same"""
+
+    # get the first step of each window for each series
+    res_list = []
+    for sid in data.keys():
+        res = data[sid].groupby('window').first()['step']
+        res['series_id'] = sid
+        res_list.append(res)
+
+    res_concat = pd.concat(res_list).reset_index()
+
+    del res_list
+    gc.collect()
+
+    if data_info.window_info is None:
+        data_info.window_info = res_concat
+    else:
+        assert data_info.window_info.equals(res_concat), "Window info is not the same as before"

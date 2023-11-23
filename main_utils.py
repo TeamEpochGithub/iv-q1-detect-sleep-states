@@ -13,7 +13,7 @@ from src.util.get_pretrain_cache import get_pretrain_full_cache, get_pretrain_sp
 from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
 import numpy as np
-from src.util.submissionformat import to_submission_format
+from src.util.submissionformat import to_submission_format, set_window_info
 import json
 from src.score.compute_score import compute_score_full, compute_score_clean, log_scores_to_wandb
 from src.score.visualize_preds import plot_preds_on_series
@@ -138,60 +138,16 @@ def scoring(config: ConfigLoader) -> None:
     # Make predictions on test data
     predictions = ensemble.pred(
         config.get_model_store_loc(), pred_with_cpu=pred_cpu)
-    test_idx = ensemble.get_test_idx()
-
-    # Get featured data for model 1, should not give any problems as all models should have the same columns excluding features
-    ensemble.get_models()[0].reset_globals()
-    featured_data = get_processed_data(
-        ensemble.get_models()[0], training=True, save_output=True)
+    test_ids = ensemble.get_test_ids()
 
     logger.info("Formatting predictions...")
 
-    # TODO simplify this
-    # for each window get the series id and step offset
-    # window_info = (featured_data.iloc[test_idx][['series_id', 'window', 'step']]
-    #                .groupby(['series_id', 'window'])
-    #                .apply(lambda x: x.iloc[0]))
-    # # FIXME This causes a crash later on in the compute_nan_confusion_matrix as it tries
-    # #  to access the first step as a negative index which is now a very large integer instead
-    important_cols = ['series_id', 'window', 'step'] + \
-        [col for col in featured_data.columns if 'similarity_nan' in col]
-    grouped = (featured_data.iloc[test_idx][important_cols]
-               .groupby(['series_id', 'window']))
-    window_offset = grouped.apply(lambda x: x.iloc[0])
-    # TODO Check if the large step is still a problem now that we use the window_offset
-    # TODO Do the window_offset thing in from_numpy_to_submission_format too
-
-    # filter out predictions using a threshold on (f_)similarity_nan
-    filter_cfg = config.get_similarity_filter()
-    if filter_cfg:
-        logger.info(
-            f"Filtering predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
-        col_name = [
-            col for col in featured_data.columns if 'similarity_nan' in col]
-        if len(col_name) == 0:
-            raise ValueError(
-                "No (f_)similarity_nan column found in the data for filtering")
-        mean_sim = grouped.apply(lambda x: (x[col_name] == 0).mean())
-        nan_mask = mean_sim > filter_cfg['threshold']
-        nan_mask = np.where(nan_mask, np.nan, 1)
-        predictions = predictions * nan_mask
-
-    submission = to_submission_format(predictions, window_offset)
-
-    # get only the test series data from the solution
-    test_series_ids = window_offset['series_id'].unique()
-
-    # if visualize is true plot all test series
-    with open('./series_id_encoding.json', 'r') as f:
-        encoding = json.load(f)
-    decoding = {v: k for k, v in encoding.items()}
-    test_series_ids = [decoding[sid] for sid in test_series_ids]
+    submission = to_submission_format(predictions, data_info.window_offset)
 
     # load solution for test set and compute score
     solution = (pd.read_csv(config.get_train_events_path())
                 .groupby('series_id')
-                .filter(lambda x: x['series_id'].iloc[0] in test_series_ids)
+                .filter(lambda x: x['series_id'].iloc[0] in test_ids)
                 .reset_index(drop=True))
     logger.info("Start scoring test predictions...")
 
@@ -200,8 +156,7 @@ def scoring(config: ConfigLoader) -> None:
     log_scores_to_wandb(scores, data_info.scorings)
 
     # compute confusion matrix for making predictions or not
-    window_offset['series_id'] = window_offset['series_id'].map(decoding)
-    compute_nan_confusion_matrix(submission, solution, window_offset)
+    compute_nan_confusion_matrix(submission, solution, data_info.window_info)
 
     # the plot function applies encoding to the submission
     # we do not want to change the ids on the original submission
@@ -209,12 +164,14 @@ def scoring(config: ConfigLoader) -> None:
 
     # pass only the test data
     logger.info('Creating plots...')
-    plot_preds_on_series(plot_submission,
-                         featured_data[
-                             featured_data['series_id'].isin(list(encoding[i] for i in test_series_ids))],
-                         number_of_series_to_plot=config.get_number_of_plots(),
-                         folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
-                         show_plot=config.get_browser_plot(), save_figures=config.get_store_plots())
+
+    # TODO make plots work again with ensemble, which featured data to use?
+    # plot_preds_on_series(plot_submission,
+    #                      featured_data[
+    #                          featured_data['series_id'].isin(test_ids)],
+    #                      number_of_series_to_plot=config.get_number_of_plots(),
+    #                      folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
+    #                      show_plot=config.get_browser_plot(), save_figures=config.get_store_plots())
 
 
 def full_train_from_config(model_config_loader: ModelConfigLoader, store_location: str) -> None:

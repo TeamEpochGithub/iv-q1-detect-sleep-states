@@ -14,6 +14,8 @@ from src.preprocessing.pp import PP
 from src.util.hash_config import hash_config
 from tqdm import tqdm
 
+from src.util.submissionformat import set_window_info
+
 _STEP_HASH_LENGTH = 5
 
 
@@ -84,6 +86,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
         step = steps[i + j]
         logger.info(f'--- Applying step: {step_names[i + j]}')
         data_info.substage = step_hashes[i + j]
+
         # only mem reduce uses the datfarme input and the rest will use dicts so this
         # should be fine as long as mem_reduce is used first
         processed = step.run(processed)
@@ -103,6 +106,8 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
     logger.debug(
         f'Total memory usage of processed dataframes: {mem_usage(processed).sum() / 1e6:.2f} MB')
     tracemalloc.stop()
+
+    set_window_info(processed)
     return processed
 
 

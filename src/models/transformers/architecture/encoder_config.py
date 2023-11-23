@@ -19,7 +19,7 @@ class EncoderConfig(nn.Module):
     """
 
     def __init__(self, tokenizer: str = "patch", tokenizer_args: dict = {}, pe: str = "fixed",
-                 emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8, 
+                 emb_dim: int = 192, forward_dim: int = 2048, n_layers: int = 6, heads: int = 8,
                  seq_len: int = 17280, dropout: float = 0.0, attention: dict = {"type": "normal"}) -> None:
         super().__init__()
 

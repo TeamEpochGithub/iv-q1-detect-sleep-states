@@ -14,7 +14,7 @@ class TestParser(TestCase):
         expected = pd.DataFrame({
             'step': series.step,
             'anglez': series.anglez,
-            'anglez_diff': expected_feature})
+            'f_anglez_diff': expected_feature})
 
         parser = Parser(['anglez_diff'])
         result = parser.feature_engineering_single(series)
@@ -31,7 +31,7 @@ class TestParser(TestCase):
         expected = pd.DataFrame({
             'step': series.step,
             'anglez': series.anglez,
-            feature_name: expected_feature})
+            'f_' + feature_name: expected_feature})
 
         parser = Parser([feature_name])
         result = parser.feature_engineering_single(series)
@@ -48,7 +48,7 @@ class TestParser(TestCase):
         expected = pd.DataFrame({
             'step': series.step,
             'anglez': series.anglez,
-            feature_name: expected_feature})
+            'f_' + feature_name: expected_feature})
 
         parser = Parser([feature_name])
         result = parser.feature_engineering_single(series)
@@ -65,7 +65,7 @@ class TestParser(TestCase):
         expected = pd.DataFrame({
             'step': series.step,
             'anglez': series.anglez,
-            feature_name: expected_feature})
+            'f_' + feature_name: expected_feature})
 
         parser = Parser([feature_name])
         result = parser.feature_engineering_single(series)
@@ -91,7 +91,7 @@ class TestParser(TestCase):
         expected = pd.DataFrame({
             'step': series.step,
             'anglez': series.anglez,
-            feature_name: expected_feature})
+            'f_' + feature_name: expected_feature})
 
         parser = Parser([feature_name])
         result = parser.feature_engineering_single(series)
@@ -115,7 +115,7 @@ class TestParser(TestCase):
         expected = pd.DataFrame({
             'step': series.step,
             'anglez': series.anglez,
-            feature_name: expected_feature})
+            'f_' + feature_name: expected_feature})
 
         parser = Parser([feature_name])
         result = parser.feature_engineering_single(series)

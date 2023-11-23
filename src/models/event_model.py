@@ -211,7 +211,7 @@ class EventModel:
         # Load hyperparameters
         criterion = self.config["loss"]
         optimizer = self.config["optimizer"]
-        epochs = self.config["epochs"]
+        epochs = self.config["total_epochs"]
         batch_size = self.config["batch_size"]
         mask_unlabeled = self.config["mask_unlabeled"]
         if "scheduler" in self.config:
@@ -221,9 +221,9 @@ class EventModel:
         early_stopping = self.config["early_stopping"]
         activation_delay = self.config["activation_delay"]
         use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
-        if early_stopping > 0:
-            logger.info(
-                f"--- Early stopping enabled with patience of {early_stopping} epochs.")
+
+        # Log the total epochs to train
+        logger.info(f"--- Training model for {epochs} epochs")
 
         x_train = torch.from_numpy(x_train)
 
@@ -288,7 +288,7 @@ class EventModel:
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data))
-        dataloader = DataLoader(dataset, batch_size=64, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
 
         predictions = []
 

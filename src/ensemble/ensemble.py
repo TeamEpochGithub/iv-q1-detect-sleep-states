@@ -86,8 +86,9 @@ class Ensemble:
         predictions = None
         confidences = []
         # model_pred is (onset, wakeup) tuples for each window
-        for _, model_config in enumerate(self.model_configs):
 
+        for _, model_config in enumerate(self.model_configs):
+            print_section_separator(f"Ensemble - {model_config.config['name']}", spacing=0)
             model_config.reset_globals()
             model_pred = self.pred_model(
                 model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training)
@@ -102,6 +103,10 @@ class Ensemble:
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
         if self.combination_method == "confidence_average":
+            # Weight the predictions
+
+            logger.info("Weighting predictions with confidences")
+
             predictions = np.average(
                 predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []

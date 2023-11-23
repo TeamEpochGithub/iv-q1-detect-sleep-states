@@ -2,6 +2,7 @@ import json
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 
 def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> pd.DataFrame:

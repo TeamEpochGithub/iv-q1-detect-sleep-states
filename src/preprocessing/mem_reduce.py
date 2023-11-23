@@ -21,7 +21,7 @@ class MemReduce(PP):
 
     _encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: pd.DataFrame) -> dict:
         """Run the preprocessing step.
 
         :param data: the data to preprocess
@@ -30,7 +30,7 @@ class MemReduce(PP):
 
         return self.preprocess(data)
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: pd.DataFrame) -> dict:
         """Preprocess the data by reducing the memory usage of the data.
 
         :param data: the dataframe to preprocess
@@ -38,7 +38,7 @@ class MemReduce(PP):
         """
         return self.reduce_mem_usage(data)
 
-    def reduce_mem_usage(self, data: pd.DataFrame) -> pd.DataFrame:
+    def reduce_mem_usage(self, data: pd.DataFrame) -> dict:
         """Reduce the memory usage of the data.
 
         :param data: the dataframe to reduce

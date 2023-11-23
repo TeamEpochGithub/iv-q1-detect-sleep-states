@@ -69,7 +69,7 @@ class FE(ABC):
         """
         return [FE.from_config_single(fe_step) for fe_step in config_list]
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict) -> dict:
         """Run the feature engineering step.
 
         :param data: the data to process
@@ -78,7 +78,7 @@ class FE(ABC):
         return self.feature_engineering(data)
 
     @abstractmethod
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict) -> [dict | None]:
         """Process the data. This method should be overridden by the child class.
 
         :param data: the data to process

@@ -28,21 +28,19 @@ class SplitWindows(PP):
         """Return a string representation of a SplitWindows object"""
         return f"{self.__class__.__name__}(start_hour={self.start_hour})"
 
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Preprocess the data by splitting it into 24h windows.
 
-        :param df: the data without windows
+        :param data: the data without windows
         :return: the preprocessed data with window numbers
         """
 
         # Pad the series with 0s
         # Loop through the series_ids
-
         for sid in tqdm(data.keys()):
             data[sid] = self.pad_series(data[sid]).reset_index(0, drop=True)
             data[sid] = self.preprocess_series(data[sid]).reset_index(0, drop=True)
 
-        # df = self.clip_enmo_df(df)
         return data
 
     def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:

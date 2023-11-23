@@ -101,22 +101,10 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             logger.info('--- Finished saving')
     log_memory()
     logger.debug(
-        f'Memory usage of processed dataframe: {mem_usage(processed).sum() / 1e6:.2f} MB')
+        f'Total memory usage of processed dataframes: {mem_usage(processed).sum() / 1e6:.2f} MB')
     tracemalloc.stop()
-    # once processing is done we need to return a single dataframe
-    logger.info('--- Combining dataframes')
-    # add back the removd series_id column
-    for sid in processed.keys():
-        processed[sid]['series_id'] = sid
-        processed[sid]['series_id'].astype(np.uint16)
-    # combine the dataframes in the dict in to a single df
-    # while adding back the series id column to them
-    processed_df = pd.concat(processed.values(), ignore_index=True)
-    del processed
-    gc.collect()
-    logger.info('--- Finished combining dataframes')
-    return processed_df
+    return processed
 
 
-def mem_usage(data: dict | pd.DataFrame) -> int:
+def mem_usage(data: dict) -> int:
     return sum(df.memory_usage().sum() for df in data.values())

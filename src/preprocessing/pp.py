@@ -72,7 +72,7 @@ class PP(ABC):
 
         return [PP.from_config_single(pp_step) for pp_step in pp_steps]
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: pd.DataFrame | dict) -> dict:
         """Run the preprocessing step.
 
         :param data: the data to preprocess
@@ -81,7 +81,7 @@ class PP(ABC):
         return self.preprocess(data)
 
     @abstractmethod
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: pd.DataFrame | dict) -> [None | dict]:
         """
         Preprocess the data. This method should be overridden by the child class.
         :param data: the data to preprocess

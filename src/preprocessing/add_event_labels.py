@@ -53,7 +53,6 @@ class AddEventLabels(PP):
                            "Make sure your model takes the correct features.")
 
         self._events = pd.read_csv(self.events_path)
-        self._id_encoding = json.load(open(self.id_encoding_path))
         res = self.preprocess(data)
         del self._events
         return res
@@ -65,27 +64,15 @@ class AddEventLabels(PP):
         :return: the data with state labels added to the "awake" column
         """
 
-        # Initialize the awake column as 42, to catch errors later (-1 not possible in uint8)
-        # loop over the series ids
-        for i in data.keys():
-            data[i]['state-onset'] = 0.0
-            data[i]["state-wakeup"] = 0.0
-
-        # apply encoding to events
-        self._events['series_id'] = self._events['series_id'].map(self._id_encoding)
-
         # iterate over the series and set the awake column
-        tqdm.pandas()
-        # data = (data
-        #         .groupby('series_id')
-        #         .progress_apply(lambda x: self.fill_series_labels(x))
-        #         .reset_index(drop=True))
         for i in data.keys():
-            data[i] = self.fill_series_labels(data[i], i).reset_index(drop=True)
+            data[i] = self.fill_series_labels(data[i], i)
         return data
 
     # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array
     def fill_series_labels(self, series: pd.DataFrame, series_id: int) -> pd.DataFrame:
+        series["state-onset"] = 0.0
+        series["state-wakeup"] = 0.0
         current_events = self._events[self._events["series_id"] == series_id]
 
         # Only get non-nan values and convert to int

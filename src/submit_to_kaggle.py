@@ -47,7 +47,6 @@ def submit(config_loader: ConfigLoader, submit=False) -> None:
 
     # filter out predictions using a threshold on (f_)similarity_nan
     filter_cfg = config_loader.get_similarity_filter()
-    nan_mask = None
     if filter_cfg:
         logger.info(f"Creating filter for predictions using similarity_nan with threshold: {filter_cfg['threshold']:.3f}")
         col_name = [col for col in featured_data.columns if 'similarity_nan' in col]

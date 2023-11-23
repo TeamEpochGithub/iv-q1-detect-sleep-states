@@ -47,7 +47,6 @@ class AddStateLabels(PP):
         :raises FileNotFoundError: If the events csv or id_encoding json file is not found
         """
         self.events = pd.read_csv(self.events_path)
-        self.id_encoding = json.load(open(self.id_encoding_path))
         res = self.preprocess(data)
         del self.events
         return res

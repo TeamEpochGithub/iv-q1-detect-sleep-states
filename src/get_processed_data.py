@@ -14,7 +14,6 @@ from src.preprocessing.pp import PP
 from src.util.hash_config import hash_config
 from tqdm import tqdm
 
-
 _STEP_HASH_LENGTH = 5
 
 
@@ -41,6 +40,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
 
     i: int = 0
     processed: dict = {}
+
     for i in range(len(step_hashes), -1, -1):
         path = config.get_processed_out() + '/' + '_'.join(step_hashes[:i])
         # check if the final result of the preprocessing exists

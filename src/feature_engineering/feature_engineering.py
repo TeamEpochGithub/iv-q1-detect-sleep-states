@@ -37,8 +37,8 @@ class FE(ABC):
         from .sun import Sun
         from .sin_hour import SinHour
         from .add_holidays import AddHolidays
+        from .parser import Parser
         from .add_school_hours import AddSchoolHours
-
         _FEATURE_ENGINEERING_KINDS: Final[dict[str, type[FE]]] = {
             "kurtosis": Kurtosis,
             "mean": Mean,
@@ -48,7 +48,8 @@ class FE(ABC):
             "sun": Sun,
             "sin_hour": SinHour,
             "add_holidays": AddHolidays,
-            "add_school_hours": AddSchoolHours,
+            "parser": Parser,
+            "add_school_hours": AddSchoolHours
         }
 
         try:

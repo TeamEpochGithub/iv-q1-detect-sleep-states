@@ -1,7 +1,7 @@
 {
     "name": "config",
     "is_kaggle": false,
-    "log_to_wandb": false,
+    "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
     "train_events_path": "data/raw/train_events.csv",
@@ -24,7 +24,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

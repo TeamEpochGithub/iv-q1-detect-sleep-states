@@ -194,7 +194,7 @@ def full_train_from_config(model_config_loader: ModelConfigLoader, store_locatio
     pretrain: Pretrain = model_config_loader.get_pretraining()
 
     # Retrain all models with optimal parameters
-    x_train, y_train, _ = get_pretrain_full_cache(
+    x_train, y_train = get_pretrain_full_cache(
         model_config_loader, featured_data, save_output=True)
 
     logger.info("Creating model using ModelConfigLoader")

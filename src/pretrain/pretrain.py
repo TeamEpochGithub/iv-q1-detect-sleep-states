@@ -154,7 +154,6 @@ class Pretrain:
 
         X_list = []
         y_list = []
-        groups_list = []
 
         sids = list(data.keys())
         sids.sort()
@@ -169,9 +168,6 @@ class Pretrain:
             X_list.append(X_data)
             y_list.append(y_data)
 
-            groups_series = sid * np.ones(X_data.shape[0])
-            groups_list.append(groups_series)
-
             del data[sid]
             gc.collect()
 
@@ -182,10 +178,6 @@ class Pretrain:
 
         y_data = pd.concat(y_list)
         del y_list
-        gc.collect()
-
-        groups = np.concatenate(groups_list)
-        del groups_list
         gc.collect()
 
         # Store column names
@@ -200,7 +192,7 @@ class Pretrain:
         X_data = self.to_windows(X_data)
         y_data = self.to_windows(y_data)
 
-        return X_data, y_data, groups
+        return X_data, y_data
 
     def preprocess(self, data: dict) -> np.array:
         """Prepare the data for submission

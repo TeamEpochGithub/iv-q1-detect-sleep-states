@@ -27,6 +27,7 @@ class AddEventLabels(PP):
     smoothing: int = 0
     steepness: int = 1
 
+    # encoding is deprecated
     _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
     _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
@@ -35,19 +36,22 @@ class AddEventLabels(PP):
 
         :param data: the data to preprocess
         :return: the preprocessed data
-        :raises FileNotFoundError: If the events csv or id_encoding json file is not found
+        :raises FileNotFoundError: If the events csv is not found
         """
 
+        # get columns from some arbitrary frame
+        columns = next(iter(data.values())).columns
+
         # If window column is present, raise an exception
-        if "window" in data[0].columns:
+        if "window" in columns:
             logger.critical("Window column is present, this preprocessing step should be run before SplitWindows")
             raise PPException("Window column is present, this preprocessing step should be run before SplitWindows")
-        if "hot-awake" in data[0].columns:
+        if "hot-awake" in columns:
             logger.warning(
                 "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep, hot-unlabeled)"
                 " for state segmentation models. This can cause issues when also adding event labels."
                 "Make sure your model takes the correct features.")
-        if "onset" in data[0].columns:
+        if "onset" in columns:
             logger.warning("Onset column is present, for regression models. "
                            "This can cause issues when also adding event labels."
                            "Make sure your model takes the correct features.")

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 import polars as pl
+from tqdm import tqdm
 
 from ..logger.logger import logger
 from ..preprocessing.pp import PP
@@ -15,10 +16,10 @@ class MemReduce(PP):
     """Preprocessing step that reduces the memory usage of the data
 
     It will reduce the memory usage of the data by changing the data types of the columns.
-    :param id_encoding_path: the path to the encoding file of the series id
     """
-    id_encoding_path: str | None = None
 
+    # (encodings are deprecated)
+    id_encoding_path: str | None = None
     _encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def run(self, data: pd.DataFrame) -> dict:
@@ -44,26 +45,14 @@ class MemReduce(PP):
         :param data: the dataframe to reduce
         :return: the reduced dataframe
         """
-        # we should make the series id in to an int16
-        # and save an encoding (a dict) as a json file somewhere
-        # so, we can decode it later
+
+        # convert series_id to int temporarily
         sids = data['series_id'].unique()
-        encoding = dict(zip(sids, range(len(sids))))
+        mapping = {sid: i for i, sid in enumerate(sids)}
+        data['series_id'] = data['series_id'].map(mapping)
 
-        if self.id_encoding_path is None:
-            logger.warning("No encoding path given, not saving encoding")
-        else:
-            logger.debug(f"------ Saving series encoding to {self.id_encoding_path}")
-
-            with open(self.id_encoding_path, 'w') as f:
-                json.dump(encoding, f)
-
-            logger.debug(f"------ Done saving series encoding to {self.id_encoding_path}")
-
-        data['series_id'] = data['series_id'].map(encoding).astype('int16')
-
+        # convert timestamp to datetime and utc
         timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))
-
         utc = timestamp_pl.str.slice(21, 1).cast(pl.UInt16)
         timestamp_pl = timestamp_pl.str.slice(0, 19)
 
@@ -75,17 +64,16 @@ class MemReduce(PP):
         del timestamp_pl
         gc.collect()
 
-        pad_type = {'step': np.int32, 'series_id': np.uint16, 'enmo': np.float32,
+        # convert data to smaller formats
+        pad_type = {'step': np.int32, 'enmo': np.float32,
                     'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
         data = data.astype(pad_type)
         gc.collect()
-        # make a dictionary of the series id and the data
-        # without the series_id column because it is the key for that series anyway
+
+        # store each series in a different dict entry
         dfs_dict = {}
-        # uses less memeory than this
-        # dfs_dict = {key: group.iloc[:, 1:] for key, group in data.groupby('series_id')}
-        for sid in encoding.values():
-            dfs_dict[sid] = data[data['series_id'] == sid].drop(columns=['series_id'])
+        for name, encoded in tqdm(mapping.items(), desc="Storing each series in a different dict entry"):
+            dfs_dict[name] = data[data['series_id'] == encoded].drop(columns=['series_id'])
         del data
         gc.collect()
         return dfs_dict

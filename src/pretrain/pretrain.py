@@ -77,14 +77,17 @@ class Pretrain:
         y_test_list = []
         groups_list = []
 
-        for sid in tqdm(sids, desc="Splitting labels and downsampling"):
+        for enc, sid in enumerate(tqdm(sids), desc="Splitting labels and downsampling"):
             X, y = self.split_on_labels(data[sid])
 
             # Apply downsampling
             if self.downsampler is not None:
                 X = self.downsampler.downsampleX(X)
                 y = self.downsampler.downsampleY(y)
-            group = sid * np.ones(X.shape[0])
+
+            # Add group as encoded series id integer. encoding does not have to be saved,
+            # it just needs a unique number per series so GroupShuffleSplit can use it
+            group = enc * np.ones(X.shape[0])
 
             if sid in train_ids:
                 X_train_list.append(X)

@@ -141,7 +141,8 @@ def scoring(config: ConfigLoader) -> None:
 
     logger.info("Formatting predictions...")
 
-    submission = to_submission_format(predictions, data_info.window_info)
+    test_window_info = data_info.window_info[data_info.window_info['series_id'].isin(test_ids)]
+    submission = to_submission_format(predictions, test_window_info)
 
     # load solution for test set and compute score
     solution = (pd.read_csv(config.get_train_events_path())

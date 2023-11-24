@@ -77,7 +77,7 @@ class Pretrain:
         y_test_list = []
         groups_list = []
 
-        for enc, sid in enumerate(tqdm(sids), desc="Splitting labels and downsampling"):
+        for enc, sid in enumerate(tqdm(sids, desc="Splitting labels and downsampling")):
             X, y = self.split_on_labels(data[sid])
 
             # Apply downsampling

@@ -31,7 +31,7 @@ class TransformerPool(nn.Module):
         self, heads: int = 8, emb_dim: int = 92, forward_dim: int = 2048,
         n_layers: int = 6,
         seq_len: int = 17280, num_class: int = 2, pooling: str = "none", pooling_args: dict = {}, tokenizer: str = "patch", tokenizer_args: dict = {},
-        pe: str = "fixed", dropout: float = 0.1, t_type: str = "regression"
+        pe: str = "fixed", dropout: float = 0.1, t_type: str = "regression", attention: dict = {"type": "normal"}
     ) -> None:
         super(TransformerPool, self).__init__()
 
@@ -53,7 +53,7 @@ class TransformerPool(nn.Module):
         self.emb_dim = emb_dim
         self.forward_dim = forward_dim
         self.encoder = EncoderConfig(tokenizer=tokenizer, tokenizer_args=tokenizer_args, pe=pe, emb_dim=emb_dim,
-                                     forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len, dropout=dropout)
+                                     forward_dim=forward_dim, n_layers=n_layers, heads=heads, seq_len=seq_len, dropout=dropout, attention=attention)
         with torch.no_grad():
             x = torch.randn([1, seq_len, tokenizer_args["channels"]])
             out = self.encoder(x)

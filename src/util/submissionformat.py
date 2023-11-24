@@ -80,11 +80,11 @@ def set_window_info(data: dict) -> None:
     # get the first step of each window for each series
     res_list = []
     for sid in data.keys():
-        res = data[sid].groupby('window').first()['step']
+        res = data[sid].groupby('window').first()['step'].reset_index()
         res['series_id'] = sid
         res_list.append(res)
 
-    res_concat = pd.concat(res_list).reset_index()
+    res_concat = pd.concat(res_list).reset_index(drop=True)
 
     del res_list
     gc.collect()

@@ -1,22 +1,21 @@
 import os
 
+import numpy as np
 import pandas as pd
+
 from src import data_info
-from src.cv.cv import CV
-from src.get_processed_data import get_processed_data
 from src.configs.load_config import ConfigLoader
 from src.configs.load_model_config import ModelConfigLoader
+from src.cv.cv import CV
+from src.get_processed_data import get_processed_data
 from src.logger.logger import logger
 from src.pretrain.pretrain import Pretrain
+from src.score.compute_score import compute_score_full, compute_score_clean, log_scores_to_wandb
 from src.score.nan_confusion import compute_nan_confusion_matrix
 from src.util.get_pretrain_cache import get_pretrain_full_cache, get_pretrain_split_cache
-from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
-import numpy as np
-from src.util.submissionformat import to_submission_format, set_window_info
-import json
-from src.score.compute_score import compute_score_full, compute_score_clean, log_scores_to_wandb
-from src.score.visualize_preds import plot_preds_on_series
+from src.util.printing_utils import print_section_separator
+from src.util.submissionformat import to_submission_format
 
 
 def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, store_location: str, hpo: bool = False) -> None:
@@ -142,7 +141,7 @@ def scoring(config: ConfigLoader) -> None:
 
     logger.info("Formatting predictions...")
 
-    submission = to_submission_format(predictions, data_info.window_offset)
+    submission = to_submission_format(predictions, data_info.window_info)
 
     # load solution for test set and compute score
     solution = (pd.read_csv(config.get_train_events_path())

@@ -5,6 +5,7 @@ import gc
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
+from tqdm import tqdm
 
 from .. import data_info
 from ..logger.logger import logger
@@ -61,6 +62,11 @@ class Pretrain:
         :return: the train data, test data, train labels, test labels, train indices, test indices, and groups
         """
 
+        if self.downsampler is not None:
+            logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
+            data_info.window_size_before = data_info.window_size
+            data_info.window_size = data_info.window_size // data_info.downsampling_factor
+
         sids = list(data.keys())
         sids.sort()
         train_ids, test_ids = self.train_test_split(data, test_size=self.test_size)
@@ -71,37 +77,51 @@ class Pretrain:
         y_test_list = []
         groups_list = []
 
-        for sid in sids:
+        for sid in tqdm(sids, desc="Splitting labels and downsampling"):
             X, y = self.split_on_labels(data[sid])
 
             # Apply downsampling
             if self.downsampler is not None:
-                logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
-                data_info.window_size_before = data_info.window_size
-                data_info.window_size = data_info.window_size // data_info.downsampling_factor
                 X = self.downsampler.downsampleX(X)
                 y = self.downsampler.downsampleY(y)
-                group = sid * np.ones(X.shape[0])
+            group = sid * np.ones(X.shape[0])
 
-                if sid in train_ids:
-                    X_train_list.append(X)
-                    y_train_list.append(y)
-                    groups_list.append(group)
-                else:
-                    X_test_list.append(X)
-                    y_test_list.append(y)
+            if sid in train_ids:
+                X_train_list.append(X)
+                y_train_list.append(y)
+                groups_list.append(group)
+            else:
+                X_test_list.append(X)
+                y_test_list.append(y)
+            del data[sid]
+            gc.collect()
 
+        logger.info("Concatenating data")
         X_train = pd.concat(X_train_list)
+        del X_train_list
+        gc.collect()
+
         y_train = pd.concat(y_train_list)
+        del y_train_list
+        gc.collect()
+
         X_test = pd.concat(X_test_list)
+        del X_test_list
+        gc.collect()
+
         y_test = pd.concat(y_test_list)
+        del y_test_list
+        gc.collect()
+
         groups = np.concatenate(groups_list)
+        del groups_list
+        gc.collect()
 
         # Store column names
         data_info.X_columns = {column: i for i, column in enumerate(X_train.columns)}
         data_info.y_columns = {column: i for i, column in enumerate(y_train.columns)}
 
-        # Apply scaler and convert to numpy
+        logger.info("Fitting scaler and reshaping data")
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
         X_test = self.scaler.transform(X_test).astype(np.float32)
         y_train = y_train.to_numpy(dtype=np.float32)
@@ -124,20 +144,22 @@ class Pretrain:
         :return: the train data, test data, train labels, test labels, train indices and test indices
         """
 
+        if self.downsampler is not None:
+            logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
+            data_info.window_size_before = data_info.window_size
+            data_info.window_size = data_info.window_size // data_info.downsampling_factor
+
         X_list = []
         y_list = []
         groups_list = []
 
         sids = list(data.keys())
         sids.sort()
-        for sid in sids:
+        for sid in tqdm(sids, desc="Splitting labels and downsampling"):
             X_data, y_data = self.split_on_labels(data[sid])
 
             # Apply downsampling
             if self.downsampler is not None:
-                logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
-                data_info.window_size_before = data_info.window_size
-                data_info.window_size = data_info.window_size // data_info.downsampling_factor
                 X_data = self.downsampler.downsampleX(X_data)
                 y_data = self.downsampler.downsampleY(y_data)
 
@@ -150,22 +172,30 @@ class Pretrain:
             del data[sid]
             gc.collect()
 
+        logger.info("Concatenating data")
         X_data = pd.concat(X_list)
+        del X_list
+        gc.collect()
+
         y_data = pd.concat(y_list)
+        del y_list
+        gc.collect()
+
         groups = np.concatenate(groups_list)
+        del groups_list
+        gc.collect()
 
         # Store column names
         data_info.X_columns = {column: i for i, column in enumerate(X_data.columns)}
         data_info.y_columns = {column: i for i, column in enumerate(y_data.columns)}
 
-        # Apply scaler
+        logger.info("Fitting scaler and reshaping data")
         X_data = self.scaler.fit_transform(X_data).astype(np.float32)
         y_data = y_data.to_numpy(dtype=np.float32)
         gc.collect()
 
         X_data = self.to_windows(X_data)
         y_data = self.to_windows(y_data)
-
 
         return X_data, y_data, groups
 
@@ -178,18 +208,20 @@ class Pretrain:
         :return: the processed data
         """
 
+        if self.downsampler is not None:
+            logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
+            data_info.window_size_before = data_info.window_size
+            data_info.window_size = data_info.window_size // data_info.downsampling_factor
+
         results = []
 
         sids = list(data.keys())
         sids.sort()
-        for sid in sids:
+        for sid in tqdm(sids, desc="Downsampling, scaling and reshaping features"):
             x_data = self.get_features(data[sid])
 
             # Apply downsampling
             if self.downsampler is not None:
-                logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
-                data_info.window_size_before = data_info.window_size
-                data_info.window_size = data_info.window_size // data_info.downsampling_factor
                 x_data = self.downsampler.downsampleX(x_data)
 
             data_info.X_columns = {column: i for i, column in enumerate(x_data.columns)}
@@ -214,6 +246,7 @@ class Pretrain:
 
         sids = list(data.keys())
         sids.sort()
+        sids = np.array(sids)
         gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=42)
         train_idx, test_idx = next(gss.split(sids, groups=sids))
         train_series = sids[train_idx]

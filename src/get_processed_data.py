@@ -57,7 +57,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             logger.info(f'Reading existing files at: {path}')
             for filename in tqdm(os.listdir(path)):
                 sid = int(filename.split('.')[0])
-                processed[sid] = pd.read_parquet(filename)
+                processed[sid] = pd.read_parquet(path + '/' + filename)
             gc.collect()
             logger.info('Finished reading')
             break

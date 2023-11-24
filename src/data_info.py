@@ -27,4 +27,4 @@ cv_unique_series: list[str] = []
 
 # Info necessary for converting predictions to submission format
 # Contains columns series_id, window, step
-window_info: pd.DataFrame
+window_info: pd.DataFrame | None = None

@@ -60,12 +60,12 @@ class Ensemble:
         """
         return self.pred_only
 
-    def get_test_idx(self) -> np.ndarray:
+    def get_test_ids(self) -> np.ndarray:
         """
-        Get the test indices from the ensemble
+        Get the test series from the ensemble
         :return: the test indices
         """
-        return self.test_idx
+        return self.test_ids
 
     def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -186,9 +186,9 @@ class Ensemble:
         if training:
             logger.info("Splitting data into train and test...")
             data_info.substage = "pretrain_split"
-            x_train, x_test, y_train, y_test, _, test_idx, _ = get_pretrain_split_cache(
+            x_train, x_test, y_train, y_test, _, test_ids, _ = get_pretrain_split_cache(
                 model_config_loader, featured_data, save_output=True)
-            self.test_idx = test_idx
+            self.test_ids = test_ids
 
             logger.info("X Train data shape (size, window_size, features): " + str(
                 x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))

@@ -33,7 +33,7 @@ def submit(config_loader: ConfigLoader, submit=False) -> None:
 
     logger.info("Formatting predictions...")
 
-    submission = to_submission_format(predictions, data_info.window_offset)
+    submission = to_submission_format(predictions, data_info.window_info)
 
     if submit:
         submission.to_csv("submission.csv")

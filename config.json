@@ -12,10 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["sparse_transformer_gru.json"],
+        "models": ["sparse_transformer_sweep.json"],
         "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": true
+        "pred_only": false
     },
     "cv": {
         "splitter": "group_k_fold",

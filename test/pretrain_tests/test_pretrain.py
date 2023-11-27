@@ -30,7 +30,14 @@ class TestPretrain(TestCase):
             "awake": np.random.rand(138240) * 2 + 1,
             "f_test": np.random.rand(138240) * 2 + 1})
 
-        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(df)
+        data = {
+            0: df[df["series_id"] == 0].drop("series_id", axis=1),
+            1: df[df["series_id"] == 1].drop("series_id", axis=1),
+            2: df[df["series_id"] == 2].drop("series_id", axis=1),
+            3: df[df["series_id"] == 3].drop("series_id", axis=1),
+        }
+
+        X_train, X_test, y_train, y_test, train_idx, test_idx, groups = pretrain.pretrain_split(data)
 
         self.assertEqual(X_train.shape, (6, 17280, 3))
         self.assertEqual(X_test.shape, (2, 17280, 3))
@@ -57,22 +64,23 @@ class TestPretrain(TestCase):
                                          "enmo": np.repeat(0, 34560),
                                          "anglez": np.repeat(0, 34560),
                                          "f_test": np.repeat(0, 34560)})
+        data = {0: df.drop("series_id", axis=1)}
 
         pretrain.scaler.fit(df)
 
-        x_data = pretrain.preprocess(df)
+        x_data = pretrain.preprocess(data)
         self.assertEqual(x_data.shape, (2, 17280, 3))
 
     def test_train_test_split(self):
         data_info.window_size = 17280
-        df: pd.DataFrame = pd.DataFrame({"series_id": [0, 1],
-                                         "enmo": [0, 1],
-                                         "anglez": [1, 2]})
-        train_data, test_data, train_idx, test_idx = Pretrain.train_test_split(df, test_size=0.5)
-        self.assertEqual(train_data.shape, (1, 3))
-        self.assertEqual(test_data.shape, (1, 3))
-        self.assertEqual(train_idx.shape, (1,))
-        self.assertEqual(test_idx.shape, (1,))
+        data = {
+            "42": pd.DataFrame({"enmo": [0, 1],"anglez": [1, 2]}),
+            "420": pd.DataFrame({"enmo": [0, 1],"anglez": [1, 2]}),
+        }
+
+        train_series, test_series = Pretrain.train_test_split(data, test_size=0.5)
+        self.assertEqual(np.array(["42"]), train_series)
+        self.assertEqual(np.array(["420"]), test_series)
 
     def test_get_features(self):
         data_info.window_size = 17280

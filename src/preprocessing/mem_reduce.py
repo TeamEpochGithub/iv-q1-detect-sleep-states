@@ -72,7 +72,7 @@ class MemReduce(PP):
         # store each series in a different dict entry
         dfs_dict = {}
         for name, encoded in tqdm(mapping.items(), desc="Storing each series in a different dict entry"):
-            dfs_dict[name] = data[data['series_id'] == encoded].drop(columns=['series_id'])
+            dfs_dict[name] = data[data['series_id'] == encoded].drop(columns=['series_id']).reset_index(drop=True)
         del data
         gc.collect()
         return dfs_dict

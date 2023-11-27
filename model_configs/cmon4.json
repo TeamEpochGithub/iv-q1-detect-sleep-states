@@ -1,0 +1,75 @@
+{
+    "name": "cmon4",
+    "data_info": {
+        "downsampling_factor": 1,
+        "latitude": 40.73061,
+        "longitude": -73.935242,
+        "window_size": 17280
+    },
+    "preprocessing": [
+        {
+            "id_encoding_path": "series_id_encoding.json",
+            "kind": "mem_reduce"
+        },
+        {
+            "as_feature": false,
+            "kind": "similarity_nan"
+        },
+        {
+            "events_path": "data/raw/train_events.csv",
+            "fill_limit": 8640,
+            "id_encoding_path": "series_id_encoding.json",
+            "kind": "add_state_labels",
+            "nan_tolerance_window": 5,
+            "use_similarity_nan": true
+        },
+        {
+            "events_path": "data/raw/train_events.csv",
+            "id_encoding_path": "series_id_encoding.json",
+            "kind": "add_event_labels",
+            "smoothing": 0
+        },
+        {
+            "kind": "split_windows"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "rotation",
+            "window_sizes": [360]
+        }
+    ],
+    "pretraining": {
+        "scaler": {
+            "copy": true,
+            "kind": "standard-scaler"
+        },
+        "test_size": 0.2
+    },
+    "architecture": {
+        "batch_size": 60,
+        "clip_awake": false,
+        "dropout_prob": 0,
+        "early_stopping": 34,
+        "encoder_name": "resnet34",
+        "encoder_weights": "imagenet",
+        "epochs": 30,
+        "hop_length": 18,
+        "loss": "kldiv-torch",
+        "lr": 0.004310136911348807,
+        "lr_schedule": {
+            "cycle_limit": 4,
+            "lr_min": 0.002028958470471434,
+            "t_initial": 19,
+            "warmup_lr_init": 0.000001,
+            "warmup_t": 10
+        },
+        "mask_unlabeled": false,
+        "n_fft": 63,
+        "optimizer": "adamw-torch",
+        "threshold": 0.005,
+        "type": "Spectrogram_2D_Cnn",
+        "use_activation": false,
+        "use_awake_channel": true
+    }
+}

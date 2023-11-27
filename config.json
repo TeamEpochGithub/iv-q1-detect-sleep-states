@@ -1,5 +1,6 @@
 {
     "name": "config",
+    "is_kaggle": false,
     "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",

@@ -4,7 +4,7 @@ from src.preprocessing.add_noise import AddNoise
 from src.preprocessing.add_segmentation_labels import AddSegmentationLabels
 from src.preprocessing.add_state_labels import AddStateLabels
 from src.preprocessing.mem_reduce import MemReduce
-from src.preprocessing.pp import PP, PPException
+from src.preprocessing.pp import PP
 from src.preprocessing.split_windows import SplitWindows
 
 

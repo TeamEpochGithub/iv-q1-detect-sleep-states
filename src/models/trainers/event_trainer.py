@@ -114,7 +114,8 @@ class EventTrainer:
 
             # Validation
             if not full_train:
-                val_losses = self.val_loss(testloader, epoch, model)
+                val_losses = self.val_loss(
+                    testloader, epoch, model, use_activation=use_activation)
                 val_loss = sum(val_losses) / (len(val_losses) + 1)
                 avg_val_losses.append(val_loss)
 
@@ -223,17 +224,21 @@ class EventTrainer:
                 output = model(data[0].to(self.device))
 
         # Assert output is in correct format
-        assert output.shape[1] == data[1].shape[1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
+        assert output.shape[1] == data[1].shape[
+            1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
         assert output.shape[1] == data_info.window_size, \
             f"Output shape {tuple(output.shape[1])} is not equal to window size {data_info.window_size}, check if model output is correct"
-        assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"  # TODO: Describe magic number 2
+        # TODO: Describe magic number 2
+        assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"
 
         # Calculate loss
         if self.mask_unlabeled:
-            assert data[1].shape[2] == 3, f"Masked loss only works with y shape (batch_size, seq_len, 3), but shape is {tuple(data[1].shape)}"
+            assert data[1].shape[
+                2] == 3, f"Masked loss only works with y shape (batch_size, seq_len, 3), but shape is {tuple(data[1].shape)}"
             loss = self.masked_loss(output, data[1])
         else:
-            assert data[1].shape[2] == 2, f"Data shape {tuple(data[1].shape[2])} does not have 2 classes"  # TODO: Describe magic number 2
+            # TODO: Describe magic number 2
+            assert data[1].shape[2] == 2, f"Data shape {tuple(data[1].shape[2])} does not have 2 classes"
             if str(self.criterion) == "KLDivLoss()":
                 loss = self.criterion(log_softmax(
                     output, dim=1), softmax(data[1], dim=1))
@@ -254,7 +259,8 @@ class EventTrainer:
             self,
             dataloader: torch.utils.data.DataLoader,
             epoch_no: int, model: nn.Module,
-            disable_tqdm: bool = False
+            disable_tqdm: bool = False,
+            use_activation: bool = True
     ) -> List[float]:
         """
         Run the model on the test set and return validation loss
@@ -274,7 +280,7 @@ class EventTrainer:
         with tqdm(dataloader, unit="batch", disable=disable_tqdm) as tepoch:
             for _, data in enumerate(tepoch):
                 losses = self._val_one_loop(
-                    data=data, losses=losses, model=model)
+                    data=data, losses=losses, model=model, use_activation=use_activation)
                 tepoch.set_description(f"Epoch {epoch_no}")
                 tepoch.set_postfix(loss=sum(losses) /
                                    (len(losses) + 0.0000001))
@@ -284,7 +290,8 @@ class EventTrainer:
             self,
             data: torch.utils.data.DataLoader,
             losses: List[float],
-            model: nn.Module
+            model: nn.Module,
+            use_activation: bool = True
     ) -> List[float]:
         """
         Validate the model on one batch and return the loss.
@@ -300,16 +307,28 @@ class EventTrainer:
             data[0] = data[0].to(self.device).float()
             data[1] = data[1].to(self.device).float()
 
-            if str(model).startswith("MultiResidualBiGRU"):
-                output, _ = model(data[0].to(self.device))
+            # Forward pass with model
+            if use_activation is not None:
+                # If it is an GRU Model, ignore the second output
+                if str(model).startswith("MultiResidualBiGRU"):
+                    output, _ = model(data[0].to(self.device),
+                                      use_activation=use_activation)
+                else:
+                    output = model(data[0].to(self.device),
+                                   use_activation=use_activation)
             else:
-                output = model(data[0].to(self.device))
+                if str(model).startswith("MultiResidualBiGRU"):
+                    output, _ = model(data[0].to(self.device))
+                else:
+                    output = model(data[0].to(self.device))
 
             # Assert output is in correct format
-            assert output.shape[1] == data[1].shape[1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
+            assert output.shape[1] == data[1].shape[
+                1], f"Output shape {tuple(output.shape)} is not equal to target shape {tuple(data[1].shape)}"
             assert output.shape[1] == data_info.window_size, \
                 f"Output shape {tuple(output.shape[1])} is not equal to window size {data_info.window_size}, check if model output is correct"
-            assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"  # TODO: Describe magic number 2
+            # TODO: Describe magic number 2
+            assert output.shape[2] == 2, f"Output shape {tuple(output.shape)} does not have 2 classes"
 
             # Calculate loss
             if self.mask_unlabeled:

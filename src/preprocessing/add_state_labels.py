@@ -1,9 +1,8 @@
-import json
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-import warnings
 from tqdm import tqdm
 
 from ..logger.logger import logger
@@ -18,14 +17,11 @@ class AddStateLabels(PP):
     The values are 0 for asleep, 1 for awake, and 2 for unlabeled.
 
     :param events_path: the path to the events csv file
-    :param id_encoding_path: the path to the encoding file of the series id
     :param use_similarity_nan: If True, use the similarity_nan column to fill in the awake column
     :param fill_limit: The maximum number of steps to fill in the awake column
     :param nan_tolerance_window: The number of steps to tolerate NaNs before filling in the awake column
     """
-
     events_path: str
-    id_encoding_path: str
     use_similarity_nan: bool
     fill_limit: int | None = None
     nan_tolerance_window: int = 1
@@ -47,7 +43,6 @@ class AddStateLabels(PP):
         :raises FileNotFoundError: If the events csv or id_encoding json file is not found
         """
         self.events = pd.read_csv(self.events_path)
-        self.id_encoding = json.load(open(self.id_encoding_path))
         res = self.preprocess(data)
         del self.events
         return res
@@ -60,21 +55,21 @@ class AddStateLabels(PP):
         """
 
         # Initialize the awake column as 42, to catch errors later (-1 not possible in uint8)
+
         for sid in data.keys():
             data[sid]['awake'] = 42
             data[sid]['awake'] = data[sid]['awake'].astype('uint8')
 
-        # apply encoding to events
-        self.events['series_id'] = self.events['series_id'].map(self.id_encoding)
+        # get columns from some arbitrary frame
+        columns = next(iter(data.values())).columns
 
         # Hand-picked weird cases, with unlabeled, non-nan tails
         # the ids are hard-coded as full id strings, require encoding fist
         weird_series = ["0cfc06c129cc", "31011ade7c0a", "55a47ff9dc8a", "a596ad0b82aa", "a9a2f7fac455"]
-        weird_series_encoded = [self.id_encoding[sid] for sid in weird_series if sid in self.id_encoding]
 
         # iterate over the series and set the awake column
         if self.use_similarity_nan:
-            similarity_cols = [col for col in data[0].columns if col.endswith('similarity_nan')]
+            similarity_cols = [col for col in columns if col.endswith('similarity_nan')]
             if len(similarity_cols) == 0:
                 raise Exception("No (f_)similarity_nan column found, but use_similarity_nan is set to True")
             tqdm.pandas()
@@ -83,7 +78,7 @@ class AddStateLabels(PP):
         else:
             tqdm.pandas()
             for sid in data.keys():
-                data[sid] = self.set_awake(data[sid], weird_series_encoded, sid).reset_index(drop=True)
+                data[sid] = self.set_awake(data[sid], weird_series, sid).reset_index(drop=True)
 
         return data
 

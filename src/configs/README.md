@@ -680,7 +680,7 @@ Configures how plots are generated.
     }
 ```
 
-## Similarity filtering
+## Similarity filtering (deprecated)
 Apply a filter to the timestamp predictions, based on similarity to other windows.
 Requires the similarity_nan preprocessing step. Can be removed from the 
 If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to nan.

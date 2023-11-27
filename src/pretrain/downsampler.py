@@ -46,7 +46,7 @@ class Downsampler:
         # Convert to numpy array
         y = y.to_numpy()
 
-        logger.info("Shape of y before downsampling: " + str(y.shape))
+        logger.debug("Shape of y before downsampling: " + str(y.shape))
 
         # Check if the data can be downsampled and see if it is divisible by the factor
         if y.shape[0] % data_info.downsampling_factor != 0:
@@ -91,7 +91,7 @@ class Downsampler:
             raise DownsampleException(f"Data cannot be downsampled by factor {data_info.downsampling_factor}")
         # Print the shape of the data
 
-        logger.info("Shape of X before down sampling: " + str(X.shape))
+        logger.debug("Shape of X before down sampling: " + str(X.shape))
 
         new_X = []
         new_X_names = []

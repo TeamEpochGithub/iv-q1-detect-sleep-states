@@ -33,8 +33,16 @@
   ],
   "feature_engineering": [
     {
+      "kind": "sun",
+      "sun_features": [
+        "azimuth",
+        "altitude"
+      ]
+    },
+    {
       "kind": "time",
       "time_features": [
+        "weekday",
         "hour",
         "minute"
       ]
@@ -43,24 +51,10 @@
       "kind": "parser",
       "feats": [
         "anglez_diff_abs",
-        "anglez_diff_abs_median_1000",
-        "anglez_diff_abs_clip_10_skew_1000",
         "anglez_diff_abs_clip_10_savgol_180",
-        "anglez_diff_abs_clip_10_median_180",
-        "enmo_std_90",
-        "anglez_diff_abs_clip_10_max_36",
-        "enmo_std_50",
-        "anglez_diff_abs_clip_10_mean_1000",
         "anglez_diff_abs_clip_10_savgol_180_diff",
-        "anglez_diff_abs_clip_10_savgol_1000_diff",
-        "anglez_diff_abs_clip_10_median_360"
-      ]
-    },
-    {
-      "kind": "sun",
-      "sun_features": [
-        "azimuth",
-        "altitude"
+        "anglez_diff_abs_clip_10_median_180",
+        "anglez_diff_abs_clip_10_skew_1000"
       ]
     }
   ],
@@ -90,12 +84,12 @@
   "architecture": {
     "type": "event-res-gru",
     "loss": "shrinkage-loss",
-    "epochs": 100,
-    "batch_size": 32,
+    "epochs": 10,
+    "batch_size": 64,
     "optimizer": "adam-torch",
     "early_stopping": 15,
     "activation_delay": 15,
-    "lr": 0.01,
+    "lr": 0.02,
     "network_params": {
       "hidden_size": 8,
       "n_layers": 5,

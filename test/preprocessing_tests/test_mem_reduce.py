@@ -2,12 +2,13 @@ from unittest import TestCase
 
 import pandas as pd
 
+from src.get_processed_data import mem_usage
 from src.preprocessing.mem_reduce import MemReduce
 
 
 class Test(TestCase):
     def test_repr(self):
-        self.assertEqual("MemReduce(id_encoding_path='dummy')", MemReduce(id_encoding_path='dummy').__repr__())
+        self.assertEqual("MemReduce()", MemReduce().__repr__())
 
     def test_mem_reduce(self):
         # read the data
@@ -22,7 +23,8 @@ class Test(TestCase):
         print('data usage of test_series before mem_reduce:', series_mem_used_before)
         # now do the mem_reduce
 
-        series_mem_used_after = mem_reducer.reduce_mem_usage(train_series)[0].memory_usage().sum()
+        output = mem_reducer.reduce_mem_usage(train_series)
+        series_mem_used_after = mem_usage(output)
         print('data usage of test_series after mem_reduce:', series_mem_used_after)
 
         # assert that memory usage for both dataframes went down

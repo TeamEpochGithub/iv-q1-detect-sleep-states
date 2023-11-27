@@ -21,7 +21,7 @@ class TestFE(TestCase):
         self.assertIsInstance(
             FE.from_config_single({"kind": "time", "time_features": ["day", "hour", "minute", "second"]}), Time)
         self.assertIsInstance(FE.from_config_single({"kind": "rotation"}), Rotation)
-        self.assertRaises(FEException, FE.from_config_single, {"kind": "e"})
+        self.assertRaises(AssertionError, FE.from_config_single, {"kind": "e"})
 
     def test_from_config(self):
         config: dict = {

@@ -1,13 +1,16 @@
 import gc
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 import polars as pl
+from tqdm import tqdm
 
 from ..logger.logger import logger
 from ..preprocessing.pp import PP
+
+PAD_TYPE: dict[str, np.dtype | str] = {'step': np.int32, 'enmo': np.float32, 'anglez': np.float32,
+                                       'timestamp': 'datetime64[ns, UTC]'}
 
 
 @dataclass
@@ -15,77 +18,44 @@ class MemReduce(PP):
     """Preprocessing step that reduces the memory usage of the data
 
     It will reduce the memory usage of the data by changing the data types of the columns.
-    :param id_encoding_path: the path to the encoding file of the series id
     """
-    id_encoding_path: str | None = None
 
-    _encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
-
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Run the preprocessing step.
-
-        :param data: the data to preprocess
-        :return: the preprocessed data
-        """
-
-        return self.preprocess(data)
-
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: pd.DataFrame) -> dict[str, pd.DataFrame]:
         """Preprocess the data by reducing the memory usage of the data.
 
-        :param data: the dataframe to preprocess
-        :return: the preprocessed dataframe
+        :param data: the dataframe with columns 'series_id', 'step', 'timestamp', 'enmo', and 'anglez'
+        :return: the dataframe with the same columns using more efficient data types
         """
         return self.reduce_mem_usage(data)
 
-    def reduce_mem_usage(self, data: pd.DataFrame) -> pd.DataFrame:
+    def reduce_mem_usage(self, data: pd.DataFrame) -> dict[str, pd.DataFrame]:
         """Reduce the memory usage of the data.
 
-        :param data: the dataframe to reduce
-        :return: the reduced dataframe
+        :param data: the dataframe with columns 'series_id', 'step', 'timestamp', 'enmo', and 'anglez'
+        :return: the dataframe with the same columns using more efficient data types
         """
-        # we should make the series id in to an int16
-        # and save an encoding (a dict) as a json file somewhere
-        # so, we can decode it later
+
+        # convert series_id to int temporarily
         sids = data['series_id'].unique()
-        encoding = dict(zip(sids, range(len(sids))))
+        mapping = {sid: i for i, sid in enumerate(sids)}
+        data['series_id'] = data['series_id'].map(mapping)
 
-        if self.id_encoding_path is None:
-            logger.warning("No encoding path given, not saving encoding")
-        else:
-            logger.debug(f"------ Saving series encoding to {self.id_encoding_path}")
-
-            with open(self.id_encoding_path, 'w') as f:
-                json.dump(encoding, f)
-
-            logger.debug(f"------ Done saving series encoding to {self.id_encoding_path}")
-
-        data['series_id'] = data['series_id'].map(encoding).astype('int16')
-
+        # Using Polars to convert timestamp to datetime because it is much faster
         timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))
-
-        utc = timestamp_pl.str.slice(21, 1).cast(pl.UInt16)
-        timestamp_pl = timestamp_pl.str.slice(0, 19)
-
-        timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S", time_unit='ms')
+        timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S%z", time_unit='ns')
         logger.debug("------ Done converting timestamp to datetime")
-        data['timestamp'] = timestamp_pl
-        data['utc'] = utc
+        data['timestamp'] = timestamp_pl.to_pandas()
 
         del timestamp_pl
         gc.collect()
 
-        pad_type = {'step': np.int32, 'series_id': np.uint16, 'enmo': np.float32,
-                    'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
-        data = data.astype(pad_type)
+        data = data.astype(PAD_TYPE)
         gc.collect()
-        # make a dictionary of the series id and the data
-        # without the series_id column because it is the key for that series anyway
+
+        # store each series in a different dict entry
         dfs_dict = {}
-        # uses less memeory than this
-        # dfs_dict = {key: group.iloc[:, 1:] for key, group in data.groupby('series_id')}
-        for sid in encoding.values():
-            dfs_dict[sid] = data[data['series_id'] == sid].drop(columns=['series_id'])
+        for name, encoded in tqdm(mapping.items(), desc="Storing each series in a different dict entry"):
+            dfs_dict[name] = data[data['series_id'] == encoded].drop(columns=['series_id']).reset_index(drop=True)
         del data
         gc.collect()
         return dfs_dict

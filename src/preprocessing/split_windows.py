@@ -24,25 +24,19 @@ class SplitWindows(PP):
         """Initialize the SplitWindows class."""
         self._steps_before = (self.start_hour * 60 * 12)
 
-    def __repr__(self) -> str:
-        """Return a string representation of a SplitWindows object"""
-        return f"{self.__class__.__name__}(start_hour={self.start_hour})"
-
-    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+    def preprocess(self, data: dict) -> dict:
         """Preprocess the data by splitting it into 24h windows.
 
-        :param df: the data without windows
+        :param data: the data without windows
         :return: the preprocessed data with window numbers
         """
 
         # Pad the series with 0s
         # Loop through the series_ids
-
         for sid in tqdm(data.keys()):
             data[sid] = self.pad_series(data[sid]).reset_index(0, drop=True)
             data[sid] = self.preprocess_series(data[sid]).reset_index(0, drop=True)
 
-        # df = self.clip_enmo_df(df)
         return data
 
     def preprocess_series(self, series: pd.DataFrame) -> pd.DataFrame:
@@ -62,16 +56,14 @@ class SplitWindows(PP):
         gc.collect()
 
         # Pad types
-        pad_type = {'step': np.int32,
-                    'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
+        pad_type = {'step': np.int32, 'enmo': np.float32, 'anglez': np.float32, 'timestamp': 'datetime64[ns, UTC]'}
 
         optionals = {  # (data_type, default_val for padding)
             'awake': (np.uint8, 3),
             'state-onset': (np.float32, 0),
             'state-wakeup': (np.float32, 0),
             'f_similarity_nan': (np.float32, 0),
-            'similarity_nan': (np.float32, 0),
-            'utc': (np.uint16, 0),
+            'similarity_nan': (np.float32, 0)
         }
 
         # set the data types for the optional columns
@@ -105,7 +97,6 @@ class SplitWindows(PP):
         start_pad_df = pd.DataFrame({'timestamp': timestamps,
                                      'enmo': np.zeros(amount_of_padding_start),
                                      'anglez': np.zeros(amount_of_padding_start),
-                                     'utc': np.zeros(amount_of_padding_start),
                                      'step': step})
 
         # only pad the optional columns if they exist
@@ -131,7 +122,6 @@ class SplitWindows(PP):
         end_pad_df = pd.DataFrame({'timestamp': timestamps,
                                    'enmo': np.zeros(amount_of_padding_end),
                                    'anglez': np.zeros(amount_of_padding_end),
-                                   'utc': np.zeros(amount_of_padding_end),
                                    'step': step})
 
         # only pad the optional columns if they exist
@@ -141,6 +131,6 @@ class SplitWindows(PP):
 
         # Concatenate the dfs
         dfs_to_concat = [start_pad_df, group, end_pad_df]
-        group = pd.concat(dfs_to_concat, ignore_index=True)
+        group = pd.concat([df for df in dfs_to_concat if not df.empty], ignore_index=True)
 
         return group.astype(pad_type)

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, TypeAlias
 
 import pandas as pd
-import copy
 
-from ..logger.logger import logger
+JSON: TypeAlias = None | int | str | bool | list['JSON'] | dict[str, 'JSON']
 
 
 @dataclass
@@ -18,7 +18,7 @@ class FE(ABC):
     """
 
     @staticmethod
-    def from_config_single(config: dict) -> FE:
+    def from_config_single(config: dict[str, JSON]) -> FE:
         """Parse the config of a single feature engineering step and return the feature engineering step.
 
         :param config: the config of a single feature engineering step
@@ -27,9 +27,7 @@ class FE(ABC):
         config_copy = copy.deepcopy(config)
         kind: str = config_copy.pop("kind", None)
 
-        if kind is None:
-            logger.critical("No kind specified for feature engineering step")
-            raise FEException("No kind specified for feature engineering step")
+        assert kind is not None, "No kind specified for feature engineering step"
 
         from .kurtosis import Kurtosis
         from .mean import Mean
@@ -57,14 +55,11 @@ class FE(ABC):
             "parser": Parser
         }
 
-        try:
-            return _FEATURE_ENGINEERING_KINDS[kind](**config_copy)
-        except KeyError:
-            logger.critical(f"Unknown feature engineering step: {kind}")
-            raise FEException(f"Unknown feature engineering step: {kind}")
+        assert kind in _FEATURE_ENGINEERING_KINDS, f"Unknown feature engineering step: {kind=}"
+        return _FEATURE_ENGINEERING_KINDS[kind](**config_copy)
 
     @staticmethod
-    def from_config(config_list: list[dict]) -> list[FE]:
+    def from_config(config_list: list[dict[str, JSON]]) -> list[FE]:
         """Parse the config list of feature engineering steps and return the feature engineering steps.
 
         It also filters out the steps that are only for training.

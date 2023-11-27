@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Final
 
-import pandas as pd
 import copy
 
 from ..logger.logger import logger

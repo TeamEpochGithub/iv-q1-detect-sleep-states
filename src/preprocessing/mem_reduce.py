@@ -1,5 +1,4 @@
 import gc
-import json
 from dataclasses import dataclass, field
 
 import numpy as np

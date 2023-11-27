@@ -1,8 +1,8 @@
 import gc
-import json
 
 import numpy as np
 import pandas as pd
+
 from src import data_info
 from src.logger.logger import logger
 
@@ -46,8 +46,9 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     df = res.melt(id_vars=['series_id', 'window'], value_vars=['onset', 'wakeup'], var_name='event', value_name='step').sort_values(
         by=['series_id', 'window', 'step'])
 
-    df_conf = res.melt(id_vars=['series_id', 'window'], value_vars=['onset_confidence', 'wakeup_confidence'], var_name='event',
-                               value_name='confidence').sort_values(by=['series_id', 'window', 'confidence'])
+    df_conf = res.melt(id_vars=['series_id', 'window'], value_vars=['onset_confidence', 'wakeup_confidence'],
+                       var_name='event',
+                       value_name='confidence').sort_values(by=['series_id', 'window', 'confidence'])
 
     df['score'] = df_conf['confidence']
 

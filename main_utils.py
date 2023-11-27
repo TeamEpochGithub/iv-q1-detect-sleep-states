@@ -155,15 +155,11 @@ def scoring(config: ConfigLoader) -> None:
     # compute confusion matrix for making predictions or not
     compute_nan_confusion_matrix(submission, solution, data_info.window_info)
 
-    # the plot function applies encoding to the submission
-    # we do not want to change the ids on the original submission
-    plot_submission = submission.copy()
-
     # pass only the test data
     logger.info('Creating plots...')
 
     # TODO make plots work again with ensemble, which featured data to use?
-    # plot_preds_on_series(plot_submission,
+    # plot_preds_on_series(submission,
     #                      featured_data[
     #                          featured_data['series_id'].isin(test_ids)],
     #                      number_of_series_to_plot=config.get_number_of_plots(),

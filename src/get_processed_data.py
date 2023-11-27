@@ -3,8 +3,7 @@ import os
 import tracemalloc
 
 import pandas as pd
-import numpy as np
-import json
+from tqdm import tqdm
 
 from src import data_info
 from src.configs.load_model_config import ModelConfigLoader
@@ -12,8 +11,6 @@ from src.feature_engineering.feature_engineering import FE
 from src.logger.logger import logger
 from src.preprocessing.pp import PP
 from src.util.hash_config import hash_config
-from tqdm import tqdm
-
 from src.util.submissionformat import set_window_info
 
 _STEP_HASH_LENGTH = 5

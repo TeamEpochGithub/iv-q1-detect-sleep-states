@@ -51,7 +51,7 @@
         },
         {
             "kind": "add_weather",
-            "weather_data_path": "./data/raw/weather.csv",
+            "weather_data_path": "./data/external/weather.csv",
             "weather_features": ["temp", "dwpt", "rhum", "prcp", "snow", "wdir", "wspd", "wpgt", "pres", "tsun", "coco"]
         }
     ],

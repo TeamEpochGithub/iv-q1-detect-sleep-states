@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 from src.feature_engineering.feature_engineering import FE
 
-_WEATHER_FEATURES: Final[set[str]] = {"temp", "dwpt", "rhum", "prcp", "snow", "wdir", "wspd", "wpgt", "pres", "tsun", "coco"}
+_WEATHER_FEATURES: Final[set[str]] = {'temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt',
+                                      'pres', 'tsun', 'coco'}
 
 
 @dataclass
@@ -19,7 +20,7 @@ class AddWeather(FE):
     Make sure to download the weather data first using src/misc/download_weather_data.py,
     since we cannot retrieve that data on Kaggle.
 
-    The following features are supported: "temp", "dwpt", "rhum", "prcp", "snow", "wdir", "wspd", "wpgt", "pres", "tsun", "coco"
+    The following features are supported: 'temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco'
     For more information about the weather features, see https://dev.meteostat.net/python/hourly.html#data-structure
 
     :param weather_data_path: the path to the weather data
@@ -33,7 +34,7 @@ class AddWeather(FE):
     def __post_init__(self) -> None:
         """Check if the weather features are supported"""
         assert all(weather_feature in _WEATHER_FEATURES for weather_feature in self.weather_features), \
-            f"Unknown weather features: {self.weather_features}"
+            f"Unknown {self.weather_features = }"
 
     def run(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
         """Read the weather data
@@ -61,7 +62,7 @@ class AddWeather(FE):
         :param data: the data to process with timestamp columns
         :return: the processed data with the columns in weather_features
         """
-        assert {"timestamp", "utc"}.issubset(set(next(iter(data.values())).columns)), "The timestamp and/or UTC columns are missing!"
+        assert {'timestamp', 'utc'}.issubset(set(next(iter(data.values())).columns)), "The timestamp and/or UTC columns are missing!"
 
         # TODO Crashes when there is a series affected by DST (first occurrence at index 7)
         for sid, _ in tqdm(data.items()):
@@ -70,6 +71,6 @@ class AddWeather(FE):
             data[sid]['temp_timestamp'] = pd.to_datetime(data[sid]['timestamp'] + pd.to_timedelta(data[sid]['utc'], unit='h'), utc=True, errors='raise')
             assert is_datetime64tz_dtype(data[sid]['temp_timestamp']), \
                 f"The data (id={sid}) timestamp column (dtype={data[sid]['temp_timestamp'].dtype}) is not of type 'datetime64[ns, UTC]'!"
-            data[sid] = pd.merge_asof(data[sid], self._weather_data[["timestamp"] + self.weather_features], left_on="temp_timestamp", right_on="timestamp", direction="nearest")
+            data[sid] = pd.merge_asof(data[sid], self._weather_data[['timestamp'] + self.weather_features], left_on='temp_timestamp', right_on='timestamp', direction='nearest')
 
         return data

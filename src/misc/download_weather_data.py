@@ -7,7 +7,7 @@ from meteostat import Point, Hourly
 START_DATE = datetime(2017, 1, 1)
 END_DATE = datetime(2022, 12, 31)
 LOCATION = Point(40.730610, -73.935242)  # New York City
-FILE_NAME = Path(__file__).parent.parent.parent / 'data' / 'raw' / 'weather.csv'
+FILE_NAME = Path(__file__).parent.parent.parent / 'data' / 'external' / 'weather.csv'
 
 
 def download_weather_data() -> None:

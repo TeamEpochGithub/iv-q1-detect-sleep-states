@@ -382,7 +382,7 @@ class EventModel:
             all_confidences.append(confidences)
 
         # Return numpy array
-        return np.array(all_predictions), np.array(all_confidences)
+        return all_predictions, all_confidences
 
     def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
         """

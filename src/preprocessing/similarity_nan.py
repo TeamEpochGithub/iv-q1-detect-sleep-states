@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 from src import data_info
@@ -21,7 +22,7 @@ class SimilarityNan(PP):
             data[sid] = self.similarity_nan(data[sid])
         return data
 
-    def similarity_nan(self, series):
+    def similarity_nan(self, series: pd.DataFrame) -> pd.DataFrame:
         """Computes the similarity of each point to that at the same time in the last 24h hours"""
         col_name = 'f_similarity_nan' if self.as_feature else 'similarity_nan'
 

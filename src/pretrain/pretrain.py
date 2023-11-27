@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import gc
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
+from tqdm import tqdm
 
 from .. import data_info
 from ..logger.logger import logger
@@ -48,7 +51,7 @@ class Pretrain:
 
         return Pretrain(scaler, downsampler, test_size)
 
-    def pretrain_split(self, df: pd.DataFrame) -> (
+    def pretrain_split(self, data: dict) -> (
             np.array, np.array, np.array, np.array, np.array, np.array, np.array):
         """Prepare the data for training
 
@@ -59,26 +62,70 @@ class Pretrain:
         :return: the train data, test data, train labels, test labels, train indices, test indices, and groups
         """
 
-        train_data, test_data, train_idx, test_idx = self.train_test_split(df, test_size=self.test_size)
-
-        X_train, y_train = self.split_on_labels(train_data)
-        X_test, y_test = self.split_on_labels(test_data)
-
-        # Apply downsampling
         if self.downsampler is not None:
             logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
             data_info.window_size_before = data_info.window_size
             data_info.window_size = data_info.window_size // data_info.downsampling_factor
-            X_train = self.downsampler.downsampleX(X_train)
-            X_test = self.downsampler.downsampleX(X_test)
-            y_train = self.downsampler.downsampleY(y_train)
-            y_test = self.downsampler.downsampleY(y_test)
+
+        sids = list(data.keys())
+        sids.sort()
+        train_ids, test_ids = self.train_test_split(data, test_size=self.test_size)
+
+        X_train_list = []
+        y_train_list = []
+        X_test_list = []
+        y_test_list = []
+        groups_list = []
+
+        for enc, sid in enumerate(tqdm(sids, desc="Splitting labels and downsampling")):
+            X, y = self.split_on_labels(data[sid])
+
+            # Apply downsampling
+            if self.downsampler is not None:
+                X = self.downsampler.downsampleX(X)
+                y = self.downsampler.downsampleY(y)
+
+            # Add group as encoded series id integer. encoding does not have to be saved,
+            # it just needs a unique number per series so GroupShuffleSplit can use it
+            num_windows = X.shape[0] // data_info.window_size
+            group = enc * np.ones(num_windows)
+
+            if sid in train_ids:
+                X_train_list.append(X)
+                y_train_list.append(y)
+                groups_list.append(group)
+            else:
+                X_test_list.append(X)
+                y_test_list.append(y)
+            del data[sid]
+            gc.collect()
+
+        logger.info("Concatenating data")
+        X_train = pd.concat(X_train_list)
+        del X_train_list
+        gc.collect()
+
+        y_train = pd.concat(y_train_list)
+        del y_train_list
+        gc.collect()
+
+        X_test = pd.concat(X_test_list)
+        del X_test_list
+        gc.collect()
+
+        y_test = pd.concat(y_test_list)
+        del y_test_list
+        gc.collect()
+
+        groups = np.concatenate(groups_list)
+        del groups_list
+        gc.collect()
 
         # Store column names
         data_info.X_columns = {column: i for i, column in enumerate(X_train.columns)}
         data_info.y_columns = {column: i for i, column in enumerate(y_train.columns)}
 
-        # Apply scaler and convert to numpy
+        logger.info("Fitting scaler and reshaping data")
         X_train = self.scaler.fit_transform(X_train).astype(np.float32)
         X_test = self.scaler.transform(X_test).astype(np.float32)
         y_train = y_train.to_numpy(dtype=np.float32)
@@ -89,87 +136,119 @@ class Pretrain:
         y_train = self.to_windows(y_train)
         y_test = self.to_windows(y_test)
 
-        groups = y_train[:, 0, -1]
-        y_train = y_train[:, :, :-1]
-        y_test = y_test[:, :, :-1]
+        return X_train, X_test, y_train, y_test, train_ids, test_ids, groups
 
-        return X_train, X_test, y_train, y_test, train_idx, test_idx, groups
-
-    def pretrain_final(self, df: pd.DataFrame) -> (np.array, np.array, np.array):
+    def pretrain_final(self, data: dict) -> (np.array, np.array, np.array):
         """Prepare the data for training
 
         It splits the data into train and test sets, standardizes the data according to the train set,
         splits the data into features and labels, and converts the data to a numpy array of shape (window, window_size, n_features).
 
-        :param df: the dataframe to pretrain on
+        :param data: the dataframes to pretrain on
         :return: the train data, test data, train labels, test labels, train indices and test indices
         """
 
-        # Get the window size from the data (group by window feature and get the size of the first group)
-
-        X_train, y_train = self.split_on_labels(df)
-
-        # Apply downsampling
         if self.downsampler is not None:
             logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
             data_info.window_size_before = data_info.window_size
             data_info.window_size = data_info.window_size // data_info.downsampling_factor
-            X_train = self.downsampler.downsampleX(X_train)
-            y_train = self.downsampler.downsampleY(y_train)
+
+        X_list = []
+        y_list = []
+
+        sids = list(data.keys())
+        sids.sort()
+        for sid in tqdm(sids, desc="Splitting labels and downsampling"):
+            X_data, y_data = self.split_on_labels(data[sid])
+
+            # Apply downsampling
+            if self.downsampler is not None:
+                X_data = self.downsampler.downsampleX(X_data)
+                y_data = self.downsampler.downsampleY(y_data)
+
+            X_list.append(X_data)
+            y_list.append(y_data)
+
+            del data[sid]
+            gc.collect()
+
+        logger.info("Concatenating data")
+        X_data = pd.concat(X_list)
+        del X_list
+        gc.collect()
+
+        y_data = pd.concat(y_list)
+        del y_list
+        gc.collect()
 
         # Store column names
-        data_info.X_columns = {column: i for i, column in enumerate(X_train.columns)}
-        data_info.y_columns = {column: i for i, column in enumerate(y_train.columns)}
+        data_info.X_columns = {column: i for i, column in enumerate(X_data.columns)}
+        data_info.y_columns = {column: i for i, column in enumerate(y_data.columns)}
 
-        # Apply scaler
-        X_train = self.scaler.fit_transform(X_train).astype(np.float32)
-        y_train = y_train.to_numpy(dtype=np.float32)
+        logger.info("Fitting scaler and reshaping data")
+        X_data = self.scaler.fit_transform(X_data).astype(np.float32)
+        y_data = y_data.to_numpy(dtype=np.float32)
+        gc.collect()
 
-        X_train = self.to_windows(X_train)
-        y_train = self.to_windows(y_train)
+        X_data = self.to_windows(X_data)
+        y_data = self.to_windows(y_data)
 
-        groups = y_train[:, 0, -1]
-        y_train = y_train[:, :, :-1]
+        return X_data, y_data
 
-        return X_train, y_train, groups
-
-    def preprocess(self, x_data: pd.DataFrame) -> np.array:
+    def preprocess(self, data: dict) -> np.array:
         """Prepare the data for submission
 
         The data is supposed to be processed the same way as for the training and testing data.
 
-        :param x_data: the dataframe to preprocess
+        :param data: the dataframes to preprocess with the series id as key
         :return: the processed data
         """
-        x_data = self.get_features(x_data)
 
-        # Apply downsampling
         if self.downsampler is not None:
             logger.info(f"Downsampling data with factor {data_info.downsampling_factor}")
             data_info.window_size_before = data_info.window_size
             data_info.window_size = data_info.window_size // data_info.downsampling_factor
-            x_data = self.downsampler.downsampleX(x_data)
 
-        data_info.X_columns = {column: i for i, column in enumerate(x_data.columns)}
+        results = []
 
-        x_data = self.scaler.transform(x_data).astype(np.float32)
-        return self.to_windows(x_data)
+        sids = list(data.keys())
+        sids.sort()
+        for sid in tqdm(sids, desc="Downsampling, scaling and reshaping features"):
+            x_data = self.get_features(data[sid])
+
+            # Apply downsampling
+            if self.downsampler is not None:
+                x_data = self.downsampler.downsampleX(x_data)
+
+            data_info.X_columns = {column: i for i, column in enumerate(x_data.columns)}
+
+            x_data = self.scaler.transform(x_data).astype(np.float32)
+            x_data = self.to_windows(x_data)
+            results.append(x_data)
+
+            del data[sid]
+            gc.collect()
+
+        concat = np.concatenate(results, axis=0)
+        return concat
 
     @staticmethod
-    def train_test_split(df: pd.DataFrame, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
+    def train_test_split(data: dict, test_size: float = 0.2) -> (pd.DataFrame, pd.DataFrame, np.array, np.array):
         """Split data into train and test on series id using GroupShuffleSplit
 
-        :param df: the dataframe to split
-        :param test_size: the size of the test set
-        :return: the train data, test data, train indices and test indices
+        :param data: the dictionary of dataframes to split
+        :return: the train sids and test sids
         """
-        groups = df["series_id"]
-        gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=42)
-        train_idx, test_idx = next(gss.split(df, groups=groups))
-        train_data = df.iloc[train_idx]
-        test_data = df.iloc[test_idx]
 
-        return train_data, test_data, train_idx, test_idx
+        sids = list(data.keys())
+        sids.sort()
+        sids = np.array(sids)
+        gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=42)
+        train_idx, test_idx = next(gss.split(sids, groups=sids))
+        train_series = sids[train_idx]
+        test_series = sids[test_idx]
+
+        return train_series, test_series
 
     @staticmethod
     def get_features(df: pd.DataFrame) -> pd.DataFrame:

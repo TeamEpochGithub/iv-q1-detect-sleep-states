@@ -16,6 +16,7 @@ def compute_nan_confusion_matrix(submission: pd.DataFrame, solution: pd.DataFram
     """
 
     logger.info('Computing confusion matrix for making predictions or not per window')
+    window_info = window_info.copy()
     window_info.set_index(['series_id', 'window'], inplace=True)
     first_offsets: pd.DataFrame = window_info.groupby(level=0).first()['step']
 

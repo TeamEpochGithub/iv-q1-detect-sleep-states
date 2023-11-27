@@ -11,7 +11,12 @@
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
-    "hpo": "spectrogram-sweep.json",
+    "ensemble": {
+        "models": ["spectrogram-sweep.json"],
+        "weights": [1],
+        "comb_method": "confidence_average",
+        "pred_only": true
+    },
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],

@@ -50,7 +50,7 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         # now sum the residual features x and the encoded features x
         x_encoded += x.permute(0, 2, 1)
 
-        y = self.GRU(x_encoded, use_activation=use_activation)
+        y, _ = self.GRU(x_encoded, use_activation=use_activation)
         return y
 
 

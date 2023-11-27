@@ -105,7 +105,7 @@
         "hop_length": 18,
         "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
-        "mask_unlabeled": true,
+        "mask_unlabeled": false,
         "clip_awake": true,
         "use_activation": true,
         "use_auxiliary_awake": true,

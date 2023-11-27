@@ -17,6 +17,7 @@ from src.util.state_to_event import pred_to_event_state
 from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 
 class EventModel:
@@ -297,7 +298,7 @@ class EventModel:
                 batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
-                if str(self.model).startswith("MultiResidualBiGRU"):
+                if isinstance(self.model, MultiResidualBiGRU):
                     batch_prediction, _ = self.model(batch_data)
                 else:
                     batch_prediction = self.model(batch_data)
@@ -382,7 +383,7 @@ class EventModel:
             all_confidences.append(confidences)
 
         # Return numpy array
-        return np.array(all_predictions), np.array(all_confidences)
+        return all_predictions, all_confidences
 
     def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
         """

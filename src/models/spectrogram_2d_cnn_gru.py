@@ -35,9 +35,9 @@ class EventSegmentation2DCNNGRU(EventModel):
         self.model_type = "Spectrogram_2D_Cnn"
 
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
-        if self.config.get("use_auxiliarly-awake", False):
+        if self.config.get("use_auxiliary_awake", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=3, model_type=self.model_type, config=self.config)
+                                                           out_channels=5, model_type=self.model_type, config=self.config)
         else:
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
                                                            out_channels=2, model_type=self.model_type, config=self.config)

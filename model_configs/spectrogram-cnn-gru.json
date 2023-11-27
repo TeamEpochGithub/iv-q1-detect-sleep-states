@@ -44,6 +44,13 @@
           ]
         },
         {
+          "kind": "sun",
+          "sun_features": [
+            "azimuth",
+            "altitude"
+          ]
+        },
+        {
           "kind": "parser",
           "feats": [
             "anglez_diff_abs",
@@ -59,14 +66,8 @@
             "anglez_diff_abs_clip_10_savgol_1000_diff",
             "anglez_diff_abs_clip_10_median_360"
           ]
-        },
-        {
-          "kind": "sun",
-          "sun_features": [
-            "azimuth",
-            "altitude"
-          ]
         }
+        
       ],
       "pretraining": {
         "downsample": {

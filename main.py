@@ -157,7 +157,7 @@ if __name__ == "__main__":
     config_loader: ConfigLoader = ConfigLoader("config.json")
 
     # Gotta sweep
-    if config_loader.get_hpo():
+    if config_loader.get_hpo() and False:
         mp3_file_path = "gotta_sweep.mp3"  # Replace with the path to your MP3 file
         play_mp3(mp3_file_path)
         try:

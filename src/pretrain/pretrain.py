@@ -87,7 +87,8 @@ class Pretrain:
 
             # Add group as encoded series id integer. encoding does not have to be saved,
             # it just needs a unique number per series so GroupShuffleSplit can use it
-            group = enc * np.ones(X.shape[0])
+            num_windows = X.shape[0] // data_info.window_size
+            group = enc * np.ones(num_windows)
 
             if sid in train_ids:
                 X_train_list.append(X)

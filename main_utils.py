@@ -53,7 +53,7 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
     logger.info("Splitting data into train and test...")
     data_info.substage = "pretrain_split"
 
-    x_train, x_test, y_train, y_test, train_idx, _, groups = get_pretrain_split_cache(
+    x_train, x_test, y_train, y_test, train_ids, _, groups = get_pretrain_split_cache(
         model_config, featured_data, save_output=True)
 
     logger.info("X Train data shape (size, window_size, features): " + str(
@@ -89,11 +89,11 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
         data_info.stage = "cv"
 
         # It now only saves the trained model from the last fold
-        train_df = featured_data.iloc[train_idx]
+        train_window_info = data_info.window_info[data_info.window_info['series_id'].isin(train_ids)]
 
         # Apply CV
         scores = cv.cross_validate(
-            model, x_train, y_train, train_df=train_df, groups=groups)
+            model, x_train, y_train, train_window_info=train_window_info, groups=groups)
 
         # Log scores to wandb
         mean_scores = np.mean(scores, axis=0)
@@ -130,9 +130,6 @@ def scoring(config: ConfigLoader) -> None:
 
     # Get ensemble
     ensemble = config.get_ensemble()
-
-    # Get config hash
-    config_hash = hash_config(config.get_config(), length=16)
 
     # Make predictions on test data
     predictions = ensemble.pred(

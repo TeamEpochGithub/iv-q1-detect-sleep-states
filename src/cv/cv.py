@@ -30,10 +30,10 @@ _SPLITTERS: dict[str] = {
 }
 
 _SCORERS: dict[str, Callable[[...], float]] = {
-    "score_full": lambda data, y_pred, idx: compute_score_full(
-        *(from_numpy_to_submission_format(data, y_pred, idx))),
-    "score_clean": lambda data, y_pred, idx: compute_score_clean(
-        *(from_numpy_to_submission_format(data, y_pred, idx)))
+    "score_full": lambda info, y_pred: compute_score_full(
+        *(from_numpy_to_submission_format(info, y_pred))),
+    "score_clean": lambda info, y_pred: compute_score_clean(
+        *(from_numpy_to_submission_format(info, y_pred)))
 }
 
 
@@ -83,7 +83,7 @@ class CV:
             raise CVException("Unknown CV splitter %s", splitter)
         self.scoring = _get_scoring(scoring)
 
-    def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, train_df: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
+    def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, train_window_info: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
         """Evaluate the model using the CV method
 
         Run the cross-validation as specified in the config.
@@ -94,7 +94,7 @@ class CV:
         :param model: the model to evaluate with methods `train` and `pred`
         :param data: the data to fit of shape (X_train[0], window_size, n_features)
         :param labels: the labels of shape (X_train[0], window_size, features)
-        :param train_df: the full train dataframe
+        :param train_window_info: the window info for the training split
         :param groups: the group labels used while splitting the data of shape (size, ) or None for no grouping
         :return: the scores of all folds of shape (n_splits, n_scorers)
         """
@@ -118,12 +118,15 @@ class CV:
             model.reset_optimizer()
             model.reset_scheduler()
 
+            # Get the window info for scoring
+            validate_window_info = train_window_info.iloc[validate_idx]
+
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(train_df, y_pred, validate_idx)
+                score = [scorer(validate_window_info, y_pred)
                          for scorer in self.scoring]
             else:
-                score = self.scoring(train_df, y_pred, validate_idx)
+                score = self.scoring(validate_window_info, y_pred)
 
             scores.append(score)
 

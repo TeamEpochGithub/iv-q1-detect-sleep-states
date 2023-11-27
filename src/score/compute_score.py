@@ -120,7 +120,7 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
     return score_clean
 
 
-def from_numpy_to_submission_format(train_df: pd.DataFrame, y_pred: np.ndarray, validate_idx: np.array) -> (pd.DataFrame, pd.DataFrame):
+def from_numpy_to_submission_format(validate_window_info: pd.DataFrame, y_pred: np.ndarray,) -> (pd.DataFrame, pd.DataFrame):
     """Turn the numpy y_pred and the train events file into a solution and submission dataframes.
 
     While you probably want to compare y_pred with y_true, it seems that that is not possible in our case.
@@ -136,30 +136,11 @@ def from_numpy_to_submission_format(train_df: pd.DataFrame, y_pred: np.ndarray, 
     :return: the submission [0] and solution [1] which can be used by compute_score_full & compute_score_clean
     """
 
-    total_arr = []
-    # Reconstruct the original indices to access the data from train_main
-    for i in validate_idx:
-        arr = np.arange(i * data_info.window_size_before, (i + 1) * data_info.window_size_before)
-        total_arr.append(arr)
-    data_validate_idx = np.concatenate(total_arr)
-
-    # Complete labelled data of current test split
-    test_cv = train_df.iloc[data_validate_idx]
-    # Prepare submission (prediction of the model)
-    window_info_test_cv = (test_cv[['series_id', 'window', 'step']]
-                           .groupby(['series_id', 'window'])
-                           .apply(lambda x: x.iloc[0]))
-
-    # Retrieve submission made by the model on the train split in the cv
-    submission = to_submission_format(y_pred, window_info_test_cv)
+    # Combine predictions with window info to generate submission dataframe with series ids and proper offsets
+    submission = to_submission_format(y_pred, validate_window_info)
 
     # Prepare solution
-    test_series_ids = window_info_test_cv['series_id'].unique()
-    # Load the encoding
-    with open('./series_id_encoding.json', 'r') as f:
-        encoding = json.load(f)
-    decoding = {v: k for k, v in encoding.items()}
-    test_series_ids = [decoding[sid] for sid in test_series_ids]
+    test_series_ids = validate_window_info['series_id'].unique()
 
     # Load the train events from file
     solution = (pd.read_csv("data/raw/train_events.csv")

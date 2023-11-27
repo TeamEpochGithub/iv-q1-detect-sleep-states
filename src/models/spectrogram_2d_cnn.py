@@ -272,9 +272,9 @@ class EventSegmentation2DCNN(EventModel):
         Reset the weights of the model. Useful for retraining the model.
         """
         torch.manual_seed(42)
-        if self.config.get("use_awake_channel", False):
+        if self.config.get("use_auxiliary_awake", False):
             self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+                in_channels=len(data_info.X_columns), out_channels=5, model_type=self.model_type, config=self.config)
         else:
             self.model = SpectrogramEncoderDecoder(
                 in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)

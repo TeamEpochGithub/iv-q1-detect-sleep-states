@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.feature_engineering.feature_engineering import FE, FEException
+from src.feature_engineering.feature_engineering import FE
 from src.feature_engineering.kurtosis import Kurtosis
 from src.feature_engineering.mean import Mean
 from src.feature_engineering.rotation import Rotation

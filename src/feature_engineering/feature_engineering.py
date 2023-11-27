@@ -9,6 +9,7 @@ import copy
 
 from ..logger.logger import logger
 
+
 @dataclass
 class FE(ABC):
     """
@@ -38,6 +39,7 @@ class FE(ABC):
         from .sun import Sun
         from .sin_hour import SinHour
         from .add_holidays import AddHolidays
+        from .parser import Parser
         from .add_school_hours import AddSchoolHours
         from .add_weather import AddWeather
 
@@ -52,6 +54,7 @@ class FE(ABC):
             "add_holidays": AddHolidays,
             "add_school_hours": AddSchoolHours,
             "add_weather": AddWeather,
+            "parser": Parser
         }
 
         try:

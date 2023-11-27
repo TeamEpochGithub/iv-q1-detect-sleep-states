@@ -56,6 +56,9 @@ class EventSegmentationTransformer(EventModel):
             "threshold": 0.0,
             "mask_unlabeled": False,
             "use_auxiliary_awake": False,
+            "attention": {
+                "type": "normal"
+            },
             "lr_schedule": {
                 "t_initial": 100,
                 "warmup_t": 5,

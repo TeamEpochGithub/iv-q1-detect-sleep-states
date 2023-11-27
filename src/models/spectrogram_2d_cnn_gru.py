@@ -269,9 +269,9 @@ class EventSegmentation2DCNNGRU(EventModel):
         Reset the weights of the model. Useful for retraining the model.
         """
         torch.manual_seed(42)
-        if self.config.get("use_awake_channel", False):
+        if self.config.get("use_auxiliary_awake", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=3, model_type=self.model_type, config=self.config)
+                                                           out_channels=5, model_type=self.model_type, config=self.config)
         else:
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
                                                            out_channels=2, model_type=self.model_type, config=self.config)

@@ -6,7 +6,7 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-spectrogram-1
+name: sweep-spectrogram-3
 metric:
   goal: maximize
   name: cv_score
@@ -48,7 +48,8 @@ parameters:
               "kind": "add_event_labels",
               "id_encoding_path": "series_id_encoding.json",
               "events_path": "data/raw/train_events.csv",
-              "smoothing": 0
+              "smoothing": 0,
+              "steepness": 2
           },
           {
               "kind": "split_windows"
@@ -124,11 +125,10 @@ parameters:
                 max: 2
                 min: 1
               lr_min:
-                max: 0.01
-                min: 1e-08
+                value: 0.002
               t_initial:
-                max: 50
-                min: 10
+                max: 45
+                min: 25
               warmup_lr_init:
                 value: 1e-06
               warmup_t:

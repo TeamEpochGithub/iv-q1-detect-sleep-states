@@ -14,13 +14,14 @@ List of options and their config options:
     - `features`: Any existing numerical features
 - `time`
     - `time_features`: a list of time features to include
-      - Options: `year`, `month`, `day`, `hour`, `minute`, `second`, `microsecond`
+      - Options: `year`, `month`, `week`, `weekday`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 - `sun`
     -  `sun_features`: a list of sun features to include
       - Options: `elevation`, `azimuth`
 - `add_holidays`
+- `add_school_hours`
 
 
 Example:
@@ -55,6 +56,9 @@ Example:
         },
         {
             "kind": "add_holidays"
+        },
+        {
+            "kind": "add_school_hours"
         }
 ]
 ```

@@ -1,5 +1,6 @@
 {
     "name": "config",
+    "is_kaggle": false,
     "log_to_wandb": true,
     "pred_with_cpu": false,
     "train_series_path": "data/raw/train_series.parquet",
@@ -14,7 +15,7 @@
         "models": ["spectrogram-sweep.json"],
         "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": false
+        "pred_only": true
     },
     "cv": {
         "splitter": "group_k_fold",

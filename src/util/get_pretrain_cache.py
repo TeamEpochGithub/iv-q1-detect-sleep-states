@@ -100,12 +100,12 @@ def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_dat
             pickle.dump((X_train, y_train, groups, data_info.X_columns,
                         data_info.y_columns), open(path, "wb"))
 
-        # Save scaler
-        initial_hash = hash_config(
-            model_config_loader.get_pretrain_config(), length=5)
-        scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
-            initial_hash + ".pkl"
-        pretrain.scaler.save(scaler_filename)
-        logger.info(f"Saved scaler to {scaler_filename}")
+            # Save scaler
+            initial_hash = hash_config(
+                model_config_loader.get_pretrain_config(), length=5)
+            scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
+                initial_hash + ".pkl"
+            pretrain.scaler.save(scaler_filename)
+            logger.info(f"Saved scaler to {scaler_filename}")
 
     return X_train, y_train, groups

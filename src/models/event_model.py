@@ -288,7 +288,7 @@ class EventModel:
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data))
-        dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
         predictions = []
 

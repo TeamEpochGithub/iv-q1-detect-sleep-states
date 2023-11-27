@@ -74,8 +74,8 @@ class TestPretrain(TestCase):
     def test_train_test_split(self):
         data_info.window_size = 17280
         data = {
-            "42": pd.DataFrame({"enmo": [0, 1],"anglez": [1, 2]}),
-            "420": pd.DataFrame({"enmo": [0, 1],"anglez": [1, 2]}),
+            "42": pd.DataFrame({"enmo": [0, 1], "anglez": [1, 2]}),
+            "420": pd.DataFrame({"enmo": [0, 1], "anglez": [1, 2]}),
         }
 
         train_series, test_series = Pretrain.train_test_split(data, test_size=0.5)

@@ -6,7 +6,7 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-spectrogram-2
+name: sweep-spectrogram-1
 metric:
   goal: maximize
   name: cv_score
@@ -48,8 +48,7 @@ parameters:
               "kind": "add_event_labels",
               "id_encoding_path": "series_id_encoding.json",
               "events_path": "data/raw/train_events.csv",
-              "smoothing": 5,
-              "steepness": 2
+              "smoothing": 0
           },
           {
               "kind": "split_windows"
@@ -58,7 +57,7 @@ parameters:
         value: [
           {
             "kind": "rotation",
-            "window_sizes": [18,100,360]
+            "window_sizes": [100,360]
           }
           ]
       pretraining:
@@ -79,7 +78,7 @@ parameters:
               - adamw-torch
           epochs:
             min: 15
-            max: 70
+            max: 100
           batch_size:
             max: 64
             min: 16
@@ -87,7 +86,7 @@ parameters:
             max: 0.1
             min: 1e-06
           early_stopping:
-            max: 30
+            max: 25
             min: 15
           threshold:
             value: 0.0
@@ -106,14 +105,9 @@ parameters:
             value: "resnet34"
           encoder_weights:
             value: "imagenet"
-          hidden_layers:
-            value: 8
-          bilinear:
-            value: false
-          scale_factor:
-            value: 2
           mask_unlabeled:
             values:
+              - true
               - false
           use_auxiliary_awake:
             values:

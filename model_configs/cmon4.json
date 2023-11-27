@@ -8,7 +8,6 @@
     },
     "preprocessing": [
         {
-            "id_encoding_path": "series_id_encoding.json",
             "kind": "mem_reduce"
         },
         {

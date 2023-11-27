@@ -15,7 +15,6 @@ class TestPP(TestCase):
 
         self.assertIsInstance(PP.from_config_single({"kind": "add_segmentation_labels"}), AddSegmentationLabels)
         self.assertIsInstance(PP.from_config_single({"kind": "add_state_labels",
-                                                     "id_encoding_path": "e.json",
                                                      "events_path": "e.csv",
                                                      "use_similarity_nan": False}), AddStateLabels)
 
@@ -30,7 +29,6 @@ class TestPP(TestCase):
                 },
                 {
                     "kind": "add_state_labels",
-                    "id_encoding_path": "b.json",
                     "events_path": "c.csv",
                     "use_similarity_nan": False
                 },
@@ -46,7 +44,6 @@ class TestPP(TestCase):
 
         self.assertIsInstance(pp_steps[0], MemReduce)
         self.assertIsInstance(pp_steps[1], AddStateLabels)
-        self.assertEqual(pp_steps[1].id_encoding_path, "b.json")
         self.assertEqual(pp_steps[1].events_path, "c.csv")
         self.assertIsInstance(pp_steps[2], SplitWindows)
         self.assertEqual(pp_steps[2].start_hour, 1)
@@ -58,7 +55,6 @@ class TestPP(TestCase):
                 },
                 {
                     "kind": "add_state_labels",
-                    "id_encoding_path": "b.json",
                     "events_path": "c.csv",
                     "use_similarity_nan": False
                 },

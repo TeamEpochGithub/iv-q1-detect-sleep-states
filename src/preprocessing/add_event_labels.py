@@ -16,18 +16,14 @@ class AddEventLabels(PP):
     The values are 0 for no event and 1 for event.
 
     :param events_path: the path to the events csv file
-    :param id_encoding_path: the path to the encoding file of the series id
     :param smoothing: the sigma value for the gaussian smoothing
     :param steepness: the steepness of the gaussian smoothing
     """
     events_path: str
-    id_encoding_path: str
     smoothing: int = 0
     steepness: int = 1
 
-    # encoding is deprecated
     _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
-    _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def run(self, data: dict) -> dict:
         """Run the preprocessing step.

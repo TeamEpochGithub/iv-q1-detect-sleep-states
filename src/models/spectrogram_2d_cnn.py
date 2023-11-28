@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import wandb
 from src.models.trainers.event_state_trainer import EventStateTrainer
+from scipy.signal import find_peaks
 
 from .architectures.spectrogram_encoder_decoder import SpectrogramEncoderDecoder
 from .event_model import EventModel
@@ -108,6 +109,35 @@ class EventSegmentation2DCNN(EventModel):
         # Get only the 2 event state features
         labels_list = [data_info.y_columns["state-onset"],
                        data_info.y_columns["state-wakeup"]]
+
+        if self.config.get('penis_curve', False):
+            # PENIS CURVEEEEEEE!!!!!!!!!!
+            for window in y_train[:, :, labels_list]:
+                for i in range(window.shape[1]):
+                    # find the peaks
+                    peaks, _ = find_peaks(window[:, i])
+                    # set the peaks to 1
+                    window[peaks, i] = 1
+                    for peak in peaks:
+                        # map +-36 around the peak to 0-pi
+                        angles = np.linspace(0, np.pi, 72)
+                        window[peak-36:peak+36, i] = 0.2 * np.sin(angles) + 0.8
+                        # set the rest to 0
+                        window[window < 0.8] = 0
+            # MORE PENIS CURVEEEEEEE!!!!!!!!!
+            for window in y_test[:, :, labels_list]:
+                for i in range(window.shape[1]):
+                    # find the peaks
+                    peaks, _ = find_peaks(window[:, i])
+                    # set the peaks to 1
+                    window[peaks, i] = 1
+                    for peak in peaks:
+                        # map +-36 around the peak to 0-pi
+                        angles = np.linspace(0, np.pi, 72)
+                        window[peak-36:peak+36, i] = 0.2 * np.sin(angles) + 0.8
+                        # set the rest to 0
+                        window[window < 0.8] = 0
+
         if mask_unlabeled:
             # Add awake label to front of the list
             labels_list.insert(0, data_info.y_columns["awake"])

@@ -23,8 +23,8 @@ Methods:
         depth = 3 -> number of feature tensors = 4 (one with same resolution as input and 3 downsampled).
 """
 import torch.nn as nn
-from efficientnet_pytorch import EfficientNet
-from efficientnet_pytorch.utils import url_map, url_map_advprop, get_model_params
+from src.external.efficientnet_pytorch import EfficientNet
+from src.external.efficientnet_pytorch.utils import url_map, url_map_advprop, get_model_params
 
 from ._base import EncoderMixin
 

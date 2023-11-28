@@ -25,7 +25,7 @@ Methods:
 
 import torch.nn as nn
 
-from pretrainedmodels.models.senet import (
+from src.external.pretrainedmodels.models.senet import (
     SENet,
     SEBottleneck,
     SEResNetBottleneck,

@@ -24,8 +24,8 @@ Methods:
 """
 
 import torch.nn as nn
-from pretrainedmodels.models.inceptionv4 import InceptionV4, BasicConv2d
-from pretrainedmodels.models.inceptionv4 import pretrained_settings
+from src.external.pretrainedmodels.models.inceptionv4 import InceptionV4, BasicConv2d
+from src.external.pretrainedmodels.models.inceptionv4 import pretrained_settings
 
 from ._base import EncoderMixin
 

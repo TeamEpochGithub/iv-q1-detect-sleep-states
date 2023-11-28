@@ -1,8 +1,8 @@
 import re
 import torch.nn as nn
 
-from pretrainedmodels.models.xception import pretrained_settings
-from pretrainedmodels.models.xception import Xception
+from src.external.pretrainedmodels.models.xception import pretrained_settings
+from src.external.pretrainedmodels.models.xception import Xception
 
 from ._base import EncoderMixin
 

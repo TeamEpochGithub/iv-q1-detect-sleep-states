@@ -26,7 +26,7 @@ Methods:
 import torch.nn as nn
 from torchvision.models.vgg import VGG
 from torchvision.models.vgg import make_layers
-from pretrainedmodels.models.torchvision_models import pretrained_settings
+from src.external.pretrainedmodels.models.torchvision_models import pretrained_settings
 
 from ._base import EncoderMixin
 

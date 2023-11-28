@@ -103,10 +103,13 @@ class Ensemble:
                 predictions = model_pred.reshape(
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
-        if self.combination_method == "confidence_average":
+        if self.combination_method == "confidence_average" or self.combination_method == "power_average":
             # Weight the predictions
 
             logger.info("Weighting predictions with confidences")
+
+            if self.combination_method == "power_average":
+                predictions = np.power(predictions, 1.5)
 
             predictions = np.average(
                 predictions, axis=3, weights=self.weight_matrix)
@@ -165,8 +168,10 @@ class Ensemble:
             "Preprocessing and feature engineering", spacing=0)
         data_info.stage = "preprocessing & feature engineering"
 
-        logger.info(f"Saving output is {not is_kaggle}, since kaggle submission is {is_kaggle}")
-        featured_data = get_processed_data(model_config_loader, training=training, save_output=not is_kaggle)
+        logger.info(
+            f"Saving output is {not is_kaggle}, since kaggle submission is {is_kaggle}")
+        featured_data = get_processed_data(
+            model_config_loader, training=training, save_output=not is_kaggle)
 
         # ------------------------ #
         #         Pretrain         #
@@ -220,11 +225,11 @@ class Ensemble:
         model_type = None
         if training:
             model_filename = store_location + "/optimal_" + \
-                             model_name + "-" + initial_hash + model.hash + ".pt"
+                model_name + "-" + initial_hash + model.hash + ".pt"
             model_type = "optimal"
         else:
             model_filename = store_location + "/submit_" + \
-                             model_name + "-" + initial_hash + model.hash + ".pt"
+                model_name + "-" + initial_hash + model.hash + ".pt"
             model_type = "submit"
 
         # If this file exists, load instead of start training

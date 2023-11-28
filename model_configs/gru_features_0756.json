@@ -1,5 +1,5 @@
 {
-  "name": "gru_features",
+  "name": "gru_features_0756",
   "data_info": {
     "window_size": 17280,
     "downsampling_factor": 6,
@@ -36,13 +36,6 @@
   ],
   "feature_engineering": [
     {
-      "kind": "sun",
-      "sun_features": [
-        "azimuth",
-        "altitude"
-      ]
-    },
-    {
       "kind": "time",
       "time_features": [
         "hour",
@@ -64,6 +57,13 @@
         "anglez_diff_abs_clip_10_savgol_180_diff",
         "anglez_diff_abs_clip_10_savgol_1000_diff",
         "anglez_diff_abs_clip_10_median_360"
+      ]
+    },
+    {
+      "kind": "sun",
+      "sun_features": [
+        "azimuth",
+        "altitude"
       ]
     }
   ],

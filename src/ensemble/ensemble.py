@@ -33,9 +33,8 @@ class Ensemble:
         if weight_matrix is None:
             weight_matrix = np.ones(len(self.model_configs))
 
-        # Apply softmax to weight matrix
-        self.weight_matrix = np.exp(
-            weight_matrix) / np.sum(np.exp(weight_matrix))
+        # Instead of softmax, make sure the list sums to 1
+        self.weight_matrix = np.array(weight_matrix) / np.sum(weight_matrix)
 
         if len(self.weight_matrix) != len(self.model_configs):
             logger.critical(

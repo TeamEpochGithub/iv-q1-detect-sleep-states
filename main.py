@@ -1,3 +1,7 @@
+import os
+import random
+
+import numpy as np
 import torch
 
 import wandb
@@ -33,17 +37,25 @@ def main() -> None:
             logger.critical("Cannot have both hpo and ensemble hpo")
             raise Exception("Cannot have both hpo and ensemble hpo")
 
-
         if is_ensemble_hpo:
             ensemble_config = is_ensemble_hpo
+            min_models, max_models = (1, 5)
+            n_models = np.random.randint(min_models, max_models)
 
+            ensemble_models = os.listdir(ensemble_config["model_config_loc"])
+            chosen_models = random.choices(ensemble_models, k=n_models)
+            chosen_weights = [random.random() for _ in range(n_models)]
 
+            # Override ensemble models with the chosen models
+            config_loader.config["ensemble"]["models"] = chosen_models
+            config_loader.config["ensemble"]["weights"] = chosen_weights
 
-
+            # Set the ensemble config
+            config_loader.set_ensemble()
 
 
         if is_hpo:
-            #Get the hpo config and add it to the config on wandb
+            # Get the hpo config and add it to the config on wandb
             config_loader.config["hpo_model"] = config_loader.get_hpo_config().config
 
             # Initialize wandb

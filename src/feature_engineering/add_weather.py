@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Final
 
 import pandas as pd
-from pandas.api.types import is_datetime64tz_dtype
 from tqdm import tqdm
 
 from src.feature_engineering.feature_engineering import FE

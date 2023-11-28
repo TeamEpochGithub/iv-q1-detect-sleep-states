@@ -1,5 +1,5 @@
 import gc
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -9,6 +9,9 @@ from tqdm import tqdm
 from ..logger.logger import logger
 from ..preprocessing.pp import PP
 
+PAD_TYPE: dict[str, np.dtype | str] = {'step': np.int32, 'enmo': np.float32, 'anglez': np.float32,
+                                       'timestamp': 'datetime64[ns, UTC]'}
+
 
 @dataclass
 class MemReduce(PP):
@@ -17,32 +20,19 @@ class MemReduce(PP):
     It will reduce the memory usage of the data by changing the data types of the columns.
     """
 
-    # (encodings are deprecated)
-    id_encoding_path: str | None = None
-    _encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
-
-    def run(self, data: pd.DataFrame) -> dict:
-        """Run the preprocessing step.
-
-        :param data: the data to preprocess
-        :return: the preprocessed data
-        """
-
-        return self.preprocess(data)
-
-    def preprocess(self, data: pd.DataFrame) -> dict:
+    def preprocess(self, data: pd.DataFrame) -> dict[str, pd.DataFrame]:
         """Preprocess the data by reducing the memory usage of the data.
 
-        :param data: the dataframe to preprocess
-        :return: the preprocessed dataframe
+        :param data: the dataframe with columns 'series_id', 'step', 'timestamp', 'enmo', and 'anglez'
+        :return: the dataframe with the same columns using more efficient data types
         """
         return self.reduce_mem_usage(data)
 
-    def reduce_mem_usage(self, data: pd.DataFrame) -> dict:
+    def reduce_mem_usage(self, data: pd.DataFrame) -> dict[str, pd.DataFrame]:
         """Reduce the memory usage of the data.
 
-        :param data: the dataframe to reduce
-        :return: the reduced dataframe
+        :param data: the dataframe with columns 'series_id', 'step', 'timestamp', 'enmo', and 'anglez'
+        :return: the dataframe with the same columns using more efficient data types
         """
 
         # convert series_id to int temporarily
@@ -50,23 +40,16 @@ class MemReduce(PP):
         mapping = {sid: i for i, sid in enumerate(sids)}
         data['series_id'] = data['series_id'].map(mapping)
 
-        # convert timestamp to datetime and utc
+        # Using Polars to convert timestamp to datetime because it is much faster
         timestamp_pl = pl.from_pandas(pd.Series(data.timestamp, copy=False))
-        utc = timestamp_pl.str.slice(21, 1).cast(pl.UInt16)
-        timestamp_pl = timestamp_pl.str.slice(0, 19)
-
-        timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S", time_unit='ms')
+        timestamp_pl = timestamp_pl.str.to_datetime(format="%Y-%m-%dT%H:%M:%S%z", time_unit='ns')
         logger.debug("------ Done converting timestamp to datetime")
-        data['timestamp'] = timestamp_pl
-        data['utc'] = utc
+        data['timestamp'] = timestamp_pl.to_pandas()
 
         del timestamp_pl
         gc.collect()
 
-        # convert data to smaller formats
-        pad_type = {'step': np.int32, 'enmo': np.float32,
-                    'anglez': np.float32, 'timestamp': 'datetime64[ns]', 'utc': np.uint16}
-        data = data.astype(pad_type)
+        data = data.astype(PAD_TYPE)
         gc.collect()
 
         # store each series in a different dict entry

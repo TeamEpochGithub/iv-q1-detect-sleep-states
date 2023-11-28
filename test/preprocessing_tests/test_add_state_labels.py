@@ -6,10 +6,9 @@ from src.preprocessing.add_state_labels import AddStateLabels
 
 class TestAddStateLabels(TestCase):
     def test_repr(self) -> None:
-        pp = AddStateLabels('./dummy_event_path', './dummy_id_encoding_path',
-                            use_similarity_nan=True, fill_limit=10)
+        pp = AddStateLabels('./dummy_event_path', use_similarity_nan=True, fill_limit=10)
         self.assertEqual(
-            "AddStateLabels(events_path='./dummy_event_path', id_encoding_path='./dummy_id_encoding_path', use_similarity_nan=True, fill_limit=10, nan_tolerance_window=1)",
+            "AddStateLabels(events_path='./dummy_event_path', use_similarity_nan=True, fill_limit=10, nan_tolerance_window=1)",
             pp.__repr__())
 
     # def test_preprocess_one_night(self):

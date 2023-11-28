@@ -20,7 +20,7 @@
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "use_similarity_nan": true,
-            "fill_limit": 8640,
+            "fill_limit": 8641,
             "nan_tolerance_window": 5
         },
         {
@@ -37,9 +37,20 @@
     ],
     "feature_engineering": [
         {
+            "kind": "parser",
+            "feats": [
+              "anglez_diff_abs",
+              "anglez_diff_abs_clip_10_savgol_180",
+              "anglez_diff_abs_clip_10_savgol_180_diff",
+              "anglez_diff_abs_clip_10_median_180",
+              "anglez_diff_abs_clip_10_skew_1000"
+            ]
+        },
+        {
             "kind": "rotation",
-            "window_sizes": [18, 100, 360]   
+            "window_sizes": [18, 100, 360]
         }
+        
     ],
 
     "pretraining": {
@@ -51,29 +62,30 @@
     },
 
     "architecture": {
-        "batch_size": 50,
-        "bilinear": false,
-        "early_stopping": 29,
+        "type": "Spectrogram_2D_Cnn",
+        "loss": "shrinkage-loss",
+        "optimizer": "adamw-torch",
+        "epochs": 50,
+        "batch_size": 64,
+        "lr": 0.002310136911348807,
+        "lr_schedule": {
+          "cycle_limit": 1,
+          "lr_min": 0.001028958470471434,
+          "t_initial": 19,
+          "warmup_lr_init": 0.000001,
+          "warmup_t": 10
+        },
+        "hidden_layers": 8,
+        "early_stopping": 13,
+        "threshold": 0,
+        "n_fft": 63,
+        "hop_length": 18,
         "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
-        "epochs": 66,
-        "hidden_layers": 8,
-        "hop_length": 18,
-        "loss": "mse-torch",
-        "lr": 0.0006118536185789334,
-        "lr_schedule": {
-          "cycle_limit": 2,
-          "lr_min": 0.0014035626739418512,
-          "t_initial": 15,
-          "warmup_lr_init": 0.000001,
-          "warmup_t": 7
-        },
-        "mask_unlabeled": false,
-        "n_fft": 63,
-        "optimizer": "adam-torch",
+        "bilinear": false,
         "scale_factor": 2,
-        "threshold": 0,
-        "type": "Spectrogram_2D_Cnn",
-        "use_auxiliary_awake": false
+        "use_auxiliary_awake": true,
+        "use_activation": true,
+        "penis_curve": false
       }
 }

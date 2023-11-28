@@ -27,8 +27,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pretrainedmodels.models.dpn import DPN
-from pretrainedmodels.models.dpn import pretrained_settings
+from src.external.pretrainedmodels.models.dpn import DPN
+from src.external.pretrainedmodels.models.dpn import pretrained_settings
 
 from ._base import EncoderMixin
 

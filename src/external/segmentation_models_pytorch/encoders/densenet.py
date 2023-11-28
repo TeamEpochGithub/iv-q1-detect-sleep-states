@@ -26,7 +26,7 @@ Methods:
 import re
 import torch.nn as nn
 
-from pretrainedmodels.models.torchvision_models import pretrained_settings
+from src.external.pretrainedmodels.models.torchvision_models import pretrained_settings
 from torchvision.models.densenet import DenseNet
 
 from ._base import EncoderMixin

@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import wandb
 from src.models.trainers.event_state_trainer import EventStateTrainer
+from scipy.signal import find_peaks
 
 from .architectures.spectrogram_encoder_decoder import SpectrogramEncoderDecoder
 from .event_model import EventModel
@@ -108,6 +109,35 @@ class EventSegmentation2DCNN(EventModel):
         # Get only the 2 event state features
         labels_list = [data_info.y_columns["state-onset"],
                        data_info.y_columns["state-wakeup"]]
+
+        if self.config.get('penis_curve', False):
+            angles = np.linspace(0, np.pi, 270)
+            peak_curve = 0.8 * np.sin(angles) + 0.2
+            # PENIS CURVEEEEEEE!!!!!!!!!!
+            for window in y_train[:, :, labels_list]:
+                for i in range(window.shape[1]):
+                    # find the peaks
+                    peaks, _ = find_peaks(window[:, i])
+                    # set the peaks to 1
+                    window[peaks, i] = 1
+                    for peak in peaks:
+                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
+
+                        # set the rest to 0
+                        window[window < 0.2] = 0
+            # MORE PENIS CURVEEEEEEE!!!!!!!!!
+            for window in y_test[:, :, labels_list]:
+                for i in range(window.shape[1]):
+                    # find the peaks
+                    peaks, _ = find_peaks(window[:, i])
+                    # set the peaks to 1
+                    window[peaks, i] = 1
+                    for peak in peaks:
+                        # map +-36 around the peak to 0-pi
+                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
+                        # set the rest to 0
+                        window[window < 0.2] = 0
+
         if mask_unlabeled:
             # Add awake label to front of the list
             labels_list.insert(0, data_info.y_columns["awake"])
@@ -272,9 +302,9 @@ class EventSegmentation2DCNN(EventModel):
         Reset the weights of the model. Useful for retraining the model.
         """
         torch.manual_seed(42)
-        if self.config.get("use_awake_channel", False):
+        if self.config.get("use_auxiliary_awake", False):
             self.model = SpectrogramEncoderDecoder(
-                in_channels=len(data_info.X_columns), out_channels=3, model_type=self.model_type, config=self.config)
+                in_channels=len(data_info.X_columns), out_channels=5, model_type=self.model_type, config=self.config)
         else:
             self.model = SpectrogramEncoderDecoder(
                 in_channels=len(data_info.X_columns), out_channels=2, model_type=self.model_type, config=self.config)

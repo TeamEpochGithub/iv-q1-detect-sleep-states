@@ -289,7 +289,7 @@ class EventModel:
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data))
-        dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
         predictions = []
 
@@ -370,7 +370,7 @@ class EventModel:
                        1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
 
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred, thresh=self.config["threshold"])
+            events = pred_to_event_state(pred, thresh=self.config["threshold"], n_events=10)
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:

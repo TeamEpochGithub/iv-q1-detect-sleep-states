@@ -78,7 +78,7 @@
       ],
       "standard": "mean"
     },
-    "test_size": 0.2,
+    "test_size": 0.01,
     "scaler": {
       "kind": "standard-scaler",
       "copy": true
@@ -87,16 +87,16 @@
   "architecture": {
     "type": "event-res-gru",
     "loss": "shrinkage-loss",
-    "epochs": 10,
-    "batch_size": 64,
-    "optimizer": "adam-torch",
-    "early_stopping": 15,
+    "epochs": 100,
+    "batch_size": 32,
+    "optimizer": "adamw-torch",
+    "early_stopping": 25,
     "activation_delay": 15,
-    "lr": 0.02,
+    "lr": 0.01,
     "network_params": {
       "hidden_size": 8,
       "n_layers": 5,
-      "activation": "relu"
+      "activation": "gelu"
     },
     "lr_schedule": {
       "t_initial": 25,

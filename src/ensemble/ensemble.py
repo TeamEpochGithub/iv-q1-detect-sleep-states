@@ -203,7 +203,7 @@ class Ensemble:
                 model_config_loader.get_pretrain_config(), length=5)
             if pretrain.scaler.scaler:
                 pretrain.scaler.load(
-                    store_location + "/scaler-" + scaler_hash + ".pkl")
+                    store_location + "/submit_scaler-" + scaler_hash + ".pkl")
 
             x_test = pretrain.preprocess(featured_data)
             assert x_test.shape[1] == data_info.window_size, "The window size of the test data should be the same as the window size of the training data"
@@ -212,9 +212,8 @@ class Ensemble:
         model = model_config_loader.set_model()
 
         # Hash of concatenated string of preprocessing, feature engineering and pretraining
-        # FIXME Should be datainfo, preprocessing, feature engineering and pretraining (get_pretrain_config)
         initial_hash = hash_config(
-            model_config_loader.get_pp_fe_pretrain(), length=5)
+            model_config_loader.get_pretrain_config(), length=5)
         data_info.substage = f"training model: {model_name}"
 
         # Get filename of model

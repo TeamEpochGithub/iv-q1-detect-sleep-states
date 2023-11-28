@@ -102,7 +102,8 @@
     "network_params": {
       "hidden_size": 8,
       "n_layers": 5,
-      "activation": "relu"
+      "activation": "relu",
+      "dropout": 0.6
     },
     "lr_schedule": {
       "t_initial": 25,

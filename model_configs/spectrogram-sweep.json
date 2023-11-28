@@ -37,9 +37,20 @@
     ],
     "feature_engineering": [
         {
+            "kind": "parser",
+            "feats": [
+              "anglez_diff_abs",
+              "anglez_diff_abs_clip_10_savgol_180",
+              "anglez_diff_abs_clip_10_savgol_180_diff",
+              "anglez_diff_abs_clip_10_median_180",
+              "anglez_diff_abs_clip_10_skew_1000"
+            ]
+        },
+        {
             "kind": "rotation",
-            "window_sizes": [18, 100, 360]   
+            "window_sizes": [18, 100, 360]
         }
+        
     ],
 
     "pretraining": {
@@ -56,10 +67,10 @@
         "optimizer": "adamw-torch",
         "epochs": 50,
         "batch_size": 64,
-        "lr": 0.004310136911348807,
+        "lr": 0.002310136911348807,
         "lr_schedule": {
           "cycle_limit": 1,
-          "lr_min": 0.002028958470471434,
+          "lr_min": 0.001028958470471434,
           "t_initial": 19,
           "warmup_lr_init": 0.000001,
           "warmup_t": 10
@@ -75,6 +86,6 @@
         "scale_factor": 2,
         "use_auxiliary_awake": true,
         "use_activation": true,
-        "penis_curve": true
+        "penis_curve": false
       }
 }

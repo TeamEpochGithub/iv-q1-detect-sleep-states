@@ -7,7 +7,6 @@ from scipy.ndimage import gaussian_filter
 from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
 
-import warnings
 
 @dataclass
 class AddEventLabels(PP):
@@ -101,24 +100,7 @@ class AddEventLabels(PP):
         # Apply a gaussian label smoothing to the 1's of the state_onset and state_wakeup columns and save as float 32
         # This is done to prevent overfitting to the exact event step
         series["state-onset"] = gaussian_filter(series["state-onset"], sigma=self.smoothing).astype(np.float32)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # set any value < 0.6 to 0
-            series["state-onset"][series["state-onset"] < 0.6] = 0.0
-            # now make it so the largest value is 0.4
-            series["state-onset"] = series["state-onset"] / np.max(series["state-onset"]) * 0.4
-            # now add and offset of 0.7 to all points larger than 0
-            series["state-onset"][series["state-onset"] > 0] = series["state-onset"][series["state-onset"] > 0] + 0.6
-
         series["state-wakeup"] = gaussian_filter(series["state-wakeup"], sigma=self.smoothing).astype(np.float32)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # set any value < 0.6 to 0
-            series["state-wakeup"][series["state-wakeup"] < 0.6] = 0.0
-            # now make it so the largest value is 0.4
-            series["state-wakeup"] = series["state-wakeup"] / np.max(series["state-wakeup"]) * 0.4
-            # now add and offset of 0.7 to all points larger than 0
-            series["state-wakeup"][series["state-wakeup"] > 0] = series["state-wakeup"][series["state-wakeup"] > 0] + 0.6
         return series
 
     def custom_score_array(self, input_array):

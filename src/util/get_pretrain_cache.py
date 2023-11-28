@@ -11,7 +11,7 @@ from src.pretrain.pretrain import Pretrain
 from src.util.hash_config import hash_config
 
 
-def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_data: pd.DataFrame, save_output: bool = True) \
+def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_data: dict, save_output: bool = True) \
         -> (np.array, np.array, np.array, np.array, np.array, np.array, np.array):
     """Get the pretrain data, either from the cache or by preprocessing the data
 
@@ -79,7 +79,7 @@ def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_dat
 
     if os.path.exists(path):
         logger.info(f'Pretrain full: Reading existing files from: {path}')
-        X_train, y_train, groups, data_info.X_columns, data_info.y_columns = pickle.load(
+        X_train, y_train, data_info.X_columns, data_info.y_columns = pickle.load(
             open(path, "rb"))
         data_info.window_size = data_info.window_size // data_info.downsampling_factor
         logger.info('Finished reading')
@@ -93,19 +93,19 @@ def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_dat
             "Pretraining with scaler " + str(pretrain.scaler.kind) + " and test size of " + str(pretrain.test_size))
 
         data_info.substage = "pretrain_full"
-        X_train, y_train, groups = pretrain.pretrain_final(featured_data)
+        X_train, y_train = pretrain.pretrain_final(featured_data)
 
         if save_output:
             logger.info(f"Saving pretrain full cache to {path}")
-            pickle.dump((X_train, y_train, groups, data_info.X_columns,
+            pickle.dump((X_train, y_train, data_info.X_columns,
                         data_info.y_columns), open(path, "wb"))
 
-        # Save scaler
-        initial_hash = hash_config(
-            model_config_loader.get_pretrain_config(), length=5)
-        scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
-            initial_hash + ".pkl"
-        pretrain.scaler.save(scaler_filename)
-        logger.info(f"Saved scaler to {scaler_filename}")
+            # Save scaler
+            initial_hash = hash_config(
+                model_config_loader.get_pretrain_config(), length=5)
+            scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
+                initial_hash + ".pkl"
+            pretrain.scaler.save(scaler_filename)
+            logger.info(f"Saved scaler to {scaler_filename}")
 
-    return X_train, y_train, groups
+    return X_train, y_train

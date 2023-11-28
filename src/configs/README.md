@@ -567,13 +567,18 @@ Example:
 ## Ensemble
 For now, we support just an ensemble of 1 function.
 
-Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined
+Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined, and whether to only do predictions
+
+### Combinations methods
+- `confidence_average`: Averages confidences for all models by weight
+- `power_average`: Applies a power to all model predictions and then averages them
 
 ```JSON
 "ensemble": {
     "models": ["model1name", "model2name"],
     "weights": [1, 2],
     "comb_method": "addition",
+    "pred_only": false
 }
 ```
 
@@ -671,7 +676,7 @@ Configures how plots are generated.
     }
 ```
 
-## Similarity filtering
+## Similarity filtering (deprecated)
 Apply a filter to the timestamp predictions, based on similarity to other windows.
 Requires the similarity_nan preprocessing step. Can be removed from the 
 If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to nan.

@@ -1,10 +1,8 @@
-import json
 from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
 from scipy.ndimage import gaussian_filter
-from tqdm import tqdm
 
 from ..logger.logger import logger
 from ..preprocessing.pp import PP, PPException
@@ -18,42 +16,41 @@ class AddEventLabels(PP):
     The values are 0 for no event and 1 for event.
 
     :param events_path: the path to the events csv file
-    :param id_encoding_path: the path to the encoding file of the series id
     :param smoothing: the sigma value for the gaussian smoothing
     :param steepness: the steepness of the gaussian smoothing
     """
     events_path: str
-    id_encoding_path: str
     smoothing: int = 0
     steepness: int = 1
 
     _events: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
-    _id_encoding: dict = field(init=False, default_factory=dict, repr=False, compare=False)
 
     def run(self, data: dict) -> dict:
         """Run the preprocessing step.
 
         :param data: the data to preprocess
         :return: the preprocessed data
-        :raises FileNotFoundError: If the events csv or id_encoding json file is not found
+        :raises FileNotFoundError: If the events csv is not found
         """
 
+        # get columns from some arbitrary frame
+        columns = next(iter(data.values())).columns
+
         # If window column is present, raise an exception
-        if "window" in data[0].columns:
+        if "window" in columns:
             logger.critical("Window column is present, this preprocessing step should be run before SplitWindows")
             raise PPException("Window column is present, this preprocessing step should be run before SplitWindows")
-        if "hot-awake" in data[0].columns:
+        if "hot-awake" in columns:
             logger.warning(
                 "Hot encoded columns are present (hot-NaN, hot-awake, hot-asleep, hot-unlabeled)"
                 " for state segmentation models. This can cause issues when also adding event labels."
                 "Make sure your model takes the correct features.")
-        if "onset" in data[0].columns:
+        if "onset" in columns:
             logger.warning("Onset column is present, for regression models. "
                            "This can cause issues when also adding event labels."
                            "Make sure your model takes the correct features.")
 
         self._events = pd.read_csv(self.events_path)
-        self._id_encoding = json.load(open(self.id_encoding_path))
         res = self.preprocess(data)
         del self._events
         return res
@@ -65,27 +62,15 @@ class AddEventLabels(PP):
         :return: the data with state labels added to the "awake" column
         """
 
-        # Initialize the awake column as 42, to catch errors later (-1 not possible in uint8)
-        # loop over the series ids
-        for i in data.keys():
-            data[i]['state-onset'] = 0.0
-            data[i]["state-wakeup"] = 0.0
-
-        # apply encoding to events
-        self._events['series_id'] = self._events['series_id'].map(self._id_encoding)
-
         # iterate over the series and set the awake column
-        tqdm.pandas()
-        # data = (data
-        #         .groupby('series_id')
-        #         .progress_apply(lambda x: self.fill_series_labels(x))
-        #         .reset_index(drop=True))
         for i in data.keys():
-            data[i] = self.fill_series_labels(data[i], i).reset_index(drop=True)
+            data[i] = self.fill_series_labels(data[i], i)
         return data
 
     # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array
     def fill_series_labels(self, series: pd.DataFrame, series_id: int) -> pd.DataFrame:
+        series["state-onset"] = 0.0
+        series["state-wakeup"] = 0.0
         current_events = self._events[self._events["series_id"] == series_id]
 
         # Only get non-nan values and convert to int

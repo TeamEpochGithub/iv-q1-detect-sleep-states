@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import copy
 from abc import ABC, abstractmethod
-from typing import Final
+from typing import Final, TypeAlias
 
 import pandas as pd
-import copy
 
-from ..logger.logger import logger
+JSON: TypeAlias = None | int | str | bool | list['JSON'] | dict[str, 'JSON']
 
 
 class FE(ABC):
@@ -16,7 +16,7 @@ class FE(ABC):
     """
 
     @staticmethod
-    def from_config_single(config: dict) -> FE:
+    def from_config_single(config: dict[str, JSON]) -> FE:
         """Parse the config of a single feature engineering step and return the feature engineering step.
 
         :param config: the config of a single feature engineering step
@@ -25,9 +25,7 @@ class FE(ABC):
         config_copy = copy.deepcopy(config)
         kind: str = config_copy.pop("kind", None)
 
-        if kind is None:
-            logger.critical("No kind specified for feature engineering step")
-            raise FEException("No kind specified for feature engineering step")
+        assert kind is not None, "No kind specified for feature engineering step"
 
         from .kurtosis import Kurtosis
         from .mean import Mean
@@ -39,27 +37,25 @@ class FE(ABC):
         from .add_holidays import AddHolidays
         from .parser import Parser
         from .add_school_hours import AddSchoolHours
+
         _FEATURE_ENGINEERING_KINDS: Final[dict[str, type[FE]]] = {
-            "kurtosis": Kurtosis,
-            "mean": Mean,
-            "skewness": Skewness,
-            "time": Time,
-            "rotation": Rotation,
-            "sun": Sun,
-            "sin_hour": SinHour,
-            "add_holidays": AddHolidays,
-            "parser": Parser,
-            "add_school_hours": AddSchoolHours
+            'kurtosis': Kurtosis,
+            'mean': Mean,
+            'skewness': Skewness,
+            'time': Time,
+            'rotation': Rotation,
+            'sun': Sun,
+            'sin_hour': SinHour,
+            'add_holidays': AddHolidays,
+            'parser': Parser,
+            'add_school_hours': AddSchoolHours
         }
 
-        try:
-            return _FEATURE_ENGINEERING_KINDS[kind](**config_copy)
-        except KeyError:
-            logger.critical(f"Unknown feature engineering step: {kind}")
-            raise FEException(f"Unknown feature engineering step: {kind}")
+        assert kind in _FEATURE_ENGINEERING_KINDS, f"Unknown feature engineering step: {kind=}"
+        return _FEATURE_ENGINEERING_KINDS[kind](**config_copy)
 
     @staticmethod
-    def from_config(config_list: list[dict]) -> list[FE]:
+    def from_config(config_list: list[dict[str, JSON]]) -> list[FE]:
         """Parse the config list of feature engineering steps and return the feature engineering steps.
 
         It also filters out the steps that are only for training.
@@ -69,7 +65,7 @@ class FE(ABC):
         """
         return [FE.from_config_single(fe_step) for fe_step in config_list]
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
         """Run the feature engineering step.
 
         :param data: the data to process
@@ -78,14 +74,13 @@ class FE(ABC):
         return self.feature_engineering(data)
 
     @abstractmethod
-    def feature_engineering(self, data: pd.DataFrame) -> pd.DataFrame:
+    def feature_engineering(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
         """Process the data. This method should be overridden by the child class.
 
         :param data: the data to process
         :return: the processed data
         """
-        logger.critical("Feature engineering method not implemented. Did you forget to override it?")
-        raise FEException("Feature engineering method not implemented. Did you forget to override it?")
+        pass
 
 
 class FEException(Exception):

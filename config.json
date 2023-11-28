@@ -18,7 +18,11 @@
         "pred_only": true
     },
     "ensemble_hpo": {
-        
+        "model_config_loc": "ensemble_configs",
+        "n_events": 10,
+        ""
+
+
     },
 
     "cv": {

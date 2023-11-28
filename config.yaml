@@ -6,7 +6,7 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-transformer
+name: sweep-transformer-gru
 metric:
   goal: maximize
   name: cv_score
@@ -14,7 +14,7 @@ parameters:
   hpo_model:
     parameters:
       name:
-        value: transformer_sweep
+        value: transformer_gru_sweep
       data_info:
         parameters:
           downsampling_factor:
@@ -30,8 +30,7 @@ parameters:
       preprocessing:
         value: [
           {
-              "kind": "mem_reduce",
-              "id_encoding_path": "series_id_encoding.json"
+              "kind": "mem_reduce"
           },
           {
               "kind": "similarity_nan",
@@ -49,7 +48,8 @@ parameters:
               "kind": "add_event_labels",
               "id_encoding_path": "series_id_encoding.json",
               "events_path": "data/raw/train_events.csv",
-              "smoothing": 0
+              "smoothing": 0,
+              "steepness": 2
           },
           {
               "kind": "split_windows"
@@ -63,10 +63,6 @@ parameters:
           {
               "kind": "sun",
               "sun_features": ["azimuth", "altitude"]
-          },
-          {
-              "kind": "rotation",
-              "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
           }]
       pretraining:
         parameters:
@@ -90,13 +86,13 @@ parameters:
         parameters:
           activation_delay:
             max: 50
-            min: 0
+            min: 20
           batch_size:
             max: 128
-            min: 16
+            min: 64
           early_stopping:
             max: 50
-            min: 1
+            min: 15
           epochs:
             value: 250
           loss:
@@ -105,24 +101,25 @@ parameters:
               - shrinkage-loss
               - kldiv-torch
           lr:
-            max: 0.1
-            min: 1e-06
+            max: 0.03
+            min: 0.005
           lr_schedule:
             parameters:
               cycle_limit:
-                max: 4
-                min: 1
+                values:
+                - 2
+                - 3
+                - 4
               lr_min:
-                max: 0.01
-                min: 1e-08
+                value: 0.002
               t_initial:
-                max: 50
-                min: 10
+                max: 45
+                min: 25
               warmup_lr_init:
                 value: 1e-06
               warmup_t:
-                max: 10
-                min: 0
+                max: 7
+                min: 2
           mask_unlabeled:
             values:
               - true
@@ -130,33 +127,48 @@ parameters:
           network_params:
             parameters:
               heads:
-                max: 16
-                min: 1
+                max: 8
+                min: 3
               emb_dim:
-                max: 512
-                min: 16
+                max: 256
+                min: 64
               forward_dim:
                 max: 1024
-                min: 16
+                min: 256
               n_layers:
-                max: 32
-                min: 1
+                max: 10
+                min: 5
               pooling:
-                value: "none"
+                value: "gru"
+              pooling_args:
+                parameters:
+                  dropout:
+                    value: 0.0
+                  bidir:
+                    values:
+                    - true
+                    - false
+                  hidden_size:
+                    max: 60
+                    min: 6
+                  n_layers:
+                    max: 10
+                    min: 5
+                  activation:
+                    values:
+                    - relu
+                    - gelu
               tokenizer:
                 value: "patch"
               tokenizer_args:
                 parameters:
                   patch_size:
                     values:
-                    - 2
                     - 4
                     - 6
                     - 8
                     - 12
                     - 16
-                    - 24
-                    - 32
               pe:
                 value: "fixed"
               dropout:

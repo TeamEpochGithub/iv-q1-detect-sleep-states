@@ -6,7 +6,7 @@ from src.preprocessing.add_event_labels import AddEventLabels
 
 
 class TestAddEventSegmentationLabels(TestCase):
-    pp = AddEventLabels('./dummy_event_path', './dummy_id_encoding_path', smoothing=2)
+    pp = AddEventLabels('./dummy_event_path', smoothing=2)
 
     def test_custom_score_array(self):
         arr = [0] * 361 + [1] + [0] * 361
@@ -18,7 +18,7 @@ class TestAddEventSegmentationLabels(TestCase):
         self.assertEqual(scoring[-1], 0)
 
     def test_repr(self):
-        self.assertEqual("AddEventLabels(events_path='./dummy_event_path', id_encoding_path='./dummy_id_encoding_path', smoothing=2, steepness=1)", self.pp.__repr__())
+        self.assertEqual("AddEventLabels(events_path='./dummy_event_path', smoothing=2, steepness=1)", self.pp.__repr__())
 
     # def test_add_event_labels_crash(self):
     #     df_dict = {"timestamp": pd.date_range(start="2021-01-01", periods=10, freq="5S"),

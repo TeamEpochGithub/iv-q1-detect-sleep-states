@@ -42,9 +42,6 @@ class Ensemble:
                 "Weight matrix length does not match number of models")
             raise ValueError(
                 "Weight matrix length does not match number of models")
-        elif np.sum(self.weight_matrix) != 1:
-            logger.critical("Weight matrix must sum to 1")
-            raise ValueError("Weight matrix must sum to 1")
         elif np.any(self.weight_matrix) <= 0:
             logger.critical("Weight matrix must be positive")
             raise ValueError("Weight matrix must be positive")
@@ -63,14 +60,14 @@ class Ensemble:
         """
         return self.pred_only
 
-    def get_test_idx(self) -> np.ndarray:
+    def get_test_ids(self) -> np.ndarray:
         """
-        Get the test indices from the ensemble
+        Get the test series from the ensemble
         :return: the test indices
         """
-        return self.test_idx
+        return self.test_ids
 
-    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -78,6 +75,8 @@ class Ensemble:
 
         :param data: 3D tensor with shape (window, n_timesteps, n_features)
         :param pred_with_cpu: whether to use the cpu for prediction
+        :param training: whether to train the model
+        :param is_kaggle: whether to submit to kaggle
         :return: 3D array with shape (window, 2), with onset and wakeup steps (nan if no detection)
         """
 
@@ -89,11 +88,11 @@ class Ensemble:
         predictions = None
         confidences = []
         # model_pred is (onset, wakeup) tuples for each window
-        for _, model_config in enumerate(self.model_configs):
 
+        for _, model_config in enumerate(self.model_configs):
             model_config.reset_globals()
             model_pred = self.pred_model(
-                model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training)
+                model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training, is_kaggle=is_kaggle)
 
             # Model_pred is tuple of np.array(onset, awake) for each window
             # Split the series of tuples into two column
@@ -104,7 +103,14 @@ class Ensemble:
                 predictions = model_pred.reshape(
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
-        if self.combination_method == "confidence_average":
+        if self.combination_method == "confidence_average" or self.combination_method == "power_average":
+            # Weight the predictions
+
+            logger.info("Weighting predictions with confidences")
+
+            if self.combination_method == "power_average":
+                predictions = np.power(predictions, 1.5)
+
             predictions = np.average(
                 predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []
@@ -143,11 +149,12 @@ class Ensemble:
         return aggregate, aggregate_confidences
 
     def pred_model(
-        self,
-        model_config_loader: ModelConfigLoader,
-        store_location: str,
-        pred_with_cpu: bool = True,
-        training: bool = False
+            self,
+            model_config_loader: ModelConfigLoader,
+            store_location: str,
+            pred_with_cpu: bool = True,
+            training: bool = False,
+            is_kaggle: bool = False
     ) -> tuple[np.ndarray[Any, np.dtype[Any]], np.ndarray[Any, np.dtype[Any]]]:
 
         model_name = model_config_loader.get_name()
@@ -160,8 +167,11 @@ class Ensemble:
         print_section_separator(
             "Preprocessing and feature engineering", spacing=0)
         data_info.stage = "preprocessing & feature engineering"
+
+        logger.info(
+            f"Saving output is {not is_kaggle}, since kaggle submission is {is_kaggle}")
         featured_data = get_processed_data(
-            model_config_loader, training=training, save_output=True)
+            model_config_loader, training=training, save_output=not is_kaggle)
 
         # ------------------------ #
         #         Pretrain         #
@@ -177,15 +187,13 @@ class Ensemble:
         logger.info("Pretraining with scaler " + str(pretrain.scaler.kind) +
                     " and test size of " + str(pretrain.test_size))
 
-        # Split data into train/test and validation
-        # Use numpy.reshape to turn the data into a 3D tensor with shape (window, n_timesteps, n_features)
-        logger.info("Splitting data into train and test...")
-        data_info.substage = "pretrain_split"
-
+        # This is train optimal, so we want to split the data into train and test. If not we do predictions only (submit_to_kaggle)
         if training:
-            x_train, x_test, y_train, y_test, _, test_idx, _ = get_pretrain_split_cache(
+            logger.info("Splitting data into train and test...")
+            data_info.substage = "pretrain_split"
+            x_train, x_test, y_train, y_test, _, test_ids, _ = get_pretrain_split_cache(
                 model_config_loader, featured_data, save_output=True)
-            self.test_idx = test_idx
+            self.test_ids = test_ids
 
             logger.info("X Train data shape (size, window_size, features): " + str(
                 x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
@@ -195,7 +203,7 @@ class Ensemble:
             assert x_train.shape[1] == y_train.shape[1] == x_test.shape[1] == y_test.shape[
                 1], "The window size of the train and test data should be the same"
         else:
-            # Hash of concatenated string of preprocessing, feature engineering and pretraining
+            # Load scaler from submit model
             scaler_hash = hash_config(
                 model_config_loader.get_pretrain_config(), length=5)
             if pretrain.scaler.scaler:
@@ -209,21 +217,25 @@ class Ensemble:
         model = model_config_loader.set_model()
 
         # Hash of concatenated string of preprocessing, feature engineering and pretraining
+        # FIXME Should be datainfo, preprocessing, feature engineering and pretraining (get_pretrain_config)
         initial_hash = hash_config(
             model_config_loader.get_pp_fe_pretrain(), length=5)
         data_info.substage = f"training model: {model_name}"
 
         # Get filename of model
+        model_type = None
         if training:
             model_filename = store_location + "/optimal_" + \
                 model_name + "-" + initial_hash + model.hash + ".pt"
+            model_type = "optimal"
         else:
             model_filename = store_location + "/submit_" + \
                 model_name + "-" + initial_hash + model.hash + ".pt"
+            model_type = "submit"
 
         # If this file exists, load instead of start training
         if os.path.isfile(model_filename):
-            logger.info("Found existing trained optimal model: " +
+            logger.info(f"Found existing trained {model_type} model: " +
                         model_name + " with location " + model_filename)
             model.load(model_filename, only_hyperparameters=False)
         else:

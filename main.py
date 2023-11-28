@@ -34,19 +34,24 @@ def main() -> None:
             raise Exception("Cannot have both hpo and ensemble hpo")
 
 
-        # Get the hpo config
-        if is_hpo:
-            config_loader.config["hpo_model"] = config_loader.get_hpo_config(
-            ).config
+        if is_ensemble_hpo:
+            ensemble_config = is_ensemble_hpo
 
-        # Initialize wandb
-        wandb.init(
-            project='detect-sleep-states',
-            name=config_hash,
-            config=config_loader.get_config()
-        )
-        if is_hpo:
 
+
+
+
+
+        if is_hpo:
+            #Get the hpo config and add it to the config on wandb
+            config_loader.config["hpo_model"] = config_loader.get_hpo_config().config
+
+            # Initialize wandb
+            wandb.init(
+                project='detect-sleep-states',
+                name=config_hash,
+                config=config_loader.get_config()
+            )
             # Merge the config from the hpo config
             config_loader.config |= wandb.config
             assert config_loader.config["hpo_model"] == wandb.config["hpo_model"]

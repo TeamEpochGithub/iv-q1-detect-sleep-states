@@ -111,6 +111,8 @@ class EventSegmentation2DCNN(EventModel):
                        data_info.y_columns["state-wakeup"]]
 
         if self.config.get('penis_curve', False):
+            angles = np.linspace(0, np.pi, 270)
+            peak_curve = 0.8 * np.sin(angles) + 0.2
             # PENIS CURVEEEEEEE!!!!!!!!!!
             for window in y_train[:, :, labels_list]:
                 for i in range(window.shape[1]):
@@ -119,11 +121,10 @@ class EventSegmentation2DCNN(EventModel):
                     # set the peaks to 1
                     window[peaks, i] = 1
                     for peak in peaks:
-                        # map +-36 around the peak to 0-pi
-                        angles = np.linspace(0, np.pi, 72)
-                        window[peak-36:peak+36, i] = 0.2 * np.sin(angles) + 0.8
+                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
+
                         # set the rest to 0
-                        window[window < 0.8] = 0
+                        window[window < 0.2] = 0
             # MORE PENIS CURVEEEEEEE!!!!!!!!!
             for window in y_test[:, :, labels_list]:
                 for i in range(window.shape[1]):
@@ -133,10 +134,9 @@ class EventSegmentation2DCNN(EventModel):
                     window[peaks, i] = 1
                     for peak in peaks:
                         # map +-36 around the peak to 0-pi
-                        angles = np.linspace(0, np.pi, 72)
-                        window[peak-36:peak+36, i] = 0.2 * np.sin(angles) + 0.8
+                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
                         # set the rest to 0
-                        window[window < 0.8] = 0
+                        window[window < 0.2] = 0
 
         if mask_unlabeled:
             # Add awake label to front of the list

@@ -65,7 +65,7 @@
           "warmup_t": 10
         },
         "hidden_layers": 8,
-        "early_stopping": 14,
+        "early_stopping": 13,
         "threshold": 0,
         "n_fft": 63,
         "hop_length": 18,
@@ -74,6 +74,7 @@
         "bilinear": false,
         "scale_factor": 2,
         "use_auxiliary_awake": true,
-        "use_activation": true
+        "use_activation": true,
+        "penis_curve": true
       }
 }

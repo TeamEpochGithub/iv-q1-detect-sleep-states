@@ -75,7 +75,7 @@
       ],
       "standard": "mean"
     },
-    "test_size": 0.01,
+    "test_size": 0.2,
     "scaler": {
       "kind": "standard-scaler",
       "copy": true

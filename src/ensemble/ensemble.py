@@ -208,7 +208,7 @@ class Ensemble:
                 model_config_loader.get_pretrain_config(), length=5)
             if pretrain.scaler.scaler:
                 pretrain.scaler.load(
-                    store_location + "/submit_scaler-" + scaler_hash + ".pkl")
+                    store_location + "/scaler-" + scaler_hash + ".pkl")
 
             x_test = pretrain.preprocess(featured_data)
             assert x_test.shape[1] == data_info.window_size, "The window size of the test data should be the same as the window size of the training data"

@@ -1,5 +1,5 @@
 {
-  "name": "gru_features",
+  "name": "gru-features-dropout",
   "data_info": {
     "window_size": 17280,
     "downsampling_factor": 6,

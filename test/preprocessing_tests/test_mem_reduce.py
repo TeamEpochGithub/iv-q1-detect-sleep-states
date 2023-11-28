@@ -39,5 +39,5 @@ class Test(TestCase):
             "anglez": [0.0, 0.0],
         })
 
-        mem_reducer = MemReduce(id_encoding_path=None)
+        mem_reducer = MemReduce()
         data = mem_reducer.preprocess(data)

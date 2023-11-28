@@ -65,5 +65,6 @@ class AddWeather(FE):
         for sid, _ in tqdm(data.items()):
             data[sid] = pd.merge_asof(data[sid], self._weather_data[['timestamp'] + self.weather_features],
                                       on='timestamp', direction='nearest')
+            data[sid].rename(columns={weather_feature: f'f_{weather_feature}' for weather_feature in self.weather_features}, inplace=True)
 
         return data

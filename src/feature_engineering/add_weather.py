@@ -2,13 +2,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
 
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
 from src.feature_engineering.feature_engineering import FE
 
-_WEATHER_FEATURES: Final[set[str]] = {'temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt',
-                                      'pres', 'tsun', 'coco'}
+WEATHER_CONDITION_CODES: list[str] = [
+    'null', 'Clear', 'Fair', 'Cloudy', 'Overcast', 'Fog', 'Freezing Fog', 'Light Rain', 'Rain', 'Heavy Rain',
+    'Freezing Rain', 'Heavy Freezing Rain', 'Sleet', 'Heavy Sleet', 'Light Snowfall', 'Snowfall', 'Heavy Snowfall',
+    'Rain Shower', 'Heavy Rain Shower', 'Sleet Shower', 'Heavy Sleet Shower', 'Snow Shower', 'Heavy Snow Shower',
+    'Lightning', 'Hail', 'Thunderstorm', 'Heavy Thunderstorm', 'Storm'
+]
+
+WEATHER_FEATURES_INPUT: Final[set[str]] = {'temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco'}
 
 
 @dataclass
@@ -27,12 +34,18 @@ class AddWeather(FE):
     weather_data_path: str
     weather_features: list[str]
 
+    _weather_features_out: list[str] = field(init=False, default_factory=list, repr=False, compare=False)
     _weather_data: pd.DataFrame = field(init=False, default_factory=pd.DataFrame, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         """Check if the weather features are supported"""
-        assert all(weather_feature in _WEATHER_FEATURES for weather_feature in self.weather_features), \
+        assert all(weather_feature in WEATHER_FEATURES_INPUT for weather_feature in self.weather_features), \
             f"Unknown {self.weather_features = }"
+
+        self._weather_features_out: list[str] = [f"f_{weather_feature}" for weather_feature in self.weather_features]
+        if 'f_coco' in self._weather_features_out:
+            self._weather_features_out.remove('f_coco')
+            self._weather_features_out += [f'f_coco_{weather_condition_code}' for weather_condition_code in WEATHER_CONDITION_CODES]
 
     def run(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
         """Read the weather data
@@ -50,6 +63,12 @@ class AddWeather(FE):
 
         assert self._weather_data['timestamp'].dtype == pd.DatetimeTZDtype(tz='UTC'), \
             f"The weather data timestamp column (dtype={self._weather_data['timestamp'].dtype}) is not of dtype 'datetime64[ns, UTC]'!"
+
+        # Set all float columns to float32
+        for column in self._weather_data.columns:
+            if self._weather_data[column].dtype == np.float64:
+                self._weather_data[column] = self._weather_data[column].astype(np.float32)
+
         return self.feature_engineering(data)
 
     def feature_engineering(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
@@ -63,8 +82,7 @@ class AddWeather(FE):
         assert 'timestamp' in next(iter(data.values())).columns, "The timestamp column is missing"
 
         for sid, _ in tqdm(data.items()):
-            data[sid] = pd.merge_asof(data[sid], self._weather_data[['timestamp'] + self.weather_features],
+            data[sid] = pd.merge_asof(data[sid], self._weather_data[self._weather_data.columns.intersection(set(['timestamp'] + self._weather_features_out))],
                                       on='timestamp', direction='nearest')
-            data[sid].rename(columns={weather_feature: f'f_{weather_feature}' for weather_feature in self.weather_features}, inplace=True)
 
         return data

@@ -96,7 +96,6 @@ def main() -> None:
 
         # Update the wandb summary with the updated config
         wandb.run.summary.update(curr_config)
-        return
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")

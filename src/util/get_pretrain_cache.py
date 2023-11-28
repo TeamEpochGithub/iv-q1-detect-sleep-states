@@ -2,7 +2,6 @@ import os
 import pickle
 
 import numpy as np
-import pandas as pd
 
 from src import data_info
 from src.configs.load_model_config import ModelConfigLoader

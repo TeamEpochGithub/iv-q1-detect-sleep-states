@@ -45,7 +45,7 @@ def main() -> None:
 
         if is_ensemble_hpo:
             ensemble_config = is_ensemble_hpo
-            min_models, max_models = (1, 2)
+            min_models, max_models = (1, 6)
             n_models = np.random.randint(min_models, max_models)
 
             ensemble_models = os.listdir(ensemble_config["model_config_loc"])

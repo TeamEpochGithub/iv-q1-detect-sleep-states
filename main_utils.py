@@ -131,7 +131,7 @@ def scoring(config: ConfigLoader) -> None:
 
     # Make predictions on test data
     predictions = ensemble.pred(
-        config.get_model_store_loc(), pred_with_cpu=pred_cpu, find_peaks=config.config["ensemble_hpo"])
+        config.get_model_store_loc(), pred_with_cpu=pred_cpu, find_peaks=config.config.get("ensemble_hpo"))
     test_ids = ensemble.get_test_ids()
 
     logger.info("Formatting predictions...")

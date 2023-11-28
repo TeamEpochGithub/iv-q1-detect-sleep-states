@@ -117,7 +117,11 @@ class Ensemble:
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
                 # Convert to relative window event timestamps
-                events = pred_to_event_state(pred, thresh=0, n_events=find_peaks["n_events"], find_peaks_params=find_peaks["find_peaks"])
+                if find_peaks is None:
+                    find_peaks_dict = {"width": 24, "height": 0, "distance": 100}
+                    events = pred_to_event_state(pred, thresh=0, n_events=10, find_peaks_params=find_peaks_dict)
+                else:
+                    events = pred_to_event_state(pred, thresh=0, n_events=find_peaks.get("n_events"), find_peaks_params=find_peaks.get("find_peaks"))
 
                 # Add step offset based on repeat factor.
                 if data_info.downsampling_factor <= 1:

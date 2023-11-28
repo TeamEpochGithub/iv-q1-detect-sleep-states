@@ -1,5 +1,5 @@
 {
-  "name": "gru_features",
+  "name": "gru_features_0756",
   "data_info": {
     "window_size": 17280,
     "downsampling_factor": 6,
@@ -8,7 +8,8 @@
   },
   "preprocessing": [
     {
-      "kind": "mem_reduce"
+      "kind": "mem_reduce",
+      "id_encoding_path": "series_id_encoding.json"
     },
     {
       "kind": "similarity_nan",
@@ -16,6 +17,7 @@
     },
     {
       "kind": "add_state_labels",
+      "id_encoding_path": "series_id_encoding.json",
       "events_path": "data/raw/train_events.csv",
       "use_similarity_nan": true,
       "fill_limit": 8640,
@@ -23,6 +25,7 @@
     },
     {
       "kind": "add_event_labels",
+      "id_encoding_path": "series_id_encoding.json",
       "events_path": "data/raw/train_events.csv",
       "smoothing": 5,
       "steepness": 2
@@ -32,13 +35,6 @@
     }
   ],
   "feature_engineering": [
-    {
-      "kind": "sun",
-      "sun_features": [
-        "azimuth",
-        "altitude"
-      ]
-    },
     {
       "kind": "time",
       "time_features": [
@@ -61,6 +57,13 @@
         "anglez_diff_abs_clip_10_savgol_180_diff",
         "anglez_diff_abs_clip_10_savgol_1000_diff",
         "anglez_diff_abs_clip_10_median_360"
+      ]
+    },
+    {
+      "kind": "sun",
+      "sun_features": [
+        "azimuth",
+        "altitude"
       ]
     }
   ],

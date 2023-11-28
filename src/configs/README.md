@@ -576,13 +576,18 @@ Example:
 ## Ensemble
 For now, we support just an ensemble of 1 function.
 
-Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined
+Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined, and whether to only do predictions
+
+### Combinations methods
+- `confidence_average`: Averages confidences for all models by weight
+- `power_average`: Applies a power to all model predictions and then averages them
 
 ```JSON
 "ensemble": {
     "models": ["model1name", "model2name"],
     "weights": [1, 2],
     "comb_method": "addition",
+    "pred_only": false
 }
 ```
 

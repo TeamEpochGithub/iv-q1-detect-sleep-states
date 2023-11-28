@@ -29,6 +29,12 @@ def main() -> None:
 
     # Initialize wandb
     if config_loader.get_log_to_wandb():
+        # Initialize wandb
+        wandb.init(
+            project='detect-sleep-states',
+            name=config_hash,
+            config=config_loader.get_config()
+        )
         # Add models
         is_hpo = config_loader.get_hpo()
         is_ensemble_hpo = config_loader.get_ensemble_hpo()
@@ -39,7 +45,7 @@ def main() -> None:
 
         if is_ensemble_hpo:
             ensemble_config = is_ensemble_hpo
-            min_models, max_models = (1, 5)
+            min_models, max_models = (1, 2)
             n_models = np.random.randint(min_models, max_models)
 
             ensemble_models = os.listdir(ensemble_config["model_config_loc"])
@@ -53,17 +59,13 @@ def main() -> None:
             # Set the ensemble config
             config_loader.set_ensemble()
 
+            # Merge the wandb config and the ensemble config
+            config_loader.config["ensemble_hpo"] |= wandb.config.get("ensemble_hpo")
 
         if is_hpo:
             # Get the hpo config and add it to the config on wandb
             config_loader.config["hpo_model"] = config_loader.get_hpo_config().config
 
-            # Initialize wandb
-            wandb.init(
-                project='detect-sleep-states',
-                name=config_hash,
-                config=config_loader.get_config()
-            )
             # Merge the config from the hpo config
             config_loader.config |= wandb.config
             assert config_loader.config["hpo_model"] == wandb.config["hpo_model"]
@@ -94,7 +96,7 @@ def main() -> None:
 
         # Update the wandb summary with the updated config
         wandb.run.summary.update(curr_config)
-
+        return
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")

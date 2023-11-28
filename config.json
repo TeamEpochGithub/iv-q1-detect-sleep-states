@@ -15,17 +15,17 @@
         "models": ["cmon.json", "cmon2.json", "transformer_gru.json"],
         "weights": [0.6, 0.4, 0.2],
         "comb_method": "confidence_average",
-        "pred_only": true
+        "pred_only": false
     },
     "ensemble_hpo": {
         "model_config_loc": "ensemble_configs",
         "n_events": 10,
         "find_peaks": {
-            "distance": 10,
-            "prominence": 0.1,
-            "width": 10,
+            "distance": 100,
+            "prominence": 0,
+            "width": 24,
             "height": 0,
-            "threshold": 0.1
+            "threshold": 0
         }
     },
     "cv": {

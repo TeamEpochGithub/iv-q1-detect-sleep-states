@@ -19,7 +19,6 @@ from src.util.submissionformat import to_submission_format
 
 
 def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, store_location: str, hpo: bool = False) -> None:
-
     # Initialisation
     model_config.reset_globals()
     model_name = model_config.get_name()
@@ -73,7 +72,7 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
 
     # Get filename of model
     model_filename_opt = store_location + "/optimal_" + \
-        model_name + "-" + initial_hash + model.hash + ".pt"
+                         model_name + "-" + initial_hash + model.hash + ".pt"
 
     # Get cv object
     cv = cross_validation
@@ -133,7 +132,7 @@ def scoring(config: ConfigLoader) -> None:
 
     # Make predictions on test data
     predictions = ensemble.pred(
-        config.get_model_store_loc(), pred_with_cpu=pred_cpu)
+        config.get_model_store_loc(), pred_with_cpu=pred_cpu, find_peaks=config.config["ensemble_hpo"])
     test_ids = ensemble.get_test_ids()
 
     logger.info("Formatting predictions...")
@@ -195,13 +194,13 @@ def full_train_from_config(model_config_loader: ModelConfigLoader, store_locatio
 
     # Save scaler
     scaler_filename: str = store_location + "/scaler-" + \
-        initial_hash + ".pkl"
+                           initial_hash + ".pkl"
     pretrain.scaler.save(scaler_filename)
 
     model_filename_opt = store_location + "/optimal_" + \
-        model_name + "-" + initial_hash + model.hash + ".pt"
+                         model_name + "-" + initial_hash + model.hash + ".pt"
     model_filename_submit = store_location + "/submit_" + \
-        model_name + "-" + initial_hash + model.hash + ".pt"
+                            model_name + "-" + initial_hash + model.hash + ".pt"
     if os.path.isfile(model_filename_submit):
         logger.info("Found existing fully trained submit model: " +
                     model_name + " with location " + model_filename_submit)

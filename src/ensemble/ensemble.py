@@ -66,7 +66,7 @@ class Ensemble:
         """
         return self.test_ids
 
-    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False, find_peaks: dict = None) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -76,6 +76,7 @@ class Ensemble:
         :param pred_with_cpu: whether to use the cpu for prediction
         :param training: whether to train the model
         :param is_kaggle: whether to submit to kaggle
+        :param find_peaks: whether to parameterize the find peaks algorithm
         :return: 3D array with shape (window, 2), with onset and wakeup steps (nan if no detection)
         """
 
@@ -116,7 +117,7 @@ class Ensemble:
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
                 # Convert to relative window event timestamps
-                events = pred_to_event_state(pred, thresh=0, n_events=10)
+                events = pred_to_event_state(pred, thresh=0, n_events=find_peaks["n_events"], find_peaks_params=find_peaks["find_peaks"])
 
                 # Add step offset based on repeat factor.
                 if data_info.downsampling_factor <= 1:
@@ -225,11 +226,11 @@ class Ensemble:
         model_type = None
         if training:
             model_filename = store_location + "/optimal_" + \
-                model_name + "-" + initial_hash + model.hash + ".pt"
+                             model_name + "-" + initial_hash + model.hash + ".pt"
             model_type = "optimal"
         else:
             model_filename = store_location + "/submit_" + \
-                model_name + "-" + initial_hash + model.hash + ".pt"
+                             model_name + "-" + initial_hash + model.hash + ".pt"
             model_type = "submit"
 
         # If this file exists, load instead of start training

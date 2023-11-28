@@ -106,7 +106,7 @@ class AddEventLabels(PP):
 
     def custom_score_array(self, input_array):
         # Define the maximum distances for different scores
-        tolerances = [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]
+        tolerances = [12, 36]  # , 60, 90, 120, 150, 180, 240, 300, 360]
         if self.steepness > 0:
             tolerances = [tolerance // self.steepness for tolerance in tolerances]
         else:

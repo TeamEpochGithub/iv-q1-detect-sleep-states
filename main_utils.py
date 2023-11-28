@@ -68,7 +68,7 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(
-        model_config.get_pp_fe_pretrain(), length=5)
+        model_config.get_pretrain_config(), length=5)
     data_info.substage = f"training model: {model_name}"
 
     # Get filename of model

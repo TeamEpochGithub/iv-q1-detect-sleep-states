@@ -134,7 +134,6 @@ class Ensemble:
             # Return tuple
             return all_predictions, all_confidences
 
-
         # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 
         # Weight the predictions
@@ -169,8 +168,10 @@ class Ensemble:
             "Preprocessing and feature engineering", spacing=0)
         data_info.stage = "preprocessing & feature engineering"
 
-        logger.info(f"Saving output is {not is_kaggle}, since kaggle submission is {is_kaggle}")
-        featured_data = get_processed_data(model_config_loader, training=training, save_output=not is_kaggle)
+        logger.info(
+            f"Saving output is {not is_kaggle}, since kaggle submission is {is_kaggle}")
+        featured_data = get_processed_data(
+            model_config_loader, training=training, save_output=not is_kaggle)
 
         # ------------------------ #
         #         Pretrain         #
@@ -225,11 +226,11 @@ class Ensemble:
         model_type = None
         if training:
             model_filename = store_location + "/optimal_" + \
-                             model_name + "-" + initial_hash + model.hash + ".pt"
+                model_name + "-" + initial_hash + model.hash + ".pt"
             model_type = "optimal"
         else:
             model_filename = store_location + "/submit_" + \
-                             model_name + "-" + initial_hash + model.hash + ".pt"
+                model_name + "-" + initial_hash + model.hash + ".pt"
             model_type = "submit"
 
         # If this file exists, load instead of start training

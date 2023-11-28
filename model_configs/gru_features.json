@@ -8,8 +8,7 @@
   },
   "preprocessing": [
     {
-      "kind": "mem_reduce",
-      "id_encoding_path": "series_id_encoding.json"
+      "kind": "mem_reduce"
     },
     {
       "kind": "similarity_nan",
@@ -17,7 +16,6 @@
     },
     {
       "kind": "add_state_labels",
-      "id_encoding_path": "series_id_encoding.json",
       "events_path": "data/raw/train_events.csv",
       "use_similarity_nan": true,
       "fill_limit": 8640,
@@ -25,7 +23,6 @@
     },
     {
       "kind": "add_event_labels",
-      "id_encoding_path": "series_id_encoding.json",
       "events_path": "data/raw/train_events.csv",
       "smoothing": 5,
       "steepness": 2

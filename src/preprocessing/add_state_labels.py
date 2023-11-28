@@ -17,14 +17,11 @@ class AddStateLabels(PP):
     The values are 0 for asleep, 1 for awake, and 2 for unlabeled.
 
     :param events_path: the path to the events csv file
-    :param id_encoding_path: the path to the encoding file of the series id
     :param use_similarity_nan: If True, use the similarity_nan column to fill in the awake column
     :param fill_limit: The maximum number of steps to fill in the awake column
     :param nan_tolerance_window: The number of steps to tolerate NaNs before filling in the awake column
     """
-
     events_path: str
-    id_encoding_path: str
     use_similarity_nan: bool
     fill_limit: int | None = None
     nan_tolerance_window: int = 1

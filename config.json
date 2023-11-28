@@ -12,8 +12,8 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["gru_features.json", "sparse_transformer_sweep_features.json"],
-        "weights": [1, 1],
+        "models": ["gru_features.json", "sparse_transformer_sweep_features.json", "cmon2.json"],
+        "weights": [1, 1, 0.5],
         "comb_method": "confidence_average",
         "pred_only": true
     },
@@ -24,7 +24,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": true,
+    "train_for_submission": false,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

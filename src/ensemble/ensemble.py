@@ -103,10 +103,13 @@ class Ensemble:
                 predictions = model_pred.reshape(
                     model_pred.shape[0], model_pred.shape[1], 2, 1)
 
-        if self.combination_method == "confidence_average":
+        if self.combination_method == "confidence_average" or self.combination_method == "power_average":
             # Weight the predictions
 
             logger.info("Weighting predictions with confidences")
+
+            if self.combination_method == "power_average":
+                predictions = np.power(predictions, 1.5)
 
             predictions = np.average(
                 predictions, axis=3, weights=self.weight_matrix)
@@ -130,6 +133,7 @@ class Ensemble:
 
             # Return tuple
             return all_predictions, all_confidences
+
 
         # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 

@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
 
-import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64tz_dtype
 from tqdm import tqdm
@@ -62,15 +61,10 @@ class AddWeather(FE):
         :param data: the data to process with timestamp columns
         :return: the processed data with the columns in weather_features
         """
-        assert {'timestamp', 'utc'}.issubset(set(next(iter(data.values())).columns)), "The timestamp and/or UTC columns are missing!"
+        assert 'timestamp' in next(iter(data.values())).columns, "The timestamp column is missing"
 
-        # TODO Crashes when there is a series affected by DST (first occurrence at index 7)
         for sid, _ in tqdm(data.items()):
-            # Since the timestamp and UTC columns are stored separately because some shitty code breaks down somewhere
-            # when timestamps are stored properly, we need to merge them together in a temporary column here.
-            data[sid]['temp_timestamp'] = pd.to_datetime(data[sid]['timestamp'] + pd.to_timedelta(data[sid]['utc'], unit='h'), utc=True, errors='raise')
-            assert is_datetime64tz_dtype(data[sid]['temp_timestamp']), \
-                f"The data (id={sid}) timestamp column (dtype={data[sid]['temp_timestamp'].dtype}) is not of type 'datetime64[ns, UTC]'!"
-            data[sid] = pd.merge_asof(data[sid], self._weather_data[['timestamp'] + self.weather_features], left_on='temp_timestamp', right_on='timestamp', direction='nearest')
+            data[sid] = pd.merge_asof(data[sid], self._weather_data[['timestamp'] + self.weather_features],
+                                      on='timestamp', direction='nearest')
 
         return data

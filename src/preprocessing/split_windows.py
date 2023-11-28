@@ -133,4 +133,7 @@ class SplitWindows(PP):
         dfs_to_concat = [start_pad_df, group, end_pad_df]
         group = pd.concat([df for df in dfs_to_concat if not df.empty], ignore_index=True)
 
+        assert group['timestamp'].is_monotonic_increasing, \
+            "The timestamp column is not sorted anymore. Something went wrong!"
+
         return group.astype(pad_type)

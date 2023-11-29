@@ -12,10 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["sparse_transformer_sweep_features.json"],
-        "weights": [1],
+        "models": ["gru_features12.json", "gru_features.json", "sparse_transformer_sweep_features.json"],
+        "weights": [1, 1, 1],
         "comb_method": "confidence_average",
-        "pred_only": false
+        "pred_only": true
     },
     "cv": {
         "splitter": "group_k_fold",
@@ -24,7 +24,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

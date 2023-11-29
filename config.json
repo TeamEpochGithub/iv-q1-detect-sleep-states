@@ -12,10 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["gru_features.json", "sparse_transformer_sweep_features.json", "cmon2.json"],
-        "weights": [1, 1, 0.5],
+        "models": ["236-gru-features-dropout.json"],
+        "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": true
+        "pred_only": false
     },
     "cv": {
         "splitter": "group_k_fold",
@@ -24,7 +24,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

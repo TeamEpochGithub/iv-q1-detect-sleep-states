@@ -70,13 +70,18 @@
         "features": [
           "f_anglez_diff_abs",
           "f_enmo",
-          "f_anglez_diff_abs_clip_10_mean_1000",
+          "f_anglez_diff_abs",
+          "f_anglez_diff_abs_median_1000",
           "f_anglez_diff_abs_clip_10_skew_1000",
+          "f_anglez_diff_abs_clip_10_savgol_180",
           "f_anglez_diff_abs_clip_10_median_180",
           "f_enmo_std_90",
+          "f_anglez_diff_abs_clip_10_max_36",
           "f_enmo_std_50",
-          "f_anglez_diff_abs_clip_10_median_360",
-          "f_anglez_diff_abs_median_1000"
+          "f_anglez_diff_abs_clip_10_mean_1000",
+          "f_anglez_diff_abs_clip_10_savgol_180_diff",
+          "f_anglez_diff_abs_clip_10_savgol_1000_diff",
+          "f_anglez_diff_abs_clip_10_median_360"
         ],
         "methods": [
           "min",
@@ -99,7 +104,7 @@
       "type": "Spectrogram_Cnn_Gru",
       "loss": "shrinkage-loss",
       "optimizer": "adam-torch",
-      "epochs": 50,
+      "epochs": 100,
       "batch_size": 64,
       "lr": 0.01,
       "early_stopping": 20,

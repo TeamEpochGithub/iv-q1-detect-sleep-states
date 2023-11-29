@@ -221,9 +221,8 @@ class Ensemble:
         model = model_config_loader.set_model()
 
         # Hash of concatenated string of preprocessing, feature engineering and pretraining
-        # FIXME Should be datainfo, preprocessing, feature engineering and pretraining (get_pretrain_config)
         initial_hash = hash_config(
-            model_config_loader.get_pp_fe_pretrain(), length=5)
+            model_config_loader.get_pretrain_config(), length=5)
         data_info.substage = f"training model: {model_name}"
 
         # Get filename of model

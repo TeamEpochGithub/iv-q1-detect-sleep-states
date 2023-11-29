@@ -68,7 +68,7 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
 
     # Hash of concatenated string of preprocessing, feature engineering and pretraining
     initial_hash = hash_config(
-        model_config.get_pp_fe_pretrain(), length=5)
+        model_config.get_pretrain_config(), length=5)
     data_info.substage = f"training model: {model_name}"
 
     # Get filename of model
@@ -178,25 +178,16 @@ def full_train_from_config(model_config_loader: ModelConfigLoader, store_locatio
     model_name = model_config_loader.get_name()
 
     initial_hash = hash_config(
-        model_config_loader.get_pp_fe_pretrain(), length=5)
+        model_config_loader.get_pretrain_config(), length=5)
 
     featured_data = get_processed_data(
         model_config_loader, training=True, save_output=True)
 
-    # Get pretrain
-    pretrain: Pretrain = model_config_loader.get_pretraining()
-
-    # Retrain all models with optimal parameters
     x_train, y_train = get_pretrain_full_cache(
         model_config_loader, featured_data, save_output=True)
 
     logger.info("Creating model using ModelConfigLoader")
     model = model_config_loader.set_model()
-
-    # Save scaler
-    scaler_filename: str = store_location + "/scaler-" + \
-        initial_hash + ".pkl"
-    pretrain.scaler.save(scaler_filename)
 
     model_filename_opt = store_location + "/optimal_" + \
         model_name + "-" + initial_hash + model.hash + ".pt"

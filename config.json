@@ -24,7 +24,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

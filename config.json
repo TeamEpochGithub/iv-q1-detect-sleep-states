@@ -15,7 +15,7 @@
         "models": ["cmon.json"],
         "weights": [0.6],
         "comb_method": "confidence_average",
-        "pred_only": false
+        "pred_only": true
     },
     "ensemble_hpo": {
         "model_config_loc": "ensemble_configs",

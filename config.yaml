@@ -30,8 +30,8 @@ parameters:
             max: 100
             min: 5
           height:
-            max: 1
-            min: 0
+            max: 0.3
+            min: 0.0
           threshold:
-            max: 1
-            min: 0
+            max: 0.3
+            min: 0.0

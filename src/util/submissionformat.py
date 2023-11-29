@@ -93,4 +93,5 @@ def set_window_info(data: dict) -> None:
     if data_info.window_info is None:
         data_info.window_info = res_concat
     else:
+        data_info.window_info = res_concat
         assert data_info.window_info.equals(res_concat), "Window info is not the same as before"

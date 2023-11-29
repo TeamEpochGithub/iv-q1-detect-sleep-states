@@ -12,8 +12,8 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["horsemen1.json", "horsemen2.json", "horsemen3.json", "horsemen4.json"],
-        "weights": [2, 1, 1, 1],
+        "models": ["STFGO.json", "horsemen1.json"],
+        "weights": [1, 1],
         "comb_method": "confidence_average",
         "pred_only": true
     },
@@ -24,7 +24,7 @@
             "n_splits": 5
         }
     },
-    "train_for_submission": false,
+    "train_for_submission": true,
     "scoring": true,
     "visualize_preds": {
         "n": 0,

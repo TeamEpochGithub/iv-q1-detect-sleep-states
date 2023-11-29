@@ -49,7 +49,7 @@ class EventSegmentation2DCNNGRU(EventModel):
             # Read the indices of the features we want to pass along the spectrogram from datainfo
             spec_features_indices = [data_info.X_columns[feature] for feature in spec_features_downsampled]
         else:
-            spec_features_indices = list(data_info.X_columns.values())
+            spec_features_indices = list(range(len(data_info.X_columns.values())))
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         if self.config.get("use_auxiliary_awake", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
@@ -286,9 +286,27 @@ class EventSegmentation2DCNNGRU(EventModel):
         Reset the weights of the model. Useful for retraining the model.
         """
         torch.manual_seed(42)
+        if self.config.get("use_spec_features", False):
+            spec_features = ['f_enmo', 'f_anglez_diff_abs', 'f_anglez_diff_abs_median_1000', 'f_anglez_diff_abs_clip_10_skew_1000',
+                             'f_anglez_diff_abs_clip_10_median_180', 'f_enmo_std_90', 'f_enmo_std_50', 'f_anglez_diff_abs_clip_10_median_360']
+            # add the downsampling methods to these features
+            spec_features_downsampled = []
+            downsampling_methods = ["mean", "median", "max", "min", "std", "var", "range"]
+            for feature in spec_features:
+                for method in downsampling_methods:
+                    # exclude max range and var from anglezdiffabs
+                    if feature == "f_anglez_diff_abs" and method in ["max", "range", "var"]:
+                        continue
+                    spec_features_downsampled.append(feature + "_" + method)
+            # Read the indices of the features we want to pass along the spectrogram from datainfo
+            spec_features_indices = [data_info.X_columns[feature] for feature in spec_features_downsampled]
+        else:
+            spec_features_indices = list(range(len(data_info.X_columns.values())))
         if self.config.get("use_auxiliary_awake", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=5, model_type=self.model_type, config=self.config)
+                                                           out_channels=5, model_type=self.model_type, config=self.config,
+                                                           spec_features_indices=spec_features_indices)
         else:
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=2, model_type=self.model_type, config=self.config)
+                                                           out_channels=2, model_type=self.model_type, config=self.config,
+                                                           spec_features_indices=spec_features_indices)

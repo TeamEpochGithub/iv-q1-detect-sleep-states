@@ -109,10 +109,12 @@ class Ensemble:
             logger.info("Weighting predictions with confidences")
 
             if self.combination_method == "power_average":
-                predictions = np.power(predictions, 1.5)
-
-            predictions = np.average(
-                predictions, axis=3, weights=self.weight_matrix)
+                predictions = np.power(predictions, 2)
+                # Sum the confidences
+                predictions = np.sum(predictions, axis=3)
+            else:
+                predictions = np.average(
+                    predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):

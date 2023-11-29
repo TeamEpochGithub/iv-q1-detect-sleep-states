@@ -100,7 +100,7 @@
       "loss": "shrinkage-loss",
       "optimizer": "adam-torch",
       "epochs": 50,
-      "batch_size": 64,
+      "batch_size": 32,
       "lr": 0.01,
       "early_stopping": 20,
       "threshold": 0,

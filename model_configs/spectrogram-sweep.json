@@ -50,7 +50,7 @@
             "kind": "rotation",
             "window_sizes": [18, 100, 360]
         }
-        
+
     ],
 
     "pretraining": {
@@ -66,7 +66,7 @@
         "loss": "shrinkage-loss",
         "optimizer": "adamw-torch",
         "epochs": 50,
-        "batch_size": 64,
+        "batch_size": 32,
         "lr": 0.002310136911348807,
         "lr_schedule": {
           "cycle_limit": 1,

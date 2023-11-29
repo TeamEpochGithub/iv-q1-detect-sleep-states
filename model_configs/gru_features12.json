@@ -1,8 +1,8 @@
 {
-    "name": "gru_features",
+    "name": "gru_features12",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 6,
+        "downsampling_factor": 12,
         "latitude": 40.73061,
         "longitude": -73.935242
     },
@@ -102,7 +102,7 @@
         "network_params": {
             "hidden_size": 8,
             "n_layers": 5,
-            "activation": "relu"
+            "activation": "gelu"
         },
         "lr_schedule": {
             "t_initial": 25,

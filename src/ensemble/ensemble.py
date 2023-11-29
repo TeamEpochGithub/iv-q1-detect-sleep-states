@@ -106,7 +106,7 @@ class Ensemble:
         if self.combination_method == "confidence_average" or self.combination_method == "power_average":
             # Weight the predictions
 
-            logger.info("Weighting predictions with confidences")
+            logger.info(f"Weighting predictions with confidences, weights = {self.weight_matrix}")
 
             if self.combination_method == "power_average":
                 predictions = np.power(predictions, 1.5)

@@ -12,10 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["gru_features12.json", "gru_features.json", "sparse_transformer_sweep_features.json"],
-        "weights": [1, 1, 1],
+        "models": ["236-gru-features-dropout.json"],
+        "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": true
+        "pred_only": false
     },
     "cv": {
         "splitter": "group_k_fold",

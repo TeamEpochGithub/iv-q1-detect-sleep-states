@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.feature_engineering.feature_engineering import FE, FEException
+from src.feature_engineering.feature_engineering import FE
 from src.feature_engineering.kurtosis import Kurtosis
 from src.feature_engineering.mean import Mean
 from src.feature_engineering.rotation import Rotation
@@ -21,7 +21,7 @@ class TestFE(TestCase):
         self.assertIsInstance(
             FE.from_config_single({"kind": "time", "time_features": ["day", "hour", "minute", "second"]}), Time)
         self.assertIsInstance(FE.from_config_single({"kind": "rotation"}), Rotation)
-        self.assertRaises(FEException, FE.from_config_single, {"kind": "e"})
+        self.assertRaises(AssertionError, FE.from_config_single, {"kind": "e"})
 
     def test_from_config(self):
         config: dict = {

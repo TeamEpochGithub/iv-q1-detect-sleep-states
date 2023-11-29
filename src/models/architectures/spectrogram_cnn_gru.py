@@ -5,18 +5,18 @@ import torchaudio.transforms as T
 
 
 class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
-    def __init__(self, in_channels, out_channels, model_type, config):
+    def __init__(self, in_channels, out_channels, model_type, config, spec_features_indices):
         super(MultiResidualBiGRUwSpectrogramCNN, self).__init__()
         self.config = config
         self.gru_params = config.get('gru_params', {})
-
+        self.spec_features_indices = spec_features_indices
         # TODO exclude some of the features from the spectrogram
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
             # The channels used by the encoder are for now only anglez and enmo
             # so this is hardcoded to 2 for now
-            in_channels=in_channels,
+            in_channels=len(spec_features_indices),
             classes=1,
             encoder_depth=config.get('encoder_depth', 5),
         )
@@ -37,7 +37,7 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
     def forward(self, x, use_activation=True):
         # Pass only enmo and anglez to the spectrogram
         x = x.permute(0, 2, 1)
-        x_spec = self.spectrogram(x)
+        x_spec = self.spectrogram(x[:, self.spec_features_indices, :])
         x_encoded = self.encoder(x_spec).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
@@ -46,9 +46,9 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
 
         # TODO if some features are excluded from the spectrgoram chnage this
         # downsample the input features to the same shape as the encoded features
-        x = x[:, :, ::self.config.get('hop_length')]
+        x = x[:, self.spec_features_indices, ::self.config.get('hop_length')]
         # now sum the residual features x and the encoded features x
-        x_encoded += x.permute(0, 2, 1)
+        x_encoded[:, ::self.config.get('hop_length'), self.spec_features_indices] += x.permute(0, 2, 1)
 
         y, _ = self.GRU(x_encoded, use_activation=use_activation)
         return y

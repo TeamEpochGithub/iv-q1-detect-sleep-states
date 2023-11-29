@@ -8,6 +8,7 @@ from numpy import ndarray
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
 from tqdm import tqdm
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 from ... import data_info
 from ...logger.logger import logger
@@ -211,14 +212,14 @@ class EventTrainer:
         # Forward pass with model and optional activation delay
         if use_activation is not None:
             # If it is an GRU Model, ignore the second output
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device),
                                   use_activation=use_activation)
             else:
                 output = model(data[0].to(self.device),
                                use_activation=use_activation)
         else:
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
@@ -310,14 +311,14 @@ class EventTrainer:
             # Forward pass with model
             if use_activation is not None:
                 # If it is an GRU Model, ignore the second output
-                if str(model).startswith("MultiResidualBiGRU"):
+                if isinstance(model, MultiResidualBiGRU):
                     output, _ = model(data[0].to(self.device),
                                       use_activation=use_activation)
                 else:
                     output = model(data[0].to(self.device),
                                    use_activation=use_activation)
             else:
-                if str(model).startswith("MultiResidualBiGRU"):
+                if isinstance(model, MultiResidualBiGRU):
                     output, _ = model(data[0].to(self.device))
                 else:
                     output = model(data[0].to(self.device))

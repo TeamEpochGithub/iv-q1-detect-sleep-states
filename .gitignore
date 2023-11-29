@@ -200,3 +200,6 @@ prediction_plots/
 
 #Ignore submissions
 submissions/
+
+# Hydra logs
+outputs/

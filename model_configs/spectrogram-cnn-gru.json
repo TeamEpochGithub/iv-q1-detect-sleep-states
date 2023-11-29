@@ -2,22 +2,20 @@
     "name": "spectrogram-cnn-gru",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 1,
+        "downsampling_factor": 12,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
     "preprocessing": [
         {
-            "kind": "mem_reduce",
-            "id_encoding_path": "series_id_encoding.json"
+            "kind": "mem_reduce"
         },
         {
             "kind": "similarity_nan",
-            "as_feature": false
+            "as_feature": true
         },
         {
             "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "use_similarity_nan": true,
             "fill_limit": 8640,
@@ -25,7 +23,6 @@
         },
         {
             "kind": "add_event_labels",
-            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "smoothing": 5,
             "steepness": 2
@@ -103,7 +100,7 @@
         "early_stopping": 20,
         "threshold": 0.0,
         "n_fft": 63,
-        "hop_length": 18,
+        "hop_length": 1,
         "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
         "mask_unlabeled": false,

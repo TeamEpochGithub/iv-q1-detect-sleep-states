@@ -97,7 +97,6 @@ class AddEventLabels(PP):
         # This is done to prevent overfitting to the exact event step
         series["state-onset"] = gaussian_filter(series["state-onset"], sigma=self.smoothing).astype(np.float32)
         series["state-wakeup"] = gaussian_filter(series["state-wakeup"], sigma=self.smoothing).astype(np.float32)
-
         return series
 
     def custom_score_array(self, input_array):

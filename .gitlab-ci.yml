@@ -28,8 +28,8 @@ lint:
   stage: lint
   image: python:$PYTHON_VERSION
   script:
-    - flake8 . --max-line-length=175 --statistics --exit-zero --exclude ./venv
-    - ERROR_COUNT=$(flake8 . --max-line-length=175 --count --exclude ./venv --exit-zero | tail -n 1)
+    - flake8 . --max-line-length=175 --statistics --exit-zero --exclude ./venv,./src/external
+    - ERROR_COUNT=$(flake8 . --max-line-length=175 --count --exclude ./venv,./src/external --exit-zero | tail -n 1)
     - ERROR_COUNT=$((ERROR_COUNT))
     - echo $ERROR_COUNT
     - if [ "$ERROR_COUNT" -gt 0 ]; then

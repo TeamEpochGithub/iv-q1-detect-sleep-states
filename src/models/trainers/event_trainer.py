@@ -8,9 +8,25 @@ from numpy import ndarray
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
 from tqdm import tqdm
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 from ... import data_info
 from ...logger.logger import logger
+
+
+def masked_loss(criterion, outputs, y):
+    labels = y[:, :, :3]
+
+    unlabeled_mask = y[:, :, 3]
+    unlabeled_mask = 1 - unlabeled_mask
+    unlabeled_mask = unlabeled_mask.unsqueeze(1).repeat(1, 1, 3)
+
+    loss_unreduced = criterion(outputs, labels)
+
+    loss_masked = loss_unreduced * unlabeled_mask
+
+    loss = torch.sum(loss_masked) / torch.sum(unlabeled_mask)
+    return loss
 
 
 class EventTrainer:
@@ -196,14 +212,14 @@ class EventTrainer:
         # Forward pass with model and optional activation delay
         if use_activation is not None:
             # If it is an GRU Model, ignore the second output
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device),
                                   use_activation=use_activation)
             else:
                 output = model(data[0].to(self.device),
                                use_activation=use_activation)
         else:
-            if str(model).startswith("MultiResidualBiGRU"):
+            if isinstance(model, MultiResidualBiGRU):
                 output, _ = model(data[0].to(self.device))
             else:
                 output = model(data[0].to(self.device))
@@ -295,14 +311,14 @@ class EventTrainer:
             # Forward pass with model
             if use_activation is not None:
                 # If it is an GRU Model, ignore the second output
-                if str(model).startswith("MultiResidualBiGRU"):
+                if isinstance(model, MultiResidualBiGRU):
                     output, _ = model(data[0].to(self.device),
                                       use_activation=use_activation)
                 else:
                     output = model(data[0].to(self.device),
                                    use_activation=use_activation)
             else:
-                if str(model).startswith("MultiResidualBiGRU"):
+                if isinstance(model, MultiResidualBiGRU):
                     output, _ = model(data[0].to(self.device))
                 else:
                     output = model(data[0].to(self.device))

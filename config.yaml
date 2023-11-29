@@ -23,15 +23,6 @@ parameters:
           distance:
             max: 500
             min: 20
-          prominence:
-            max: 0.5
-            min: 0
           width:
             max: 100
             min: 5
-          height:
-            max: 0.3
-            min: 0.0
-          threshold:
-            max: 0.3
-            min: 0.0

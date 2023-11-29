@@ -1,3 +1,5 @@
+from typing import Final
+
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -5,18 +7,18 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 
-WEATHER_CONDITION_CODES: list[str] = [
+WEATHER_CONDITION_CODES: Final[list[str]] = [
     'null', 'Clear', 'Fair', 'Cloudy', 'Overcast', 'Fog', 'Freezing Fog', 'Light Rain', 'Rain', 'Heavy Rain',
     'Freezing Rain', 'Heavy Freezing Rain', 'Sleet', 'Heavy Sleet', 'Light Snowfall', 'Snowfall', 'Heavy Snowfall',
     'Rain Shower', 'Heavy Rain Shower', 'Sleet Shower', 'Heavy Sleet Shower', 'Snow Shower', 'Heavy Snow Shower',
     'Lightning', 'Hail', 'Thunderstorm', 'Heavy Thunderstorm', 'Storm'
 ]
 
-fill_na_with_zeros = SimpleImputer(missing_values=pd.NA, strategy='constant', fill_value=0)
-float_to_uint8 = FunctionTransformer(lambda x: x.astype(np.uint8), feature_names_out='one-to-one')
-coco_one_hot_encoder = OneHotEncoder(drop='first', sparse_output=False, handle_unknown='error', dtype=np.float32)
+fill_na_with_zeros: Final[SimpleImputer] = SimpleImputer(missing_values=pd.NA, strategy='constant', fill_value=0)
+float_to_uint8: Final[FunctionTransformer] = FunctionTransformer(lambda x: x.astype(np.uint8), feature_names_out='one-to-one')
+coco_one_hot_encoder: Final[OneHotEncoder] = OneHotEncoder(drop='first', sparse_output=False, handle_unknown='error', dtype=np.uint8)
 
-preprocessing_steps = Pipeline(
+preprocessing_steps: Final[Pipeline] = Pipeline(
     steps=[
         ('fill_na_with_zeros', fill_na_with_zeros),
         ('coco_float_to_uint8', ColumnTransformer(
@@ -49,9 +51,9 @@ def preprocess_weather_data(weather_df: pd.DataFrame) -> pd.DataFrame:
 
     :param weather_df: the weather data with 'timestamp', 'temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', and  'coco' columns.
     :return: the preprocessed weather data with 'timestamp', 'f_temp', 'f_dwpt', 'f_rhum', 'f_prcp', 'f_snow', 'f_wdir', 'f_wspd', 'f_wpgt',
-        'f_pres', and 'f_tsun' columns in addtition to the one hot encoded 'f_coco' columns.
+        'f_pres', and 'f_tsun' columns in addition to the one hot encoded 'f_coco' columns.
     """
-    weather_df = preprocessing_steps.fit_transform(weather_df)
+    weather_df: pd.DataFrame = preprocessing_steps.fit_transform(weather_df)
 
     # Rename the columns
     weather_df.rename(columns={feature: f"f_{feature.split('__')[-1]}" for feature in weather_df.columns}, inplace=True)

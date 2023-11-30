@@ -152,6 +152,7 @@ if __name__ == "__main__":
 
     # Set seed for reproducibility
     torch.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
 
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")

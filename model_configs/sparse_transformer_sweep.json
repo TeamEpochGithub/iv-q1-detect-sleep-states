@@ -1,14 +1,15 @@
 {
-    "name": "gru_sweep",
+    "name": "sparse_transformer_sweep",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 24,
+        "downsampling_factor": 12,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
     "preprocessing": [
         {
-            "kind": "mem_reduce"
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
         },
         {
             "kind": "similarity_nan",
@@ -16,6 +17,7 @@
         },
         {
             "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "use_similarity_nan": true,
             "fill_limit": 8640,
@@ -23,8 +25,10 @@
         },
         {
             "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 0,
+            "steepness": 2
         },
         {
             "kind": "split_windows"
@@ -38,10 +42,6 @@
         {
             "kind": "sun",
             "sun_features": ["azimuth", "altitude"]
-        },
-        {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
         }
     ],
     "pretraining": {
@@ -57,27 +57,48 @@
         }
     },
     "architecture": {
-        "activation_delay": 13,
-        "batch_size": 56,
-        "early_stopping": 37,
-        "epochs": 5,
+        "activation_delay": 45,
+        "batch_size": 90,
+        "early_stopping": 48,
+        "epochs": 250,
         "loss": "shrinkage-loss",
-        "lr": 0.00822546449394296,
+        "lr": 0.015549418652428596,
         "lr_schedule": {
-            "cycle_limit": 3,
-            "lr_min": 0.0028207485798287975,
-            "t_initial": 47,
+            "cycle_limit": 2,
+            "lr_min": 0.002,
+            "t_initial": 33,
             "warmup_lr_init": 0.000001,
-            "warmup_t": 3
+            "warmup_t": 5
         },
         "mask_unlabeled": false,
         "network_params": {
-            "activation": "gelu",
-            "hidden_size": 16,
-            "n_layers": 10
+            "dropout": 0.6229411429626215,
+            "emb_dim": 248,
+            "forward_dim": 922,
+            "heads": 6,
+            "n_layers": 6,
+            "pe": "fixed",
+            "pooling": "gru",
+            "attention": {
+                "type": "sparse",
+                "block_size": 60,
+                "local_attn_ctx": 20,
+                "attn_mode": "all"
+            },
+            "pooling_args": {
+                "activation": "relu",
+                "bidir": true,
+                "dropout": 0,
+                "hidden_size": 7,
+                "n_layers": 6
+            },
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 8
+            }
         },
         "optimizer": "adamw-torch",
         "threshold": 0,
-        "type": "event-res-gru"
+        "type": "event-segmentation-transformer"
     }
 }

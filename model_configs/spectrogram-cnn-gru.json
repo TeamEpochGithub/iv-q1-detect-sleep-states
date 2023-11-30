@@ -69,14 +69,7 @@
       "downsample": {
         "features": [
           "f_anglez_diff_abs",
-          "f_enmo",
-          "f_anglez_diff_abs_clip_10_mean_1000",
-          "f_anglez_diff_abs_clip_10_skew_1000",
-          "f_anglez_diff_abs_clip_10_median_180",
-          "f_enmo_std_90",
-          "f_enmo_std_50",
-          "f_anglez_diff_abs_clip_10_median_360",
-          "f_anglez_diff_abs_median_1000"
+          "f_enmo"
         ],
         "methods": [
           "min",
@@ -99,10 +92,10 @@
       "type": "Spectrogram_Cnn_Gru",
       "loss": "shrinkage-loss",
       "optimizer": "adam-torch",
-      "epochs": 50,
+      "epochs": 100,
       "batch_size": 64,
       "lr": 0.01,
-      "early_stopping": 20,
+      "early_stopping": 40,
       "threshold": 0,
       "n_fft": 63,
       "hop_length": 1,
@@ -123,11 +116,12 @@
         "cycle_decay": 0.5
       },
       "gru_params": {
-        "activation": "relu",
+        "activation": "gelu",
         "hidden_size": 20,
-        "n_layers": 5
+        "n_layers": 8,
+        "dropout": 0.3
       },
-      "use_spec_features": true,
+      "use_spec_features": false,
       "use_decoder": true
     }
 }

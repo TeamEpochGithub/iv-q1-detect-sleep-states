@@ -35,8 +35,7 @@ class EventSegmentation2DCNNGRU(EventModel):
         self.model_type = "Spectrogram_2D_Cnn"
         # Features we want in the spectrgoram
         if self.config.get("use_spec_features", False):
-            spec_features = ['f_enmo', 'f_anglez_diff_abs', 'f_anglez_diff_abs_median_1000', 'f_anglez_diff_abs_clip_10_skew_1000',
-                             'f_anglez_diff_abs_clip_10_median_180', 'f_enmo_std_90', 'f_enmo_std_50', 'f_anglez_diff_abs_clip_10_median_360']
+            spec_features = ['f_enmo', 'f_anglez_diff_abs']
             # add the downsampling methods to these features
             spec_features_downsampled = []
             downsampling_methods = ["mean", "median", "max", "min", "std", "var", "range"]
@@ -296,8 +295,7 @@ class EventSegmentation2DCNNGRU(EventModel):
         """
         torch.manual_seed(42)
         if self.config.get("use_spec_features", False):
-            spec_features = ['f_enmo', 'f_anglez_diff_abs', 'f_anglez_diff_abs_median_1000', 'f_anglez_diff_abs_clip_10_skew_1000',
-                             'f_anglez_diff_abs_clip_10_median_180', 'f_enmo_std_90', 'f_enmo_std_50', 'f_anglez_diff_abs_clip_10_median_360']
+            spec_features = ['f_enmo', 'f_anglez_diff_abs']
             # add the downsampling methods to these features
             spec_features_downsampled = []
             downsampling_methods = ["mean", "median", "max", "min", "std", "var", "range"]

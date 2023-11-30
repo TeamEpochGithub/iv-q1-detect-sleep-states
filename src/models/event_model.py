@@ -17,6 +17,7 @@ from src.util.state_to_event import pred_to_event_state
 from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 
 class EventModel:
@@ -288,7 +289,7 @@ class EventModel:
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data))
-        dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
         predictions = []
 
@@ -297,7 +298,7 @@ class EventModel:
                 batch_data = batch_data[0].to(device)
 
                 # Make a batch prediction
-                if str(self.model).startswith("MultiResidualBiGRU"):
+                if isinstance(self.model, MultiResidualBiGRU):
                     batch_prediction, _ = self.model(batch_data)
                 else:
                     batch_prediction = self.model(batch_data)
@@ -369,7 +370,7 @@ class EventModel:
                        1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
 
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred, thresh=self.config["threshold"])
+            events = pred_to_event_state(pred, thresh=self.config["threshold"], n_events=10)
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:
@@ -382,7 +383,7 @@ class EventModel:
             all_confidences.append(confidences)
 
         # Return numpy array
-        return np.array(all_predictions), np.array(all_confidences)
+        return all_predictions, all_confidences
 
     def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
         """

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Final, TypeAlias
 
 import pandas as pd
@@ -9,6 +10,7 @@ import pandas as pd
 JSON: TypeAlias = None | int | str | bool | list['JSON'] | dict[str, 'JSON']
 
 
+@dataclass
 class FE(ABC):
     """
     Base class for feature engineering (FE) steps.
@@ -37,18 +39,20 @@ class FE(ABC):
         from .add_holidays import AddHolidays
         from .parser import Parser
         from .add_school_hours import AddSchoolHours
+        from .add_weather import AddWeather
 
         _FEATURE_ENGINEERING_KINDS: Final[dict[str, type[FE]]] = {
-            'kurtosis': Kurtosis,
-            'mean': Mean,
-            'skewness': Skewness,
-            'time': Time,
-            'rotation': Rotation,
-            'sun': Sun,
-            'sin_hour': SinHour,
-            'add_holidays': AddHolidays,
-            'parser': Parser,
-            'add_school_hours': AddSchoolHours
+            "kurtosis": Kurtosis,
+            "mean": Mean,
+            "skewness": Skewness,
+            "time": Time,
+            "rotation": Rotation,
+            "sun": Sun,
+            "sin_hour": SinHour,
+            "add_holidays": AddHolidays,
+            "add_school_hours": AddSchoolHours,
+            "add_weather": AddWeather,
+            "parser": Parser
         }
 
         assert kind in _FEATURE_ENGINEERING_KINDS, f"Unknown feature engineering step: {kind=}"

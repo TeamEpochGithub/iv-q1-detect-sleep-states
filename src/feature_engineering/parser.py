@@ -23,6 +23,7 @@ class Parser(FE):
     - <prev>_<stat>_<size>: compute the rolling statistic of the feature (either a pandas or numpy function)
     - <prev>_clip_<size>: clip the feature between -size and size
     - <prev>_savgol_<size>: compute the savgol filter of the feature with size, see scipy.signal.savgol_filter
+    - <prev>_sin: compute the sin of the feature, assumes input is in degrees
 
     <prev> can be an original feature, or it will be recursively computed with the same scheme.
     """
@@ -84,7 +85,9 @@ class Parser(FE):
         # we now know it should be a feature as <prev>_<func>_<size>
         splits = feat.split("_")
         func = splits[-2]
-        size = int(splits[-1])
+        size = float(splits[-1])
+        if int(size) == size:
+            size = int(size)
         prev = self.add_feature_and_save("_".join(splits[:-2]))
 
         # use a pandas rolling statistic function
@@ -99,5 +102,8 @@ class Parser(FE):
 
         if func == "savgol":
             return pd.Series(savgol_filter(prev, size, 3))
+
+        if func == 'sin':
+            return np.sin(prev * np.pi / 180)
 
         raise ValueError(f"Unknown feature: {feat}")

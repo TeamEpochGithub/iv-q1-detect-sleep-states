@@ -24,7 +24,7 @@ def pred_all(ensemble, store_location):
         model_config.reset_globals()
         model_pred = ensemble.pred_model(
             model_config_loader=model_config, store_location=store_location, pred_with_cpu=False,
-            training=False, is_kaggle=False)
+            training=True, is_kaggle=False)
 
         # Model_pred is tuple of np.array(onset, awake) for each window
         # Split the series of tuples into two column

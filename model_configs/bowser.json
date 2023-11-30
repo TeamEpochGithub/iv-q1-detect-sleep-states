@@ -1,0 +1,136 @@
+{
+    "name": "STFGO",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.73061,
+        "longitude": -73.935242
+    },
+    "preprocessing": [
+        {
+            "kind": "mem_reduce"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
+            "kind": "add_state_labels",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5,
+            "steepness": 2.5
+        },
+        {
+            "kind": "split_windows"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "parser",
+            "feats": [
+                "anglez_diff_abs",
+                "anglez_diff_abs_median_1000",
+                "anglez_diff_abs_clip_10_skew_1000",
+                "anglez_diff_abs_clip_10_savgol_180",
+                "anglez_diff_abs_clip_10_median_180",
+                "enmo_std_90",
+                "anglez_diff_abs_clip_10_max_36",
+                "enmo_std_50",
+                "anglez_diff_abs_clip_10_mean_1000",
+                "anglez_diff_abs_clip_10_savgol_180_diff",
+                "anglez_diff_abs_clip_10_savgol_1000_diff",
+                "anglez_diff_abs_clip_10_median_360"
+            ]
+        },
+        {
+            "kind": "sun",
+            "sun_features": [
+                "azimuth",
+                "altitude"
+            ]
+        },
+        {
+            "kind": "time",
+            "time_features": [
+                "hour",
+                "minute",
+                "weekday"
+            ]
+        }
+    ],
+    "pretraining": {
+        "downsample": {
+            "features": [
+                "f_anglez_diff_abs",
+                "f_enmo"
+            ],
+            "methods": [
+                "min",
+                "max",
+                "mean",
+                "std",
+                "median",
+                "range",
+                "var"
+            ],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+    "architecture": {
+        "activation_delay": 45,
+        "batch_size": 90,
+        "early_stopping": 48,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.015549418652428596,
+        "lr_schedule": {
+            "cycle_limit": 2,
+            "lr_min": 0.002,
+            "t_initial": 33,
+            "warmup_lr_init": 0.000001,
+            "warmup_t": 5
+        },
+        "mask_unlabeled": false,
+        "network_params": {
+            "dropout": 0.6229411429626215,
+            "emb_dim": 248,
+            "forward_dim": 922,
+            "heads": 6,
+            "n_layers": 6,
+            "pe": "fixed",
+            "pooling": "gru",
+            "attention": {
+                "type": "sparse",
+                "block_size": 60,
+                "local_attn_ctx": 20,
+                "attn_mode": "all"
+            },
+            "pooling_args": {
+                "hidden_size": 20,
+                "n_layers": 8,
+                "activation": "gelu",
+                "dropout": 0.4,
+                "bidir": true
+            },
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 8
+            }
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
+    }
+}

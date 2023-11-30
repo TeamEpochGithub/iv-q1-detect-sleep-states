@@ -6,7 +6,7 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-transformer-gru
+name: sweep-spectrogram-3
 metric:
   goal: maximize
   name: cv_score
@@ -14,13 +14,12 @@ parameters:
   hpo_model:
     parameters:
       name:
-        value: transformer_gru_sweep
+        value: spectrogram-sweep
       data_info:
         parameters:
           downsampling_factor:
             values:
-              - 12
-              - 24
+              - 1
           latitude:
             value: 40.73061
           longitude:
@@ -34,7 +33,7 @@ parameters:
           },
           {
               "kind": "similarity_nan",
-              "as_feature": true
+              "as_feature": false
           },
           {
               "kind": "add_state_labels",
@@ -57,23 +56,12 @@ parameters:
       feature_engineering:
         value: [
           {
-              "kind": "time",
-              "time_features": ["hour","minute"]
-          },
-          {
-              "kind": "sun",
-              "sun_features": ["azimuth", "altitude"]
-          }]
+            "kind": "rotation",
+            "window_sizes": [100,360]
+          }
+          ]
       pretraining:
         parameters:
-          downsample:
-            parameters:
-              features:
-                value: ["f_anglez", "f_enmo"]
-              methods:
-                value: ["min", "max", "mean", "std", "median", "range", "var"]
-              standard:
-                value: "mean"
           test_size:
             value: 0.2
           scaler:
@@ -84,32 +72,57 @@ parameters:
                 value: true
       architecture:
         parameters:
-          activation_delay:
-            max: 50
-            min: 20
-          batch_size:
-            max: 128
-            min: 64
-          early_stopping:
-            max: 50
-            min: 15
+          optimizer:
+            values:
+              - adam-torch
+              - adamw-torch
           epochs:
-            value: 250
+            min: 15
+            max: 100
+          batch_size:
+            max: 64
+            min: 16
+          lr:
+            max: 0.1
+            min: 1e-06
+          early_stopping:
+            max: 25
+            min: 15
+          threshold:
+            value: 0.0
+          n_fft:
+            values:
+              - 127
+              - 63
+          hop_length:
+            values:
+              - 6
+              - 10
+              - 12
+              - 18
+              - 20
+          encoder_name: 
+            value: "resnet34"
+          encoder_weights:
+            value: "imagenet"
+          mask_unlabeled:
+            values:
+              - true
+              - false
+          use_auxiliary_awake:
+            values:
+              - true
+              - false
           loss:
             values:
               - mse-torch
               - shrinkage-loss
               - kldiv-torch
-          lr:
-            max: 0.03
-            min: 0.005
           lr_schedule:
             parameters:
               cycle_limit:
-                values:
-                - 2
-                - 3
-                - 4
+                max: 2
+                min: 1
               lr_min:
                 value: 0.002
               t_initial:
@@ -118,67 +131,7 @@ parameters:
               warmup_lr_init:
                 value: 1e-06
               warmup_t:
-                max: 7
-                min: 2
-          mask_unlabeled:
-            values:
-              - true
-              - false
-          network_params:
-            parameters:
-              heads:
-                max: 8
-                min: 3
-              emb_dim:
-                max: 256
-                min: 64
-              forward_dim:
-                max: 1024
-                min: 256
-              n_layers:
                 max: 10
-                min: 5
-              pooling:
-                value: "gru"
-              pooling_args:
-                parameters:
-                  dropout:
-                    value: 0.0
-                  bidir:
-                    values:
-                    - true
-                    - false
-                  hidden_size:
-                    max: 60
-                    min: 6
-                  n_layers:
-                    max: 10
-                    min: 5
-                  activation:
-                    values:
-                    - relu
-                    - gelu
-              tokenizer:
-                value: "patch"
-              tokenizer_args:
-                parameters:
-                  patch_size:
-                    values:
-                    - 4
-                    - 6
-                    - 8
-                    - 12
-                    - 16
-              pe:
-                value: "fixed"
-              dropout:
-                max: 0.9
                 min: 0
-          optimizer:
-            values:
-              - adam-torch
-              - adamw-torch
-          threshold:
-            value: 0
           type:
-            value: event-segmentation-transformer
+            value: Spectrogram_2D_Cnn

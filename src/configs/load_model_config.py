@@ -12,6 +12,7 @@ from ..models.transformers.segmentation_transformer import SegmentationTransform
 from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
 from ..models.spectrogram_2d_cnn import EventSegmentation2DCNN
 from ..models.event_res_gru import EventResGRU
+from ..models.spectrogram_2d_cnn_gru import EventSegmentation2DCNNGRU
 from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
@@ -173,6 +174,8 @@ class ModelConfigLoader:
                     model_config, model_name)
             case "Spectrogram_2D_Cnn":
                 curr_model = EventSegmentation2DCNN(model_config, model_name)
+            case "Spectrogram_Cnn_Gru":
+                curr_model = EventSegmentation2DCNNGRU(model_config, model_name)
             case _:
                 logger.critical("Model not found: " + model_config["type"])
                 raise ConfigException(

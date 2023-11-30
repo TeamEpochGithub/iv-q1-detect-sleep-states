@@ -1,0 +1,91 @@
+{
+    "name": "spectrogram-sweep",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 1,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
+    "preprocessing": [
+        {
+            "kind": "mem_reduce",
+            "id_encoding_path": "series_id_encoding.json"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": false
+        },
+        {
+            "kind": "add_state_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8641,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "id_encoding_path": "series_id_encoding.json",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 5,
+            "steepness": 2
+        },
+        {
+            "kind": "split_windows"
+        }
+
+    ],
+    "feature_engineering": [
+        {
+            "kind": "parser",
+            "feats": [
+              "anglez_diff_abs",
+              "anglez_diff_abs_clip_10_savgol_180",
+              "anglez_diff_abs_clip_10_savgol_180_diff",
+              "anglez_diff_abs_clip_10_median_180",
+              "anglez_diff_abs_clip_10_skew_1000"
+            ]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [18, 100, 360]
+        }
+
+    ],
+
+    "pretraining": {
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+
+    "architecture": {
+        "type": "Spectrogram_2D_Cnn",
+        "loss": "shrinkage-loss",
+        "optimizer": "adamw-torch",
+        "epochs": 50,
+        "batch_size": 32,
+        "lr": 0.002310136911348807,
+        "lr_schedule": {
+          "cycle_limit": 1,
+          "lr_min": 0.001028958470471434,
+          "t_initial": 19,
+          "warmup_lr_init": 0.000001,
+          "warmup_t": 10
+        },
+        "hidden_layers": 8,
+        "early_stopping": 13,
+        "threshold": 0,
+        "n_fft": 63,
+        "hop_length": 18,
+        "encoder_name": "resnet34",
+        "encoder_weights": "imagenet",
+        "bilinear": false,
+        "scale_factor": 2,
+        "use_auxiliary_awake": true,
+        "use_activation": true,
+        "penis_curve": false
+      }
+}

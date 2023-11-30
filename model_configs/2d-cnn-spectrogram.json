@@ -50,13 +50,13 @@
         "loss": "shrinkage-loss",
         "optimizer": "adam-torch",
         "epochs": 1,
-        "batch_size": 64,
+        "batch_size": 32,
         "lr": 0.00001,
         "early_stopping": 20,
         "threshold": 0.005,
         "n_fft": 63,
         "hop_length": 6,
-        "encoder_name": "mobilenet_v2",
+        "encoder_name": "resnet34",
         "encoder_weights": "imagenet",
         "mask_unlabeled": false,
         "use_augmentation": true,
@@ -69,6 +69,6 @@
             "warmup_t": 0,
             "warmup_lr_init": 0.00001,
             "lr_min": 0.000003
-        } 
+        }
     }
 }

@@ -182,6 +182,9 @@ List of options and their config options:
     - Options: `elevation`, `azimuth`
 - `add_holidays`
 - `add_school_hours`
+- `add_weather`
+  - `weather_features`: a list of weather features to include
+    - Options: `temp`, `dwpt`, `rhum`, `prcp`, `snow`, `wdir`, `wspd`, `wpgt`, `pres`, `tsun`, `coco`
 
 Example:
 ```JSON
@@ -222,6 +225,10 @@ Example:
         },
         {
             "kind": "add_school_hours"
+        },
+        {
+            "kind": "add_weather",
+            "weather_features": ["temp", "dwpt", "rhum", "prcp", "snow", "wdir", "wspd", "wpgt", "pres", "tsun", "coco"]
         }
 ]
 ```

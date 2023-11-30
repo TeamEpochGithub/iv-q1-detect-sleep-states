@@ -12,10 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["unet.json"],
-        "weights": [1],
+        "models": ["red1.json", "red2.json", "red3.json", "red4.json", "red5.json", "horsemen1.json", "STFGO.json"],
+        "weights": [1, 1, 1, 1, 1, 1, 1],
         "comb_method": "confidence_average",
-        "pred_only": false
+        "pred_only": true
     },
     "cv": {
         "splitter": "group_k_fold",

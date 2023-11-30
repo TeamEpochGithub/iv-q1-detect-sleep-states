@@ -89,7 +89,7 @@ class Ensemble:
         confidences = []
         # model_pred is (onset, wakeup) tuples for each window
 
-        for _, model_config in enumerate(self.model_configs):
+        for i, model_config in enumerate(self.model_configs):
             model_config.reset_globals()
             model_pred = self.pred_model(
                 model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training, is_kaggle=is_kaggle)
@@ -97,24 +97,15 @@ class Ensemble:
             # Model_pred is tuple of np.array(onset, awake) for each window
             # Split the series of tuples into two column
             if predictions is not None:
-                predictions = np.concatenate((predictions, (model_pred.reshape(
-                    model_pred.shape[0], model_pred.shape[1], 2, 1))), axis=3)
+                predictions += model_pred * self.weight_matrix[i]
             else:
-                predictions = model_pred.reshape(
-                    model_pred.shape[0], model_pred.shape[1], 2, 1)
+                predictions = model_pred * self.weight_matrix[i]
 
         if self.combination_method == "confidence_average" or self.combination_method == "power_average":
             # Weight the predictions
 
             logger.info("Weighting predictions with confidences")
 
-            if self.combination_method == "power_average":
-                predictions = np.power(predictions, 2)
-                # Sum the confidences
-                predictions = np.sum(predictions, axis=3)
-            else:
-                predictions = np.average(
-                    predictions, axis=3, weights=self.weight_matrix)
             all_predictions = []
             all_confidences = []
             for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):

@@ -12,21 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["gru_features.json"],
+        "models": ["stfgo.json"],
         "weights": [0.6],
         "comb_method": "confidence_average",
         "pred_only": false
-    },
-    "ensemble_hpo": {
-        "model_config_loc": "ensemble_configs",
-        "n_events": 10,
-        "find_peaks": {
-            "distance": 100,
-            "prominence": 0,
-            "width": 24,
-            "height": 0,
-            "threshold": 0
-        }
     },
     "cv": {
         "splitter": "group_k_fold",

@@ -26,3 +26,9 @@ parameters:
           width:
             max: 100
             min: 5
+          height:
+            value: 0
+          prominence:
+            value: 0
+          threshold:
+            value: 0

@@ -45,7 +45,7 @@ def main() -> None:
 
         if is_ensemble_hpo:
             ensemble_config = is_ensemble_hpo
-            min_models, max_models = (2, 3)
+            min_models, max_models = (2, 6)
             n_models = np.random.randint(min_models, max_models)
 
             ensemble_models = os.listdir(ensemble_config["model_config_loc"])
@@ -60,7 +60,9 @@ def main() -> None:
             config_loader.set_ensemble()
 
             # Merge the wandb config and the ensemble config
+            logger.info("ENSEMBLE HPO BEFORE" + str(config_loader.config["ensemble_hpo"]))
             config_loader.config["ensemble_hpo"] |= wandb.config.get("ensemble_hpo")
+            logger.info("ENSEMBLE HPO AFTER" + str(config_loader.config["ensemble_hpo"]))
 
         if is_hpo:
             # Get the hpo config and add it to the config on wandb

@@ -100,7 +100,7 @@
       "loss": "shrinkage-loss",
       "optimizer": "adam-torch",
       "epochs": 50,
-      "batch_size": 32,
+      "batch_size": 64,
       "lr": 0.01,
       "early_stopping": 20,
       "threshold": 0,
@@ -128,6 +128,6 @@
         "n_layers": 5
       },
       "use_spec_features": true,
-      "use_decoder": false
+      "use_decoder": true
     }
 }

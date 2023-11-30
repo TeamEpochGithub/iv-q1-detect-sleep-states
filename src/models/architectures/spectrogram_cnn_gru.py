@@ -52,9 +52,9 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         x_encoded = self.encoder(x_spec).squeeze(1)
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
-        x_encoded = x_encoded.permute(0, 2, 1)
         if self.config.get('use_decoder', False):
             x_decoded = self.decoder(x_encoded)
+        x_encoded = x_encoded.permute(0, 2, 1)
         x_encoded = self.liner(x_encoded)
 
         # TODO if some features are excluded from the spectrgoram chnage this

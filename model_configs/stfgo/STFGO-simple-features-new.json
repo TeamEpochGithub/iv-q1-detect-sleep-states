@@ -1,11 +1,38 @@
 {
-  "name": "STFGO-weep",
+  "name": "STFGO-simple-features-new",
   "data_info": {
     "window_size": 17280,
     "downsampling_factor": 12,
     "latitude": 40.730610,
     "longitude": -73.935242
   },
+  "feature_engineering": [
+    {
+      "feats": [
+        "anglez_diff_abs",
+        "anglez_diff_abs_clip_10_savgol_180",
+        "anglez_diff_abs_clip_10_median_180",
+        "anglez_diff_abs_gt_0.2_mean_180",
+        "f_similarity_nan_clip_0.0005"
+      ],
+      "kind": "parser"
+    },
+    {
+      "kind": "sun",
+      "sun_features": [
+        "azimuth",
+        "altitude"
+      ]
+    },
+    {
+      "kind": "time",
+      "time_features": [
+        "hour",
+        "minute",
+        "weekday"
+      ]
+    }
+  ],
   "preprocessing": [
     {
       "kind": "mem_reduce"
@@ -31,53 +58,10 @@
       "kind": "split_windows"
     }
   ],
-  "feature_engineering": [
-    {
-      "feats": [
-        "anglez_diff_abs",
-        "anglez_diff_abs_median_1000",
-        "anglez_diff_abs_clip_10_skew_1000",
-        "enmo_mean_1000",
-        "enmo_std_1000",
-        "anglez_diff_abs_clip_10_savgol_180",
-        "anglez_diff_abs_clip_10_median_180",
-        "anglez_diff_abs_clip_10_median_90",
-        "enmo_std_90",
-        "anglez_diff_abs_clip_10_max_36",
-        "enmo_std_50",
-        "anglez_diff_abs_clip_10_mean_1000",
-        "anglez_diff_abs_clip_10_savgol_180_diff",
-        "anglez_diff_abs_clip_10_savgol_1000_diff",
-        "anglez_diff_abs_clip_10_median_360",
-        "anglez_diff_abs_clip_10_skew_180_diff",
-        "anglez_diff_abs_clip_10_median_360_diff",
-        "anglez_sin_min_1000",
-        "anglez_sin_skew_180",
-        "enmo_max_500",
-        "anglez_diff_abs_gt_0.2_mean_180",
-        "f_similarity_nan_clip_0.0005"
-      ],
-      "kind": "parser"
-    },
-    {
-      "kind": "sun",
-      "sun_features": [
-        "azimuth",
-        "altitude"
-      ]
-    },
-    {
-      "kind": "time",
-      "time_features": [
-        "hour",
-        "minute",
-        "weekday"
-      ]
-    }
-  ],
   "pretraining": {
     "downsample": {
       "features": [
+        "f_anglez",
         "f_anglez_diff_abs",
         "f_enmo"
       ],
@@ -121,8 +105,8 @@
         "type": "sparse"
       },
       "dropout": 0.6708895456187687,
-      "emb_dim": 165,
-      "forward_dim": 731,
+      "emb_dim": 150,
+      "forward_dim": 650,
       "heads": 4,
       "n_layers": 10,
       "pe": "fixed",
@@ -131,7 +115,7 @@
         "activation": "gelu",
         "bidir": true,
         "dropout": 0.2912650291122579,
-        "hidden_size": 20,
+        "hidden_size": 16,
         "n_layers": 7
       },
       "tokenizer": "patch",

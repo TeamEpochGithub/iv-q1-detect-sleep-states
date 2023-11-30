@@ -24,6 +24,7 @@ class Parser(FE):
     - <prev>_clip_<size>: clip the feature between -size and size
     - <prev>_savgol_<size>: compute the savgol filter of the feature with size, see scipy.signal.savgol_filter
     - <prev>_sin: compute the sin of the feature, assumes input is in degrees
+    - <prev>_gt_<size>: compute the boolean of the feature being greater than size
 
     <prev> can be an original feature, or it will be recursively computed with the same scheme.
     """
@@ -89,23 +90,25 @@ class Parser(FE):
         # we now know it should be a feature as <prev>_<func>_<size>
         splits = feat.split("_")
         func = splits[-2]
-        size = float(splits[-1])
-        if int(size) == size:
-            size = int(size)
+        num = float(splits[-1])
+        if int(num) == num:
+            num = int(num)
         prev = self.add_feature_and_save("_".join(splits[:-2]))
 
         # use a pandas rolling statistic function
         if func in ['mean', 'std', 'min', 'max', 'median', 'skew', 'kurt']:
-            return prev.rolling(size, center=True).agg(func).bfill().ffill()
+            return prev.rolling(num, center=True).agg(func).bfill().ffill()
 
         if func == 'range':
-            return prev.rolling(size, center=True).agg(np.ptp).bfill().ffill().ffill()
+            return prev.rolling(num, center=True).agg(np.ptp).bfill().ffill().ffill()
 
         if func == 'clip':
-            return prev.clip(-size, size)
+            return prev.clip(-num, num)
+
+        if func == 'gt':
+            return prev.gt(num).astype(np.float32)
 
         if func == "savgol":
-            return pd.Series(savgol_filter(prev, size, 3))
-
+            return pd.Series(savgol_filter(prev, num, 3))
 
         raise ValueError(f"Unknown feature: {feat}")

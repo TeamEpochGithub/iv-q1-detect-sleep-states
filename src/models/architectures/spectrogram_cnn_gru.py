@@ -3,6 +3,7 @@ from torch import nn
 from src.external.segmentation_models_pytorch import Unet
 import torchaudio.transforms as T
 from src.models.architectures.Unet_decoder import UNet1DDecoder
+import torch
 
 
 class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
@@ -54,19 +55,19 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         # as residual features
         if self.config.get('use_decoder', False):
             x_decoded = self.decoder(x_encoded)
+        else:
+            x_decoded = torch.zeros_like(x_encoded)
         x_encoded = x_encoded.permute(0, 2, 1)
-        x_encoded = self.liner(x_encoded)
+        x_encoded_linear = self.liner(x_encoded)
 
         # TODO if some features are excluded from the spectrgoram chnage this
         # downsample the input features to the same shape as the encoded features
         x = x[:, self.spec_features_indices, ::self.config.get('hop_length')]
         # now sum the residual features x and the encoded features x
-        x_encoded[:, ::self.config.get('hop_length'), self.spec_features_indices] += x.permute(0, 2, 1)
+        x_encoded_linear[:, ::self.config.get('hop_length'), self.spec_features_indices] += x.permute(0, 2, 1)
 
-        y, _ = self.GRU(x_encoded, use_activation=use_activation)
-        if self.config.get('use_decoder', False):
-            y += x_decoded
-        return y
+        y, _ = self.GRU(x_encoded_linear, use_activation=use_activation)
+        return y + x_decoded
 
 
 class SpecNormalize(nn.Module):

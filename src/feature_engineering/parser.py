@@ -82,6 +82,10 @@ class Parser(FE):
             prev = self.add_feature_and_save(feat[:-4])
             return prev.abs()
 
+        if feat.endswith("_sin"):
+            prev = self.add_feature_and_save(feat[:-4])
+            return np.sin(prev * np.pi / 180)
+
         # we now know it should be a feature as <prev>_<func>_<size>
         splits = feat.split("_")
         func = splits[-2]
@@ -103,7 +107,5 @@ class Parser(FE):
         if func == "savgol":
             return pd.Series(savgol_filter(prev, size, 3))
 
-        if func == 'sin':
-            return np.sin(prev * np.pi / 180)
 
         raise ValueError(f"Unknown feature: {feat}")

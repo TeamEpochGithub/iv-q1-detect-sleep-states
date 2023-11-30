@@ -1,5 +1,5 @@
 {
-    "name": "sparse_transformer_sweep_features",
+    "name": "red1",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -8,8 +8,7 @@
     },
     "preprocessing": [
         {
-            "kind": "mem_reduce",
-            "id_encoding_path": "series_id_encoding.json"
+            "kind": "mem_reduce"
         },
         {
             "kind": "similarity_nan",
@@ -17,7 +16,6 @@
         },
         {
             "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "use_similarity_nan": true,
             "fill_limit": 8640,
@@ -25,7 +23,6 @@
         },
         {
             "kind": "add_event_labels",
-            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "smoothing": 5,
             "steepness": 2
@@ -35,13 +32,6 @@
         }
     ],
     "feature_engineering": [
-        {
-            "kind": "time",
-            "time_features": [
-            "hour",
-            "minute"
-            ]
-        },
         {
             "kind": "parser",
             "feats": [
@@ -65,73 +55,81 @@
                 "azimuth",
                 "altitude"
             ]
+        },
+        {
+            "kind": "time",
+            "time_features": [
+                "hour",
+                "minute",
+                "weekday"
+            ]
         }
     ],
     "pretraining": {
-    "downsample": {
-        "features": [
-        "f_anglez_diff_abs",
-        "f_enmo"
-        ],
-        "methods": [
-        "min",
-        "max",
-        "mean",
-        "std",
-        "median",
-        "range",
-        "var"
-        ],
-        "standard": "mean"
-    },
-    "test_size": 0.2,
-    "scaler": {
-        "kind": "standard-scaler",
-        "copy": true
-    }
+        "downsample": {
+            "features": [
+                "f_anglez_diff_abs",
+                "f_enmo"
+            ],
+            "methods": [
+                "min",
+                "max",
+                "mean",
+                "std",
+                "median",
+                "range",
+                "var"
+            ],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
     },
     "architecture": {
-        "activation_delay": 45,
-        "batch_size": 90,
-        "early_stopping": 48,
+        "activation_delay": 43,
+        "batch_size": 81,
+        "early_stopping": 27,
         "epochs": 250,
         "loss": "shrinkage-loss",
-        "lr": 0.015549418652428596,
+        "lr": 0.021993876440714016,
         "lr_schedule": {
-            "cycle_limit": 2,
-            "lr_min": 0.002,
-            "t_initial": 33,
-            "warmup_lr_init": 0.000001,
-            "warmup_t": 5
+          "cycle_limit": 4,
+          "lr_min": 0.002,
+          "t_initial": 33,
+          "warmup_lr_init": 0.000001,
+          "warmup_t": 7
         },
         "mask_unlabeled": false,
         "network_params": {
-            "dropout": 0.6229411429626215,
-            "emb_dim": 248,
-            "forward_dim": 922,
-            "heads": 6,
-            "n_layers": 6,
-            "pe": "fixed",
-            "pooling": "gru",
-            "attention": {
-                "type": "sparse",
-                "block_size": 60,
-                "local_attn_ctx": 20,
-                "attn_mode": "all"
-            },
-            "pooling_args": {
-                "activation": "relu",
-                "bidir": true,
-                "dropout": 0,
-                "hidden_size": 7,
-                "n_layers": 6
-            },
-            "tokenizer": "patch",
-            "tokenizer_args": {
-                "patch_size": 8
-            }
+          "attention": {
+            "attn_mode": "all",
+            "block_size": 79,
+            "local_attn_ctx": 20,
+            "type": "sparse"
+          },
+          "dropout": 0.6708895456187687,
+          "emb_dim": 165,
+          "forward_dim": 731,
+          "heads": 4,
+          "n_layers": 10,
+          "pe": "fixed",
+          "pooling": "gru",
+          "pooling_args": {
+            "activation": "gelu",
+            "bidir": true,
+            "dropout": 0.2912650291122579,
+            "hidden_size": 20,
+            "n_layers": 7
+          },
+          "tokenizer": "patch",
+          "tokenizer_args": {
+            "patch_size": 16
+          }
         },
-        "optimizer": "adamw-torch",
+        "optimizer": "adam-torch",
         "threshold": 0,
         "type": "event-segmentation-transformer"
     }

@@ -116,7 +116,7 @@
         "cycle_decay": 0.5
       },
       "gru_params": {
-        "activation": "gelu",
+        "activation": "relu",
         "hidden_size": 20,
         "n_layers": 8,
         "dropout": 0.3

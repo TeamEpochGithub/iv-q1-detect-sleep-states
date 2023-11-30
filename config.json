@@ -12,7 +12,7 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["stfgo/STFGO-more-features.json"],
+        "models": ["stfgo/STFGO-sweep.json"],
         "weights":[1],
         "comb_method": "confidence_average",
         "pred_only": false

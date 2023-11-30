@@ -4,6 +4,7 @@ import tracemalloc
 
 import pandas as pd
 from tqdm import tqdm
+import shutil
 
 from src import data_info
 from src.configs.load_model_config import ModelConfigLoader
@@ -95,8 +96,14 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             logger.info(f'--- Saving to: {path}')
             if not os.path.exists(path):
                 os.makedirs(path)
-            for sid in tqdm(processed.keys()):
-                processed[sid].to_parquet(path + '/' + str(sid) + '.parquet')
+
+            try:
+                for sid in tqdm(processed.keys()):
+                    processed[sid].to_parquet(path + '/' + str(sid) + '.parquet', compression='zstd')
+            except KeyboardInterrupt:  # delete the folder
+                logger.info('KeyboardInterrupt: saving aborted, deleting cache folder')
+                shutil.rmtree(path)
+                raise KeyboardInterrupt
 
             logger.info('--- Finished saving')
     log_memory()

@@ -81,7 +81,7 @@
   "architecture": {
     "type": "event-res-gru",
     "loss": "shrinkage-loss",
-    "epochs": 10,
+    "epochs": 100,
     "batch_size": 64,
     "optimizer": "adam-torch",
     "early_stopping": 25,

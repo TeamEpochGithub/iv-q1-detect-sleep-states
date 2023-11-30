@@ -9,12 +9,12 @@ from src.util.submissionformat import to_submission_format
 from .scoring import score
 from ..logger.logger import logger
 
-_TOLERANCES = {
+_TOLERANCES: dict[str, list[int]] = {
     'onset': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
     'wakeup': [12, 36, 60, 90, 120, 150, 180, 240, 300, 360],
 }
 
-_COLUMN_NAMES = {
+_COLUMN_NAMES: dict[str, str] = {
     'series_id_column_name': 'series_id',
     'time_column_name': 'step',
     'event_column_name': 'event',
@@ -65,11 +65,11 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
     :return: the score for the entire dataset
     """
 
-    # Add the series ids to the list of unique series ids
-    solution_series_ids = solution['series_id'].unique()
-    data_info.cv_unique_series.extend(solution_series_ids)
-
-    verify_cv(submission, solution)
+    if data_info.stage == 'cv':
+        # Add the series ids to the list of unique series ids
+        solution_series_ids = solution['series_id'].unique()
+        data_info.cv_unique_series.extend(solution_series_ids)
+        verify_cv(submission, solution)
 
     # Count the number of labelled series in the submission and solution
     submission_sids = submission['series_id'].unique()

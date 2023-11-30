@@ -7,22 +7,23 @@ import wandb
 from timm.scheduler import CosineLRScheduler
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
-from src.models.trainers.event_state_trainer import EventStateTrainer
 
 from src.loss.loss import Loss
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 from src.models.model_exception import ModelException
+from src.models.trainers.event_state_trainer import EventStateTrainer
 from src.models.trainers.event_trainer import EventTrainer
 from src.optimizer.optimizer import Optimizer
 from src.util.state_to_event import pred_to_event_state
 from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
-from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 
 class EventModel:
-    """
-    Model class with basic methods for training and evaluation. This class should be overwritten by the user.
+    """Model class with basic methods for training and evaluation.
+
+    This class should be overwritten by the user.
     """
 
     def __init__(self, config: dict, name: str) -> None:
@@ -320,6 +321,28 @@ class EventModel:
         # # Apply upsampling to the predictions
         downsampling_factor = data_info.downsampling_factor
 
+        return self.model_output_sinc_interpolate_to_events(self.config['threshold'], 10, downsampling_factor, predictions, raw_output)
+
+    @staticmethod
+    def model_output_sinc_interpolate_to_events(threshold: float, n_events: int, downsampling_factor: float,
+                                                predictions: np.ndarray, raw_output: bool) -> np.ndarray:
+        """Process the predictions from the event model to (almost) usable format.
+
+        It does some weird sinc interpolation and then converts the predictions to events I guess.
+
+        This is an attempt at decoupling this from the pred method,
+        but I already know that it will just create more confusion instead.
+        This unfortunately seems necessary for #266.
+
+        (Yay, more spaghetti code!)
+
+        :param threshold: idk
+        :param n_events: what is this?
+        :param downsampling_factor: isn't this in data_info?
+        :param predictions: I have no idea
+        :param raw_output: I already said that I have no idea
+        :return: the predictions and confidences, as numpy arrays
+        """
         # TODO Try other interpolation methods (linear / cubic)
         # if downsampling_factor > 1:
         #     predictions = np.repeat(predictions, downsampling_factor, axis=1)
@@ -341,48 +364,40 @@ class EventModel:
 
         steps_sinc = np.arange(0, data_info.window_size_before, data_info.downsampling_factor)
         u_sinc = np.arange(0, data_info.window_size_before, 1)
-
         upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
-
         # Find the period
         T = steps_sinc[1] - steps_sinc[0]
         # Use broadcasting correctly
         sincM = (u_sinc - steps_sinc[:, np.newaxis]) / T
         res_sinc = np.sinc(sincM)
-
         for channel_idx in range(predictions.shape[2]):
             for row_idx in tqdm(range(predictions.shape[0]), "Upsampling using sinc interpolation", unit="window"):
                 y_sinc = np.dot(predictions[row_idx, :, channel_idx], res_sinc)
                 upsampled_data[row_idx, :, channel_idx] = y_sinc
-
         predictions = upsampled_data
-
         # Return raw output if necessary
         if raw_output:
             return predictions
-
-        all_predictions = []
-        all_confidences = []
+        all_predictions: list[tuple[float, float]] = []
+        all_confidences: list[tuple[float, float]] = []
         # Convert to events
         for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
             # Pred should be 2d array with shape (window_size, 2)
-            assert pred.shape[
-                       1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+            assert pred.shape[1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
 
             # Convert to relative window event timestamps
-            events = pred_to_event_state(pred, thresh=self.config["threshold"], n_events=10)
+            events = pred_to_event_state(pred, thresh=threshold, n_events=n_events)
 
             # Add step offset based on repeat factor.
             if downsampling_factor > 1:
-                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
+                offset = (
+                    (downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
             else:
                 offset = 0
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)
             all_confidences.append(confidences)
-
-        # Return numpy array
         return all_predictions, all_confidences
 
     def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
@@ -391,15 +406,11 @@ class EventModel:
         :param pred: predictions
         :param target: actual labels
         """
-        # Evaluate function
-        logger.critical(
-            "--- Evaluation of base class called. Did you forget to override it?")
-        raise ModelException(
-            "Evaluation of base class called. Did you forget to override it?")
+        pass
 
     def save(self, path: str) -> None:
-        """
-        Save function for the model.
+        """Save function for the model.
+
         :param path: path to save the model to
         """
         checkpoint = {
@@ -410,8 +421,8 @@ class EventModel:
         logger.info("--- Model saved to: " + path)
 
     def load(self, path: str, only_hyperparameters: bool = False) -> None:
-        """
-        Load function for the model.
+        """Load function for the model.
+
         :param path: path to model checkpoint
         :param only_hyperparameters: whether to only load the hyperparameters
         """
@@ -434,32 +445,32 @@ class EventModel:
         logger.info("Model fully loaded from: " + path)
 
     def reset_weights(self) -> None:
+        """Reset the weights of the model.
+
+        Useful for retraining the model.
         """
-        Reset the weights of the model. Useful for retraining the model. This function should be overwritten by the user.
-        """
-        logger.critical(
-            "--- Resetting weights of base class called. Did you forget to override it?")
-        raise ModelException(
-            "Resetting weights of base class called. Did you forget to override it?")
+        pass
 
     def reset_optimizer(self) -> None:
-        """
-        Reset the optimizer to the initial state. Useful for retraining the model.
+        """Reset the optimizer to the initial state.
+
+        Useful for retraining the model.
         """
         self.config['optimizer'] = type(self.config['optimizer'])(
             self.model.parameters(), lr=self.config['lr'])
 
     def reset_scheduler(self) -> None:
-        """
-        Reset the scheduler to the initial state. Useful for retraining the model.
+        """Reset the scheduler to the initial state.
+
+        Useful for retraining the model.
         """
         if 'scheduler' in self.config:
             self.config['scheduler'] = CosineLRScheduler(
                 self.config['optimizer'], **self.config["lr_schedule"])
 
     def log_train_test(self, avg_losses: list | np.ndarray, avg_val_losses: list | np.ndarray, epochs: int, name: str = "") -> None:
-        """
-        Log the train and test loss to wandb.
+        """Log the train and test loss to Weights & Biases.
+
         :param avg_losses: list of average train losses
         :param avg_val_losses: list of average test losses
         :param epochs: number of epochs

@@ -53,13 +53,15 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
     logger.info("Splitting data into train and test...")
     data_info.substage = "pretrain_split"
 
-    x_train, x_test, y_train, y_test, train_ids, _, groups = get_pretrain_split_cache(
+    x_train, x_test, y_train, y_test, data_info.train_ids, data_info.test_ids, groups = get_pretrain_split_cache(
         model_config, featured_data, save_output=True)
     logger.info("X Train data shape (size, window_size, features): " + str(
         x_train.shape) + " and y Train data shape (size, window_size, features): " + str(y_train.shape))
     logger.info("X Test data shape (size, window_size, features): " + str(
         x_test.shape) + " and y Test data shape (size, window_size, features): " + str(y_test.shape))
     logger.info("Creating model using ModelConfigLoader")
+
+    data_info.validate_window_info = data_info.window_info[data_info.window_info['series_id'].isin(data_info.test_ids)]
 
     assert x_test.shape[1] == data_info.window_size_before // data_info.downsampling_factor == data_info.window_size == y_test.shape[1] == x_train.shape[1] == y_train.shape[1]
 
@@ -87,8 +89,7 @@ def train_from_config(model_config: ModelConfigLoader, cross_validation: CV, sto
         logger.info("Applying cross-validation on model: " + model_name)
         data_info.stage = "cv"
 
-        # It now only saves the trained model from the last fold
-        train_window_info = data_info.window_info[data_info.window_info['series_id'].isin(train_ids)]
+        train_window_info = data_info.window_info[data_info.window_info['series_id'].isin(data_info.train_ids)]
 
         # Apply CV
         scores = cv.cross_validate(

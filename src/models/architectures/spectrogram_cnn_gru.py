@@ -2,6 +2,7 @@ from src.models.architectures import multi_res_bi_GRU
 from torch import nn
 from src.external.segmentation_models_pytorch import Unet
 import torchaudio.transforms as T
+from src.models.architectures.Unet_decoder import UNet1DDecoder
 
 
 class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
@@ -34,6 +35,16 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         # will shape the encoder outputs to the same shape as the original inputs
         self.liner = nn.Linear(in_features=(config.get('n_fft', 127)+1)//2, out_features=in_channels)
 
+        self.decoder = UNet1DDecoder(
+            n_channels=(config.get('n_fft', 127) + 1) // 2,
+            n_classes=out_channels,
+            bilinear=config.get('bilinear', False),
+            scale_factor=config.get('scale_factor', 2),
+            # hardcoded for now
+            # TODO make this a config
+            duration=17280 // (12*config.get('hop_length', 1)),
+        )
+
     def forward(self, x, use_activation=True):
         # Pass only enmo and anglez to the spectrogram
         x = x.permute(0, 2, 1)
@@ -42,6 +53,8 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         # The rest of the features are subsampled and passed to the decoder
         # as residual features
         x_encoded = x_encoded.permute(0, 2, 1)
+        if self.config.get('use_decoder', False):
+            x_decoded = self.decoder(x_encoded)
         x_encoded = self.liner(x_encoded)
 
         # TODO if some features are excluded from the spectrgoram chnage this
@@ -51,6 +64,8 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         x_encoded[:, ::self.config.get('hop_length'), self.spec_features_indices] += x.permute(0, 2, 1)
 
         y, _ = self.GRU(x_encoded, use_activation=use_activation)
+        if self.config.get('use_decoder', False):
+            y += x_decoded
         return y
 
 

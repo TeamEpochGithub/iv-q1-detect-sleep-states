@@ -124,8 +124,10 @@
       },
       "gru_params": {
         "activation": "relu",
-        "hidden_size": 8,
+        "hidden_size": 20,
         "n_layers": 5
-      }
+      },
+      "use_spec_features": true,
+      "use_decoder": false
     }
 }

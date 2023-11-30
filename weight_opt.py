@@ -47,16 +47,9 @@ def combine_preds(predictions, weight_matrix):
     combined_confidences = []
     for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
         # Convert to relative window event timestamps
-        events = pred_to_event_state(pred, thresh=0, n_events=10)
+        events = pred_to_event_state(pred, thresh=0, n_events=2)
 
-        # Add step offset based on repeat factor.
-        if data_info.downsampling_factor <= 1:
-            offset = 0
-        elif data_info.downsampling_factor % 2 == 0:
-            offset = (data_info.downsampling_factor / 2.0) - 0.5
-        else:
-            offset = data_info.downsampling_factor // 2
-        steps = (events[0] + offset, events[1] + offset)
+        steps = (events[0], events[1])
         confidences = (events[2], events[3])
         combined_predictions.append(steps)
         combined_confidences.append(confidences)

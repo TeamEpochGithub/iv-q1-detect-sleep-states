@@ -353,6 +353,11 @@ class EventModel:
         for channel_idx in range(predictions.shape[2]):
             for row_idx in tqdm(range(predictions.shape[0]), "Upsampling using sinc interpolation", unit="window"):
                 y_sinc = np.dot(predictions[row_idx, :, channel_idx], res_sinc)
+
+                if downsampling_factor > 1:
+                    offset = int((downsampling_factor / 2.0) if downsampling_factor % 2 == 0 else downsampling_factor // 2)
+                    y_sinc = np.concatenate([np.zeros(offset), y_sinc[:-offset]])
+
                 upsampled_data[row_idx, :, channel_idx] = y_sinc
 
         predictions = upsampled_data
@@ -371,13 +376,7 @@ class EventModel:
 
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"], n_events=10)
-
-            # Add step offset based on repeat factor.
-            if downsampling_factor > 1:
-                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
-            else:
-                offset = 0
-            steps = (events[0] + offset, events[1] + offset)
+            steps = (events[0], events[1])
             confidences = (events[2], events[3])
             all_predictions.append(steps)
             all_confidences.append(confidences)

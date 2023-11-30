@@ -12,9 +12,9 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["stfgo/STFGO-sweep.json","gru-features-dropout.json","gru-features-simple.json",
+        "models": ["stfgo/STFGO-sweep.json","gru-features-simple.json",
             "gru_features.json","stfgo/STFGO-simple-features.json"],
-        "weights":[1,1,1,1,1],
+        "weights":[0.364, 0.297, 0.261, 0.341],
         "comb_method": "confidence_average",
         "pred_only": true
     },

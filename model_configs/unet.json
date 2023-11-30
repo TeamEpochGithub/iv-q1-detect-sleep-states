@@ -24,7 +24,8 @@
         {
             "kind": "add_event_labels",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 0
+            "smoothing": 5,
+            "steepness": 2
         },
         {
             "kind": "split_windows"
@@ -32,8 +33,21 @@
     ],
     "feature_engineering": [
         {
-            "kind": "time",
-            "time_features": ["hour","minute"]
+            "kind": "parser",
+            "feats": [
+                "anglez_diff_abs",
+                "anglez_diff_abs_median_1000",
+                "anglez_diff_abs_clip_10_skew_1000",
+                "anglez_diff_abs_clip_10_savgol_180",
+                "anglez_diff_abs_clip_10_median_180",
+                "enmo_std_90",
+                "anglez_diff_abs_clip_10_max_36",
+                "enmo_std_50",
+                "anglez_diff_abs_clip_10_mean_1000",
+                "anglez_diff_abs_clip_10_savgol_180_diff",
+                "anglez_diff_abs_clip_10_savgol_1000_diff",
+                "anglez_diff_abs_clip_10_median_360"
+            ]
         },
         {
             "kind": "sun",
@@ -43,15 +57,29 @@
             ]
         },
         {
-            "kind": "rotation",
-            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+            "kind": "time",
+            "time_features": [
+                "hour",
+                "minute",
+                "weekday"
+            ]
         }
-
     ],
     "pretraining": {
         "downsample": {
-            "features": ["f_anglez", "f_enmo"],
-            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "features": [
+                "f_anglez_diff_abs",
+                "f_enmo"
+            ],
+            "methods": [
+                "min",
+                "max",
+                "mean",
+                "std",
+                "median",
+                "range",
+                "var"
+            ],
             "standard": "mean"
         },
         "test_size": 0.2,
@@ -61,22 +89,22 @@
         }
     },
     "architecture": {
-        "activation_delay": 45,
-        "batch_size": 128,
-        "early_stopping": 17,
-        "epochs": 10,
-        "loss": "mse-torch",
-        "lr": 0.005239752600594687,
+        "activation_delay": 30,
+        "batch_size": 64,
+        "early_stopping": 30,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.0063770148988308226,
         "lr_schedule": {
-            "cycle_limit": 3,
-            "lr_min": 0.00009666150325794088,
-            "t_initial": 25,
+            "cycle_limit": 5,
+            "lr_min": 0.000057289151136947914,
+            "t_initial": 20,
             "warmup_lr_init": 0.000001,
-            "warmup_t": 4
+            "warmup_t": 2
         },
         "mask_unlabeled": true,
         "network_params": {
-            "activation": "relu",
+            "activation": "gelu",
             "hidden_layers": 8,
             "kernel_size": 7,
             "depth": 2,

@@ -1,0 +1,107 @@
+{
+  "name": "gru-features-simple",
+  "data_info": {
+    "window_size": 17280,
+    "downsampling_factor": 6,
+    "latitude": 40.730610,
+    "longitude": -73.935242
+  },
+  "feature_engineering": [
+    {
+      "feats": [
+        "anglez_diff_abs",
+        "anglez_diff_abs_clip_10_savgol_180",
+        "anglez_diff_abs_clip_10_median_180"
+      ],
+      "kind": "parser"
+    },
+    {
+      "kind": "sun",
+      "sun_features": [
+        "azimuth",
+        "altitude"
+      ]
+    },
+    {
+      "kind": "time",
+      "time_features": [
+        "hour",
+        "minute",
+        "weekday"
+      ]
+    }
+  ],
+  "preprocessing": [
+    {
+      "kind": "mem_reduce"
+    },
+    {
+      "as_feature": true,
+      "kind": "similarity_nan"
+    },
+    {
+      "events_path": "data/raw/train_events.csv",
+      "fill_limit": 8640,
+      "kind": "add_state_labels",
+      "nan_tolerance_window": 5,
+      "use_similarity_nan": true
+    },
+    {
+      "events_path": "data/raw/train_events.csv",
+      "kind": "add_event_labels",
+      "smoothing": 5,
+      "steepness": 2
+    },
+    {
+      "kind": "split_windows"
+    }
+  ],
+  "pretraining": {
+    "downsample": {
+      "features": [
+        "f_anglez",
+        "f_anglez_diff_abs",
+        "f_enmo"
+      ],
+      "methods": [
+        "min",
+        "max",
+        "mean",
+        "std",
+        "median",
+        "range",
+        "var"
+      ],
+      "standard": "mean"
+    },
+    "scaler": {
+      "copy": true,
+      "kind": "standard-scaler"
+    },
+    "test_size": 0.2
+  },
+  "architecture": {
+    "type": "event-res-gru",
+    "loss": "shrinkage-loss",
+    "epochs": 100,
+    "batch_size": 32,
+    "optimizer": "adam-torch",
+    "early_stopping": 15,
+    "activation_delay": 15,
+    "lr": 0.01,
+    "network_params": {
+      "hidden_size": 8,
+      "n_layers": 5,
+      "activation": "relu"
+    },
+    "lr_schedule": {
+      "t_initial": 25,
+      "warmup_t": 5,
+      "warmup_lr_init": 0.000001,
+      "lr_min": 0.00001,
+      "cycle_limit": 3,
+      "cycle_decay": 0.5
+    },
+    "threshold": 0
+  }
+}

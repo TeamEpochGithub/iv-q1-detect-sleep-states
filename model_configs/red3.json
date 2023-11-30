@@ -1,10 +1,10 @@
 {
-    "name": "gru_features12",
+    "name": "red3",
     "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 24,
         "latitude": 40.73061,
-        "longitude": -73.935242
+        "longitude": -73.935242,
+        "window_size": 17280
     },
     "preprocessing": [
         {
@@ -33,13 +33,6 @@
     ],
     "feature_engineering": [
         {
-            "kind": "time",
-            "time_features": [
-                "hour",
-                "minute"
-            ]
-        },
-        {
             "kind": "parser",
             "feats": [
                 "anglez_diff_abs",
@@ -61,6 +54,14 @@
             "sun_features": [
                 "azimuth",
                 "altitude"
+            ]
+        },
+        {
+            "kind": "time",
+            "time_features": [
+                "hour",
+                "minute",
+                "weekday"
             ]
         }
     ],
@@ -88,27 +89,48 @@
         }
     },
     "architecture": {
-        "type": "event-res-gru",
+        "activation_delay": 50,
+        "batch_size": 105,
+        "early_stopping": 31,
+        "epochs": 250,
         "loss": "shrinkage-loss",
-        "epochs": 100,
-        "batch_size": 32,
-        "optimizer": "adam-torch",
-        "early_stopping": 15,
-        "activation_delay": 15,
-        "lr": 0.01,
-        "network_params": {
-            "hidden_size": 8,
-            "n_layers": 5,
-            "activation": "gelu"
-        },
+        "lr": 0.013138683054232648,
         "lr_schedule": {
-            "t_initial": 25,
-            "warmup_t": 5,
-            "warmup_lr_init": 0.000001,
-            "lr_min": 0.00001,
-            "cycle_limit": 3,
-            "cycle_decay": 0.5
+          "cycle_limit": 4,
+          "lr_min": 0.002,
+          "t_initial": 34,
+          "warmup_lr_init": 0.000001,
+          "warmup_t": 4
         },
-        "threshold": 0
+        "mask_unlabeled": true,
+        "network_params": {
+          "attention": {
+            "attn_mode": "all",
+            "block_size": 111,
+            "local_attn_ctx": 20,
+            "type": "sparse"
+          },
+          "dropout": 0.4382689508179796,
+          "emb_dim": 88,
+          "forward_dim": 626,
+          "heads": 6,
+          "n_layers": 10,
+          "pe": "fixed",
+          "pooling": "gru",
+          "pooling_args": {
+            "activation": "gelu",
+            "bidir": true,
+            "dropout": 0.3194977764523189,
+            "hidden_size": 22,
+            "n_layers": 8
+          },
+          "tokenizer": "patch",
+          "tokenizer_args": {
+            "patch_size": 16
+          }
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
     }
 }

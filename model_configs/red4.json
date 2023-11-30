@@ -1,10 +1,10 @@
 {
-    "name": "unet",
+    "name": "red4",
     "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12,
-        "latitude": 40.730610,
-        "longitude": -73.935242
+    "window_size": 17280,
+    "downsampling_factor": 12,
+    "latitude": 40.730610,
+    "longitude": -73.935242
     },
     "preprocessing": [
         {
@@ -33,23 +33,6 @@
     ],
     "feature_engineering": [
         {
-            "kind": "parser",
-            "feats": [
-                "anglez_diff_abs",
-                "anglez_diff_abs_median_1000",
-                "anglez_diff_abs_clip_10_skew_1000",
-                "anglez_diff_abs_clip_10_savgol_180",
-                "anglez_diff_abs_clip_10_median_180",
-                "enmo_std_90",
-                "anglez_diff_abs_clip_10_max_36",
-                "enmo_std_50",
-                "anglez_diff_abs_clip_10_mean_1000",
-                "anglez_diff_abs_clip_10_savgol_180_diff",
-                "anglez_diff_abs_clip_10_savgol_1000_diff",
-                "anglez_diff_abs_clip_10_median_360"
-            ]
-        },
-        {
             "kind": "sun",
             "sun_features": [
                 "azimuth",
@@ -60,15 +43,14 @@
             "kind": "time",
             "time_features": [
                 "hour",
-                "minute",
-                "weekday"
+                "minute"
             ]
         }
     ],
     "pretraining": {
         "downsample": {
             "features": [
-                "f_anglez_diff_abs",
+                "f_anglez",
                 "f_enmo"
             ],
             "methods": [
@@ -89,32 +71,48 @@
         }
     },
     "architecture": {
-        "activation_delay": 30,
-        "batch_size": 64,
-        "early_stopping": 30,
+        "activation_delay": 45,
+        "batch_size": 90,
+        "early_stopping": 48,
         "epochs": 250,
         "loss": "shrinkage-loss",
-        "lr": 0.0063770148988308226,
+        "lr": 0.015549418652428596,
         "lr_schedule": {
-            "cycle_limit": 5,
-            "lr_min": 0.000057289151136947914,
-            "t_initial": 20,
+            "cycle_limit": 2,
+            "lr_min": 0.002,
+            "t_initial": 33,
             "warmup_lr_init": 0.000001,
-            "warmup_t": 2
+            "warmup_t": 5
         },
-        "mask_unlabeled": true,
+        "mask_unlabeled": false,
         "network_params": {
-            "activation": "gelu",
-            "hidden_layers": 8,
-            "kernel_size": 7,
-            "depth": 2,
-            "dropout": 0,
-            "stride": 2,
-            "padding": 2,
-            "n_layers": 5
+            "dropout": 0.6229411429626215,
+            "emb_dim": 248,
+            "forward_dim": 922,
+            "heads": 6,
+            "n_layers": 6,
+            "pe": "fixed",
+            "pooling": "gru",
+            "attention": {
+                "type": "sparse",
+                "block_size": 60,
+                "local_attn_ctx": 20,
+                "attn_mode": "all"
+            },
+            "pooling_args": {
+                "hidden_size": 20,
+                "n_layers": 8,
+                "activation": "gelu",
+                "dropout": 0.4,
+                "bidir": true
+            },
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 8
+            }
         },
         "optimizer": "adamw-torch",
         "threshold": 0,
-        "type": "event-seg-unet-1d-cnn"
+        "type": "event-segmentation-transformer"
     }
 }

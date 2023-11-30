@@ -15,7 +15,7 @@
         "models": ["bowser.json"],
         "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": false
+        "pred_only": true
     },
     "cv": {
         "splitter": "group_k_fold",

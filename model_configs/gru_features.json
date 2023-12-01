@@ -1,8 +1,8 @@
 {
-    "name": "horsemen1",
+    "name": "gru_features",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 12,
+        "downsampling_factor": 6,
         "latitude": 40.73061,
         "longitude": -73.935242
     },
@@ -33,6 +33,13 @@
     ],
     "feature_engineering": [
         {
+            "kind": "time",
+            "time_features": [
+                "hour",
+                "minute"
+            ]
+        },
+        {
             "kind": "parser",
             "feats": [
                 "anglez_diff_abs",
@@ -54,14 +61,6 @@
             "sun_features": [
                 "azimuth",
                 "altitude"
-            ]
-        },
-        {
-            "kind": "time",
-            "time_features": [
-                "hour",
-                "minute",
-                "weekday"
             ]
         }
     ],
@@ -98,16 +97,15 @@
         "activation_delay": 15,
         "lr": 0.01,
         "network_params": {
-            "hidden_size": 20,
-            "n_layers": 8,
-            "activation": "gelu",
-            "dropout": 0.4
+            "hidden_size": 8,
+            "n_layers": 5,
+            "activation": "relu"
         },
         "lr_schedule": {
             "t_initial": 25,
             "warmup_t": 5,
             "warmup_lr_init": 0.000001,
-            "lr_min": 0.001,
+            "lr_min": 0.00001,
             "cycle_limit": 3,
             "cycle_decay": 0.5
         },

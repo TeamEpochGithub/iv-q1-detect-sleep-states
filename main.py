@@ -1,3 +1,7 @@
+import os
+import random
+
+import numpy as np
 import torch
 
 import wandb
@@ -25,20 +29,44 @@ def main() -> None:
 
     # Initialize wandb
     if config_loader.get_log_to_wandb():
-        # Add models
-
-        # Get the hpo config
-        if config_loader.get_hpo():
-            config_loader.config["hpo_model"] = config_loader.get_hpo_config(
-            ).config
-
         # Initialize wandb
         wandb.init(
             project='detect-sleep-states',
             name=config_hash,
             config=config_loader.get_config()
         )
-        if config_loader.get_hpo():
+        # Add models
+        is_hpo = config_loader.get_hpo()
+        is_ensemble_hpo = config_loader.get_ensemble_hpo()
+
+        if is_hpo and is_ensemble_hpo:
+            logger.critical("Cannot have both hpo and ensemble hpo")
+            raise Exception("Cannot have both hpo and ensemble hpo")
+
+        if is_ensemble_hpo:
+            ensemble_config = is_ensemble_hpo
+            min_models, max_models = (2, 6)
+            n_models = np.random.randint(min_models, max_models)
+
+            ensemble_models = os.listdir(ensemble_config["model_config_loc"])
+            chosen_models = random.choices(ensemble_models, k=n_models)
+            chosen_weights = [random.random() for _ in range(n_models)]
+
+            # Override ensemble models with the chosen models
+            config_loader.config["ensemble"]["models"] = chosen_models
+            config_loader.config["ensemble"]["weights"] = chosen_weights
+
+            # Set the ensemble config
+            config_loader.set_ensemble()
+
+            # Merge the wandb config and the ensemble config
+            logger.info("ENSEMBLE HPO BEFORE" + str(config_loader.config["ensemble_hpo"]))
+            config_loader.config["ensemble_hpo"] |= wandb.config.get("ensemble_hpo")
+            logger.info("ENSEMBLE HPO AFTER" + str(config_loader.config["ensemble_hpo"]))
+
+        if is_hpo:
+            # Get the hpo config and add it to the config on wandb
+            config_loader.config["hpo_model"] = config_loader.get_hpo_config().config
 
             # Merge the config from the hpo config
             config_loader.config |= wandb.config
@@ -70,7 +98,6 @@ def main() -> None:
 
         # Update the wandb summary with the updated config
         wandb.run.summary.update(curr_config)
-
         logger.info(f"Logging to wandb with run id: {config_hash}")
     else:
         logger.info("Not logging to wandb")

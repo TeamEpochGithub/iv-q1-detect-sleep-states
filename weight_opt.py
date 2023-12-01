@@ -38,7 +38,7 @@ def pred_all(ensemble, store_location):
     return predictions
 
 
-def combine_preds(predictions, weight_matrix):
+def combine_preds(predictions, weight_matrix, offset=5.5):
     """Combine predictions using given weights"""
 
     predictions = np.average(
@@ -47,9 +47,10 @@ def combine_preds(predictions, weight_matrix):
     combined_confidences = []
     for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
         # Convert to relative window event timestamps
-        events = pred_to_event_state(pred, thresh=0, n_events=2)
+        find_peaks_dict = {"width": 24, "height": 0, "distance": 100}
+        events = pred_to_event_state(pred, thresh=0, n_events=2, find_peaks_params=find_peaks_dict)
 
-        steps = (events[0], events[1])
+        steps = (events[0] + offset, events[1] + offset)
         confidences = (events[2], events[3])
         combined_predictions.append(steps)
         combined_confidences.append(confidences)

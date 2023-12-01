@@ -96,7 +96,7 @@ def get_processed_data(config: ModelConfigLoader, training=True, save_output=Tru
             if not os.path.exists(path):
                 os.makedirs(path)
             for sid in tqdm(processed.keys()):
-                processed[sid].to_parquet(path + '/' + str(sid) + '.parquet')
+                processed[sid].to_parquet(path + '/' + str(sid) + '.parquet', compression='zstd')
 
             logger.info('--- Finished saving')
     log_memory()

@@ -1,0 +1,126 @@
+{
+  "name": "STFGO-simpler-features",
+  "data_info": {
+    "window_size": 17280,
+    "downsampling_factor": 12,
+    "latitude": 40.730610,
+    "longitude": -73.935242
+  },
+  "feature_engineering": [
+    {
+      "feats": [
+        "anglez_diff_abs",
+        "anglez_diff_abs_clip_10_savgol_180",
+        "anglez_diff_abs_clip_10_median_180"
+      ],
+      "kind": "parser"
+    },
+    {
+      "kind": "sun",
+      "sun_features": [
+        "altitude"
+      ]
+    },
+    {
+      "kind": "time",
+      "time_features": [
+        "hour",
+        "minute"
+      ]
+    }
+  ],
+  "preprocessing": [
+    {
+      "kind": "mem_reduce"
+    },
+    {
+      "as_feature": true,
+      "kind": "similarity_nan"
+    },
+    {
+      "events_path": "data/raw/train_events.csv",
+      "fill_limit": 8640,
+      "kind": "add_state_labels",
+      "nan_tolerance_window": 5,
+      "use_similarity_nan": true
+    },
+    {
+      "events_path": "data/raw/train_events.csv",
+      "kind": "add_event_labels",
+      "smoothing": 5,
+      "steepness": 2
+    },
+    {
+      "kind": "split_windows"
+    }
+  ],
+  "pretraining": {
+    "downsample": {
+      "features": [
+        "f_anglez",
+        "f_anglez_diff_abs",
+        "f_enmo"
+      ],
+      "methods": [
+        "min",
+        "max",
+        "mean",
+        "std",
+        "median",
+        "range",
+        "var"
+      ],
+      "standard": "mean"
+    },
+    "scaler": {
+      "copy": true,
+      "kind": "standard-scaler"
+    },
+    "test_size": 0.2
+  },
+  "architecture": {
+    "activation_delay": 43,
+    "batch_size": 81,
+    "early_stopping": 27,
+    "epochs": 250,
+    "loss": "shrinkage-loss",
+    "lr": 0.021993876440714016,
+    "lr_schedule": {
+      "cycle_limit": 4,
+      "lr_min": 0.002,
+      "t_initial": 33,
+      "warmup_lr_init": 0.000001,
+      "warmup_t": 7
+    },
+    "mask_unlabeled": false,
+    "network_params": {
+      "attention": {
+        "attn_mode": "all",
+        "block_size": 79,
+        "local_attn_ctx": 20,
+        "type": "sparse"
+      },
+      "dropout": 0.6708895456187687,
+      "emb_dim": 150,
+      "forward_dim": 650,
+      "heads": 4,
+      "n_layers": 10,
+      "pe": "fixed",
+      "pooling": "gru",
+      "pooling_args": {
+        "activation": "gelu",
+        "bidir": true,
+        "dropout": 0.2912650291122579,
+        "hidden_size": 16,
+        "n_layers": 7
+      },
+      "tokenizer": "patch",
+      "tokenizer_args": {
+        "patch_size": 16
+      }
+    },
+    "optimizer": "adam-torch",
+    "threshold": 0,
+    "type": "event-segmentation-transformer"
+  }
+}

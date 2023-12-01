@@ -317,9 +317,6 @@ class EventModel:
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
-        # # Apply upsampling to the predictions
-        downsampling_factor = data_info.downsampling_factor
-
         # TODO Try other interpolation methods (linear / cubic)
         # if downsampling_factor > 1:
         #     predictions = np.repeat(predictions, downsampling_factor, axis=1)
@@ -372,11 +369,7 @@ class EventModel:
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=self.config["threshold"], n_events=10)
 
-            # Add step offset based on repeat factor.
-            if downsampling_factor > 1:
-                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
-            else:
-                offset = 0
+            offset = 5.5
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)

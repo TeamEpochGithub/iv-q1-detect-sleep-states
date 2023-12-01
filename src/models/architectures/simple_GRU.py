@@ -24,9 +24,9 @@ class SimpleGRU(nn.Module):
 
     def forward(self, x):
         if self.bidirectional:
-            h0 = torch.zeros(2*self.num_layers, x.size(1), self.hidden_size).to(x._device)
+            h0 = torch.zeros(2*self.num_layers, x.size(1), self.hidden_size).to(x.device)
         else:
-            h0 = torch.zeros(self.num_layers, x.size(1), self.hidden_size).to(x._device)
+            h0 = torch.zeros(self.num_layers, x.size(1), self.hidden_size).to(x.device)
         x1, _ = self.GRU(x, h0)
         # apply pooling to return 1 label per timestamp
         x2 = self.pooling(x1.permute(0, 2, 1))

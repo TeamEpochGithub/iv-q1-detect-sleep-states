@@ -87,6 +87,8 @@ class EventStateTrainer:
         counter = 0
         max_counter = self.early_stopping
         trained_epochs = 0
+        # the first 2 columns in y are the labels
+
         for epoch in range(self.n_epochs):
             if activation_delay is None:
                 use_activation = None

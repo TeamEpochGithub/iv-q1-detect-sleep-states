@@ -91,7 +91,7 @@
       "type": "Spectrogram_Cnn_Gru",
       "loss": "shrinkage-loss",
       "optimizer": "adam-torch",
-      "epochs": 99,
+      "epochs": 102,
       "batch_size": 64,
       "lr": 0.01,
       "early_stopping": 40,

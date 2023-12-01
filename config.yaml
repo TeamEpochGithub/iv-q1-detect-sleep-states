@@ -6,132 +6,29 @@ command:
 method: bayes
 project: detect-sleep-states
 program: main.py
-name: sweep-spectrogram-3
+name: ensemble-hpo
 metric:
   goal: maximize
-  name: cv_score
+  name: score
 parameters:
-  hpo_model:
+  ensemble_hpo:
     parameters:
-      name:
-        value: spectrogram-sweep
-      data_info:
+      model_config_loc:
+        value: ensemble_configs
+      n_events:
+        max: 25
+        min: 1
+      find_peaks:
         parameters:
-          downsampling_factor:
-            values:
-              - 1
-          latitude:
-            value: 40.73061
-          longitude:
-            value: -73.935242
-          window_size:
-            value: 17280
-      preprocessing:
-        value: [
-          {
-              "kind": "mem_reduce"
-          },
-          {
-              "kind": "similarity_nan",
-              "as_feature": false
-          },
-          {
-              "kind": "add_state_labels",
-              "id_encoding_path": "series_id_encoding.json",
-              "events_path": "data/raw/train_events.csv",
-              "use_similarity_nan": true,
-              "fill_limit": 8640,
-              "nan_tolerance_window": 5
-          },
-          {
-              "kind": "add_event_labels",
-              "id_encoding_path": "series_id_encoding.json",
-              "events_path": "data/raw/train_events.csv",
-              "smoothing": 0,
-              "steepness": 2
-          },
-          {
-              "kind": "split_windows"
-          }]
-      feature_engineering:
-        value: [
-          {
-            "kind": "rotation",
-            "window_sizes": [100,360]
-          }
-          ]
-      pretraining:
-        parameters:
-          test_size:
-            value: 0.2
-          scaler:
-            parameters:
-              kind:
-                value: "standard-scaler"
-              copy:
-                value: true
-      architecture:
-        parameters:
-          optimizer:
-            values:
-              - adam-torch
-              - adamw-torch
-          epochs:
-            min: 15
+          distance:
+            max: 500
+            min: 20
+          width:
             max: 100
-          batch_size:
-            max: 64
-            min: 16
-          lr:
-            max: 0.1
-            min: 1e-06
-          early_stopping:
-            max: 25
-            min: 15
+            min: 5
+          height:
+            value: 0
+          prominence:
+            value: 0
           threshold:
-            value: 0.0
-          n_fft:
-            values:
-              - 127
-              - 63
-          hop_length:
-            values:
-              - 6
-              - 10
-              - 12
-              - 18
-              - 20
-          encoder_name: 
-            value: "resnet34"
-          encoder_weights:
-            value: "imagenet"
-          mask_unlabeled:
-            values:
-              - true
-              - false
-          use_auxiliary_awake:
-            values:
-              - true
-              - false
-          loss:
-            values:
-              - mse-torch
-              - shrinkage-loss
-              - kldiv-torch
-          lr_schedule:
-            parameters:
-              cycle_limit:
-                max: 2
-                min: 1
-              lr_min:
-                value: 0.002
-              t_initial:
-                max: 45
-                min: 25
-              warmup_lr_init:
-                value: 1e-06
-              warmup_t:
-                max: 10
-                min: 0
-          type:
-            value: Spectrogram_2D_Cnn
+            value: 0

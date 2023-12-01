@@ -1,5 +1,5 @@
 {
-    "name": "horsemen1",
+    "name": "STFGO",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -89,28 +89,48 @@
         }
     },
     "architecture": {
-        "type": "event-res-gru",
+        "activation_delay": 45,
+        "batch_size": 90,
+        "early_stopping": 48,
+        "epochs": 250,
         "loss": "shrinkage-loss",
-        "epochs": 100,
-        "batch_size": 32,
-        "optimizer": "adam-torch",
-        "early_stopping": 15,
-        "activation_delay": 15,
-        "lr": 0.01,
-        "network_params": {
-            "hidden_size": 20,
-            "n_layers": 8,
-            "activation": "gelu",
-            "dropout": 0.4
-        },
+        "lr": 0.015549418652428596,
         "lr_schedule": {
-            "t_initial": 25,
-            "warmup_t": 5,
+            "cycle_limit": 2,
+            "lr_min": 0.002,
+            "t_initial": 33,
             "warmup_lr_init": 0.000001,
-            "lr_min": 0.001,
-            "cycle_limit": 3,
-            "cycle_decay": 0.5
+            "warmup_t": 5
         },
-        "threshold": 0
+        "mask_unlabeled": false,
+        "network_params": {
+            "dropout": 0.6229411429626215,
+            "emb_dim": 248,
+            "forward_dim": 922,
+            "heads": 6,
+            "n_layers": 6,
+            "pe": "fixed",
+            "pooling": "gru",
+            "attention": {
+                "type": "sparse",
+                "block_size": 60,
+                "local_attn_ctx": 20,
+                "attn_mode": "all"
+            },
+            "pooling_args": {
+                "hidden_size": 20,
+                "n_layers": 8,
+                "activation": "gelu",
+                "dropout": 0.4,
+                "bidir": true
+            },
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 8
+            }
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
     }
 }

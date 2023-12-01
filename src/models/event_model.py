@@ -11,10 +11,10 @@ from tqdm import tqdm
 from src.loss.loss import Loss
 from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 from src.models.model_exception import ModelException
-from src.models.trainers.event_state_trainer import EventStateTrainer
 from src.models.trainers.event_trainer import EventTrainer
 from src.optimizer.optimizer import Optimizer
 from src.util.state_to_event import pred_to_event_state
+from .trainers.early_stopping_metric import EarlyStoppingMetric
 from .. import data_info
 from ..logger.logger import logger
 from ..util.hash_config import hash_config
@@ -125,6 +125,7 @@ class EventModel:
         else:
             scheduler = None
         early_stopping = self.config["early_stopping"]
+        early_stopping_metric = EarlyStoppingMetric[self.config.get("early_stopping_metric", "VALIDATION_SCORE")]
         activation_delay = self.config["activation_delay"]
         use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
         if early_stopping > 0:
@@ -184,12 +185,9 @@ class EventModel:
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset, batch_size=batch_size)
 
-        if use_auxiliary_awake:
-            trainer = EventStateTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
-        else:
-            trainer = EventTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
+                               early_stopping_metric=early_stopping_metric, mask_unlabeled=mask_unlabeled,
+                               use_auxiliary_awake=use_auxiliary_awake)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
@@ -221,6 +219,7 @@ class EventModel:
         else:
             scheduler = None
         early_stopping = self.config["early_stopping"]
+        early_stopping_metric = EarlyStoppingMetric[self.config.get("early_stopping_metric", "VALIDATION_SCORE")]
         activation_delay = self.config["activation_delay"]
         use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
 
@@ -255,12 +254,9 @@ class EventModel:
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
 
-        if use_auxiliary_awake:
-            trainer = EventStateTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
-        else:
-            trainer = EventTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
+                               early_stopping_metric=early_stopping_metric,
+                               mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         trainer.fit(
             trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)

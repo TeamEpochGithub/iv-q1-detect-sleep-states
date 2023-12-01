@@ -7,7 +7,6 @@ import torch
 import wandb
 from timm.scheduler import CosineLRScheduler
 from torch import nn, log_softmax, softmax
-from torch.nn import KLDivLoss
 from tqdm import tqdm
 
 from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
@@ -323,6 +322,8 @@ class EventTrainer:
             for _, data in enumerate(tepoch):
                 losses, output = self._val_one_loop(
                     data=data, losses=losses, model=model, use_activation=use_activation)
+                if self.use_auxiliary_awake:
+                    output = output[:, :, :2]
                 outputs.append(output.cpu())
                 tepoch.set_description(f"Epoch {epoch_no}")
                 tepoch.set_postfix(loss=sum(losses) / (len(losses) + 0.0000001))
@@ -422,7 +423,7 @@ class EventTrainer:
         # Set true to 0 and false to 1
         unlabeled_mask = unlabeled_mask ^ 1
 
-        if isinstance(self.criterion, KLDivLoss):
+        if isinstance(self.criterion, nn.KLDivLoss):
             # Outputs should be given the label when the mask is 0
             output = output * unlabeled_mask + labels * (1 - unlabeled_mask)
 

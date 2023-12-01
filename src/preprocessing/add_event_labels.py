@@ -103,7 +103,7 @@ class AddEventLabels(PP):
         # Define the maximum distances for different scores
         tolerances = [12, 36, 60, 90, 120, 150, 180, 240, 300, 360]
         if self.steepness > 0:
-            tolerances = [tolerance // self.steepness for tolerance in tolerances]
+            tolerances = [tolerance / self.steepness for tolerance in tolerances]
         else:
             tolerances = [tolerance * -self.steepness for tolerance in tolerances]
         scores = list(np.round(np.linspace(1, 0.1, len(tolerances)), 1))
@@ -123,11 +123,11 @@ class AddEventLabels(PP):
             for ((curr_distance, curr_score), (next_distance, next_score)) \
                     in zip(distances_and_scores, distances_and_scores[1:]):
                 # Get the bounds to fill in the scores and make sure they are not out of bounds.
-                lower_bound = max(0, idx - curr_distance)
-                lower_next_bound = max(0, idx - next_distance)
+                lower_bound = int(max(0, idx - curr_distance))
+                lower_next_bound = int(max(0, idx - next_distance))
 
-                upper_bound = min(len(input_array), idx + curr_distance + 1)
-                upper_next_bound = min(len(input_array), idx + next_distance + 1)
+                upper_bound = int(min(len(input_array), idx + curr_distance + 1))
+                upper_next_bound = int(min(len(input_array), idx + next_distance + 1))
 
                 # Fill in the scores in the result array
                 result[lower_bound:lower_next_bound] = curr_score

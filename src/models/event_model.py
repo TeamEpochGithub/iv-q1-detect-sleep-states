@@ -241,6 +241,15 @@ class EventModel:
 
         y_train = torch.from_numpy(y_train[:, :, labels_list])
 
+        if use_auxiliary_awake:
+            # Change all 3's for last column to 2's
+            y_train[:, :, -1] = torch.where(
+                y_train[:, :, -1] == 3, torch.tensor(2), y_train[:, :, -1])
+
+            awake = y_train[:, :, -1]
+            awake = torch.nn.functional.one_hot(awake.to(torch.int64))
+            y_train = torch.cat((y_train[:, :, :-1], awake.float()), dim=2)
+
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(x_train, y_train)
 

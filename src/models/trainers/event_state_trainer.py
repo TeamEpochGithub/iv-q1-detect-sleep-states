@@ -87,7 +87,20 @@ class EventStateTrainer:
         counter = 0
         max_counter = self.early_stopping
         trained_epochs = 0
+        # the first 2 columns in y are the labels
+
         for epoch in range(self.n_epochs):
+            if model.config.get("adaptive_gaussian_factor", None) is not None:
+                # after downsampling the labels peak is 0.9566 and not 1
+                # taking the exponential will lower the value of the peak too
+                # so we first find all indices where the peak is and set the peaks to 1 again
+
+                # find the indices where the peak is and set them to only if the tensor is not all 0
+                # peak_indices_onset = trainloader.dataset.tensors[1][:, :, data_info.y_columns['state-onset']].max(axis=1).indices
+                # peak_indices_wakeup = trainloader.dataset.tensors[1][:, :, data_info.y_columns['state-wakeup']].max(axis=1).indices
+                # take the exponential of the output channels
+                trainloader.dataset.tensors[1][:, :, :2] = \
+                    torch.pow(trainloader.dataset.tensors[1][:, :, :2], model.config.get("adaptive_gaussian_factor", 1))
             if activation_delay is None:
                 use_activation = None
             else:

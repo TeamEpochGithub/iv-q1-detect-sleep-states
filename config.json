@@ -15,7 +15,7 @@
         "models": ["spectrogram-cnn-gru.json"],
         "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": true
+        "pred_only": false
     },
     "cv": {
         "splitter": "group_k_fold",

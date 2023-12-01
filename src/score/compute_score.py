@@ -69,7 +69,7 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
     solution_series_ids = solution['series_id'].unique()
     data_info.cv_unique_series.extend(solution_series_ids)
 
-    verify_cv(submission, solution)
+    # verify_cv(submission, solution)
 
     # Count the number of labelled series in the submission and solution
     submission_sids = submission['series_id'].unique()

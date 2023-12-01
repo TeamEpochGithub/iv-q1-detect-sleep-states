@@ -116,14 +116,7 @@ class Ensemble:
                 else:
                     events = pred_to_event_state(pred, thresh=0, n_events=find_peaks.get("n_events"), find_peaks_params=find_peaks.get("find_peaks"))
 
-                # Add step offset based on repeat factor.
-                if data_info.downsampling_factor <= 1:
-                    offset = 0
-                elif data_info.downsampling_factor % 2 == 0:
-                    offset = (data_info.downsampling_factor / 2.0) - 0.5
-                else:
-                    offset = data_info.downsampling_factor // 2
-                offset = 0
+                offset = 5.5
                 steps = (events[0] + offset, events[1] + offset)
                 confidences = (events[2], events[3])
                 all_predictions.append(steps)
@@ -131,8 +124,6 @@ class Ensemble:
 
             # Return tuple
             return all_predictions, all_confidences
-
-        # TODO: consider how to combine non-Nan and NaNs in the predictions #146
 
         # Weight the predictions
         predictions = np.array(predictions)

@@ -1,3 +1,5 @@
+import os
+
 import timm
 import functools
 import torch.utils.model_zoo as model_zoo
@@ -84,7 +86,7 @@ def get_encoder(name, in_channels=3, depth=5, weights=None, output_stride=32, **
                     list(encoders[name]["pretrained_settings"].keys()),
                 )
             )
-        if wandb.run is not None:
+        if os.path.exists("src/external/resnet34-333f7ec4.pth"):
             encoder.load_state_dict(torch.load("src/external/resnet34-333f7ec4.pth"))
         else:
             encoder.load_state_dict(torch.load("/kaggle/input/src-code-detect-sleep-states/src/external/resnet34-333f7ec4.pth"))

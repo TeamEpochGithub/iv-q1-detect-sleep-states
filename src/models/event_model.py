@@ -38,6 +38,7 @@ class EventModel:
             self.hash = hash_config(config, length=5)
 
         self.name = name
+        self.inference_batch_size = 32
 
         # Why didn't we set all parameters in the config like this? This is so much cleaner.
         self.early_stopping_metric = EarlyStoppingMetric[
@@ -244,6 +245,15 @@ class EventModel:
 
         y_train = torch.from_numpy(y_train[:, :, labels_list])
 
+        if use_auxiliary_awake:
+            # Change all 3's for last column to 2's
+            y_train[:, :, -1] = torch.where(
+                y_train[:, :, -1] == 3, torch.tensor(2), y_train[:, :, -1])
+
+            awake = y_train[:, :, -1]
+            awake = torch.nn.functional.one_hot(awake.to(torch.int64))
+            y_train = torch.cat((y_train[:, :, :-1], awake.float()), dim=2)
+
         # Create a dataset from X and y
         train_dataset = torch.utils.data.TensorDataset(x_train, y_train)
 
@@ -289,7 +299,7 @@ class EventModel:
 
         # Create a DataLoader for batched inference
         dataset = TensorDataset(torch.from_numpy(data))
-        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=self.inference_batch_size, shuffle=False)
 
         predictions = []
 
@@ -317,7 +327,7 @@ class EventModel:
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
-        # # Apply upsampling to the predictions
+        # Apply upsampling to the predictions
         downsampling_factor = data_info.downsampling_factor
 
         return self.model_output_sinc_interpolate_to_events(self.config['threshold'], 10, downsampling_factor, predictions, raw_output)
@@ -387,12 +397,8 @@ class EventModel:
             # Convert to relative window event timestamps
             events = pred_to_event_state(pred, thresh=threshold, n_events=n_events)
 
-            # Add step offset based on repeat factor.
-            if downsampling_factor > 1:
-                offset = (
-                    (downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
-            else:
-                offset = 0
+            offset = 5.5
+
             steps = (events[0] + offset, events[1] + offset)
             confidences = (events[2], events[3])
             all_predictions.append(steps)

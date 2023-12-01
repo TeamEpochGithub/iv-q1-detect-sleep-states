@@ -1,8 +1,8 @@
 {
-    "name": "cmon2",
+    "name": "cmon",
     "data_info": {
         "window_size": 17280,
-        "downsampling_factor": 6,
+        "downsampling_factor": 12,
         "latitude": 40.730610,
         "longitude": -73.935242
     },
@@ -34,21 +34,11 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": ["weekday", "hour", "minute"]
+            "time_features": ["hour", "minute"]
         },
         {
             "kind": "sun",
             "sun_features": ["azimuth", "altitude"]
-        },
-        {
-            "kind": "add_holidays"
-        },
-        {
-            "kind": "add_school_hours"
-        },
-        {
-            "kind": "add_weather",
-            "weather_features": ["temp", "dwpt", "rhum", "prcp", "snow", "wdir", "wspd", "wpgt", "pres", "tsun", "coco"]
         }
     ],
     "pretraining": {

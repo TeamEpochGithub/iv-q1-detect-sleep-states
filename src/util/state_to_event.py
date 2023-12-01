@@ -10,11 +10,12 @@ def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
     return np.argmax(one_hot, axis=0)
 
 
-def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 1) -> tuple:
+def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 1, find_peaks_params: dict = None) -> tuple:
     """Convert an event segmentation prediction to an onset and event. Normally used for predictions.
     param: 3d numpy array (channel, window_size) of event states for each timestep, 0=no state > 0=state
     param: thresh float, threshold for the prediction to be considered a state
     param: n_events int, number of events to return
+    param: find_peaks_params dict, parameters for the find_peaks function
     """
     assert predictions.shape[1] == 2, "Predictions should be 3d array with shape (window_size, 2)"
 
@@ -47,9 +48,9 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 
         return np.arange(len(predictions[:, 0])), np.arange(len(predictions[:, 1])), predictions[:, 0], predictions[:, 1]
 
     # Find peaks in the predictions
-    o_peaks, o_properties = find_peaks(predictions[:, 0], height=thresh, width=24, distance=100)
+    o_peaks, o_properties = find_peaks(predictions[:, 0], **find_peaks_params)
 
-    a_peaks, a_properties = find_peaks(predictions[:, 1], height=thresh, width=24, distance=100)
+    a_peaks, a_properties = find_peaks(predictions[:, 1], **find_peaks_params)
 
     # Sort the o_peaks indices based on the peak_heights
     o_sorted = np.argsort(o_properties["peak_heights"])[::-1]

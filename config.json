@@ -12,8 +12,8 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["red1.json", "red2.json", "red3.json", "red4.json", "red5.json", "horsemen1.json", "STFGO.json"],
-        "weights": [1, 1, 1, 1, 1, 1, 1],
+        "models": ["stfgo-1.json", "stfgo.json", "spectrogram-cnn-gru.json", "horsemen1.json"],
+        "weights": [1, 1, 1, 1],
         "comb_method": "confidence_average",
         "pred_only": true
     },

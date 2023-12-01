@@ -56,8 +56,8 @@ class Downsampler:
         Y_new = []
 
         for i in range(y.shape[1]):
-            # y_downsampled = np.median(y[:, i].reshape(-1, data_info.downsampling_factor), axis=1)
-            y_downsampled = y[::12, i]
+            y_downsampled = np.median(y[:, i].reshape(-1, data_info.downsampling_factor), axis=1)
+            # y_downsampled = y[::12, i]
             Y_new.append(y_downsampled)
 
         y = np.array(Y_new).T

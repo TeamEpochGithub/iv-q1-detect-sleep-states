@@ -1,13 +1,17 @@
 import numpy as np
 import torch
 import wandb
+from tqdm import tqdm
 from src.models.trainers.event_state_trainer import EventStateTrainer
+from torch.utils.data import TensorDataset, DataLoader
 from .event_model import EventModel
 from .trainers.event_trainer import EventTrainer
+from src.util.state_to_event import pred_to_event_state
 
 from .. import data_info
 from ..logger.logger import logger
 from .architectures.spectrogram_cnn_gru import MultiResidualBiGRUwSpectrogramCNN
+from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 
 class EventSegmentation2DCNNGRU(EventModel):
@@ -317,3 +321,123 @@ class EventSegmentation2DCNNGRU(EventModel):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
                                                            out_channels=2, model_type=self.model_type, config=self.config,
                                                            spec_features_indices=spec_features_indices)
+
+    def pred(self, data: np.ndarray, pred_with_cpu: bool, raw_output: bool = False) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Prediction function for the model.
+        :param data: unlabelled data
+        :param pred_with_cpu: whether to use cpu or gpu
+        :return: the predictions and confidences, as numpy arrays
+        """
+        # Prediction function
+        logger.info(f"--- Predicting results with model {self.name}")
+        # Run the model on the data and return the predictions
+
+        if pred_with_cpu:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda")
+
+        self.model.eval()
+        self.model.to(device)
+
+        # Print data shape
+        logger.info(f"--- Data shape of predictions dataset: {data.shape}")
+
+        # Create a DataLoader for batched inference
+        dataset = TensorDataset(torch.from_numpy(data))
+        dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+
+        predictions = []
+
+        with torch.no_grad():
+            for batch_data in tqdm(dataloader, "Predicting", unit="batch"):
+                batch_data = batch_data[0].to(device)
+
+                # Make a batch prediction
+                if isinstance(self.model, MultiResidualBiGRU):
+                    batch_prediction, _ = self.model(batch_data)
+                else:
+                    batch_prediction = self.model(batch_data)
+
+                # If auxiliary awake is used, take only the first 2 columns
+                if self.config.get("use_auxiliary_awake", False):
+                    batch_prediction = batch_prediction[:, :, :2]
+
+                if pred_with_cpu:
+                    batch_prediction = batch_prediction.numpy()
+                else:
+                    batch_prediction = batch_prediction.cpu().numpy()
+
+                predictions.append(batch_prediction)
+
+        # Concatenate the predictions from all batches
+        predictions = np.concatenate(predictions, axis=0)
+
+        # # Apply upsampling to the predictions
+        downsampling_factor = data_info.downsampling_factor
+
+        # TODO Try other interpolation methods (linear / cubic)
+        # if downsampling_factor > 1:
+        #     predictions = np.repeat(predictions, downsampling_factor, axis=1)
+
+        # # Define the original time points
+        # original_time_points = np.linspace(0, 1, data_info.window_size)
+        #
+        # # Define the new time points for upsampled data
+        # upsampled_time_points = np.linspace(0, 1, data_info.window_size_before)
+        #
+        # # Create an array to store upsampled data
+        # upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
+        #
+        # # Apply interpolation along axis=1 for each channel
+        # for channel_idx in range(predictions.shape[2]):
+        #     for row_idx in range(predictions.shape[0]):
+        #         interpolation_function = interp1d(original_time_points, predictions[row_idx, :, channel_idx], kind='linear', fill_value='extrapolate')
+        #         upsampled_data[row_idx, :, channel_idx] = interpolation_function(upsampled_time_points)
+
+        steps_sinc = np.arange(0, data_info.window_size_before, data_info.downsampling_factor)
+        u_sinc = np.arange(0, data_info.window_size_before, 1)
+
+        upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
+
+        # Find the period
+        T = steps_sinc[1] - steps_sinc[0]
+        # Use broadcasting correctly
+        sincM = (u_sinc - steps_sinc[:, np.newaxis]) / T
+        res_sinc = np.sinc(sincM)
+
+        for channel_idx in range(predictions.shape[2]):
+            for row_idx in tqdm(range(predictions.shape[0]), "Upsampling using sinc interpolation", unit="window"):
+                y_sinc = np.dot(predictions[row_idx, :, channel_idx], res_sinc)
+                upsampled_data[row_idx, :, channel_idx] = y_sinc
+
+        predictions = upsampled_data
+
+        # Return raw output if necessary
+        if raw_output:
+            return predictions
+
+        all_predictions = []
+        all_confidences = []
+        # Convert to events
+        for pred in tqdm(predictions, desc="Converting predictions to events", unit="window"):
+            # Pred should be 2d array with shape (window_size, 2)
+            assert pred.shape[
+                       1] == 2, "Prediction should be 2d array with shape (window_size, 2)"
+
+            # Convert to relative window event timestamps
+            events = pred_to_event_state(pred, thresh=self.config["threshold"], n_events=10)
+
+            # Add step offset based on repeat factor.
+            if downsampling_factor > 1:
+                offset = ((downsampling_factor / 2.0) - 0.5 if downsampling_factor % 2 == 0 else downsampling_factor // 2)
+            else:
+                offset = 0
+            steps = (events[0] + offset, events[1] + offset)
+            confidences = (events[2], events[3])
+            all_predictions.append(steps)
+            all_confidences.append(confidences)
+
+        # Return numpy array
+        return all_predictions, all_confidences

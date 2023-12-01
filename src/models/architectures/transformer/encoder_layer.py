@@ -1,7 +1,6 @@
 from torch.nn.modules import (
     MultiheadAttention,
     Dropout,
-    BatchNorm1d,
     LayerNorm,
 )
 from torch import nn

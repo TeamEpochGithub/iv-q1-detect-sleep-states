@@ -48,7 +48,7 @@ class ResidualTransformer(nn.Module):
         # Patching
         self.patching = PatchTokenizer(
             channels=input_size, emb_dim=emb_dim, patch_size=patch_size)
-        
+
         # Positional encoding
         if pe == "fixed":
             self.pos_encoding = FixedPositionalEncoding(
@@ -56,10 +56,11 @@ class ResidualTransformer(nn.Module):
         elif pe == "learnable":
             self.pos_encoding = LearnablePositionalEncoding(
                 emb_dim=emb_dim, dropout=dropout, max_len=l_e)
-            
+
         # Create transformer encoder
         self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer=EncoderLayer(heads=heads, emb_dim=emb_dim, expansion=expansion, dropout=dropout, attention=attention),
+            encoder_layer=EncoderLayer(
+                heads=heads, emb_dim=emb_dim, expansion=expansion, dropout=dropout, attention=attention),
             num_layers=n_layers,
             norm=nn.LayerNorm(emb_dim)
         )

@@ -1,15 +1,14 @@
 {
-    "name": "sparse_transformer_sweep_features",
+    "name": "red2",
     "data_info": {
-        "window_size": 17280,
-        "downsampling_factor": 12,
-        "latitude": 40.730610,
-        "longitude": -73.935242
+        "downsampling_factor": 24,
+        "latitude": 40.73061,
+        "longitude": -73.935242,
+        "window_size": 17280
     },
     "preprocessing": [
         {
-            "kind": "mem_reduce",
-            "id_encoding_path": "series_id_encoding.json"
+            "kind": "mem_reduce"
         },
         {
             "kind": "similarity_nan",
@@ -17,7 +16,6 @@
         },
         {
             "kind": "add_state_labels",
-            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "use_similarity_nan": true,
             "fill_limit": 8640,
@@ -25,7 +23,6 @@
         },
         {
             "kind": "add_event_labels",
-            "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
             "smoothing": 5,
             "steepness": 2
@@ -35,13 +32,6 @@
         }
     ],
     "feature_engineering": [
-        {
-            "kind": "time",
-            "time_features": [
-            "hour",
-            "minute"
-            ]
-        },
         {
             "kind": "parser",
             "feats": [
@@ -65,70 +55,78 @@
                 "azimuth",
                 "altitude"
             ]
+        },
+        {
+            "kind": "time",
+            "time_features": [
+                "hour",
+                "minute",
+                "weekday"
+            ]
         }
     ],
     "pretraining": {
-    "downsample": {
-        "features": [
-        "f_anglez_diff_abs",
-        "f_enmo"
-        ],
-        "methods": [
-        "min",
-        "max",
-        "mean",
-        "std",
-        "median",
-        "range",
-        "var"
-        ],
-        "standard": "mean"
-    },
-    "test_size": 0.2,
-    "scaler": {
-        "kind": "standard-scaler",
-        "copy": true
-    }
+        "downsample": {
+            "features": [
+                "f_anglez_diff_abs",
+                "f_enmo"
+            ],
+            "methods": [
+                "min",
+                "max",
+                "mean",
+                "std",
+                "median",
+                "range",
+                "var"
+            ],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
     },
     "architecture": {
-        "activation_delay": 45,
-        "batch_size": 90,
-        "early_stopping": 48,
+        "activation_delay": 34,
+        "batch_size": 102,
+        "early_stopping": 28,
         "epochs": 250,
         "loss": "shrinkage-loss",
-        "lr": 0.015549418652428596,
+        "lr": 0.010570427235965888,
         "lr_schedule": {
-            "cycle_limit": 2,
+            "cycle_limit": 3,
             "lr_min": 0.002,
-            "t_initial": 33,
+            "t_initial": 28,
             "warmup_lr_init": 0.000001,
-            "warmup_t": 5
+            "warmup_t": 4
         },
         "mask_unlabeled": false,
         "network_params": {
-            "dropout": 0.6229411429626215,
-            "emb_dim": 248,
-            "forward_dim": 922,
-            "heads": 6,
-            "n_layers": 6,
+            "attention": {
+            "attn_mode": "all",
+            "block_size": 95,
+            "local_attn_ctx": 20,
+            "type": "sparse"
+            },
+            "dropout": 0.711959974833962,
+            "emb_dim": 126,
+            "forward_dim": 811,
+            "heads": 4,
+            "n_layers": 8,
             "pe": "fixed",
             "pooling": "gru",
-            "attention": {
-                "type": "sparse",
-                "block_size": 60,
-                "local_attn_ctx": 20,
-                "attn_mode": "all"
-            },
             "pooling_args": {
-                "activation": "relu",
-                "bidir": true,
-                "dropout": 0,
-                "hidden_size": 7,
-                "n_layers": 6
+            "activation": "gelu",
+            "bidir": true,
+            "dropout": 0.636471747428731,
+            "hidden_size": 34,
+            "n_layers": 8
             },
             "tokenizer": "patch",
             "tokenizer_args": {
-                "patch_size": 8
+            "patch_size": 12
             }
         },
         "optimizer": "adamw-torch",

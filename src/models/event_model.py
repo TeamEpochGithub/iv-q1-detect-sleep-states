@@ -317,9 +317,6 @@ class EventModel:
         # Concatenate the predictions from all batches
         predictions = np.concatenate(predictions, axis=0)
 
-        # # Apply upsampling to the predictions
-        downsampling_factor = data_info.downsampling_factor
-
         # TODO Try other interpolation methods (linear / cubic)
         # if downsampling_factor > 1:
         #     predictions = np.repeat(predictions, downsampling_factor, axis=1)

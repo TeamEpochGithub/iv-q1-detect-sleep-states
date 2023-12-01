@@ -73,10 +73,9 @@ def get_objective(config_loader: ConfigLoader):
 
     def objective(trial: optuna.trial):
         # Suggest weights for ensemble
-        num_weights = len(config_loader.config["ensemble"]["weights"])
         weight_matrix = [
             trial.suggest_float("weight_" + str(i), -1, 1)
-            for i in range(num_weights)
+            for i in config_loader.config["ensemble"]["models"]
         ]
 
         logger.info("Weighting predictions with confidences")

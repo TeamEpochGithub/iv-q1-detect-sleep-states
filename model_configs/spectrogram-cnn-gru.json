@@ -103,6 +103,7 @@
       "batch_size": 32,
       "lr": 0.01,
       "early_stopping": 20,
+      "EarlyStoppingMetric": "VALIDATION_SCORE",
       "threshold": 0,
       "n_fft": 63,
       "hop_length": 1,

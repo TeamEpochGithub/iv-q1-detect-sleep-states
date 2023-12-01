@@ -33,7 +33,7 @@ class EventTrainer:
     criterion: nn.Module = nn.CrossEntropyLoss()
     mask_unlabeled: bool = False
     early_stopping: int = 10
-    early_stopping_metric: EarlyStoppingMetric = EarlyStoppingMetric.VALIDATION_SCORE
+    early_stopping_metric: EarlyStoppingMetric = EarlyStoppingMetric.VALIDATION_LOSS
     use_auxiliary_awake: bool = False
 
     _device: torch.device = field(init=False, repr=False, compare=False)

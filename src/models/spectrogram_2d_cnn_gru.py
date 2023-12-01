@@ -187,8 +187,9 @@ class EventSegmentation2DCNNGRU(EventModel):
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset, batch_size=batch_size)
 
-        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled,
-                               use_auxiliary_awake=use_auxiliary_awake)
+        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
+                               early_stopping_metric=self.early_stopping_metric,
+                               mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
@@ -274,8 +275,9 @@ class EventSegmentation2DCNNGRU(EventModel):
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
 
-        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled,
-                               use_auxiliary_awake=use_auxiliary_awake)
+        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
+                               early_stopping_metric=self.early_stopping_metric,
+                               mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         trainer.fit(
             trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)

@@ -95,6 +95,7 @@
       "batch_size": 32,
       "optimizer": "adam-torch",
       "early_stopping": 15,
+      "EarlyStoppingMetric": "VALIDATION_SCORE",
       "activation_delay": 15,
       "lr": 0.01,
       "network_params": {

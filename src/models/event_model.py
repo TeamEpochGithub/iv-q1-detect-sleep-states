@@ -39,6 +39,11 @@ class EventModel:
 
         self.name = name
 
+        # Why didn't we set all parameters in the config like this? This is so much cleaner.
+        self.early_stopping_metric = EarlyStoppingMetric[
+            self.config.get(EarlyStoppingMetric.__name__, 'VALIDATION_LOSS')
+        ]
+
     def get_type(self) -> str:
         """
         Get type function for the model.
@@ -125,7 +130,6 @@ class EventModel:
         else:
             scheduler = None
         early_stopping = self.config["early_stopping"]
-        early_stopping_metric = EarlyStoppingMetric[self.config.get("early_stopping_metric", "VALIDATION_SCORE")]
         activation_delay = self.config["activation_delay"]
         use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
         if early_stopping > 0:
@@ -186,7 +190,7 @@ class EventModel:
             test_dataset, batch_size=batch_size)
 
         trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
-                               early_stopping_metric=early_stopping_metric, mask_unlabeled=mask_unlabeled,
+                               early_stopping_metric=self.early_stopping_metric, mask_unlabeled=mask_unlabeled,
                                use_auxiliary_awake=use_auxiliary_awake)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
@@ -219,7 +223,6 @@ class EventModel:
         else:
             scheduler = None
         early_stopping = self.config["early_stopping"]
-        early_stopping_metric = EarlyStoppingMetric[self.config.get("early_stopping_metric", "VALIDATION_SCORE")]
         activation_delay = self.config["activation_delay"]
         use_auxiliary_awake = self.config.get("use_auxiliary_awake", False)
 
@@ -255,7 +258,7 @@ class EventModel:
             train_dataset, batch_size=batch_size)
 
         trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
-                               early_stopping_metric=early_stopping_metric,
+                               early_stopping_metric=self.early_stopping_metric,
                                mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         trainer.fit(
             trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,

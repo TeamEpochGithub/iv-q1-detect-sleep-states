@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from src.logger.logger import logger
-from src.models.model import ModelException
+from src.models.model_exception import ModelException
 
 
 class ConBrBlock(nn.Module):

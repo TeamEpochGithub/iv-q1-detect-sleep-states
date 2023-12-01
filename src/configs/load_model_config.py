@@ -10,7 +10,7 @@ from ..models.event_res_gru import EventResGRU
 from ..models.spectrogram_2d_cnn_gru import EventSegmentation2DCNNGRU
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
-from ..models.model import Model
+from ..models.event_model import EventModel
 from .. import data_info
 
 
@@ -131,7 +131,7 @@ class ModelConfigLoader:
         return {k: self.config[k] for k in ["data_info", "preprocessing", "feature_engineering", "pretraining"]
                 if k in self.config}
 
-    def set_model(self) -> Model:
+    def set_model(self) -> EventModel:
         """
         Set the model from the config
         :return: the model
@@ -160,7 +160,7 @@ class ModelConfigLoader:
         self.model = curr_model
         return curr_model
 
-    def get_model(self) -> Model:
+    def get_model(self) -> EventModel:
         """
         Get the model from the config
         :return: the model

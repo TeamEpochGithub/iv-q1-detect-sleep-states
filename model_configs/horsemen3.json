@@ -1,8 +1,8 @@
 {
-    "name": "horsemen1",
+    "name": "horsemen3",
     "data_info": {
       "window_size": 17280,
-      "downsampling_factor": 12,
+      "downsampling_factor": 24,
       "latitude": 40.730610,
       "longitude": -73.935242
     },
@@ -98,10 +98,10 @@
       "activation_delay": 15,
       "lr": 0.01,
       "network_params": {
-        "hidden_size": 20,
-        "n_layers": 8,
+        "hidden_size": 16,
+        "n_layers": 7,
         "activation": "gelu",
-        "dropout": 0.4
+        "dropout": 0.2
       },
       "lr_schedule": {
         "t_initial": 25,
@@ -113,4 +113,4 @@
       },
       "threshold": 0
     }
-}
+  }

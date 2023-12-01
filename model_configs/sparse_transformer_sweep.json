@@ -1,5 +1,5 @@
 {
-    "name": "sparse_transformer_sweep_features",
+    "name": "sparse_transformer_sweep",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
@@ -27,7 +27,7 @@
             "kind": "add_event_labels",
             "id_encoding_path": "series_id_encoding.json",
             "events_path": "data/raw/train_events.csv",
-            "smoothing": 5,
+            "smoothing": 0,
             "steepness": 2
         },
         {
@@ -37,58 +37,24 @@
     "feature_engineering": [
         {
             "kind": "time",
-            "time_features": [
-            "hour",
-            "minute"
-            ]
-        },
-        {
-            "kind": "parser",
-            "feats": [
-                "anglez_diff_abs",
-                "anglez_diff_abs_median_1000",
-                "anglez_diff_abs_clip_10_skew_1000",
-                "anglez_diff_abs_clip_10_savgol_180",
-                "anglez_diff_abs_clip_10_median_180",
-                "enmo_std_90",
-                "anglez_diff_abs_clip_10_max_36",
-                "enmo_std_50",
-                "anglez_diff_abs_clip_10_mean_1000",
-                "anglez_diff_abs_clip_10_savgol_180_diff",
-                "anglez_diff_abs_clip_10_savgol_1000_diff",
-                "anglez_diff_abs_clip_10_median_360"
-            ]
+            "time_features": ["hour","minute"]
         },
         {
             "kind": "sun",
-            "sun_features": [
-                "azimuth",
-                "altitude"
-            ]
+            "sun_features": ["azimuth", "altitude"]
         }
     ],
     "pretraining": {
-    "downsample": {
-        "features": [
-        "f_anglez_diff_abs",
-        "f_enmo"
-        ],
-        "methods": [
-        "min",
-        "max",
-        "mean",
-        "std",
-        "median",
-        "range",
-        "var"
-        ],
-        "standard": "mean"
-    },
-    "test_size": 0.2,
-    "scaler": {
-        "kind": "standard-scaler",
-        "copy": true
-    }
+        "downsample": {
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
     },
     "architecture": {
         "activation_delay": 45,

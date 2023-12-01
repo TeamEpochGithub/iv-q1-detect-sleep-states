@@ -12,11 +12,10 @@
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
     "ensemble": {
-        "models": ["stfgo/STFGO-sweep.json","gru-features-simple.json",
-            "gru_features.json","stfgo/STFGO-simple-features.json"],
-        "weights":[0.364, 0.297, 0.261, 0.341],
+        "models": ["spectrogram-cnn-gru.json"],
+        "weights": [1],
         "comb_method": "confidence_average",
-        "pred_only": true
+        "pred_only": false
     },
     "cv": {
         "splitter": "group_k_fold",

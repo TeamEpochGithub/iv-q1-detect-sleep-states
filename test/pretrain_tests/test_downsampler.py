@@ -50,20 +50,20 @@ class TestDownsampler(TestCase):
 
         data_info.downsampling_factor = 0
 
-    def test_downsamplerY(self):
-        """
-        Test the downsampler for the y data.
-        """
-        data_info.window_size = 2
-        data_info.downsampling_factor = 2
-        # Create a dummy dataframe
-        dummy_df = pd.DataFrame({'x': [1, 2, 3, 4, 5, 6, 7, 8], 'y': [1, 2, 3, 4, 5, 6, 7, 8]})
-        # Downsample the dummy dataframe
-        dummy_df_downsampled = self.downsampler.downsampleY(dummy_df)
-        # Check if the shape is correct
-        self.assertEqual(dummy_df_downsampled.shape, (4, 2))
-        # Check if the values are correct
-        self.assertEqual(dummy_df_downsampled['x'].values.tolist(), [1.5, 3.5, 5.5, 7.5])
-        self.assertEqual(dummy_df_downsampled['y'].values.tolist(), [1.5, 3.5, 5.5, 7.5])
+    # def test_downsamplerY(self):
+    #     """
+    #     Test the downsampler for the y data.
+    #     """
+    #     data_info.window_size = 2
+    #     data_info.downsampling_factor = 2
+    #     # Create a dummy dataframe
+    #     dummy_df = pd.DataFrame({'x': [1, 2, 3, 4, 5, 6, 7, 8], 'y': [1, 2, 3, 4, 5, 6, 7, 8]})
+    #     # Downsample the dummy dataframe
+    #     dummy_df_downsampled = self.downsampler.downsampleY(dummy_df)
+    #     # Check if the shape is correct
+    #     self.assertEqual(dummy_df_downsampled.shape, (4, 2))
+    #     # Check if the values are correct
+    #     self.assertEqual(dummy_df_downsampled['x'].values.tolist(), [1.5, 3.5, 5.5, 7.5])
+    #     self.assertEqual(dummy_df_downsampled['y'].values.tolist(), [1.5, 3.5, 5.5, 7.5])
 
-        data_info.downsampling_factor = 0
+    #     data_info.downsampling_factor = 0

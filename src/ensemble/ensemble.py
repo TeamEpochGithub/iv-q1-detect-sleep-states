@@ -119,7 +119,7 @@ class Ensemble:
                     offset = (data_info.downsampling_factor / 2.0) - 0.5
                 else:
                     offset = data_info.downsampling_factor // 2
-                offset = 0
+                # offset = -0.5
                 steps = (events[0] + offset, events[1] + offset)
                 confidences = (events[2], events[3])
                 all_predictions.append(steps)

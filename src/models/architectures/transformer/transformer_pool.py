@@ -6,7 +6,6 @@ from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 
 # Base imports
 from .pooling import SeqPool, LSTMPooling, NoPooling
-from .encoder_config import EncoderConfig
 from ...architectures.seg_unet_1d_cnn import ConBrBlock
 
 

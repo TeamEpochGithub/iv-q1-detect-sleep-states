@@ -6,9 +6,10 @@ from sklearn.model_selection import GroupKFold, StratifiedGroupKFold, GroupShuff
     LeavePGroupsOut, PredefinedSplit, KFold, LeaveOneOut, LeavePOut, RepeatedKFold, RepeatedStratifiedKFold, \
     ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit, TimeSeriesSplit
 
+from src.models.event_model import EventModel
+
 from .. import data_info
 from ..logger.logger import logger
-from ..models.model import Model
 from ..score.compute_score import compute_score_full, compute_score_clean, from_numpy_to_submission_format
 
 _SPLITTERS: dict[str] = {
@@ -83,7 +84,7 @@ class CV:
             raise CVException("Unknown CV splitter %s", splitter)
         self.scoring = _get_scoring(scoring)
 
-    def cross_validate(self, model: Model, data: np.ndarray, labels: np.ndarray, train_window_info: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
+    def cross_validate(self, model: EventModel, data: np.ndarray, labels: np.ndarray, train_window_info: pd.DataFrame, groups: np.ndarray = None, ) -> np.ndarray:
         """Evaluate the model using the CV method
 
         Run the cross-validation as specified in the config.

@@ -385,18 +385,6 @@ class EventModel:
         # Return numpy array
         return all_predictions, all_confidences
 
-    def evaluate(self, pred: pd.DataFrame, target: pd.DataFrame) -> float:
-        """
-        Evaluation function for the model. This function should be overwritten by the user.
-        :param pred: predictions
-        :param target: actual labels
-        """
-        # Evaluate function
-        logger.critical(
-            "--- Evaluation of base class called. Did you forget to override it?")
-        raise ModelException(
-            "Evaluation of base class called. Did you forget to override it?")
-
     def save(self, path: str) -> None:
         """
         Save function for the model.

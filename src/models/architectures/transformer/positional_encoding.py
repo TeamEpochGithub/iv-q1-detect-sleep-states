@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from typing import Type
 import math
 
 
@@ -15,7 +14,7 @@ class FixedPositionalEncoding(nn.Module):
 
     def __init__(
         self,
-        d_model: int,
+        emb_dim: int,
         dropout: float = 0.1,
         max_len: int = 1024,
         scale_factor: float = 1.0,
@@ -23,16 +22,16 @@ class FixedPositionalEncoding(nn.Module):
         super(FixedPositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
         self.max_len = max_len
-        pe = torch.zeros(max_len, d_model)  # positional encoding
+        pe = torch.zeros(max_len, emb_dim)  # positional encoding
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, d_model, 2).float() *
-            (-math.log(10000.0) / d_model)
+            torch.arange(0, emb_dim, 2).float() *
+            (-math.log(10000.0) / emb_dim)
         )
         pe[:, 0::2] = torch.sin(position * div_term)
-        # If d_model is uneven, we have to remove the last value
+        # If emb_dim is uneven, we have to remove the last value
         cosine_pos = torch.cos(position * div_term)
-        if d_model % 2 == 0:
+        if emb_dim % 2 == 0:
             pe[:, 1::2] = cosine_pos
         else:
             pe[:, 1::2] = cosine_pos[:, :-1]
@@ -98,22 +97,3 @@ class OtherPositionalEncoding(nn.Module):
         :return: Output tensor.
         """
         return self.pos_emb(x) + x
-
-
-def get_pos_encoder(pos_encoding: str) -> Type[nn.Module]:
-    """
-    Get positional encoding from config.
-    :param pos_encoding: Positional encoding.
-    :return: Positional encoding.
-    """
-    if pos_encoding == "learnable":
-        return LearnablePositionalEncoding
-    elif pos_encoding == "fixed":
-        return FixedPositionalEncoding
-    elif pos_encoding == "other":
-        return OtherPositionalEncoding
-
-    raise NotImplementedError(
-        "pos_encoding should be 'learnable'/'fixed', not '{}'".format(
-            pos_encoding)
-    )

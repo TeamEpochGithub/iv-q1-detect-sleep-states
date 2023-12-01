@@ -1,19 +1,13 @@
 import json
 
+from src.models.event_segmentation_transformer import EventSegmentationTransformer
+
 from ..feature_engineering.feature_engineering import FE
 from ..logger.logger import logger
-from ..models.classic_base_model import ClassicBaseModel
 from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
-from ..models.example_model import ExampleModel
-from ..models.seg_simple_1d_cnn import SegmentationSimple1DCNN
-from ..models.seg_unet_1d_cnn import SegmentationUnet1DCNN
-from ..models.split_event_seg_unet_1d_cnn import SplitEventSegmentationUnet1DCNN
-from ..models.transformers.segmentation_transformer import SegmentationTransformer
-from ..models.transformers.event_segmentation_transformer import EventSegmentationTransformer
 from ..models.spectrogram_2d_cnn import EventSegmentation2DCNN
 from ..models.event_res_gru import EventResGRU
 from ..models.spectrogram_2d_cnn_gru import EventSegmentation2DCNNGRU
-from ..models.transformers.transformer import Transformer
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
 from ..models.model import Model
@@ -146,31 +140,13 @@ class ModelConfigLoader:
         model_name = self.config["name"]
         model_config = self.config["architecture"]
         match model_config["type"]:
-            case "example-fc-model":
-                curr_model = ExampleModel(model_config, model_name)
-            case "classic-base-model":
-                curr_model = ClassicBaseModel(model_config, model_name)
-            case "seg-simple-1d-cnn":
-                curr_model = SegmentationSimple1DCNN(
-                    model_config, model_name)
-            case "transformer":
-                curr_model = Transformer(model_config, model_name)
-            case "segmentation-transformer":
-                curr_model = SegmentationTransformer(
-                    model_config, model_name)
             case "event-segmentation-transformer":
                 curr_model = EventSegmentationTransformer(
-                    model_config, model_name)
-            case "seg-unet-1d-cnn":
-                curr_model = SegmentationUnet1DCNN(
                     model_config, model_name)
             case "event-res-gru":
                 curr_model = EventResGRU(model_config, model_name)
             case "event-seg-unet-1d-cnn":
                 curr_model = EventSegmentationUnet1DCNN(
-                    model_config, model_name)
-            case "split-event-seg-unet-1d-cnn":
-                curr_model = SplitEventSegmentationUnet1DCNN(
                     model_config, model_name)
             case "Spectrogram_2D_Cnn":
                 curr_model = EventSegmentation2DCNN(model_config, model_name)

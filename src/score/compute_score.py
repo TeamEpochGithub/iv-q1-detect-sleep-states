@@ -93,7 +93,7 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
     logger.debug(f'Solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
-    score_full = score_fast(solution.dropna(), submission)
+    score_full = (score_fast if data_info.stage == 'scoring' else score_slow)(solution.dropna(), submission)
     logger.info(f'Score for all {len(solution["series_id"].unique())} series: {score_full}')
     logger.info(
         f'Number of predicted events: {len(submission)} and number of true events / no nan: {len(solution)} / {len(solution.dropna())}')
@@ -125,7 +125,7 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
         logger.info(f'No clean series to compute non-nan score with,'
                     f' submission has none of the {len(solution_no_nan_ids)} clean series')
     else:
-        score_clean = score_fast(solution.dropna(), submission)
+        score_clean = (score_fast if data_info.stage == 'scoring' else score_slow)(solution.dropna(), submission)
         logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {score_clean}')
         logger.info(
             f'Number of predicted events: {len(submission_filtered_no_nan)} and number of true events: {len(solution_no_nan)}')

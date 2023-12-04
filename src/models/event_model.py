@@ -322,13 +322,14 @@ class EventModel:
                 else:
                     batch_prediction = batch_prediction.cpu().numpy()
 
-                # Do the similarity_nan postprocessing here because fuck code structure
+                # Do the similarity_nan postprocessing masking stuff here because fuck code structure
                 if 'f_similarity_nan_mean' in data_info.X_columns:
                     if pred_with_cpu:
-                        similarity_nan_mean: np.ndarray = batch_data[:, :, data_info.X_columns['f_similarity_nan_mean']].numpy()
+                        similarity_nan_mean: np.ndarray[np.float32] = batch_data[:, :, data_info.X_columns['f_similarity_nan_mean']].numpy()
                     else:
-                        similarity_nan_mean: np.ndarray = batch_data[:, :, data_info.X_columns['f_similarity_nan_mean']].cpu().numpy()
-                    similarity_nan_mask: np.ndarray[np.bool_] = np.logical_not(np.isclose(np.append(np.diff(similarity_nan_mean), [1]), 0.0, rtol=1e-09, atol=1e-09))
+                        similarity_nan_mean: np.ndarray[np.float32] = batch_data[:, :, data_info.X_columns['f_similarity_nan_mean']].cpu().numpy()
+                    similarity_nan_mask: np.ndarray[np.float32] = np.append(np.diff(similarity_nan_mean), [1])  # Append 1 here to retain the same length as before
+                    similarity_nan_mask: np.ndarray[np.bool_] = np.logical_not(np.isclose(similarity_nan_mask, 0.0, rtol=1e-09, atol=1e-09))
                     batch_prediction[0, :, 1] = np.multiply(batch_prediction[0, :, 1], similarity_nan_mask)
 
                 predictions.append(batch_prediction)

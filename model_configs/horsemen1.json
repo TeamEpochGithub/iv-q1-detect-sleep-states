@@ -92,6 +92,7 @@
         "type": "event-res-gru",
         "loss": "shrinkage-loss",
         "epochs": 100,
+        "EarlyStoppingMetric": "VALIDATION_SCORE",
         "batch_size": 32,
         "optimizer": "adam-torch",
         "early_stopping": 15,

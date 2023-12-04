@@ -77,11 +77,11 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
     :return: the score for the entire dataset
     """
 
-    # Add the series ids to the list of unique series ids
-    solution_series_ids = solution['series_id'].unique()
-    data_info.cv_unique_series.extend(solution_series_ids)
-
-    # verify_cv(submission, solution)
+    if data_info.stage == 'cv':
+        # Add the series ids to the list of unique series ids
+        solution_series_ids = solution['series_id'].unique()
+        data_info.cv_unique_series.extend(solution_series_ids)
+        verify_cv(submission, solution)
 
     # Count the number of labelled series in the submission and solution
     submission_sids = submission['series_id'].unique()

@@ -1,4 +1,5 @@
 # Config variables
+import numpy as np
 import pandas as pd
 
 pred_with_cpu: bool = False  # Whether to use CPU or GPU for prediction
@@ -28,3 +29,6 @@ cv_unique_series: list[str] = []
 # Info necessary for converting predictions to submission format
 # Contains columns series_id, window, step
 window_info: pd.DataFrame | None = None
+train_ids: np.ndarray | None = None
+test_ids: np.ndarray | None = None
+validate_window_info: pd.DataFrame | None = None

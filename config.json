@@ -11,12 +11,7 @@
     "processed_loc_in": "data/raw",
     "model_store_loc": "tm",
     "model_config_loc": "model_configs",
-    "ensemble": {
-        "models": ["spectrogram-cnn-gru.json", "horsemen1.json", "unet.json", "STFGO-new.json"],
-        "weights": [1,1,1,1],
-        "comb_method": "confidence_average",
-        "pred_only": false
-    },
+    "hpo": "horsemen1.json",
     "cv": {
         "splitter": "group_k_fold",
         "scoring": ["score_full", "score_clean"],

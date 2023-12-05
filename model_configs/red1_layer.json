@@ -1,9 +1,9 @@
 {
-    "name": "horsemen1",
+    "name": "red1",
     "data_info": {
         "window_size": 17280,
         "downsampling_factor": 12,
-        "latitude": 40.73061,
+        "latitude": 40.730610,
         "longitude": -73.935242
     },
     "preprocessing": [
@@ -82,35 +82,51 @@
             ],
             "standard": "mean"
         },
-        "test_size": 0.01,
+        "test_size": 0.2,
         "scaler": {
             "kind": "standard-scaler",
             "copy": true
         }
     },
     "architecture": {
-        "type": "event-res-gru",
+        "activation_delay": 43,
+        "batch_size": 81,
+        "early_stopping": 27,
+        "epochs": 250,
         "loss": "shrinkage-loss",
-        "epochs": 100,
-        "batch_size": 32,
-        "optimizer": "adam-torch",
-        "early_stopping": 15,
-        "activation_delay": 15,
-        "lr": 0.01,
-        "network_params": {
-            "hidden_size": 20,
-            "n_layers": 8,
-            "activation": "gelu",
-            "dropout": 0.4
-        },
+        "lr": 0.021993876440714016,
         "lr_schedule": {
-            "t_initial": 25,
-            "warmup_t": 5,
-            "warmup_lr_init": 0.000001,
-            "lr_min": 0.001,
-            "cycle_limit": 3,
-            "cycle_decay": 0.5
+          "cycle_limit": 4,
+          "lr_min": 0.002,
+          "t_initial": 33,
+          "warmup_lr_init": 0.000001,
+          "warmup_t": 7
         },
-        "threshold": 0
+        "mask_unlabeled": false,
+        "network_params": {
+            "attention": {
+                "attn_mode": "all",
+                "block_size": 79,
+                "local_attn_ctx": 20,
+                "type": "sparse"
+            },
+            "dropout": 0.6708895456187687,
+            "emb_dim": 165,
+            "expansion": 4,
+            "heads": 4,
+            "n_layers": 10,
+            "pe": "fixed",
+            "residual_model": {
+                "activation": "gelu",
+                "bidir": true,
+                "dropout": 0.2912650291122579,
+                "hidden_size": 20,
+                "n_layers": 7
+            },
+            "patch_size": 16
+        },
+        "optimizer": "adam-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
     }
 }

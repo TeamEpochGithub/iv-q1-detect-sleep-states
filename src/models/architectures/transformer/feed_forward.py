@@ -11,18 +11,12 @@ class FeedForward(nn.Module):
     :param dropout: Dropout rate.
     """
 
-    def __init__(self, emb_dim: int, forward_dim: int = 2048, dropout: float = 0.1) -> None:
+    def __init__(self, emb_dim: int, expansion: int = 4, dropout: float = 0.1) -> None:
         super().__init__()
-        self.layer1 = nn.Linear(emb_dim, forward_dim)
+        self.layer1 = nn.Linear(emb_dim, emb_dim * expansion)
         self.activation = F.gelu
         self.dropout = nn.Dropout(dropout)
-        self.layer2 = nn.Linear(forward_dim, emb_dim)
-
-        # Below is an init from torchvision
-        nn.init.xavier_uniform_(self.layer1.weight)
-        nn.init.xavier_uniform_(self.layer2.weight)
-        nn.init.normal_(self.layer1.bias, std=1e-6)
-        nn.init.normal_(self.layer2.bias, std=1e-6)
+        self.layer2 = nn.Linear(emb_dim * expansion, emb_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

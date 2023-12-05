@@ -1,9 +1,9 @@
 import torch
 
 from src.logger.logger import logger
+from src.models.architectures.transformer.residual_transformer import ResidualTransformer
 from src.models.event_model import EventModel
-from .architecture.transformer_pool import TransformerPool
-from ... import data_info
+from .. import data_info
 
 
 class EventSegmentationTransformer(EventModel):
@@ -33,15 +33,17 @@ class EventSegmentationTransformer(EventModel):
         self.model_type = "event-segmentation-transformer"
 
         # Load transformer config and model
-        self.config["network_params"]["t_type"] = "event"
         if self.config.get("use_auxiliary_awake", False):
             self.config["network_params"]["num_class"] = 5
         else:
             self.config["network_params"]["num_class"] = 2
         self.config['network_params']["seq_len"] = data_info.window_size
-        self.config['network_params']["tokenizer_args"]["channels"] = len(
+        self.config['network_params']["input_size"] = len(
             data_info.X_columns)
-        self.model = TransformerPool(**self.config['network_params'])
+        if 'residual_model' in self.config['network_params']:
+            self.config['network_params']['residual_model']['input_size'] = self.config['network_params']['input_size']
+            self.config['network_params']['residual_model']['out_size'] = self.config["network_params"]["num_class"]
+        self.model = ResidualTransformer(**self.config['network_params'])
 
         # Load model class config
         self.load_config(self.config)
@@ -66,17 +68,26 @@ class EventSegmentationTransformer(EventModel):
                 "lr_min": 2e-8
             },
             "network_params": {
-                "heads": 8,
-                "emb_dim": 48,
-                "forward_dim": 96,
+                "heads": 6,
+                "emb_dim": 256,
+                "expansion": 4,
                 "n_layers": 6,
-                "pooling": "none",
-                "tokenizer": "patch",
-                "tokenizer_args": {
-                    "patch_size": 12
+                "residual_model": {
+                    "hidden_size": 20,
+                    "n_layers": 8,
+                    "activation": "gelu",
+                    "dropout": 0.4,
+                    "bidir": True
                 },
-                "pe": "other",
-                "dropout": 0.0
+                "patch_size": 8,
+                "pe": "fixed",
+                "dropout": 0.6229411429626215,
+                "attention": {
+                    "type": "sparse",
+                    "block_size": 60,
+                    "local_attn_ctx": 20,
+                    "attn_mode": "all"
+                }
             }
         }
 
@@ -85,4 +96,4 @@ class EventSegmentationTransformer(EventModel):
         Reset the weights of the model. Useful for retraining the model.
         """
         torch.manual_seed(42)
-        self.model = TransformerPool(**self.config['network_params'])
+        self.model = ResidualTransformer(**self.config['network_params'])

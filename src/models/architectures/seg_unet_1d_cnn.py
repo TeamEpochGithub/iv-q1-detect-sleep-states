@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from src.logger.logger import logger
-from src.models.model import ModelException
+from src.models.model_exception import ModelException
 
 
 class ConBrBlock(nn.Module):
@@ -37,10 +37,13 @@ class SeBlock(nn.Module):
     def __init__(self, in_layer: int, out_layer: int):
         super().__init__()
 
-        self.conv1 = nn.Conv1d(in_channels=in_layer, out_channels=out_layer // 8, kernel_size=1, padding=0)
-        self.conv2 = nn.Conv1d(in_channels=out_layer // 8, out_channels=in_layer, kernel_size=1, padding=0)
+        self.conv1 = nn.Conv1d(
+            in_channels=in_layer, out_channels=out_layer // 8, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv1d(in_channels=out_layer // 8,
+                               out_channels=in_layer, kernel_size=1, padding=0)
         self.fc = nn.Linear(in_features=1, out_features=out_layer // 8)
-        self.fc2 = nn.Linear(in_features=out_layer // 8, out_features=out_layer)
+        self.fc2 = nn.Linear(in_features=out_layer //
+                             8, out_features=out_layer)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -84,7 +87,7 @@ class SegUnet1D(nn.Module):
     SegUnetId model. Contains the architecture of the SegUnetId model used for state and event segmentation.
     """
 
-    def __init__(self, in_channels: int, window_size: int, out_channels: int, model_type: str,
+    def __init__(self, in_channels: int, window_size: int, out_channels: int,
                  activation: str | None = 'relu', hidden_layers: int = 8, kernel_size: int = 7, depth: int = 2,
                  dropout: float = 0, stride: int = 4, padding: int = 1, n_layers: int = 4) -> None:
         super().__init__()
@@ -93,7 +96,6 @@ class SegUnet1D(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.window_size = window_size
-        self.model_type = model_type
 
         # Set model params
         self.hidden_layers = hidden_layers
@@ -179,11 +181,13 @@ class SegUnet1D(nn.Module):
         return nn.Sequential(*block)
 
     def forward(self, x: torch.Tensor, use_activation: bool = True) -> torch.Tensor:
+        x = x.permute(0, 2, 1)
         pools = [pool(x) for pool in self.avg_pools]
 
         # Encoder
         encoder_out_prev: torch.Tensor = self.layers[0](x)
-        encoder_outputs: list[torch.Tensor] = [encoder_out_prev, self.layers[1](encoder_out_prev)]
+        encoder_outputs: list[torch.Tensor] = [
+            encoder_out_prev, self.layers[1](encoder_out_prev)]
 
         for layer, pool in zip(self.layers[2:], pools):
             x = torch.cat([encoder_outputs[-1], pool], 1)
@@ -193,13 +197,12 @@ class SegUnet1D(nn.Module):
         decoder_outputs: list = [encoder_outputs[-1]]
 
         for i, cbr in reversed(list(enumerate(self.cbrs))):
-            up = torch.cat([self.upsample(decoder_outputs[-1]), encoder_outputs[i]], 1)
+            up = torch.cat(
+                [self.upsample(decoder_outputs[-1]), encoder_outputs[i]], 1)
             decoder_outputs.append(cbr(up))
 
         out = self.outcov(decoder_outputs[-1])
 
-        if self.model_type == "state-segmentation":
-            out = self.softmax(out)
-        elif self.model_type == "event-segmentation" and use_activation:
+        if use_activation:
             out = self.activation(out)
         return out.permute(0, 2, 1)

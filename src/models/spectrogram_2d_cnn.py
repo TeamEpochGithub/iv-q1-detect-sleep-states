@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import wandb
-from src.models.trainers.event_state_trainer import EventStateTrainer
 from scipy.signal import find_peaks
 
 from .architectures.spectrogram_encoder_decoder import SpectrogramEncoderDecoder
@@ -204,12 +203,9 @@ class EventSegmentation2DCNN(EventModel):
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset, batch_size=batch_size)
 
-        if use_auxiliary_awake:
-            trainer = EventStateTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
-        else:
-            trainer = EventTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
+                               early_stopping_metric=self.early_stopping_metric,
+                               mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
             trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
@@ -286,12 +282,9 @@ class EventSegmentation2DCNN(EventModel):
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset, batch_size=batch_size)
 
-        if use_auxiliary_awake:
-            trainer = EventStateTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
-        else:
-            trainer = EventTrainer(
-                epochs, criterion, early_stopping=early_stopping, mask_unlabeled=mask_unlabeled)
+        trainer = EventTrainer(epochs, criterion, early_stopping=early_stopping,
+                               early_stopping_metric=self.early_stopping_metric,
+                               mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         trainer.fit(
             trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)

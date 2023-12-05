@@ -92,6 +92,7 @@
         "activation_delay": 45,
         "batch_size": 90,
         "early_stopping": 48,
+        "EarlyStoppingMetric": "VALIDATION_SCORE",
         "epochs": 250,
         "loss": "shrinkage-loss",
         "lr": 0.015549418652428596,

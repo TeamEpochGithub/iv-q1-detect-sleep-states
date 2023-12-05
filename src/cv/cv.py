@@ -111,6 +111,9 @@ class CV:
             X_train, X_validate = data[train_idx], data[validate_idx]
             y_train, y_validate = labels[train_idx], labels[validate_idx]
 
+            # Get the window info for scoring
+            data_info.validate_window_info = train_window_info.iloc[validate_idx]
+
             model.train(X_train, X_validate, y_train, y_validate)
             y_pred: np.array = model.pred(X_validate, pred_with_cpu=False)
 
@@ -119,15 +122,12 @@ class CV:
             model.reset_optimizer()
             model.reset_scheduler()
 
-            # Get the window info for scoring
-            validate_window_info = train_window_info.iloc[validate_idx]
-
             # Compute the score for each scorer
             if isinstance(self.scoring, list):
-                score = [scorer(validate_window_info, y_pred)
+                score = [scorer(data_info.validate_window_info, y_pred)
                          for scorer in self.scoring]
             else:
-                score = self.scoring(validate_window_info, y_pred)
+                score = self.scoring(data_info.validate_window_info, y_pred)
 
             scores.append(score)
 

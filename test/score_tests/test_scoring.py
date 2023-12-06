@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.score.scoring import score
+from src.score.event_detection_ap import score
 
 
 class Test(TestCase):
@@ -27,8 +27,7 @@ class Test(TestCase):
             'time': [10, 20, 40],
         })
 
-        result = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False,
-                       plot_precision_recall=False)
+        result = score(solution, submission, tolerances, **column_names, use_scoring_intervals=False)
 
         self.assertEqual(result, 0.6666666666666666)
 
@@ -49,7 +48,7 @@ class Test(TestCase):
             'event': ['pass', 'pass', 'pass'],
             'score': [1.0, 0.5, 1.0],
             'time': [0, 10, 14.5], })
-        result = score(solution, submission, tolerances, **column_names, plot_precision_recall=False)
+        result = score(solution, submission, tolerances, **column_names)
 
         self.assertEqual(result, 1.0)
 
@@ -70,6 +69,6 @@ class Test(TestCase):
             'event': ['pass', 'pass', 'pass'],
             'score': [1.0, 0.5, 1.0],
             'time': [0, 10, 14.5], })
-        result = score(solution, submission, tolerances, **column_names, plot_precision_recall=False)
+        result = score(solution, submission, tolerances, **column_names)
 
         self.assertEqual(result, 0.5)

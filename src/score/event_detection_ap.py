@@ -7,23 +7,8 @@ video.
 
 from typing import Dict, List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-
-# To run the code just run this script
-# What it does is it reads the data for a series from the dataset
-# then it takes the correct labels, offsets them (now it is 100 steps) and applies gaussian label
-# smoothing to it. Then takes those smoothed out predictions (there are 27 new points within 5 steps of the actual truth)
-# and passes those in to the scoring metric that was provided
-# (slightly modified to plot curves the workings are the exact same)
-# the first plot is the predictions against the actual ground truths
-# the rest of the plots show the precision recall curve
-# the first few graphs show graph for 0 score (because no predicitons are within the tolerance
-# (starts with small tolerances)) and the rest show reasonable curves
-# they are all the same because the offset is the exact same for all the tolerances hence the same graph
-# in practice it will be different since we will miss events
 
 
 class ParticipantVisibleError(Exception):
@@ -47,7 +32,6 @@ def score(
         event_column_name: str,
         score_column_name: str,
         use_scoring_intervals: bool = False,
-        plot_precision_recall=False
 ) -> float:
     """Event Detection Average Precision, an AUCPR metric for event detection in
     time series and video.
@@ -155,7 +139,80 @@ def score(
     Examples
     --------
     Detecting `'pass'` events in football:
+    >>> column_names = {
+    ...     'series_id_column_name': 'video_id',
+    ...     'time_column_name': 'time',
+    ...     'event_column_name': 'event',
+    ...     'score_column_name': 'score',
+    ... }
+    >>> tolerances = {'pass': [1.0]}
+    >>> solution = pd.DataFrame({
+    ...     'video_id': ['a', 'a'],
+    ...     'event': ['pass', 'pass'],
+    ...     'time': [0, 15],
+    ... })
+    >>> submission = pd.DataFrame({
+    ...     'video_id': ['a', 'a', 'a'],
+    ...     'event': ['pass', 'pass', 'pass'],
+    ...     'score': [1.0, 0.5, 1.0],
+    ...     'time': [0, 10, 14.5],
+    ... })
+    >>> score(solution, submission, tolerances, **column_names)
+    1.0
 
+    Increasing the confidence score of the false detection above the true
+    detections decreases the AP.
+    >>> submission.loc[1, 'score'] = 1.5
+    >>> score(solution, submission, tolerances, **column_names)
+    0.6666666666666666...
+
+    Likewise, decreasing the confidence score of a true detection below the
+    false detection also decreases the AP.
+    >>> submission.loc[1, 'score'] = 0.5  # reset
+    >>> submission.loc[0, 'score'] = 0.0
+    >>> score(solution, submission, tolerances, **column_names)
+    0.8333333333333333...
+
+    We average AP scores over tolerances. Previously, the detection at 14.5
+    would match, but adding smaller tolerances gives AP scores where it does
+    not match. This results in both a FN, since the ground-truth wasn't
+    detected, and a FP, since the detected event matches no ground-truth.
+    >>> tolerances = {'pass': [0.1, 0.2, 1.0]}
+    >>> score(solution, submission, tolerances, **column_names)
+    0.3888888888888888...
+
+    We also average over time series and over event classes.
+    >>> tolerances = {'pass': [0.5, 1.0], 'challenge': [0.25, 0.50]}
+    >>> solution = pd.DataFrame({
+    ...     'video_id': ['a', 'a', 'b'],
+    ...     'event': ['pass', 'challenge', 'pass'],
+    ...     'time': [0, 15, 0],  # restart time for new time series b
+    ... })
+    >>> submission = pd.DataFrame({
+    ...     'video_id': ['a', 'a', 'b'],
+    ...     'event': ['pass', 'challenge', 'pass'],
+    ...     'score': [1.0, 0.5, 1.0],
+    ...     'time': [0, 15, 0],
+    ... })
+    >>> score(solution, submission, tolerances, **column_names)
+    1.0
+
+    By adding scoring intervals to the solution, we may choose to ignore
+    detections outside of those intervals.
+    >>> tolerances = {'pass': [1.0]}
+    >>> solution = pd.DataFrame({
+    ...     'video_id': ['a', 'a', 'a', 'a'],
+    ...     'event': ['start', 'pass', 'pass', 'end'],
+    ...     'time': [0, 10, 20, 30],
+    ... })
+    >>> submission = pd.DataFrame({
+    ...     'video_id': ['a', 'a', 'a'],
+    ...     'event': ['pass', 'pass', 'pass'],
+    ...     'score': [1.0, 1.0, 1.0],
+    ...     'time': [10, 20, 40],
+    ... })
+    >>> score(solution, submission, tolerances, **column_names, use_scoring_intervals=True)
+    1.0
 
     """
     # Validate metric parameters
@@ -165,10 +222,6 @@ def score(
          "as defined in tolerances.")
     assert pd.api.types.is_numeric_dtype(solution[time_column_name]), \
         f"Solution column {time_column_name} must be of numeric type."
-
-    # If the submission is fully NaN, return a score of 0
-    if submission.isna().all().all():
-        return 0
 
     # Validate submission format
     for column_name in [
@@ -196,7 +249,7 @@ def score(
     globals()['score_column_name'] = score_column_name
     globals()['use_scoring_intervals'] = use_scoring_intervals
 
-    return event_detection_ap(solution, submission, tolerances, plot_precision_recall)
+    return event_detection_ap(solution, submission, tolerances)
 
 
 def filter_detections(
@@ -229,8 +282,7 @@ def filter_detections(
 def match_detections(
         tolerance: float, ground_truths: pd.DataFrame, detections: pd.DataFrame
 ) -> pd.DataFrame:
-    """Match detections to ground truth events. Arguments are taken from a
-    common event x tolerance x series_id evaluation group."""
+    """Match detections to ground truth events. Arguments are taken from a common event x tolerance x series_id evaluation group."""
     detections_sorted = detections.sort_values(score_column_name, ascending=False).dropna()
     is_matched = np.full_like(detections_sorted[event_column_name], False, dtype=bool)
     gts_matched = set()
@@ -249,7 +301,7 @@ def match_detections(
             gts_matched.add(best_gt)
 
     detections_sorted['matched'] = is_matched
-    # print(detections_sorted)
+
     return detections_sorted
 
 
@@ -271,11 +323,11 @@ def precision_recall_curve(
     # Matches become TPs and non-matches FPs as confidence threshold decreases
     tps = np.cumsum(matches)[threshold_idxs]
     fps = np.cumsum(~matches)[threshold_idxs]
+
     precision = tps / (tps + fps)
     precision[np.isnan(precision)] = 0
-    # print('precision', precision)
     recall = tps / p  # total number of ground truths might be different than total number of matches
-    # print('recall', recall)
+
     # Stop when full recall attained and reverse the outputs so recall is non-increasing.
     last_ind = tps.searchsorted(tps[-1])
     sl = slice(last_ind, None, -1)
@@ -284,34 +336,8 @@ def precision_recall_curve(
     return np.r_[precision[sl], 1], np.r_[recall[sl], 0], thresholds[sl]
 
 
-def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int, plot_precision_recall: bool) -> float:
+def average_precision_score(matches: np.ndarray, scores: np.ndarray, p: int) -> float:
     precision, recall, _ = precision_recall_curve(matches, scores, p)
-
-    # TO MAKE THE PLOTS PRETTY
-    # to plot the rectangles the exact way they calculate the area
-    # need to generate new_precision recall pairs [r1,p0], [r2,p1], [r3,p2] etc.
-    # remove first item of recall
-    # remove last item of precision
-    # pair those points together
-    # those are the new points
-
-    # the precision recall curve ends up with vertical lines with 0 thickness
-    # this code below removes the duplicates using dicts
-    if plot_precision_recall:
-        old_points_filtered = dict()
-        for i in range(len(recall)):
-            val = old_points_filtered.get(recall[i], -1)
-            if precision[i] > val:
-                old_points_filtered[recall[i]] = precision[i]
-
-        # reads the dict in to a dataframe (uncomment if you want to make fancier plots)
-        # old_points_df = pd.DataFrame({'recall': list(old_points_filtered.keys()),\
-        #                              'precision': list(old_points_filtered.values())})
-
-        plt.figure()
-        plt.scatter(old_points_filtered.keys(), old_points_filtered.values(), c='g')
-        plt.show()
-
     # Compute step integral
     return -np.sum(np.diff(recall) * np.array(precision)[:-1])
 
@@ -320,8 +346,6 @@ def event_detection_ap(
         solution: pd.DataFrame,
         submission: pd.DataFrame,
         tolerances: Dict[str, List[float]],
-        plot_precision_recall: bool,
-
 ) -> float:
     # Ensure solution and submission are sorted properly
     solution = solution.sort_values([series_id_column_name, time_column_name])
@@ -410,7 +434,6 @@ def event_detection_ap(
                 group['matched'].to_numpy(),
                 group[score_column_name].to_numpy(),
                 class_counts[group[event_column_name].iat[0]],
-                plot_precision_recall,
             )
         )
     )

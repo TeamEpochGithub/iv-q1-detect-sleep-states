@@ -1,0 +1,83 @@
+{
+    "name": "gru2",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
+    "preprocessing": [
+        {
+            "kind": "mem_reduce"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
+            "kind": "add_state_labels",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 0
+        },
+        {
+            "kind": "split_windows"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+        }
+    ],
+    "pretraining": {
+        "downsample": {
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+    "architecture": {
+        "activation_delay": 24,
+        "batch_size": 62,
+        "early_stopping": 28,
+        "epochs": 250,
+        "loss": "kldiv-torch",
+        "lr": 0.049981787868132795,
+        "lr_schedule": {
+            "cycle_limit": 2,
+            "lr_min": 0.003098641981914775,
+            "t_initial": 33,
+            "warmup_lr_init": 0.000001,
+            "warmup_t": 3
+        },
+        "mask_unlabeled": false,
+        "network_params": {
+            "activation": "gelu",
+            "hidden_size": 16,
+            "n_layers": 9
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-res-gru"
+    }
+}

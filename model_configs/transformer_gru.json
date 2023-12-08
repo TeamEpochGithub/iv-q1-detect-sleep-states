@@ -1,0 +1,95 @@
+{
+    "name": "transformer_gru",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 12,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
+    "preprocessing": [
+        {
+            "kind": "mem_reduce"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
+            "kind": "add_state_labels",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 0,
+            "steepness": 2
+        },
+        {
+            "kind": "split_windows"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        }
+    ],
+    "pretraining": {
+        "downsample": {
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+    "architecture": {
+        "activation_delay": 13,
+        "batch_size": 32,
+        "early_stopping": 10,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.005,
+        "lr_schedule": {
+            "cycle_limit": 3,
+            "lr_min": 0.002,
+            "t_initial": 30,
+            "warmup_lr_init": 0.000001,
+            "warmup_t": 3
+        },
+        "mask_unlabeled": true,
+        "network_params": {
+            "heads": 8,
+            "emb_dim": 64,
+            "forward_dim": 256,
+            "n_layers": 6,
+            "pooling": "gru",
+            "pooling_args": {
+                "hidden_size": 32,
+                "n_layers": 5,
+                "bidir": true,
+                "activation": "gelu",
+                "dropout": 0.0
+            },
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 6
+            },
+            "pe": "fixed",
+            "dropout": 0.0
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
+    }
+}

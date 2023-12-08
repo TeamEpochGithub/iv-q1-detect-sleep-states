@@ -1,0 +1,119 @@
+{
+  "name": "spectrogram-cnn-gru",
+  "data_info": {
+    "window_size": 17280,
+    "downsampling_factor": 12,
+    "latitude": 40.73061,
+    "longitude": -73.935242
+  },
+  "preprocessing": [
+    {
+      "kind": "mem_reduce"
+    },
+    {
+      "kind": "similarity_nan",
+      "as_feature": true
+    },
+    {
+      "kind": "add_state_labels",
+      "events_path": "data/raw/train_events.csv",
+      "use_similarity_nan": true,
+      "fill_limit": 8640,
+      "nan_tolerance_window": 5
+    },
+    {
+      "kind": "add_event_labels",
+      "events_path": "data/raw/train_events.csv",
+      "smoothing": 5,
+      "steepness": 2
+    },
+    {
+      "kind": "split_windows"
+    }
+  ],
+  "feature_engineering": [
+    {
+      "kind": "time",
+      "time_features": [
+        "hour",
+        "minute"
+      ]
+    },
+    {
+      "kind": "sun",
+      "sun_features": [
+        "azimuth",
+        "altitude"
+      ]
+    },
+    {
+      "kind": "parser",
+      "feats": [
+        "anglez_diff_abs",
+        "anglez_diff_abs_clip_10_savgol_180",
+        "anglez_diff_abs_clip_10_median_180"
+      ]
+    }
+  ],
+  "pretraining": {
+    "downsample": {
+      "features": [
+        "f_anglez",
+        "f_anglez_diff_abs",
+        "f_enmo"
+      ],
+      "methods": [
+        "min",
+        "max",
+        "mean",
+        "std",
+        "median",
+        "range",
+        "var"
+      ],
+      "standard": "mean",
+      "centered": true
+    },
+    "test_size": 0.2,
+    "scaler": {
+      "kind": "standard-scaler",
+      "copy": true
+    }
+  },
+  "architecture": {
+    "type": "Spectrogram_Cnn_Gru",
+    "loss": "shrinkage-loss",
+    "optimizer": "adam-torch",
+    "epochs": 50,
+    "batch_size": 64,
+    "lr": 0.01,
+    "early_stopping": 40,
+    "threshold": 0,
+    "n_fft": 63,
+    "hop_length": 1,
+    "encoder_name": "resnet34",
+    "encoder_weights": "imagenet",
+    "mask_unlabeled": false,
+    "clip_awake": true,
+    "use_activation": true,
+    "use_auxiliary_awake": true,
+    "activation_delay": 15,
+    "dropout_prob": 0.6,
+    "lr_schedule": {
+      "t_initial": 25,
+      "warmup_t": 5,
+      "warmup_lr_init": 0.000001,
+      "lr_min": 0.00001,
+      "cycle_limit": 3,
+      "cycle_decay": 0.5
+    },
+    "gru_params": {
+      "activation": "relu",
+      "hidden_size": 20,
+      "n_layers": 8,
+      "dropout": 0.3
+    },
+    "use_spec_features": false,
+    "use_decoder": true
+  }
+}

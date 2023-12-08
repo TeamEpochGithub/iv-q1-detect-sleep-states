@@ -1,0 +1,91 @@
+{
+    "name": "transformer_optimal",
+    "data_info": {
+        "window_size": 17280,
+        "downsampling_factor": 24,
+        "latitude": 40.730610,
+        "longitude": -73.935242
+    },
+    "preprocessing": [
+        {
+            "kind": "mem_reduce"
+        },
+        {
+            "kind": "similarity_nan",
+            "as_feature": true
+        },
+        {
+            "kind": "add_state_labels",
+            "events_path": "data/raw/train_events.csv",
+            "use_similarity_nan": true,
+            "fill_limit": 8640,
+            "nan_tolerance_window": 5
+        },
+        {
+            "kind": "add_event_labels",
+            "events_path": "data/raw/train_events.csv",
+            "smoothing": 0
+        },
+        {
+            "kind": "split_windows"
+        }
+    ],
+    "feature_engineering": [
+        {
+            "kind": "time",
+            "time_features": ["hour","minute"]
+        },
+        {
+            "kind": "sun",
+            "sun_features": ["azimuth", "altitude"]
+        },
+        {
+            "kind": "rotation",
+            "window_sizes": [12, 36, 60, 120, 240, 360, 1000]
+        }
+    ],
+    "pretraining": {
+        "downsample": {
+            "features": ["f_anglez", "f_enmo"],
+            "methods": ["min", "max", "mean", "std", "median", "range", "var"],
+            "standard": "mean"
+        },
+        "test_size": 0.2,
+        "scaler": {
+            "kind": "standard-scaler",
+            "copy": true
+        }
+    },
+    "architecture": {
+        "activation_delay": 40,
+        "batch_size": 64,
+        "early_stopping": 32,
+        "epochs": 250,
+        "loss": "shrinkage-loss",
+        "lr": 0.01,
+        "lr_schedule": {
+            "cycle_limit": 3,
+            "lr_min": 0.002,
+            "t_initial": 32,
+            "warmup_lr_init": 0.000001,
+            "warmup_t": 6
+        },
+        "mask_unlabeled": true,
+        "network_params": {
+            "heads": 5,
+            "emb_dim": 128,
+            "forward_dim": 768,
+            "n_layers": 6,
+            "pooling": "none",
+            "tokenizer": "patch",
+            "tokenizer_args": {
+                "patch_size": 4
+            },
+            "pe": "fixed",
+            "dropout": 0.2
+        },
+        "optimizer": "adamw-torch",
+        "threshold": 0,
+        "type": "event-segmentation-transformer"
+    }
+}

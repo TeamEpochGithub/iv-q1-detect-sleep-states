@@ -1,0 +1,34 @@
+command:
+  - ${env}
+  - venv/Scripts/python.exe
+  - ${program}
+  - ${args}
+method: bayes
+project: detect-sleep-states
+program: main.py
+name: ensemble-hpo
+metric:
+  goal: maximize
+  name: score
+parameters:
+  ensemble_hpo:
+    parameters:
+      model_config_loc:
+        value: ensemble_configs
+      n_events:
+        max: 25
+        min: 1
+      find_peaks:
+        parameters:
+          distance:
+            max: 500
+            min: 20
+          width:
+            max: 100
+            min: 5
+          height:
+            value: 0
+          prominence:
+            value: 0
+          threshold:
+            value: 0

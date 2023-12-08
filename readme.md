@@ -89,3 +89,8 @@ When the config is this way cross validation will be done using the parameters g
 When train for submission is set to true the model will also be trained on the complete train set. The visualize preds arguments are used to generate plots using plotly or to simply save jpeg of our models predictions for each series compared to the real events.
 
 To see how the preprocessing and feature engineering steps are chosen along with how hyperparameters for each model are set please refer to src/configs/readme.md and the individual model configs in the model_configs folder. Each model config lists all preprocessing, feature engineering steps along with model hyperparameters and the type of model in the formats defined in src/configs/readme.md. (There might be some methods that re not mentioned in the readme)
+
+The training happens by passing all our data to the trainer class located in src/models/trainers.
+
+### Model architectures
+In our code the model classes (classes that have methods like train and pred) and model architectures are separated. To see our model architectures please refer to src/models/architectures and to see the model classes please refer to src/models.

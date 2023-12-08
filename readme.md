@@ -44,8 +44,11 @@ The config.json file is used to set the paths of data folders, where to read the
     }
 }
 ```
+### Logging and Kaggle
+To log our experminet results we use weights and biasses. However since logging when running inference on kaggle does not make sense we have the is_kaggle and log_to_wandb as optional arguments in the config. For being able to run on kaggle in cpu notebook and to be able to use our GPUs locally we also have the pred with cpu argumnet in the config (using torch.device() would also use the cpu on kaggle if the GPU is disabled for the notebook so this is redundant but used).
+
 ### Model training
-For training models set the config to ensemble and for models give a list of all model configs you would like to use and their weights. By giving multiple model configs which are located in the model_configs folder and weigths, you can make ensembles and give each model a different weight for the confidence averaging step.
+For training models set the config to ensemble and for models give a list of all model configs you would like to use and their weights. By giving multiple model configs which are located in the model_config_loc (specified in the config) folder and weigths, you can make ensembles and give each model a different weight for the confidence averaging step.
 
 To do cross validation replace see the example config below
 

@@ -1,50 +1,10 @@
 {
-  "architecture": {
-    "activation_delay": 32,
-    "batch_size": 32,
-    "early_stopping": 17,
-    "epochs": 250,
-    "loss": "shrinkage-loss",
-    "lr": 0.006272938619890648,
-    "lr_schedule": {
-      "cycle_limit": 3,
-      "lr_min": 0.002,
-      "t_initial": 29,
-      "warmup_lr_init": 0.000001,
-      "warmup_t": 4
-    },
-    "mask_unlabeled": true,
-    "network_params": {
-      "attention": {
-        "attn_mode": "all",
-        "block_size": 110,
-        "local_attn_ctx": 20,
-        "type": "sparse"
-      },
-      "dropout": 0.8153959783987667,
-      "emb_dim": 180,
-      "expansion": 5,
-      "heads": 5,
-      "n_layers": 7,
-      "pe": "fixed",
-      "residual_model": {
-        "activation": "relu",
-        "bidir": true,
-        "dropout": 0.3858931433504918,
-        "hidden_size": 45,
-        "n_layers": 8
-      },
-      "patch_size": 12
-    },
-    "optimizer": "adamw-torch",
-    "threshold": 0,
-    "type": "event-segmentation-transformer"
-  },
+  "name": "STFGO-simple-features",
   "data_info": {
-    "downsampling_factor": 6,
+    "window_size": 17280,
+    "downsampling_factor": 12,
     "latitude": 40.73061,
-    "longitude": -73.935242,
-    "window_size": 17280
+    "longitude": -73.935242
   },
   "feature_engineering": [
     {
@@ -71,7 +31,6 @@
       ]
     }
   ],
-  "name": "STFGO-simple-layer",
   "preprocessing": [
     {
       "kind": "mem_reduce"
@@ -119,6 +78,51 @@
       "copy": true,
       "kind": "standard-scaler"
     },
-    "test_size": 0.01
+    "test_size": 0.2
+  },
+  "architecture": {
+    "activation_delay": 43,
+    "batch_size": 81,
+    "early_stopping": 27,
+    "epochs": 250,
+    "loss": "shrinkage-loss",
+    "lr": 0.021993876440714016,
+    "lr_schedule": {
+      "cycle_limit": 4,
+      "lr_min": 0.002,
+      "t_initial": 33,
+      "warmup_lr_init": 0.000001,
+      "warmup_t": 7
+    },
+    "mask_unlabeled": false,
+    "network_params": {
+      "attention": {
+        "attn_mode": "all",
+        "block_size": 79,
+        "local_attn_ctx": 20,
+        "type": "sparse"
+      },
+      "dropout": 0.6708895456187687,
+      "emb_dim": 150,
+      "forward_dim": 650,
+      "heads": 4,
+      "n_layers": 10,
+      "pe": "fixed",
+      "pooling": "gru",
+      "pooling_args": {
+        "activation": "gelu",
+        "bidir": true,
+        "dropout": 0.2912650291122579,
+        "hidden_size": 16,
+        "n_layers": 7
+      },
+      "tokenizer": "patch",
+      "tokenizer_args": {
+        "patch_size": 16
+      }
+    },
+    "optimizer": "adam-torch",
+    "threshold": 0,
+    "type": "event-segmentation-transformer"
   }
 }

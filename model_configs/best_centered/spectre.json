@@ -1,8 +1,8 @@
 {
-  "name": "horsemen4",
+  "name": "spectrogram-cnn-gru",
   "data_info": {
     "window_size": 17280,
-    "downsampling_factor": 6,
+    "downsampling_factor": 12,
     "latitude": 40.73061,
     "longitude": -73.935242
   },
@@ -33,6 +33,13 @@
   ],
   "feature_engineering": [
     {
+      "kind": "time",
+      "time_features": [
+        "hour",
+        "minute"
+      ]
+    },
+    {
       "kind": "sun",
       "sun_features": [
         "azimuth",
@@ -40,25 +47,27 @@
       ]
     },
     {
-      "kind": "time",
-      "time_features": [
-        "weekday",
-        "hour",
-        "minute"
-      ]
-    },
-    {
       "kind": "parser",
       "feats": [
         "anglez_diff_abs",
-        "anglez_diff_abs_clip_10_savgol_180"
+        "anglez_diff_abs_median_1000",
+        "anglez_diff_abs_clip_10_skew_1000",
+        "anglez_diff_abs_clip_10_savgol_180",
+        "anglez_diff_abs_clip_10_median_180",
+        "enmo_std_90",
+        "anglez_diff_abs_clip_10_max_36",
+        "enmo_std_50",
+        "anglez_diff_abs_clip_10_mean_1000",
+        "anglez_diff_abs_clip_10_savgol_180_diff",
+        "anglez_diff_abs_clip_10_savgol_1000_diff",
+        "anglez_diff_abs_clip_10_median_360"
       ]
     }
   ],
   "pretraining": {
     "downsample": {
       "features": [
-        "f_anglez",
+        "f_anglez_diff_abs",
         "f_enmo"
       ],
       "methods": [
@@ -70,7 +79,8 @@
         "range",
         "var"
       ],
-      "standard": "mean"
+      "standard": "mean",
+      "centered": true
     },
     "test_size": 0.2,
     "scaler": {
@@ -79,19 +89,24 @@
     }
   },
   "architecture": {
-    "type": "event-res-gru",
+    "type": "Spectrogram_Cnn_Gru",
     "loss": "shrinkage-loss",
+    "optimizer": "adam-torch",
     "epochs": 100,
     "batch_size": 64,
-    "optimizer": "adam-torch",
-    "early_stopping": 25,
-    "activation_delay": 15,
     "lr": 0.01,
-    "network_params": {
-      "hidden_size": 8,
-      "n_layers": 5,
-      "activation": "relu"
-    },
+    "early_stopping": 40,
+    "threshold": 0,
+    "n_fft": 63,
+    "hop_length": 1,
+    "encoder_name": "resnet34",
+    "encoder_weights": "imagenet",
+    "mask_unlabeled": false,
+    "clip_awake": true,
+    "use_activation": true,
+    "use_auxiliary_awake": true,
+    "activation_delay": 15,
+    "dropout_prob": 0.6,
     "lr_schedule": {
       "t_initial": 25,
       "warmup_t": 5,
@@ -100,6 +115,13 @@
       "cycle_limit": 3,
       "cycle_decay": 0.5
     },
-    "threshold": 0
+    "gru_params": {
+      "activation": "relu",
+      "hidden_size": 20,
+      "n_layers": 8,
+      "dropout": 0.3
+    },
+    "use_spec_features": false,
+    "use_decoder": true
   }
 }

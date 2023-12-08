@@ -1,3 +1,4 @@
+from collections.abc import MutableMapping
 from dataclasses import dataclass
 
 import numpy as np
@@ -16,7 +17,7 @@ class SimilarityNan(PP):
 
     as_feature: bool = False
 
-    def preprocess(self, data: dict) -> dict:
+    def preprocess(self, data: MutableMapping[str, pd.DataFrame]) -> MutableMapping[str, pd.DataFrame]:
         tqdm.pandas()
         for sid in data.keys():
             data[sid] = self.similarity_nan(data[sid])

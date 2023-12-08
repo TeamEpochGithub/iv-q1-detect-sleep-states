@@ -29,6 +29,11 @@ def main() -> None:
 
     # Initialize wandb
     if config_loader.get_log_to_wandb():
+
+        # Get the hpo config
+        if config_loader.get_hpo():
+            config_loader.config["hpo_model"] = config_loader.get_hpo_config().config
+
         # Initialize wandb
         wandb.init(
             project='detect-sleep-states',
@@ -65,8 +70,6 @@ def main() -> None:
             logger.info("ENSEMBLE HPO AFTER" + str(config_loader.config["ensemble_hpo"]))
 
         if is_hpo:
-            # Get the hpo config and add it to the config on wandb
-            config_loader.config["hpo_model"] = config_loader.get_hpo_config().config
 
             # Merge the config from the hpo config
             config_loader.config |= wandb.config

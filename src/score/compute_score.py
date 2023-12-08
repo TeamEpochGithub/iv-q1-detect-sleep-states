@@ -6,7 +6,8 @@ import wandb
 
 from src import data_info
 from src.util.submissionformat import to_submission_format
-from .scoring import score
+from .event_detection_ap import score
+from .fast_event_detection_ap import score_fast
 from ..logger.logger import logger
 
 _TOLERANCES: dict[str, list[int]] = {
@@ -20,6 +21,16 @@ _COLUMN_NAMES: dict[str, str] = {
     'event_column_name': 'event',
     'score_column_name': 'score',
 }
+
+
+def score_slow(solution: pd.DataFrame, submission: pd.DataFrame) -> float:
+    """Compute the score with event_detection_ap.py, using the slower, original computation.
+
+    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :return: the score (but slower...)
+    """
+    return score(solution, submission, _TOLERANCES, **_COLUMN_NAMES)
 
 
 def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
@@ -41,7 +52,8 @@ def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
     # Log the duplicate series if they exist
     duplicates = [k for k, v in Counter(data_info.cv_unique_series).items() if v > 1]
     if len(duplicates) > 0:
-        logger.warning(f'Duplicate series ids: {duplicates}. This means you used no groups, or there is a bug in our code. Will currently crash')
+        logger.warning(
+            f'Duplicate series ids: {duplicates}. This means you used no groups, or there is a bug in our code. Will currently crash')
 
     # Assert that there are no duplicate series ids in the current submission
     if len(data_info.cv_unique_series) != len(set(data_info.cv_unique_series)):
@@ -60,7 +72,7 @@ def verify_cv(submission: pd.DataFrame, solution: pd.DataFrame) -> None:
 def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
     """Compute the score for the entire dataset
 
-    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :return: the score for the entire dataset
     """
@@ -78,12 +90,13 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
                             .filter(lambda x: not np.isnan(x['step']).all()))
     solution_ids = solution_not_all_nan['series_id'].unique()
     logger.debug(f'Submission contains predictions for {len(submission_sids)} series')
-    logger.debug(f'solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
+    logger.debug(f'Solution has {len(solution_ids)} series with at least 1 non-nan prediction)')
 
     # Compute the score for the entire dataset
-    score_full = score(solution.dropna(), submission, _TOLERANCES, **_COLUMN_NAMES)
+    score_full = (score_fast if data_info.stage == 'scoring' else score_slow)(solution.dropna(), submission)
     logger.info(f'Score for all {len(solution["series_id"].unique())} series: {score_full}')
-    logger.info(f'Number of predicted events: {len(submission)} and number of true events / no nan: {len(solution)} / {len(solution.dropna())}')
+    logger.info(
+        f'Number of predicted events: {len(submission)} and number of true events / no nan: {len(solution)} / {len(solution.dropna())}')
 
     return score_full
 
@@ -91,8 +104,8 @@ def compute_score_full(submission: pd.DataFrame, solution: pd.DataFrame) -> floa
 def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> float:
     """Compute the score for the clean series
 
-    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, score)
-    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event)
+    :param submission: the submission dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
+    :param solution: the solution dataframe of shape (n_events, 5) with columns (series_id, step, event, onset, wakeup)
     :return: the score for the clean series or NaN if there are no clean series
     """
     verify_cv(submission, solution)
@@ -112,14 +125,15 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
         logger.info(f'No clean series to compute non-nan score with,'
                     f' submission has none of the {len(solution_no_nan_ids)} clean series')
     else:
-        score_clean = score(solution_no_nan, submission_filtered_no_nan, _TOLERANCES, **_COLUMN_NAMES)
+        score_clean = (score_fast if data_info.stage == 'scoring' else score_slow)(solution.dropna(), submission)
         logger.info(f'Score for the {len(solution_no_nan_ids)} clean series: {score_clean}')
-        logger.info(f'Number of predicted events: {len(submission_filtered_no_nan)} and number of true events: {len(solution_no_nan)}')
+        logger.info(
+            f'Number of predicted events: {len(submission_filtered_no_nan)} and number of true events: {len(solution_no_nan)}')
 
     return score_clean
 
 
-def from_numpy_to_submission_format(validate_window_info: pd.DataFrame, y_pred: np.ndarray,) -> (pd.DataFrame, pd.DataFrame):
+def from_numpy_to_submission_format(validate_window_info: pd.DataFrame, y_pred: np.ndarray) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Turn the numpy y_pred and the train events file into a solution and submission dataframes.
 
     While you probably want to compare y_pred with y_true, it seems that that is not possible in our case.

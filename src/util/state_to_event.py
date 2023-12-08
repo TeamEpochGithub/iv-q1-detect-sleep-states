@@ -17,6 +17,10 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 
     param: n_events int, number of events to return
     param: find_peaks_params dict, parameters for the find_peaks function
     """
+
+    if find_peaks_params is None:
+        find_peaks_params = {"width": 24, "height": 0, "distance": 100}
+
     assert predictions.shape[1] == 2, "Predictions should be 3d array with shape (window_size, 2)"
 
     # Set onset and awake to nan

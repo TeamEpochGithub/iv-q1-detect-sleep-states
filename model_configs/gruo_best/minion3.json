@@ -1,0 +1,117 @@
+{
+    "architecture": {
+      "activation_delay": 23,
+      "batch_size": 106,
+      "early_stopping": 16,
+      "epochs": 250,
+      "loss": "shrinkage-loss",
+      "lr": 0.041848393380035494,
+      "lr_schedule": {
+        "cycle_limit": 4,
+        "lr_min": 0.002,
+        "t_initial": 27,
+        "warmup_lr_init": 0.000001,
+        "warmup_t": 7
+      },
+      "mask_unlabeled": false,
+      "network_params": {
+        "activation": "relu",
+        "bidir": true,
+        "dropout": 0.5206107505832598,
+        "hidden_size": 37,
+        "n_layers": 7
+      },
+      "optimizer": "adamw-torch",
+      "threshold": 0,
+      "type": "event-res-gru"
+    },
+    "data_info": {
+      "downsampling_factor": 4,
+      "latitude": 40.73061,
+      "longitude": -73.935242,
+      "window_size": 17280
+    },
+    "feature_engineering": [
+      {
+        "feats": [
+          "anglez_diff_abs",
+          "anglez_diff_abs_median_1000",
+          "anglez_diff_abs_clip_10_skew_1000",
+          "anglez_diff_abs_clip_10_savgol_180",
+          "anglez_diff_abs_clip_10_median_180",
+          "enmo_std_90",
+          "anglez_diff_abs_clip_10_max_36",
+          "enmo_std_50",
+          "anglez_diff_abs_clip_10_mean_1000",
+          "anglez_diff_abs_clip_10_savgol_180_diff",
+          "anglez_diff_abs_clip_10_savgol_1000_diff",
+          "anglez_diff_abs_clip_10_median_360"
+        ],
+        "kind": "parser"
+      },
+      {
+        "kind": "sun",
+        "sun_features": [
+          "azimuth",
+          "altitude"
+        ]
+      },
+      {
+        "kind": "time",
+        "time_features": [
+          "hour",
+          "minute",
+          "weekday"
+        ]
+      }
+    ],
+    "name": "minion3",
+    "preprocessing": [
+      {
+        "kind": "mem_reduce"
+      },
+      {
+        "as_feature": true,
+        "kind": "similarity_nan"
+      },
+      {
+        "events_path": "data/raw/train_events.csv",
+        "fill_limit": 8640,
+        "kind": "add_state_labels",
+        "nan_tolerance_window": 5,
+        "use_similarity_nan": true
+      },
+      {
+        "events_path": "data/raw/train_events.csv",
+        "kind": "add_event_labels",
+        "smoothing": 5,
+        "steepness": 2
+      },
+      {
+        "kind": "split_windows"
+      }
+    ],
+    "pretraining": {
+      "downsample": {
+        "features": [
+          "f_anglez_diff_abs",
+          "f_enmo"
+        ],
+        "methods": [
+          "min",
+          "max",
+          "mean",
+          "std",
+          "median",
+          "range",
+          "var"
+        ],
+        "standard": "mean"
+      },
+      "scaler": {
+        "copy": true,
+        "kind": "standard-scaler"
+      },
+      "test_size": 0.2
+    }
+}

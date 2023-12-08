@@ -1,5 +1,5 @@
 # Config
-The config file is a JSON file that contains all the information needed to run the pipeline. 
+The config file is a JSON file that contains all the information needed to run the pipeline.
 The config file is split up in different sections. Each section has its own config options.
 
 ## Config Options
@@ -43,7 +43,7 @@ Variables:
   - The factor to downsample the data with. Default is 1, which means no downsampling.
 
 ## Preprocessing steps
-These steps are executed in order placed in the list. 
+These steps are executed in order placed in the list.
 The order is important as some steps depend on the output of previous steps.
 For more information on the preprocessing steps, see [Preprocessing](../preprocessing/README.md).
 
@@ -55,7 +55,7 @@ The following steps are currently implemented:
       a datetime object.
     - Stores the series ID encoding in the specified path. If there is no path specified, it will not store the encoding.
 - `similarity_nan`
-    - Compute similarity between all windows to detect a repeating pattern indicating NaN. 
+    - Compute similarity between all windows to detect a repeating pattern indicating NaN.
 Adds this as a column that is 0 for perfect similarity.
 - `add-noise`
     - Adds gaussian noise to the sensor data.
@@ -65,19 +65,19 @@ Adds this as a column that is 0 for perfect similarity.
         - `0`: asleep.
         - `1`: awake.
         - `2`: `NaN`, not labeled.
-    - If `use_similarity_nan` is set to true, 
-      it will use the similarity_nan column to determine whether something is NaN or unlabeled, 
+    - If `use_similarity_nan` is set to true,
+      it will use the similarity_nan column to determine whether something is NaN or unlabeled,
       and asleep/awake labelling around those segments will be better.
     - `fill_limit` is the maximum number of time steps that a state is extended into unlabeled non-nan data,
       only used if `use_similarity_nan` is set to true.
-    - `nan_tolerance_window`, labels are extended up to the first nan data point. 
+    - `nan_tolerance_window`, labels are extended up to the first nan data point.
       This parameter specifies the size of the median filter that is used to ignore lone nan points.
 - `split_windows`
     - Parameters: `start_hour: int = 15`
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
     - Parameters: `remove_entire_series: bool`, `remove_partially_unlabeled_windows: bool`, `remove_nan`
-    - Removes all the unlabeled data points and optionally, all NaN data. 
+    - Removes all the unlabeled data points and optionally, all NaN data.
 - `add_regression_labels` (requires `split_windows`)
     - Parameters: `id_encoding_path: str`, `events_path: str`,
     - Adds 3 columns, the wakeup, onset, wakeup-NaN and onset-NaN labels
@@ -102,14 +102,12 @@ Example for each step:
 "preprocessing": [
     {
         "kind": "mem_reduce",
-        "id_encoding_path": "series_id_encoding.json"
     },
     {
         "kind": "add_noise"
     },
     {
         "kind": "add_state_labels",
-        "id_encoding_path": "series_id_encoding.json",
         "events_path": "data/raw/train_events.csv",
         "use_similarity_nan": true,
         "fill_limit": 8640,
@@ -129,16 +127,10 @@ Example for each step:
         "kind": "truncate"
     },
     {
-        "kind": "add_regression_labels",
-        "id_encoding_path": "series_id_encoding.json",
-        "events_path": "data/raw/train_events.csv"
-    },
-    {
         "kind": "add_segmentation_labels"
     },
     {
         "kind": "add_event_labels",
-        "id_encoding_path": "series_id_encoding.json",
         "events_path": "data/raw/train_events.csv",
         "smoothing": 5
     },
@@ -146,9 +138,9 @@ Example for each step:
 ```
 
 ## Preprocessing data location
-Location out: Data created by preprocessing is stored in this directory. 
+Location out: Data created by preprocessing is stored in this directory.
 
-Location in: Data needed by preprocessing is stored in this directory. 
+Location in: Data needed by preprocessing is stored in this directory.
 
 ```JSON
 "processed_loc_out": "./data/processed",
@@ -158,7 +150,7 @@ Location in: Data needed by preprocessing is stored in this directory.
 ## Feature engineering
 Features that should be included during training and submission. It contains a list of feature engineering steps, applied in order, where each step is a dictionary.
 
-List of options and their config options: 
+List of options and their config options:
 
 - `kurtosis`
     - `window_sizes` > 3
@@ -210,7 +202,7 @@ Example:
         },
         {
             "kind": "time",
-            "time_features": ["day", "hour", "minute", "second"]    
+            "time_features": ["day", "hour", "minute", "second"]
         }
         {
             "kind": "similarity_nan",
@@ -246,7 +238,7 @@ Location in: Data needed by feature engineering is stored in this location
 ```
 
 ## Pretraining
-This step includes preparing the data for inputting in the model. 
+This step includes preparing the data for inputting in the model.
 It contains downsampling options, standardization and train-test split.
 
 List of options:
@@ -349,7 +341,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - mask_unlabeled=false
 
 - event-res-gru
-    - epochs (required) 
+    - epochs (required)
     - loss (required)
     - optimizer (required)
     - early_stopping
@@ -363,7 +355,7 @@ This contains all the models and their hyperparameters that are implemented. The
 
 #### Transformers
 - transformer / segmentation-transformer / event-segmentation-transformer
-    - epochs (required) 
+    - epochs (required)
     - loss (required)
     - optimizer (required)
     - early_stopping
@@ -383,7 +375,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - lr
     - lr_schedule (config for learning rate schedule, see [CosineLRWithRestarts](https://timm.fast.ai/SGDR))
     - threshold
-  
+
 Example of an example-fc-model configuration and a 1D-CNN configuration
 
 ```JSON
@@ -504,10 +496,10 @@ Specify location where models should be stored, furthermore, the config should b
 
 ## Cross validation
 ### Splitters
-A splitter splits the data into train and test sets. 
+A splitter splits the data into train and test sets.
 The splitters for groups are likely most relevant for our data.
 
-List of splitter options with parameters (see [sklearn.model_selection](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for more details): 
+List of splitter options with parameters (see [sklearn.model_selection](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for more details):
 - `group_k_fold`
   - `n_splits: int`, default = 5
 - `group_shuffle_split`
@@ -615,11 +607,11 @@ See [HPO Readme](../hpo/README.md) for more information.
 ### Usage
 - `"kind": str`: The kind of HPO to use. Currently, only `"wandb_sweeps"` is supported.
 - `"apply": bool`: Whether to apply the HPO. If `false`, the HPO is disabled and `ConfigLoader.hpo` returns `None`.
-- `"count": int`: The number of runs to perform. If `count` is missing, it will run indefinitely. 
+- `"count": int`: The number of runs to perform. If `count` is missing, it will run indefinitely.
 - `"sweep_configuration": dict`: The configuration for the HPO method if it is `"wandb_sweeps"`.
   See the [Weights & Biases documentation](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration) for more information.
 
-Here's an example configuration for the `SplitEvent-1D-Unet-CNN` model 
+Here's an example configuration for the `SplitEvent-1D-Unet-CNN` model
 where we want to optimize the number of epochs using random search with Weights & Biases Sweeps:
 ```json
 "hpo": {
@@ -670,10 +662,10 @@ by setting the following to true:
 ```
 
 ## Visualize preds
-Configures how plots are generated. 
+Configures how plots are generated.
 - "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
 - "browser_plot": Boolean that if set to True creates plotly plots
-- "save": Boolean that if set to True saves the images  
+- "save": Boolean that if set to True saves the images
 
 ```
 "visualize_preds": {
@@ -685,7 +677,7 @@ Configures how plots are generated.
 
 ## Similarity filtering (deprecated)
 Apply a filter to the timestamp predictions, based on similarity to other windows.
-Requires the similarity_nan preprocessing step. Can be removed from the 
+Requires the similarity_nan preprocessing step. Can be removed from the
 If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to nan.
 - "threshold": Float, if mean of f_similarity_nan is above this, prediction is set to nan
 

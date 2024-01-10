@@ -110,7 +110,6 @@ def find_events(pred: np.ndarray, median_filter_size: int = None) -> tuple:
     # Find awake indices where the awake state goes from 0 to 1
     awakes = np.where((pred[:-1] == 0) & (pred[1:] == 1))[0]
 
-    # TODO: make this work for a single onset or a single awake
     if np.size(onsets) == 0 or np.size(awakes) == 0:
         return np.nan, np.nan
 

@@ -11,7 +11,6 @@ from src.configs.load_config import ConfigLoader
 from src.logger.logger import logger
 from src.util.hash_config import hash_config
 from src.util.printing_utils import print_section_separator
-from sweep import play_mp3
 
 
 def main() -> None:
@@ -194,15 +193,4 @@ if __name__ == "__main__":
     # Load config file
     config_loader: ConfigLoader = ConfigLoader("config.json")
 
-    # Gotta sweep
-    if config_loader.get_hpo():
-        mp3_file_path = "gotta_sweep.mp3"  # Replace with the path to your MP3 file
-        play_mp3(mp3_file_path)
-        # try:
-        main()
-        # except Exception as e:
-        #     if config_loader.get_log_to_wandb():
-        #         wandb.log({"cv_score": -0.1})
-        #         wandb.log({"exception": str(e)})
-    else:
-        main()
+    main()

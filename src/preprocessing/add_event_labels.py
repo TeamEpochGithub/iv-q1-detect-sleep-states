@@ -67,7 +67,6 @@ class AddEventLabels(PP):
             data[i] = self.fill_series_labels(data[i], i)
         return data
 
-    # TODO Add type hints and PyDoc comments to fill_series_labels and custom_score_array
     def fill_series_labels(self, series: pd.DataFrame, series_id: int) -> pd.DataFrame:
         series["state-onset"] = 0.0
         series["state-wakeup"] = 0.0

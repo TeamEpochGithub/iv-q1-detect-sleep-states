@@ -362,24 +362,6 @@ class EventModel:
         :param raw_output: I already said that I have no idea
         :return: the predictions and confidences, as numpy arrays
         """
-        # TODO Try other interpolation methods (linear / cubic)
-        # if downsampling_factor > 1:
-        #     predictions = np.repeat(predictions, downsampling_factor, axis=1)
-
-        # # Define the original time points
-        # original_time_points = np.linspace(0, 1, data_info.window_size)
-        #
-        # # Define the new time points for upsampled data
-        # upsampled_time_points = np.linspace(0, 1, data_info.window_size_before)
-        #
-        # # Create an array to store upsampled data
-        # upsampled_data = np.zeros((predictions.shape[0], data_info.window_size_before, predictions.shape[2]))
-        #
-        # # Apply interpolation along axis=1 for each channel
-        # for channel_idx in range(predictions.shape[2]):
-        #     for row_idx in range(predictions.shape[0]):
-        #         interpolation_function = interp1d(original_time_points, predictions[row_idx, :, channel_idx], kind='linear', fill_value='extrapolate')
-        #         upsampled_data[row_idx, :, channel_idx] = interpolation_function(upsampled_time_points)
 
         steps_sinc = np.arange(0, data_info.window_size_before, data_info.downsampling_factor)
         u_sinc = np.arange(0, data_info.window_size_before, 1)

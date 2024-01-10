@@ -12,7 +12,6 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         self.config = config
         self.gru_params = config.get('gru_params', {})
         self.spec_features_indices = spec_features_indices
-        # TODO exclude some of the features from the spectrogram
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
@@ -41,8 +40,6 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
             n_classes=out_channels,
             bilinear=config.get('bilinear', False),
             scale_factor=config.get('scale_factor', 2),
-            # hardcoded for now
-            # TODO make this a config
             duration=17280 // (12*config.get('hop_length', 1)),
         )
 
@@ -60,7 +57,6 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         x_encoded = x_encoded.permute(0, 2, 1)
         x_encoded_linear = self.liner(x_encoded)
 
-        # TODO if some features are excluded from the spectrgoram chnage this
         # downsample the input features to the same shape as the encoded features
         x = x[:, self.spec_features_indices, ::self.config.get('hop_length')]
         # now sum the residual features x and the encoded features x

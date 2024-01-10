@@ -8,8 +8,6 @@ from ..logger.logger import logger
 
 @dataclass
 class Skewness(RollingWindow):
-    # TODO Add docstrings for the class, feature_engineering and mean functions
-    # TODO Add tests
 
     def feature_engineering(self, data: dict) -> dict:
         # Loop through window sizes

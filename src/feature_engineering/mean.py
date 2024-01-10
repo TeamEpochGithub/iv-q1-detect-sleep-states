@@ -9,8 +9,6 @@ from ..logger.logger import logger
 
 @dataclass
 class Mean(RollingWindow):
-    # TODO Add docstrings for the class, feature_engineering and mean functions
-    # TODO Add tests
 
     def feature_engineering(self, data: dict) -> dict:
         logger.debug("------ All features: " + str(self.features))

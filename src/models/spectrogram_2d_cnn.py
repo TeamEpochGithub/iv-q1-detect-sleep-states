@@ -109,34 +109,6 @@ class EventSegmentation2DCNN(EventModel):
         labels_list = [data_info.y_columns["state-onset"],
                        data_info.y_columns["state-wakeup"]]
 
-        if self.config.get('penis_curve', False):
-            angles = np.linspace(0, np.pi, 270)
-            peak_curve = 0.8 * np.sin(angles) + 0.2
-            # PENIS CURVEEEEEEE!!!!!!!!!!
-            for window in y_train[:, :, labels_list]:
-                for i in range(window.shape[1]):
-                    # find the peaks
-                    peaks, _ = find_peaks(window[:, i])
-                    # set the peaks to 1
-                    window[peaks, i] = 1
-                    for peak in peaks:
-                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
-
-                        # set the rest to 0
-                        window[window < 0.2] = 0
-            # MORE PENIS CURVEEEEEEE!!!!!!!!!
-            for window in y_test[:, :, labels_list]:
-                for i in range(window.shape[1]):
-                    # find the peaks
-                    peaks, _ = find_peaks(window[:, i])
-                    # set the peaks to 1
-                    window[peaks, i] = 1
-                    for peak in peaks:
-                        # map +-36 around the peak to 0-pi
-                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
-                        # set the rest to 0
-                        window[window < 0.2] = 0
-
         if mask_unlabeled:
             # Add awake label to front of the list
             labels_list.insert(0, data_info.y_columns["awake"])
@@ -167,6 +139,7 @@ class EventSegmentation2DCNN(EventModel):
             y_test_downsampled.append(np.array(downsampled_channels))
         y_test = torch.from_numpy(np.array(y_test_downsampled)).permute(0, 2, 1)
         del y_test_downsampled
+
         # Turn last column into one hot encoding of awake so that it can be used as auxiliary awake
         if use_auxiliary_awake:
             # Change all 3's for last column to 2's
@@ -217,7 +190,7 @@ class EventSegmentation2DCNN(EventModel):
         logger.info("--- Training of model complete!")
         self.config["total_epochs"] = total_epochs
 
-    # TODO refactor to overwrite event trainer
+
     def train_full(self, x_train: np.ndarray, y_train: np.ndarray) -> None:
         """
         Train function for the model.

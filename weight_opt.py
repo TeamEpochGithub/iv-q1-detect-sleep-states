@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     torch.manual_seed(42)
     # Load config file
-    config_loader: ConfigLoader = ConfigLoader("config.json")
+    config_loader: ConfigLoader = ConfigLoader("best_ensemble.json")
     config_hash = hash_config(config_loader.get_config(), length=16)
 
     study = optuna.create_study(

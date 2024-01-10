@@ -1,5 +1,5 @@
 import torchaudio.transforms as T
-from src.external.segmentation_models_pytorch import Unet
+from segmentation_models_pytorch import Unet
 from torch import nn
 
 from src.models.architectures.Unet_decoder import UNet1DDecoder

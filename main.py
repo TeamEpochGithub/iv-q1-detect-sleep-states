@@ -191,6 +191,6 @@ if __name__ == "__main__":
     # Set a fixed value for the hash seed
     os.environ["PYTHONHASHSEED"] = str(42)
     # Load config file
-    config_loader: ConfigLoader = ConfigLoader("config.json")
+    config_loader: ConfigLoader = ConfigLoader("best_ensemble.json")
 
     main()

@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Final
 
-
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 

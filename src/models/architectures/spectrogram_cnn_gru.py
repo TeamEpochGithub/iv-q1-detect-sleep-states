@@ -1,9 +1,10 @@
-from src.models.architectures import multi_res_bi_GRU
-from torch import nn
-from src.external.segmentation_models_pytorch import Unet
-import torchaudio.transforms as T
-from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torch
+import torchaudio.transforms as T
+from src.external.segmentation_models_pytorch import Unet
+from torch import nn
+
+from src.models.architectures import multi_res_bi_GRU
+from src.models.architectures.Unet_decoder import UNet1DDecoder
 
 
 class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
@@ -28,19 +29,20 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         )
         self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=in_channels,
                                                        hidden_size=self.gru_params.get("hidden_size", 64),
-                                                       out_size=out_channels, n_layers=self.gru_params.get("n_layers", 5),
+                                                       out_size=out_channels,
+                                                       n_layers=self.gru_params.get("n_layers", 5),
                                                        bidir=True, activation=self.gru_params.get("activation", "relu"),
                                                        flatten=False, dropout=0,
                                                        internal_layers=1, model_name='')
         # will shape the encoder outputs to the same shape as the original inputs
-        self.liner = nn.Linear(in_features=(config.get('n_fft', 127)+1)//2, out_features=in_channels)
+        self.liner = nn.Linear(in_features=(config.get('n_fft', 127) + 1) // 2, out_features=in_channels)
 
         self.decoder = UNet1DDecoder(
             n_channels=(config.get('n_fft', 127) + 1) // 2,
             n_classes=out_channels,
             bilinear=config.get('bilinear', False),
             scale_factor=config.get('scale_factor', 2),
-            duration=17280 // (12*config.get('hop_length', 1)),
+            duration=17280 // (12 * config.get('hop_length', 1)),
         )
 
     def forward(self, x, use_activation=True):

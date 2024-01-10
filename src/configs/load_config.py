@@ -1,9 +1,9 @@
 import json
 
 from src.cv.cv import CV
+from .load_model_config import ModelConfigLoader
 from .. import data_info
 from ..ensemble.ensemble import Ensemble
-from .load_model_config import ModelConfigLoader
 from ..logger.logger import logger
 
 
@@ -133,7 +133,8 @@ class ConfigLoader:
 
         # Create ensemble
         ensemble = Ensemble(
-            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"], self.config["ensemble"]["pred_only"])
+            curr_models, self.config["ensemble"]["weights"], self.config["ensemble"]["comb_method"],
+            self.config["ensemble"]["pred_only"])
 
         self.ensemble = ensemble
 

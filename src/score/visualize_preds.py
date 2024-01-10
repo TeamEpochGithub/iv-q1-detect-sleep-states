@@ -1,11 +1,13 @@
-import pandas as pd
 import json
-from src.get_processed_data import get_processed_data
+
+import pandas as pd
+
 from src.configs.load_config import ConfigLoader
+from src.get_processed_data import get_processed_data
+from src.score.util.make_global_histogram import make_global_histogram
+from src.score.util.make_pred_histogram import make_histogram
 from src.score.util.plot_with_plotly import plot_w_plotly
 from src.score.util.save_plots import save_plots
-from src.score.util.make_pred_histogram import make_histogram
-from src.score.util.make_global_histogram import make_global_histogram
 
 
 def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: str = 'data/raw/train_events.csv',
@@ -57,7 +59,7 @@ def plot_preds_on_series(preds: pd.DataFrame, data: pd.DataFrame, events_path: s
                           current_preds, id_decoding, id, features_to_plot)
         if save_figures:
             save_plots(current_series, current_events,
-                       current_preds, id_decoding, id, features_to_plot, folder_path+'/series_plots')
+                       current_preds, id_decoding, id, features_to_plot, folder_path + '/series_plots')
 
             make_histogram(current_preds, current_events, folder_path, id_decoding, id)
     # now make the global histogram

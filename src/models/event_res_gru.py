@@ -1,4 +1,5 @@
 import torch
+
 from src.models.event_model import EventModel
 from .architectures.multi_res_bi_GRU import MultiResidualBiGRU
 from .. import data_info

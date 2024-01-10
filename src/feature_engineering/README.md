@@ -1,7 +1,9 @@
 ## Feature engineering
-Features that should be included during training and submission. It contains a list of feature engineering steps, applied in order, where each step is a dictionary.
 
-List of options and their config options: 
+Features that should be included during training and submission. It contains a list of feature engineering steps,
+applied in order, where each step is a dictionary.
+
+List of options and their config options:
 
 - `kurtosis`
     - `window_sizes` > 3
@@ -14,20 +16,20 @@ List of options and their config options:
     - `features`: Any existing numerical features
 - `time`
     - `time_features`: a list of time features to include
-      - Options: `year`, `month`, `week`, `weekday`, `day`, `hour`, `minute`, `second`, `microsecond`
+        - Options: `year`, `month`, `week`, `weekday`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 - `sun`
-    -  `sun_features`: a list of sun features to include
+    - `sun_features`: a list of sun features to include
       - Options: `elevation`, `azimuth`
 - `add_holidays`
 - `add_school_hours`
 - `add_weather`
-  - `weather_features`: a list of weather features to include
-    - Options: `temp`, `dwpt`, `rhum`, `prcp`, `snow`, `wdir`, `wspd`, `wpgt`, `pres`, `tsun`, `coco`
-
+    - `weather_features`: a list of weather features to include
+        - Options: `temp`, `dwpt`, `rhum`, `prcp`, `snow`, `wdir`, `wspd`, `wpgt`, `pres`, `tsun`, `coco`
 
 Example:
+
 ```JSON
 "feature_engineering": [
         {

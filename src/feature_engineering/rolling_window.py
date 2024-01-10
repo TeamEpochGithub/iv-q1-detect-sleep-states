@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 

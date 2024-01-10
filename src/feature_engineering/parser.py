@@ -1,11 +1,11 @@
 import gc
 from dataclasses import field, dataclass
 
-from scipy.signal import savgol_filter
 import numpy as np
 import pandas as pd
-
+from scipy.signal import savgol_filter
 from tqdm import tqdm
+
 from .feature_engineering import FE
 
 
@@ -52,7 +52,7 @@ class Parser(FE):
 
         # only keep the features we want
         for feat in self.feats:
-            data['f_'+feat] = self.available_lookup[feat]
+            data['f_' + feat] = self.available_lookup[feat]
 
         # reset the lookup and collect the garbage memory
         self.available_lookup = dict()

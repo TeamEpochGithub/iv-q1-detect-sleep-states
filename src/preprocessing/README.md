@@ -1,7 +1,8 @@
 # Preprocessing
-This directory contains the preprocessing steps. 
+
+This directory contains the preprocessing steps.
 These steps are implemented as classes that inherit from the `PP` class in `src/preprocessing/pp.py`.
-These classes apply various preprocessing steps to the data to prepare it for the models. 
+These classes apply various preprocessing steps to the data to prepare it for the models.
 The following steps are currently implemented:
 
 - `mem_reduce`
@@ -21,7 +22,7 @@ The following steps are currently implemented:
     - Splits the data in to 24 hour long windows
 - `remove_unlabeled` (requires `add_state_labels`, optional `split_windows`)
     - Parameters: `remove_entire_series: bool`, `remove_partially_unlabeled_windows: bool`, `remove_nan`
-    - Removes all the unlabeled data points and optionally, all NaN data. 
+    - Removes all the unlabeled data points and optionally, all NaN data.
 - `add_regression_labels` (requires `add_state_labels`, `split_windows`)
     - Adds, the wakeup, onset, wakeup-NaN and onset-NaN labels
 - `add_segmentation_labels` (requires `add_state_labels`)
@@ -32,6 +33,7 @@ The following steps are currently implemented:
         - 3: `hot-unlabeled`
 
 Example:
+
 ```JSON
 {
   "preprocessing": [

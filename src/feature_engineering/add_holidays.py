@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Final
-from tqdm import tqdm
 
 import pandas as pd
+from tqdm import tqdm
 
 from src.feature_engineering.feature_engineering import FE
 

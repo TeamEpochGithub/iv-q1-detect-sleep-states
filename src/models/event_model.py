@@ -194,7 +194,8 @@ class EventModel:
                                early_stopping_metric=self.early_stopping_metric, mask_unlabeled=mask_unlabeled,
                                use_auxiliary_awake=use_auxiliary_awake)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer,
+            name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
 
         if wandb.run is not None:
@@ -271,7 +272,8 @@ class EventModel:
                                early_stopping_metric=self.early_stopping_metric,
                                mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         trainer.fit(
-            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name,
+            scheduler=scheduler,
             activation_delay=activation_delay)
         logger.info("Full train complete!")
 
@@ -325,11 +327,15 @@ class EventModel:
                 # Do the similarity_nan postprocessing masking stuff here because fuck code structure
                 if 'f_similarity_nan_mean' in data_info.X_columns:
                     if pred_with_cpu:
-                        similarity_nan_mean: np.ndarray[np.float32] = batch_data[:, :, data_info.X_columns['f_similarity_nan_mean']].numpy()
+                        similarity_nan_mean: np.ndarray[np.float32] = batch_data[:, :, data_info.X_columns[
+                                                                                           'f_similarity_nan_mean']].numpy()
                     else:
-                        similarity_nan_mean: np.ndarray[np.float32] = batch_data[:, :, data_info.X_columns['f_similarity_nan_mean']].cpu().numpy()
-                    similarity_nan_mask: np.ndarray[np.float32] = np.append(np.diff(similarity_nan_mean), [1])  # Append 1 here to retain the same length as before
-                    similarity_nan_mask: np.ndarray[np.bool_] = np.logical_not(np.isclose(similarity_nan_mask, 0.0, rtol=1e-09, atol=1e-09))
+                        similarity_nan_mean: np.ndarray[np.float32] = batch_data[:, :, data_info.X_columns[
+                                                                                           'f_similarity_nan_mean']].cpu().numpy()
+                    similarity_nan_mask: np.ndarray[np.float32] = np.append(np.diff(similarity_nan_mean), [
+                        1])  # Append 1 here to retain the same length as before
+                    similarity_nan_mask: np.ndarray[np.bool_] = np.logical_not(
+                        np.isclose(similarity_nan_mask, 0.0, rtol=1e-09, atol=1e-09))
                     batch_prediction[0, :, 1] = np.multiply(batch_prediction[0, :, 1], similarity_nan_mask)
 
                 predictions.append(batch_prediction)
@@ -340,7 +346,8 @@ class EventModel:
         # Apply upsampling to the predictions
         downsampling_factor = data_info.downsampling_factor
 
-        return self.model_output_sinc_interpolate_to_events(self.config['threshold'], 10, downsampling_factor, predictions, raw_output)
+        return self.model_output_sinc_interpolate_to_events(self.config['threshold'], 10, downsampling_factor,
+                                                            predictions, raw_output)
 
     @staticmethod
     def model_output_sinc_interpolate_to_events(threshold: float, n_events: int, downsampling_factor: float,
@@ -465,7 +472,8 @@ class EventModel:
             self.config['scheduler'] = CosineLRScheduler(
                 self.config['optimizer'], **self.config["lr_schedule"])
 
-    def log_train_test(self, avg_losses: list | np.ndarray, avg_val_losses: list | np.ndarray, epochs: int, name: str = "") -> None:
+    def log_train_test(self, avg_losses: list | np.ndarray, avg_val_losses: list | np.ndarray, epochs: int,
+                       name: str = "") -> None:
         """Log the train and test loss to Weights & Biases.
 
         :param avg_losses: list of average train losses
@@ -490,7 +498,8 @@ class EventModel:
             vega_spec_name="team-epoch-iv/trainval",
             data_table=table,
             fields=fields,
-            string_fields={"title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
+            string_fields={
+                "title": data_info.substage + " - Train and validation loss of model " + self.name + "_" + name}
         )
         if wandb.run is not None:
             wandb.log({f"{data_info.substage, name}": custom_plot})

@@ -22,7 +22,7 @@ def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_da
     pretrain_config_hash: str = hash_config(
         model_config_loader.get_pretrain_config())
     path: str = model_config_loader.get_processed_out() + '/pretrain_' + \
-        pretrain_config_hash + '.pkl'
+                pretrain_config_hash + '.pkl'
 
     if os.path.exists(path):
         logger.info(f'Pretrain: Reading existing files from: {path}')
@@ -55,7 +55,7 @@ def get_pretrain_split_cache(model_config_loader: ModelConfigLoader, featured_da
             initial_hash = hash_config(
                 model_config_loader.get_pretrain_config(), length=5)
             scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
-                initial_hash + ".pkl"
+                                   initial_hash + ".pkl"
             pretrain.scaler.save(scaler_filename)
             logger.info(f"Saved scaler to {scaler_filename}")
 
@@ -74,7 +74,7 @@ def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_dat
     pretrain_config_hash: str = hash_config(
         model_config_loader.get_pretrain_config())
     path: str = model_config_loader.get_processed_out() + '/pretrain_full' + \
-        pretrain_config_hash + '.pkl'
+                pretrain_config_hash + '.pkl'
 
     if os.path.exists(path):
         logger.info(f'Pretrain full: Reading existing files from: {path}')
@@ -104,7 +104,7 @@ def get_pretrain_full_cache(model_config_loader: ModelConfigLoader, featured_dat
             initial_hash = hash_config(
                 model_config_loader.get_pretrain_config(), length=5)
             scaler_filename: str = model_config_loader.get_store_location() + "/scaler-" + \
-                initial_hash + ".pkl"
+                                   initial_hash + ".pkl"
             pretrain.scaler.save(scaler_filename)
             logger.info(f"Saved scaler to {scaler_filename}")
 

@@ -1,8 +1,10 @@
 # Config
+
 The config file is a JSON file that contains all the information needed to run the pipeline.
 The config file is split up in different sections. Each section has its own config options.
 
 ## Config Options
+
 1. [Preprocessing steps](#preprocessing-steps)
 2. [Preprocessing data location](#preprocessing-data-location)
 3. [Feature engineering](#feature-engineering)
@@ -20,6 +22,7 @@ The config file is split up in different sections. Each section has its own conf
 15. [Similarity filtering](#similarity-filtering)
 
 ## General
+
 - `name`: `str`
     - Name of the config
 - `log_to_wandb`: `bool`
@@ -34,15 +37,18 @@ The config file is split up in different sections. Each section has its own conf
     - Path to the series to test on
 
 ## Data Info
+
 This is where global variables are stored that we want to use across multiple files.
 
 Variables:
+
 - `window_size`: `int`
     - The size of the window in steps before donwsampling. Default is 24 * 60 * 12 = 17280
 - `downsampling_factor`: `int`
-  - The factor to downsample the data with. Default is 1, which means no downsampling.
+    - The factor to downsample the data with. Default is 1, which means no downsampling.
 
 ## Preprocessing steps
+
 These steps are executed in order placed in the list.
 The order is important as some steps depend on the output of previous steps.
 For more information on the preprocessing steps, see [Preprocessing](../preprocessing/README.md).
@@ -53,10 +59,11 @@ The following steps are currently implemented:
     - Parameters: `id_encoding_path: Optional[str] = None`
     - Reduces the memory usage of the dataframe. Encodes the series IDs to unique ints and converts the timestamp to
       a datetime object.
-    - Stores the series ID encoding in the specified path. If there is no path specified, it will not store the encoding.
+    - Stores the series ID encoding in the specified path. If there is no path specified, it will not store the
+      encoding.
 - `similarity_nan`
     - Compute similarity between all windows to detect a repeating pattern indicating NaN.
-Adds this as a column that is 0 for perfect similarity.
+      Adds this as a column that is 0 for perfect similarity.
 - `add-noise`
     - Adds gaussian noise to the sensor data.
 - `add_state_labels`
@@ -98,6 +105,7 @@ Adds this as a column that is 0 for perfect similarity.
         - 1: `state_wakeup`
 
 Example for each step:
+
 ```JSON
 "preprocessing": [
     {
@@ -138,6 +146,7 @@ Example for each step:
 ```
 
 ## Preprocessing data location
+
 Location out: Data created by preprocessing is stored in this directory.
 
 Location in: Data needed by preprocessing is stored in this directory.
@@ -148,7 +157,9 @@ Location in: Data needed by preprocessing is stored in this directory.
 ```
 
 ## Feature engineering
-Features that should be included during training and submission. It contains a list of feature engineering steps, applied in order, where each step is a dictionary.
+
+Features that should be included during training and submission. It contains a list of feature engineering steps,
+applied in order, where each step is a dictionary.
 
 List of options and their config options:
 
@@ -163,22 +174,24 @@ List of options and their config options:
     - `features`: Any existing numerical features
 - `time`
     - `time_features`: a list of time features to include
-      - Options: `year`, `month`, `week`, `weekday`, `day`, `hour`, `minute`, `second`, `microsecond`
+        - Options: `year`, `month`, `week`, `weekday`, `day`, `hour`, `minute`, `second`, `microsecond`
 - `rotation`
     - `window_sizes`: a list of sizes for rolling median smoothing, classic baseline uses 100
 - `similarity_nan`
-  - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
+    - `as_feature`: Boolean that if True, names the column "f_similarity_nan", else just "similarity_nan"
 - `sun`
-    -  `sun_features`: a list of sun features to include based the longitude and latitude that should be specified in the data_info.
-    Currently, NYC location is used.
+    - `sun_features`: a list of sun features to include based the longitude and latitude that should be specified in the
+      data_info.
+      Currently, NYC location is used.
     - Options: `elevation`, `azimuth`
 - `add_holidays`
 - `add_school_hours`
 - `add_weather`
-  - `weather_features`: a list of weather features to include
-    - Options: `temp`, `dwpt`, `rhum`, `prcp`, `snow`, `wdir`, `wspd`, `wpgt`, `pres`, `tsun`, `coco`
+    - `weather_features`: a list of weather features to include
+        - Options: `temp`, `dwpt`, `rhum`, `prcp`, `snow`, `wdir`, `wspd`, `wpgt`, `pres`, `tsun`, `coco`
 
 Example:
+
 ```JSON
 "feature_engineering": [
         {
@@ -238,6 +251,7 @@ Location in: Data needed by feature engineering is stored in this location
 ```
 
 ## Pretraining
+
 This step includes preparing the data for inputting in the model.
 It contains downsampling options, standardization and train-test split.
 
@@ -252,6 +266,7 @@ List of options:
 - `scaler`: method used for standardization. See [Scalers](../scaler/README.md) for more info.
 
 Example:
+
 ```JSON
 "pretraining": {
     "downsample": {
@@ -268,6 +283,7 @@ Example:
 ```
 
 ## Models
+
 A list of models and their specified configurations are included here. Multiple can be entered as this allows for the
 creation of ensembles. Additionally, the location they should be stored is included.
 These models should either be a statistical, regression or state_prediction model that predicts the current timestep
@@ -283,13 +299,13 @@ These models should either be a statistical, regression or state_prediction mode
 }
 ```
 
-
 #### Implemented Models types and config options
 
-This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters that are standard.
-
+This contains all the models and their hyperparameters that are implemented. The config options are the hyperparameters
+that are standard.
 
 ##### Basic models
+
 - example-fc-model
     - epochs (required)
     - loss (required)
@@ -307,11 +323,12 @@ This contains all the models and their hyperparameters that are implemented. The
 
 
 - classic-base-model
-  - median_window=100
-  - threshold=.1
-  - use_nan_similarity=True
+    - median_window=100
+    - threshold=.1
+    - use_nan_similarity=True
 
 ##### State segmentation models
+
 - seg-unet-1d-cnn (one-hot state segmentation model that predicts awake, asleep, NaN for each timestep)
     - loss (required, ce-torch recommended)
     - optimizer (required)
@@ -326,7 +343,9 @@ This contains all the models and their hyperparameters that are implemented. The
     - mask_unlabeled=False
 
 ##### Event segmentation models
-- event-seg-unet-1d-cnn / split-event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup) for each timestep
+
+- event-seg-unet-1d-cnn / split-event-seg-unet-1d-cnn (event segmentation model that predicts state-onset, state-wakeup)
+  for each timestep
     - loss (required, shrinkage-loss recommended)
     - optimizer (required)
     - epochs=10
@@ -354,6 +373,7 @@ This contains all the models and their hyperparameters that are implemented. The
     - threshold
 
 #### Transformers
+
 - transformer / segmentation-transformer / event-segmentation-transformer
     - epochs (required)
     - loss (required)
@@ -362,15 +382,15 @@ This contains all the models and their hyperparameters that are implemented. The
     - mask_unlabeled
     - use_auxiliary_awake
     - network_params (heads, emb_dim, forward_dim": 96,
-        "n_layers": 6,
-        "pooling": "none",
-        "pooling_args": { (Dependent on model chosen for pooling) }
-        "tokenizer": "patch",
-        "tokenizer_args": {
-            "patch_size": 12
-        },
-        "pe": "other",
-        "dropout": 0.0)
+      "n_layers": 6,
+      "pooling": "none",
+      "pooling_args": { (Dependent on model chosen for pooling) }
+      "tokenizer": "patch",
+      "tokenizer_args": {
+      "patch_size": 12
+      },
+      "pe": "other",
+      "dropout": 0.0)
     - activation_delay (number of epochs to wait before applying activation to last layer)
     - lr
     - lr_schedule (config for learning rate schedule, see [CosineLRWithRestarts](https://timm.fast.ai/SGDR))
@@ -495,63 +515,72 @@ Specify location where models should be stored, furthermore, the config should b
 ```
 
 ## Cross validation
+
 ### Splitters
+
 A splitter splits the data into train and test sets.
 The splitters for groups are likely most relevant for our data.
 
-List of splitter options with parameters (see [sklearn.model_selection](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for more details):
+List of splitter options with parameters (
+see [sklearn.model_selection](https://scikit-learn.org/stable/modules/classes.html#module-sklearn.model_selection) for
+more details):
+
 - `group_k_fold`
-  - `n_splits: int`, default = 5
+    - `n_splits: int`, default = 5
 - `group_shuffle_split`
-  - `n_splits: int`, default = 5
-  - `test_size: float`, default = 0.2
-  - `train_size: float | int`, default = None
-  - `random_state: int`, default = None
+    - `n_splits: int`, default = 5
+    - `test_size: float`, default = 0.2
+    - `train_size: float | int`, default = None
+    - `random_state: int`, default = None
 - `k_fold`
-  - `n_splits: int`, default = 5
-  - `shuffle: bool`, default = False
-  - `random_state: int`, default = None
+    - `n_splits: int`, default = 5
+    - `shuffle: bool`, default = False
+    - `random_state: int`, default = None
 - `leave_one_group_out`
 - `leave_p_group_out`
-  - `n_groups: int`, default = 2
+    - `n_groups: int`, default = 2
 - `leave_one_out`
 - `leave_p_out`
-  - `p: int`
+    - `p: int`
 - `predefined_split`
-  - `test_fold: array-like` of shape `(n_samples,)`
+    - `test_fold: array-like` of shape `(n_samples,)`
 - `shuffle_split`
-  - `n_splits: int`, default = 5
-  - `test_size: float`, default = 0.2
-  - `train_size: float | int`, default = None
-  - `random_state: int`, default = None
+    - `n_splits: int`, default = 5
+    - `test_size: float`, default = 0.2
+    - `train_size: float | int`, default = None
+    - `random_state: int`, default = None
 - `stratified_k_fold`
-  - `n_splits: int`, default = 5
-  - `shuffle: bool`, default = False
-  - `random_state: int`, default = None
+    - `n_splits: int`, default = 5
+    - `shuffle: bool`, default = False
+    - `random_state: int`, default = None
 - `stratified_shuffle_split`
-  - `n_splits: int`, default = 10
-  - `test_size: float | int`, default = None
-  - `train_size: float | int`, default = None
-  - `random_state: int`, default = None
+    - `n_splits: int`, default = 10
+    - `test_size: float | int`, default = None
+    - `train_size: float | int`, default = None
+    - `random_state: int`, default = None
 - `stratified_group_k_fold`
-  - `n_splits: int`, default = 5
-  - `shuffle: bool`, default = False
-  - `random_state: int`, default = None
+    - `n_splits: int`, default = 5
+    - `shuffle: bool`, default = False
+    - `random_state: int`, default = None
 - `time_series_split`
-  - `n_splits: int`, default = 5
-  - `max_train_size: int`, default = None
-  - `test_size: int`, default = None
-  - `gap: int`, default = 0
+    - `n_splits: int`, default = 5
+    - `max_train_size: int`, default = None
+    - `test_size: int`, default = None
+    - `gap: int`, default = 0
 
 ### Scorers
+
 List of scorer options:
+
 - `score_full`: computes the score for the full dataset
 - `score_clean` computes the score for the clean dataset
 
 Currently, the scorers have only been tested with the `seg-unet-1d-cnn`.
 
 ### Usage
+
 Example:
+
 ```JSON
 "cv": {
     "splitter": "group_shuffle_split",
@@ -564,11 +593,14 @@ Example:
 ```
 
 ## Ensemble
+
 For now, we support just an ensemble of 1 function.
 
-Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined, and whether to only do predictions
+Ensemble specifications including the models used, the weight of each, and how the model predictions should be combined,
+and whether to only do predictions
 
 ### Combinations methods
+
 - `confidence_average`: Averages confidences for all models by weight
 - `power_average`: Applies a power to all model predictions and then averages them
 
@@ -587,6 +619,7 @@ Combination methods
 - Max confidence
 
 ## Loss
+
 Current loss functions that are implemented. Returns a LossException if a loss function has not been found.
 Example:
 
@@ -602,17 +635,21 @@ Options
 - "binarycrossentropy-torch"
 
 ## Hyperparameter optimization
+
 See [HPO Readme](../hpo/README.md) for more information.
 
 ### Usage
+
 - `"kind": str`: The kind of HPO to use. Currently, only `"wandb_sweeps"` is supported.
 - `"apply": bool`: Whether to apply the HPO. If `false`, the HPO is disabled and `ConfigLoader.hpo` returns `None`.
 - `"count": int`: The number of runs to perform. If `count` is missing, it will run indefinitely.
 - `"sweep_configuration": dict`: The configuration for the HPO method if it is `"wandb_sweeps"`.
-  See the [Weights & Biases documentation](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration) for more information.
+  See the [Weights & Biases documentation](https://docs.wandb.ai/guides/sweeps/define-sweep-configuration) for more
+  information.
 
 Here's an example configuration for the `SplitEvent-1D-Unet-CNN` model
 where we want to optimize the number of epochs using random search with Weights & Biases Sweeps:
+
 ```json
 "hpo": {
     "kind": "wandb_sweeps",
@@ -644,9 +681,8 @@ where we want to optimize the number of epochs using random search with Weights 
 },
 ```
 
-
-
 ## Scoring
+
 Choose whether to do the scoring and show plots
 
 ```JSON
@@ -654,6 +690,7 @@ Choose whether to do the scoring and show plots
 ```
 
 ## Train for submission
+
 Once we have a model that we want to use for submission, we can train it on all the data we have available. This is done
 by setting the following to true:
 
@@ -662,7 +699,9 @@ by setting the following to true:
 ```
 
 ## Visualize preds
+
 Configures how plots are generated.
+
 - "n": Int that specifies the number of plots to generate (for saving jpegs and plotly plots)
 - "browser_plot": Boolean that if set to True creates plotly plots
 - "save": Boolean that if set to True saves the images
@@ -676,9 +715,12 @@ Configures how plots are generated.
 ```
 
 ## Similarity filtering (deprecated)
+
 Apply a filter to the timestamp predictions, based on similarity to other windows.
 Requires the similarity_nan preprocessing step. Can be removed from the
-If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to nan.
+If the proportion of steps that are perfectly similar to another window is above the threshold, prediction is set to
+nan.
+
 - "threshold": Float, if mean of f_similarity_nan is above this, prediction is set to nan
 
 ```JSON

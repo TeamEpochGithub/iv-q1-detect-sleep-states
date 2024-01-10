@@ -1,6 +1,6 @@
+import gc
 from dataclasses import dataclass
 
-import gc
 from tqdm import tqdm
 
 from .rolling_window import RollingWindow
@@ -29,7 +29,8 @@ class Mean(RollingWindow):
                 window_size).mean().reset_index(0, drop=True)
 
             # Make sure there are no NaN values turn them into 0
-            data[sid]["f_mean_" + feature + "_" + str(window_size)] = data[sid]["f_mean_" + feature + "_" + str(window_size)].fillna(
+            data[sid]["f_mean_" + feature + "_" + str(window_size)] = data[sid][
+                "f_mean_" + feature + "_" + str(window_size)].fillna(
                 0.0)
             gc.collect()
         return data

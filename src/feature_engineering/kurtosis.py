@@ -1,6 +1,6 @@
+import gc
 from dataclasses import dataclass
 
-import gc
 from tqdm import tqdm
 
 from .rolling_window import RollingWindow

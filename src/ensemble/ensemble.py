@@ -2,26 +2,27 @@
 
 # Imports
 import os
+from typing import Any, List
+
 import numpy as np
 from tqdm import tqdm
+
 from src.get_processed_data import get_processed_data
 from src.pretrain.pretrain import Pretrain
 from src.util.get_pretrain_cache import get_pretrain_split_cache
-
-from src.util.printing_utils import print_section_separator
 from src.util.hash_config import hash_config
+from src.util.printing_utils import print_section_separator
 from src.util.state_to_event import pred_to_event_state
-
-from ..logger.logger import logger
-from typing import Any, List
-from ..configs.load_model_config import ModelConfigLoader
 from .. import data_info
+from ..configs.load_model_config import ModelConfigLoader
+from ..logger.logger import logger
 
 
 class Ensemble:
 
     # Init function
-    def __init__(self, model_configs: List[ModelConfigLoader] = None, weight_matrix: List[int] = None, combination_method: str = "addition", pred_only: bool = False) -> None:
+    def __init__(self, model_configs: List[ModelConfigLoader] = None, weight_matrix: List[int] = None,
+                 combination_method: str = "addition", pred_only: bool = False) -> None:
         self.pred_only = pred_only
         self.combination_method = combination_method
 
@@ -66,7 +67,8 @@ class Ensemble:
         """
         return self.test_ids
 
-    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False, find_peaks: dict = None) -> tuple[np.ndarray, np.ndarray]:
+    def pred(self, store_location: str, pred_with_cpu: bool, training: bool = True, is_kaggle: bool = False,
+             find_peaks: dict = None) -> tuple[np.ndarray, np.ndarray]:
         """
         Prediction function for the ensemble.
         Feeds the models data window-by-window, averages their predictions
@@ -92,7 +94,8 @@ class Ensemble:
         for i, model_config in enumerate(self.model_configs):
             model_config.reset_globals()
             model_pred = self.pred_model(
-                model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu, training=training, is_kaggle=is_kaggle)
+                model_config_loader=model_config, store_location=store_location, pred_with_cpu=pred_with_cpu,
+                training=training, is_kaggle=is_kaggle)
 
             # Model_pred is tuple of np.array(onset, awake) for each window
             # Split the series of tuples into two column
@@ -114,7 +117,8 @@ class Ensemble:
                     find_peaks_dict = {"width": 24, "height": 0, "distance": 100}
                     events = pred_to_event_state(pred, thresh=0, n_events=10, find_peaks_params=find_peaks_dict)
                 else:
-                    events = pred_to_event_state(pred, thresh=0, n_events=find_peaks.get("n_events"), find_peaks_params=find_peaks.get("find_peaks"))
+                    events = pred_to_event_state(pred, thresh=0, n_events=find_peaks.get("n_events"),
+                                                 find_peaks_params=find_peaks.get("find_peaks"))
 
                 offset = 5.5
                 steps = (events[0] + offset, events[1] + offset)
@@ -200,7 +204,8 @@ class Ensemble:
                     store_location + "/scaler-" + scaler_hash + ".pkl")
 
             x_test = pretrain.preprocess(featured_data)
-            assert x_test.shape[1] == data_info.window_size, "The window size of the test data should be the same as the window size of the training data"
+            assert x_test.shape[
+                       1] == data_info.window_size, "The window size of the test data should be the same as the window size of the training data"
 
         logger.info("Creating model using ModelConfigLoader")
         model = model_config_loader.set_model()

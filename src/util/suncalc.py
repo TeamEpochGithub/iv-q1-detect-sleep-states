@@ -295,5 +295,3 @@ def get_times(
             result[time[2]] = from_julian(Jset[idx])
 
     return result
-
-

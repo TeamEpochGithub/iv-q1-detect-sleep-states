@@ -1,10 +1,10 @@
 import gc
 import os
+import shutil
 import tracemalloc
 
 import pandas as pd
 from tqdm import tqdm
-import shutil
 
 from src import data_info
 from src.configs.load_model_config import ModelConfigLoader

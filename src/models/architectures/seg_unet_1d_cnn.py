@@ -43,7 +43,7 @@ class SeBlock(nn.Module):
                                out_channels=in_layer, kernel_size=1, padding=0)
         self.fc = nn.Linear(in_features=1, out_features=out_layer // 8)
         self.fc2 = nn.Linear(in_features=out_layer //
-                             8, out_features=out_layer)
+                                         8, out_features=out_layer)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 

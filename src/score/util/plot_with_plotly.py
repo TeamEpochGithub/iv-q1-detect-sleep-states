@@ -1,6 +1,7 @@
-import plotly.graph_objects as go
-from src.score.util.add_pred_vlines import add_pred_vlines
 import numpy as np
+import plotly.graph_objects as go
+
+from src.score.util.add_pred_vlines import add_pred_vlines
 
 
 def plot_w_plotly(current_series, current_events, current_preds, id_decoding, id, features_to_plot):
@@ -12,23 +13,23 @@ def plot_w_plotly(current_series, current_events, current_preds, id_decoding, id
             x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
             x[~mask] = np.nan
             fig.add_trace(go.Scatter(x=x, y=current_series[feature_to_plot].values,
-                                     mode='lines', name=feature_to_plot+'Awake=0',
-                                     line=dict(color='blue'), legendgroup=feature_to_plot+'Awake=0',
+                                     mode='lines', name=feature_to_plot + 'Awake=0',
+                                     line=dict(color='blue'), legendgroup=feature_to_plot + 'Awake=0',
                                      showlegend=True))
             mask = current_series['awake'] == 1
             x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
             x[~mask] = np.nan
             fig.add_trace(go.Scatter(x=x, y=current_series[feature_to_plot].values,
-                                     mode='lines', name=feature_to_plot+'Awake=1',
-                                     line=dict(color='red'), legendgroup=feature_to_plot+'Awake=1',
+                                     mode='lines', name=feature_to_plot + 'Awake=1',
+                                     line=dict(color='red'), legendgroup=feature_to_plot + 'Awake=1',
                                      showlegend=True))
             mask = current_series['awake'] == 2
             if mask.any():
                 x = current_series['step'].to_numpy(copy=True, dtype=np.float32)
                 x[~mask] = np.nan
                 fig.add_trace(go.Scatter(x=x, y=current_series[feature_to_plot].values,
-                                         mode='lines', name=feature_to_plot+'Awake=2',
-                                         line=dict(color='green'), legendgroup=feature_to_plot+'Awake=2',
+                                         mode='lines', name=feature_to_plot + 'Awake=2',
+                                         line=dict(color='green'), legendgroup=feature_to_plot + 'Awake=2',
                                          showlegend=True))
             mask = current_series['awake'] == 3
             if mask.any():

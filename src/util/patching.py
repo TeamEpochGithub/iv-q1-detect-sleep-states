@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 
@@ -29,4 +28,3 @@ def patch_y_data(y: torch.tensor, patch_size: int) -> torch.tensor:
     y = torch.transpose(y, 1, 2)
     y = torch.mode(y, 1).values
     return y
-

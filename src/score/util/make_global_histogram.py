@@ -1,9 +1,11 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import warnings
-from src.logger.logger import logger
 import os
+import warnings
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from src.logger.logger import logger
 
 
 def make_global_histogram(preds: pd.DataFrame, events: pd.DataFrame, folder_path: str):

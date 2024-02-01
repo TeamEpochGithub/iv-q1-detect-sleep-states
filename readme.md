@@ -94,3 +94,12 @@ The training happens by passing all our data to the trainer class located in src
 
 ### Model architectures
 In our code the model classes (classes that have methods like train and pred) and model architectures are separated. To see our model architectures please refer to src/models/architectures and to see the model classes please refer to src/models.
+
+### Contributors
+|  Name | Contact  |
+|---|---|
+| Jasper van Selm  | jmvanselm@gmail.com  |
+|   |   |
+|   |   |
+|   |   |
+|   |   |

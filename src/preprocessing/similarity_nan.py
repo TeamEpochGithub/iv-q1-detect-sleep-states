@@ -12,9 +12,6 @@ from src.preprocessing.pp import PP
 
 @dataclass
 class SimilarityNan(PP):
-    # TODO Add docstrings for the class and preprocess function and complete the docstring for the similarity_nan function
-    # TODO Add type hints to the similarity_nan function
-
     as_feature: bool = False
 
     def preprocess(self, data: MutableMapping[str, pd.DataFrame]) -> MutableMapping[str, pd.DataFrame]:

@@ -43,7 +43,7 @@ class SeBlock(nn.Module):
                                out_channels=in_layer, kernel_size=1, padding=0)
         self.fc = nn.Linear(in_features=1, out_features=out_layer // 8)
         self.fc2 = nn.Linear(in_features=out_layer //
-                             8, out_features=out_layer)
+                                         8, out_features=out_layer)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -99,7 +99,7 @@ class SegUnet1D(nn.Module):
 
         # Set model params
         self.hidden_layers = hidden_layers
-        self.kernel_size = kernel_size  # FIXME Only works with 7
+        self.kernel_size = kernel_size
         self.depth = depth
         if activation is None:
             self.activation = nn.Identity
@@ -145,11 +145,7 @@ class SegUnet1D(nn.Module):
         self.verify_network_params()
 
     def verify_network_params(self) -> None:
-        """Verify that the given parameters are valid.
-
-        TODO Expand this function to verify all parameters
-        TODO Run this in the config checker instead #190
-        """
+        """Verify that the given parameters are valid."""
 
         # Verify that each down layer's output has the same size as the next layer's input
         layer_sizes: list = [self.window_size,

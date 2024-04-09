@@ -1,9 +1,11 @@
 # Pretrain
 
-This step includes preparing the data for inputting in the model. It contains downsampling options, standardization and train-test split.
+This step includes preparing the data for inputting in the model. It contains downsampling options, standardization and
+train-test split.
 
 ## Pretraining
-This step includes preparing the data for inputting in the model. 
+
+This step includes preparing the data for inputting in the model.
 It contains downsampling options, standardization and train-test split.
 
 List of options:

@@ -1,23 +1,23 @@
 import json
 
 from src.models.event_segmentation_transformer import EventSegmentationTransformer
-
+from .. import data_info
 from ..feature_engineering.feature_engineering import FE
 from ..logger.logger import logger
+from ..models.event_model import EventModel
+from ..models.event_res_gru import EventResGRU
 from ..models.event_seg_unet_1d_cnn import EventSegmentationUnet1DCNN
 from ..models.spectrogram_2d_cnn import EventSegmentation2DCNN
-from ..models.event_res_gru import EventResGRU
 from ..models.spectrogram_2d_cnn_gru import EventSegmentation2DCNNGRU
 from ..preprocessing.pp import PP
 from ..pretrain.pretrain import Pretrain
-from ..models.event_model import EventModel
-from .. import data_info
 
 
 class ModelConfigLoader:
     """Class to load the model training configuration from a JSON file"""
 
-    def __init__(self, config_path: str, processed_out: str, processed_in: str, train_series: str, train_events: str, test_series: str, store_location: str = "") -> None:
+    def __init__(self, config_path: str, processed_out: str, processed_in: str, train_series: str, train_events: str,
+                 test_series: str, store_location: str = "") -> None:
         """
         Initialize the ModelConfigLoader class
         :param config_path: the path to the config.json file

@@ -1,12 +1,10 @@
 import numpy as np
 import torch
 import wandb
-from scipy.signal import find_peaks
 
 from .architectures.spectrogram_encoder_decoder import SpectrogramEncoderDecoder
 from .event_model import EventModel
 from .trainers.event_trainer import EventTrainer
-
 from .. import data_info
 from ..logger.logger import logger
 
@@ -109,34 +107,6 @@ class EventSegmentation2DCNN(EventModel):
         labels_list = [data_info.y_columns["state-onset"],
                        data_info.y_columns["state-wakeup"]]
 
-        if self.config.get('penis_curve', False):
-            angles = np.linspace(0, np.pi, 270)
-            peak_curve = 0.8 * np.sin(angles) + 0.2
-            # PENIS CURVEEEEEEE!!!!!!!!!!
-            for window in y_train[:, :, labels_list]:
-                for i in range(window.shape[1]):
-                    # find the peaks
-                    peaks, _ = find_peaks(window[:, i])
-                    # set the peaks to 1
-                    window[peaks, i] = 1
-                    for peak in peaks:
-                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
-
-                        # set the rest to 0
-                        window[window < 0.2] = 0
-            # MORE PENIS CURVEEEEEEE!!!!!!!!!
-            for window in y_test[:, :, labels_list]:
-                for i in range(window.shape[1]):
-                    # find the peaks
-                    peaks, _ = find_peaks(window[:, i])
-                    # set the peaks to 1
-                    window[peaks, i] = 1
-                    for peak in peaks:
-                        # map +-36 around the peak to 0-pi
-                        window[peak-135:peak+135, i] = peak_curve[:len(window[peak-135:peak+135, i])]
-                        # set the rest to 0
-                        window[window < 0.2] = 0
-
         if mask_unlabeled:
             # Add awake label to front of the list
             labels_list.insert(0, data_info.y_columns["awake"])
@@ -153,7 +123,8 @@ class EventSegmentation2DCNN(EventModel):
         for i in range(y_train.shape[0]):
             downsampled_channels = []
             for j in range(y_train.shape[2]):
-                downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
+                downsampled_channels.append(
+                    np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_train_downsampled.append(np.array(downsampled_channels))
         y_train = torch.from_numpy(np.array(y_train_downsampled)).permute(0, 2, 1)
         del y_train_downsampled
@@ -163,10 +134,12 @@ class EventSegmentation2DCNN(EventModel):
         for i in range(y_test.shape[0]):
             downsampled_channels = []
             for j in range(y_test.shape[2]):
-                downsampled_channels.append(np.median(y_test[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
+                downsampled_channels.append(
+                    np.median(y_test[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_test_downsampled.append(np.array(downsampled_channels))
         y_test = torch.from_numpy(np.array(y_test_downsampled)).permute(0, 2, 1)
         del y_test_downsampled
+
         # Turn last column into one hot encoding of awake so that it can be used as auxiliary awake
         if use_auxiliary_awake:
             # Change all 3's for last column to 2's
@@ -207,7 +180,8 @@ class EventSegmentation2DCNN(EventModel):
                                early_stopping_metric=self.early_stopping_metric,
                                mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         avg_losses, avg_val_losses, total_epochs = trainer.fit(
-            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            trainloader=train_dataloader, testloader=test_dataloader, model=self.model, optimizer=optimizer,
+            name=self.name, scheduler=scheduler,
             activation_delay=activation_delay)
 
         if wandb.run is not None:
@@ -217,7 +191,6 @@ class EventSegmentation2DCNN(EventModel):
         logger.info("--- Training of model complete!")
         self.config["total_epochs"] = total_epochs
 
-    # TODO refactor to overwrite event trainer
     def train_full(self, x_train: np.ndarray, y_train: np.ndarray) -> None:
         """
         Train function for the model.
@@ -264,7 +237,8 @@ class EventSegmentation2DCNN(EventModel):
         for i in range(y_train.shape[0]):
             downsampled_channels = []
             for j in range(y_train.shape[2]):
-                downsampled_channels.append(np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
+                downsampled_channels.append(
+                    np.median(y_train[i, :, j].reshape(-1, self.config.get('hop_length', 1)), axis=1))
             y_train_downsampled.append(np.array(downsampled_channels))
         y_train = torch.from_numpy(np.array(y_train_downsampled))
         del y_train_downsampled
@@ -286,7 +260,8 @@ class EventSegmentation2DCNN(EventModel):
                                early_stopping_metric=self.early_stopping_metric,
                                mask_unlabeled=mask_unlabeled, use_auxiliary_awake=use_auxiliary_awake)
         trainer.fit(
-            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name, scheduler=scheduler,
+            trainloader=train_dataloader, testloader=None, model=self.model, optimizer=optimizer, name=self.name,
+            scheduler=scheduler,
             activation_delay=activation_delay)
         logger.info("Full train complete!")
 

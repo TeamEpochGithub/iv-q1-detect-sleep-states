@@ -82,7 +82,6 @@ class AddStateLabels(PP):
 
         return data
 
-    # TODO Add type hints and (better) PyDoc comments to set_awake, set_awake_with_similarity, fill_backward and fill_forward
     def set_awake(self, series, weird_series_encoded, sid):
         awake_col = series.columns.get_loc('awake')
         series_id = sid
@@ -123,8 +122,6 @@ class AddStateLabels(PP):
             series.iloc[prev_step:, awake_col] = 1
         elif last_event == 'onset':
             series.iloc[prev_step:, awake_col] = 0
-
-        # TODO: shift?
         return series
 
     def set_awake_with_similarity(self, series, similarity_col_name, sid):

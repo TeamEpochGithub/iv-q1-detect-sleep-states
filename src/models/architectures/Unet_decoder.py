@@ -32,13 +32,13 @@ class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
     def __init__(
-        self,
-        in_channels,
-        out_channels,
-        mid_channels=None,
-        norm=nn.BatchNorm1d,
-        se=False,
-        res=False,
+            self,
+            in_channels,
+            out_channels,
+            mid_channels=None,
+            norm=nn.BatchNorm1d,
+            se=False,
+            res=False,
     ):
         super().__init__()
         self.res = res
@@ -68,7 +68,7 @@ class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
     def __init__(
-        self, in_channels, out_channels, scale_factor, norm=nn.BatchNorm1d, se=False, res=False
+            self, in_channels, out_channels, scale_factor, norm=nn.BatchNorm1d, se=False, res=False
     ):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
@@ -84,7 +84,7 @@ class Up(nn.Module):
     """Upscaling then double conv"""
 
     def __init__(
-        self, in_channels, out_channels, bilinear=True, scale_factor=2, norm=nn.BatchNorm1d
+            self, in_channels, out_channels, bilinear=True, scale_factor=2, norm=nn.BatchNorm1d
     ):
         super().__init__()
 
@@ -113,15 +113,15 @@ def create_layer_norm(channel, length):
 
 class UNet1DDecoder(nn.Module):
     def __init__(
-        self,
-        n_channels: int,
-        n_classes: int,
-        duration: int,
-        bilinear: bool = True,
-        se: bool = False,
-        res: bool = False,
-        scale_factor: int = 2,
-        dropout: float = 0.2,
+            self,
+            n_channels: int,
+            n_classes: int,
+            duration: int,
+            bilinear: bool = True,
+            se: bool = False,
+            res: bool = False,
+            scale_factor: int = 2,
+            dropout: float = 0.2,
     ):
         super().__init__()
         self.n_channels = n_channels
@@ -185,7 +185,7 @@ class UNet1DDecoder(nn.Module):
         self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(
-        self, x: torch.Tensor, labels: Optional[torch.Tensor] = None
+            self, x: torch.Tensor, labels: Optional[torch.Tensor] = None
     ) -> dict[str, Optional[torch.Tensor]]:
         """Forward
 

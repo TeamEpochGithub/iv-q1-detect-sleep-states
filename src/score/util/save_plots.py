@@ -56,7 +56,8 @@ def save_plots(current_series, current_events, current_preds, id_decoding, id, f
             plt.xticks(rotation=45)
 
     # Add the legend
-    plt.legend(['real_onset', 'real_wakeup', 'pred_onset', 'pred_wakeup', 'Awake=0', 'Awake=1', 'Awake=2'], loc='upper right')
+    plt.legend(['real_onset', 'real_wakeup', 'pred_onset', 'pred_wakeup', 'Awake=0', 'Awake=1', 'Awake=2'],
+               loc='upper right')
     # If the hash config dir doesnt exist make it
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)

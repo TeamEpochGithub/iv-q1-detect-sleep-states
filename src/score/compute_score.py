@@ -133,7 +133,8 @@ def compute_score_clean(submission: pd.DataFrame, solution: pd.DataFrame) -> flo
     return score_clean
 
 
-def from_numpy_to_submission_format(validate_window_info: pd.DataFrame, y_pred: np.ndarray) -> tuple[pd.DataFrame, pd.DataFrame]:
+def from_numpy_to_submission_format(validate_window_info: pd.DataFrame, y_pred: np.ndarray) -> tuple[
+    pd.DataFrame, pd.DataFrame]:
     """Turn the numpy y_pred and the train events file into a solution and submission dataframes.
 
     While you probably want to compare y_pred with y_true, it seems that that is not possible in our case.

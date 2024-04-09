@@ -43,7 +43,8 @@ def to_submission_format(predictions: np.ndarray, window_info: pd.DataFrame) -> 
     # one with event='onset' and the other with event='awake'
     # and then sort by series_id and window (ascending)
 
-    df = res.melt(id_vars=['series_id', 'window'], value_vars=['onset', 'wakeup'], var_name='event', value_name='step').sort_values(
+    df = res.melt(id_vars=['series_id', 'window'], value_vars=['onset', 'wakeup'], var_name='event',
+                  value_name='step').sort_values(
         by=['series_id', 'window', 'step'])
 
     df_conf = res.melt(id_vars=['series_id', 'window'], value_vars=['onset_confidence', 'wakeup_confidence'],

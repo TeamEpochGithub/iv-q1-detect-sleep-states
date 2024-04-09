@@ -1,6 +1,6 @@
-from torch import nn
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 
 class BahdanauAttention(nn.Module):
@@ -9,10 +9,11 @@ class BahdanauAttention(nn.Module):
     :param hidden_size: Hidden size of the attention module.
     :param bidirectional: Whether the attention module is bidirectional.
     '''
+
     def __init__(
-        self,
-        hidden_size: int,
-        bidirectional: bool = False,
+            self,
+            hidden_size: int,
+            bidirectional: bool = False,
     ) -> None:
         super().__init__()
         self.hidden_size = hidden_size

@@ -156,15 +156,6 @@ def scoring(config: ConfigLoader) -> None:
     # pass only the test data
     logger.info('Creating plots...')
 
-    # TODO make plots work again with ensemble, which featured data to use?
-    # plot_preds_on_series(submission,
-    #                      featured_data[
-    #                          featured_data['series_id'].isin(test_ids)],
-    #                      number_of_series_to_plot=config.get_number_of_plots(),
-    #                      folder_path=f'prediction_plots/{config_hash}-Score--{scores[1]:.4f}',
-    #                      show_plot=config.get_browser_plot(), save_figures=config.get_store_plots())
-
-
 def full_train_from_config(model_config_loader: ModelConfigLoader, store_location: str) -> None:
     """
     Full train the model with the optimal parameters

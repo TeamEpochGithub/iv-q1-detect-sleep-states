@@ -1,8 +1,8 @@
+import torchaudio.transforms as T
+from segmentation_models_pytorch import Unet
 from torch import nn
 
-from src.external.segmentation_models_pytorch import Unet
 from src.models.architectures.Unet_decoder import UNet1DDecoder
-import torchaudio.transforms as T
 
 
 class SpectrogramEncoderDecoder(nn.Module):

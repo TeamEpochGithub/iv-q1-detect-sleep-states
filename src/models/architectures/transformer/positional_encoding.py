@@ -1,6 +1,7 @@
+import math
+
 import torch
 from torch import nn
-import math
 
 
 class FixedPositionalEncoding(nn.Module):
@@ -13,11 +14,11 @@ class FixedPositionalEncoding(nn.Module):
     """
 
     def __init__(
-        self,
-        emb_dim: int,
-        dropout: float = 0.1,
-        max_len: int = 1024,
-        scale_factor: float = 1.0,
+            self,
+            emb_dim: int,
+            dropout: float = 0.1,
+            max_len: int = 1024,
+            scale_factor: float = 1.0,
     ) -> None:
         super(FixedPositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)

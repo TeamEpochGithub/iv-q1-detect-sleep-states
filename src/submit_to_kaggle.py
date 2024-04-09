@@ -7,7 +7,6 @@ from src.util.submissionformat import to_submission_format
 
 
 def submit(config_loader: ConfigLoader, submit=False) -> None:
-
     logger.info("Making predictions with ensemble on kaggle data")
 
     # Check if data/processed exists, if not create it
@@ -29,7 +28,8 @@ def submit(config_loader: ConfigLoader, submit=False) -> None:
 
     is_kaggle = config_loader.config.get("is_kaggle", False)
     # Make predictions on test data
-    predictions = ensemble.pred(config_loader.get_model_store_loc(), pred_with_cpu=pred_cpu, training=False, is_kaggle=is_kaggle)
+    predictions = ensemble.pred(config_loader.get_model_store_loc(), pred_with_cpu=pred_cpu, training=False,
+                                is_kaggle=is_kaggle)
 
     logger.info("Formatting predictions...")
 

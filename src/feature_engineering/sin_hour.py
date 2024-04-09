@@ -1,9 +1,11 @@
+import gc
+from dataclasses import dataclass
+
+import numpy as np
+from tqdm import tqdm
+
 from .feature_engineering import FE
 from ..logger.logger import logger
-import numpy as np
-from dataclasses import dataclass
-from tqdm import tqdm
-import gc
 
 
 @dataclass

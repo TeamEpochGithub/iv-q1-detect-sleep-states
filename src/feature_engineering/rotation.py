@@ -8,9 +8,6 @@ from ..logger.logger import logger
 
 @dataclass
 class Rotation(FE):
-    # TODO Add docstrings for the class and feature_engineering function
-    # TODO Add tests
-
     window_sizes: list[int] = field(default_factory=lambda: [100])
 
     def feature_engineering(self, data: dict) -> dict:

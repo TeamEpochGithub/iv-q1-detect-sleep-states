@@ -1,6 +1,6 @@
+import gc
 from dataclasses import dataclass
 
-import gc
 from tqdm import tqdm
 
 from .rolling_window import RollingWindow
@@ -9,8 +9,6 @@ from ..logger.logger import logger
 
 @dataclass
 class Kurtosis(RollingWindow):
-    # TODO Add docstrings for the class, feature_engineering and kurtosis functions
-    # TODO Add tests
 
     def feature_engineering(self, data: dict) -> dict:
         # Loop through window sizes

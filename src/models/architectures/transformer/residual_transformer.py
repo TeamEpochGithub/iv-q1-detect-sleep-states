@@ -1,10 +1,11 @@
-from torch import nn
 import torch
+from torch import nn
 
 from src.models.architectures.multi_res_bi_GRU import MultiResidualBiGRU
 from src.models.architectures.transformer.encoder_layer import EncoderLayer
 from src.models.architectures.transformer.patch_tokenizer import PatchTokenizer
-from src.models.architectures.transformer.positional_encoding import FixedPositionalEncoding, LearnablePositionalEncoding
+from src.models.architectures.transformer.positional_encoding import FixedPositionalEncoding, \
+    LearnablePositionalEncoding
 
 
 class ResidualTransformer(nn.Module):
@@ -25,9 +26,10 @@ class ResidualTransformer(nn.Module):
     """
 
     def __init__(
-        self, heads: int = 8, emb_dim: int = 92, expansion: int = 4,
-        n_layers: int = 6, seq_len: int = 17280, input_size: int = -1, num_class: int = 2, residual_model: dict = None, patch_size: int = 1,
-        pe: str = "fixed", dropout: float = 0.1, attention: dict = {"type": "normal"}
+            self, heads: int = 8, emb_dim: int = 92, expansion: int = 4,
+            n_layers: int = 6, seq_len: int = 17280, input_size: int = -1, num_class: int = 2,
+            residual_model: dict = None, patch_size: int = 1,
+            pe: str = "fixed", dropout: float = 0.1, attention: dict = {"type": "normal"}
     ) -> None:
         super(ResidualTransformer, self).__init__()
 
@@ -67,7 +69,7 @@ class ResidualTransformer(nn.Module):
 
         # Upsample to get back to original sequence length
         self.upsample = nn.Upsample(scale_factor=(
-            seq_len // l_e), mode='nearest')
+                seq_len // l_e), mode='nearest')
 
         # Layer to get number of classes
         self.linear_to_classes = nn.Linear(

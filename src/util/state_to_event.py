@@ -10,7 +10,8 @@ def one_hot_to_state(one_hot: np.ndarray) -> np.ndarray:
     return np.argmax(one_hot, axis=0)
 
 
-def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 1, find_peaks_params: dict = None) -> tuple:
+def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 1,
+                        find_peaks_params: dict = None) -> tuple:
     """Convert an event segmentation prediction to an onset and event. Normally used for predictions.
     param: 3d numpy array (channel, window_size) of event states for each timestep, 0=no state > 0=state
     param: thresh float, threshold for the prediction to be considered a state
@@ -49,7 +50,8 @@ def pred_to_event_state(predictions: np.ndarray, thresh: float, n_events: int = 
 
     # Return every step as a prediction
     if n_events == -1:
-        return np.arange(len(predictions[:, 0])), np.arange(len(predictions[:, 1])), predictions[:, 0], predictions[:, 1]
+        return np.arange(len(predictions[:, 0])), np.arange(len(predictions[:, 1])), predictions[:, 0], predictions[:,
+                                                                                                        1]
 
     # Find peaks in the predictions
     o_peaks, o_properties = find_peaks(predictions[:, 0], **find_peaks_params)
@@ -110,7 +112,6 @@ def find_events(pred: np.ndarray, median_filter_size: int = None) -> tuple:
     # Find awake indices where the awake state goes from 0 to 1
     awakes = np.where((pred[:-1] == 0) & (pred[1:] == 1))[0]
 
-    # TODO: make this work for a single onset or a single awake
     if np.size(onsets) == 0 or np.size(awakes) == 0:
         return np.nan, np.nan
 

@@ -1,7 +1,7 @@
-import torch
-from torch import nn
-import torch.nn.functional as F
 import numpy as np
+import torch
+import torch.nn.functional as F
+from torch import nn
 
 
 class SparseAttention(nn.Module):
@@ -28,10 +28,12 @@ class SparseAttention(nn.Module):
         :param v: Value tensor.
         :return: Output of layer tensor.
         '''
-        return self.blocksparse_attention_impl(q, k, v, self.heads, self.attn_mode, self.local_attn_ctx, self.block_size)
+        return self.blocksparse_attention_impl(q, k, v, self.heads, self.attn_mode, self.local_attn_ctx,
+                                               self.block_size)
 
     def blocksparse_attention_impl(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
-                                   heads: int, attn_mode: str = "e", local_attn_ctx: int = 10, block_size: int = 32) -> torch.Tensor:
+                                   heads: int, attn_mode: str = "e", local_attn_ctx: int = 10,
+                                   block_size: int = 32) -> torch.Tensor:
         '''
         Block sparse attention implementation.
         :param q: Query tensor.
@@ -62,7 +64,8 @@ class SparseAttention(nn.Module):
             a = torch.reshape(a, [n, t, embd])
         return a
 
-    def attention_impl(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, heads: int, attn_mode: str = "all", local_attn_ctx: int = 10) -> torch.Tensor:
+    def attention_impl(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, heads: int, attn_mode: str = "all",
+                       local_attn_ctx: int = 10) -> torch.Tensor:
         '''
         Attention implementation.
         :param q: Query tensor.

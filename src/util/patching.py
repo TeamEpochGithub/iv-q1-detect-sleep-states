@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 
@@ -29,14 +28,3 @@ def patch_y_data(y: torch.tensor, patch_size: int) -> torch.tensor:
     y = torch.transpose(y, 1, 2)
     y = torch.mode(y, 1).values
     return y
-
-
-def unpatch_data(d: np.array, patch_size: int) -> np.array:
-    """
-    Unpatch the data which has a shape of (seq_len // patch_size, pred)
-    :param d: data
-    :param patch_size: patch size
-    :return: unpatched data
-    """
-    # TODO: Complete this function #144
-    pass

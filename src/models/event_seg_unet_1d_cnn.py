@@ -1,7 +1,6 @@
 import torch
 
 from src.models.event_model import EventModel
-
 from .architectures.seg_unet_1d_cnn import SegUnet1D
 from .. import data_info
 from ..logger.logger import logger

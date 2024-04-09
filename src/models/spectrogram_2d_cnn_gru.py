@@ -1,10 +1,10 @@
 import torch
 import wandb
-from .event_model import EventModel
 
+from .architectures.spectrogram_cnn_gru import MultiResidualBiGRUwSpectrogramCNN
+from .event_model import EventModel
 from .. import data_info
 from ..logger.logger import logger
-from .architectures.spectrogram_cnn_gru import MultiResidualBiGRUwSpectrogramCNN
 
 
 class EventSegmentation2DCNNGRU(EventModel):
@@ -49,13 +49,15 @@ class EventSegmentation2DCNNGRU(EventModel):
         # We load the model architecture here. 2 Out channels, one for onset, one for offset event state prediction
         if self.config.get("use_auxiliary_awake", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=5, model_type=self.model_type, config=self.config,
+                                                           out_channels=5, model_type=self.model_type,
+                                                           config=self.config,
                                                            spec_features_indices=spec_features_indices)
         else:
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=2, model_type=self.model_type, config=self.config,
+                                                           out_channels=2, model_type=self.model_type,
+                                                           config=self.config,
                                                            spec_features_indices=spec_features_indices)
-        data_info.window_size = 17280//(data_info.downsampling_factor*config.get('hop_length', 1))
+        data_info.window_size = 17280 // (data_info.downsampling_factor * config.get('hop_length', 1))
         self.inference_batch_size = 1
         # Load config
         self.load_config(config)
@@ -109,9 +111,11 @@ class EventSegmentation2DCNNGRU(EventModel):
             spec_features_indices = list(range(len(data_info.X_columns.values())))
         if self.config.get("use_auxiliary_awake", False):
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=5, model_type=self.model_type, config=self.config,
+                                                           out_channels=5, model_type=self.model_type,
+                                                           config=self.config,
                                                            spec_features_indices=spec_features_indices)
         else:
             self.model = MultiResidualBiGRUwSpectrogramCNN(in_channels=len(data_info.X_columns),
-                                                           out_channels=2, model_type=self.model_type, config=self.config,
+                                                           out_channels=2, model_type=self.model_type,
+                                                           config=self.config,
                                                            spec_features_indices=spec_features_indices)

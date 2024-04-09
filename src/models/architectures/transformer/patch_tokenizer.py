@@ -14,7 +14,7 @@ class PatchTokenizer(nn.Module):
         super().__init__()
         self.patch_size = patch_size
         self.emb_dim = emb_dim
-        self.linear_projection = nn.Linear(self.patch_size*channels, emb_dim)
+        self.linear_projection = nn.Linear(self.patch_size * channels, emb_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -30,7 +30,7 @@ class PatchTokenizer(nn.Module):
         x = x.view(bs, c, length // self.patch_size,
                    self.patch_size).permute(0, 2, 1, 3)
         # (bs, no_of_patches, c, patch_l) -> (bs, len // patch_l, c*patch_l)
-        x = x.reshape(bs, length // self.patch_size, c*self.patch_size)
+        x = x.reshape(bs, length // self.patch_size, c * self.patch_size)
 
         # linear projection to embedding dimension
         x = self.linear_projection(x)

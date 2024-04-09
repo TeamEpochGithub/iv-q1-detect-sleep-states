@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-
 from .feature_engineering import FE, FEException
 from ..logger.logger import logger
 
@@ -10,8 +9,6 @@ from ..logger.logger import logger
 class RollingWindow(FE, ABC):
     """Base class for features that need a rolling window.
 
-    # TODO Describe this class
-    # TODO Describe window_sizes and features
     """
 
     window_sizes: list[int]

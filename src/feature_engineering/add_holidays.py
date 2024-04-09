@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Final
-from tqdm import tqdm
 
 import pandas as pd
+from tqdm import tqdm
 
 from src.feature_engineering.feature_engineering import FE
 
@@ -10,7 +10,6 @@ HOLIDAYS_DATES: Final[set[pd.Timestamp]] = {
     *pd.date_range('2017-6-28', '2017-9-5', tz='UTC'),  # Summer holidays 2017
     *pd.date_range('2017-9-21', '2017-9-22', tz='UTC'),  # Rosh Hashanah 2017
     pd.Timestamp('2017-10-9', tz='UTC'),  # Columbus Day 2017
-    # *pd.date_range('2017-9-29', '2017-9-30', tz='UTC'),  # Yom Kippur 2017  # TODO Check if Yom Kippur was a school holiday in 2017
     *pd.date_range('2017-11-23', '2017-11-24', tz='UTC'),  # Thanksgiving 2017
     *pd.date_range('2017-12-25', '2018-1-1', tz='UTC'),  # Christmas 2017
     pd.Timestamp('2018-1-15', tz='UTC'),  # Martin Luther King Day 2018

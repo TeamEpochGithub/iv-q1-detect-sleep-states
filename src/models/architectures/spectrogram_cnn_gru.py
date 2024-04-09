@@ -1,9 +1,10 @@
-from src.models.architectures import multi_res_bi_GRU
-from torch import nn
-from src.external.segmentation_models_pytorch import Unet
-import torchaudio.transforms as T
-from src.models.architectures.Unet_decoder import UNet1DDecoder
 import torch
+import torchaudio.transforms as T
+from segmentation_models_pytorch import Unet
+from torch import nn
+
+from src.models.architectures import multi_res_bi_GRU
+from src.models.architectures.Unet_decoder import UNet1DDecoder
 
 
 class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
@@ -12,7 +13,6 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         self.config = config
         self.gru_params = config.get('gru_params', {})
         self.spec_features_indices = spec_features_indices
-        # TODO exclude some of the features from the spectrogram
         self.encoder = Unet(
             encoder_name=config.get('encoder_name', 'resnet34'),
             encoder_weights=config.get('encoder_weights', 'imagenet'),
@@ -29,21 +29,20 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         )
         self.GRU = multi_res_bi_GRU.MultiResidualBiGRU(input_size=in_channels,
                                                        hidden_size=self.gru_params.get("hidden_size", 64),
-                                                       out_size=out_channels, n_layers=self.gru_params.get("n_layers", 5),
+                                                       out_size=out_channels,
+                                                       n_layers=self.gru_params.get("n_layers", 5),
                                                        bidir=True, activation=self.gru_params.get("activation", "relu"),
                                                        flatten=False, dropout=0,
                                                        internal_layers=1, model_name='')
         # will shape the encoder outputs to the same shape as the original inputs
-        self.liner = nn.Linear(in_features=(config.get('n_fft', 127)+1)//2, out_features=in_channels)
+        self.liner = nn.Linear(in_features=(config.get('n_fft', 127) + 1) // 2, out_features=in_channels)
 
         self.decoder = UNet1DDecoder(
             n_channels=(config.get('n_fft', 127) + 1) // 2,
             n_classes=out_channels,
             bilinear=config.get('bilinear', False),
             scale_factor=config.get('scale_factor', 2),
-            # hardcoded for now
-            # TODO make this a config
-            duration=17280 // (12*config.get('hop_length', 1)),
+            duration=17280 // (12 * config.get('hop_length', 1)),
         )
 
     def forward(self, x, use_activation=True):
@@ -60,7 +59,6 @@ class MultiResidualBiGRUwSpectrogramCNN(nn.Module):
         x_encoded = x_encoded.permute(0, 2, 1)
         x_encoded_linear = self.liner(x_encoded)
 
-        # TODO if some features are excluded from the spectrgoram chnage this
         # downsample the input features to the same shape as the encoded features
         x = x[:, self.spec_features_indices, ::self.config.get('hop_length')]
         # now sum the residual features x and the encoded features x

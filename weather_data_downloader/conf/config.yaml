@@ -1,7 +1,0 @@
-start_date: '2017-01-01'
-end_date: '2023-11-29'
-location:
-  latitude: 40.730610
-  longitude: -73.935242
-  timezone: 'US/Eastern'
-filename: 'src/external/weather.csv'

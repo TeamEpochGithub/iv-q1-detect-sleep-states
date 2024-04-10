@@ -1,4 +1,4 @@
-# Child Mind Institute - Detect Sleep States | Place 23/1877  <img src="https://github.com/TeamEpochGithub/iv-q3-harmful-brain-activity/assets/44620257/d9500ae7-0a7c-41b2-8cb7-372c81fc1fb8" width="16">
+# CMI - Detect Sleep States | Place 23/1877  <img src="https://github.com/TeamEpochGithub/iv-q3-harmful-brain-activity/assets/44620257/d9500ae7-0a7c-41b2-8cb7-372c81fc1fb8" width="16">
 ## This repository contains the code for our solution to [Child Mind Institute - Detect Sleep States](https://www.kaggle.com/competitions/child-mind-institute-detect-sleep-states) competition where we placed 23 out of 1877 teams. 
 
 ### Running main

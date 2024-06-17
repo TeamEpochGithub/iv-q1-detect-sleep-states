@@ -54,4 +54,3 @@ unittests:
 #  script:
 #    - python src/main.py  # Attempt to run the main.py file
 #  allow_failure: false
-

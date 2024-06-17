@@ -53,7 +53,7 @@ Example:
         },
         {
             "kind": "time",
-            "time_features": ["day", "hour", "minute", "second"]    
+            "time_features": ["day", "hour", "minute", "second"]
         },
         {
             "kind": "sun",

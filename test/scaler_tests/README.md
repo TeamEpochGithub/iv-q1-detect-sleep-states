@@ -1,2 +1,2 @@
 # Scaler Tests
-This directory contains scaler related tests. 
+This directory contains scaler related tests.

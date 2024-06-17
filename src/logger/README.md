@@ -49,5 +49,3 @@ When you log in a function 2 deep, use `logger.debug` (so only to file) with 6 -
 def function2()
     logger.debug("------ Starting function2")
 ```
-
-
